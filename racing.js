@@ -69,6 +69,9 @@ let gameOver = false;
 let roadOffset = 0;
 let distance = 0;
 let airborne = 0;
+let jumpFrames = 0;
+let jumpCooldown = 0;
+let flyBoost = 0;
 let lastGapHit = -9999;
 let audioContext = null;
 
@@ -174,6 +177,9 @@ function startRace() {
   distance = 0;
   roadOffset = 0;
   airborne = 0;
+  jumpFrames = 0;
+  jumpCooldown = 0;
+  flyBoost = 0;
   lastGapHit = -9999;
   player.x = 450;
   player.speed = 4 + selectedStars * 0.45;
@@ -192,6 +198,9 @@ function resetRace() {
   gameOver = false;
   distance = 0;
   airborne = 0;
+  jumpFrames = 0;
+  jumpCooldown = 0;
+  flyBoost = 0;
   finishCard.classList.remove("show");
   statusEl.textContent = "选好地图和车，点开始赛车。";
   buildItems();
@@ -241,15 +250,24 @@ function update() {
   const right = keys.has("ArrowRight") || keys.has("d");
   const fast = keys.has("ArrowUp") || keys.has("w");
   const slow = keys.has("ArrowDown") || keys.has("s");
+  const fly = keys.has("f");
   const turn = 5.2 * selectedTire.grip;
   if (left) player.x -= turn;
   if (right) player.x += turn;
   const targetTilt = left ? -0.18 : right ? 0.18 : 0;
   player.tilt += (targetTilt - player.tilt) * 0.18;
-  player.targetSpeed = (4 + selectedStars * 0.45) * selectedCar.speed + (fast ? 1.8 : 0) - (slow ? 1.5 : 0);
+  if (fly) {
+    flyBoost = Math.min(90, flyBoost + (selectedWing.id === "none" ? 1.8 : 3.2));
+    if (flyBoost < 5) playWing();
+  } else {
+    flyBoost = Math.max(0, flyBoost - 2.5);
+  }
+  jumpFrames = Math.max(0, jumpFrames - 1);
+  jumpCooldown = Math.max(0, jumpCooldown - 1);
+  const flyingNow = isPlayerAirborne();
+  player.targetSpeed = (4 + selectedStars * 0.45) * selectedCar.speed + (fast ? 1.8 : 0) - (slow ? 1.5 : 0) + (flyingNow ? 0.9 : 0);
   player.speed += (player.targetSpeed - player.speed) * 0.08;
-  const center = roadCenterAtY(player.y);
-  player.x = Math.max(center - 210, Math.min(center + 210, player.x));
+  player.x = Math.max(34, Math.min(canvas.width - 34, player.x));
   roadOffset = (roadOffset + player.speed) % 80;
   distance += player.speed;
   airborne = Math.max(0, airborne - 1);
@@ -273,7 +291,7 @@ function update() {
       rival.y = -600 - Math.random() * 900;
       rival.x = roadCenterAtY(140) - 185 + Math.floor(Math.random() * 370);
     }
-    if (airborne <= 0 && Math.abs(player.x - rival.x) < 52 && Math.abs(player.y - rival.y) < 78) {
+    if (!flyingNow && Math.abs(player.x - rival.x) < 52 && Math.abs(player.y - rival.y) < 78) {
       endRace(`撞到写着 ${rival.label} 的车，嘎了。`);
     }
   });
@@ -286,11 +304,11 @@ function update() {
     const inGap = player.y > gap.y && player.y < gap.y + gap.h;
     if (inGap && distance - lastGapHit > 140) {
       lastGapHit = distance;
-      if (selectedWing.id === "none") {
+      if (selectedWing.id === "none" && !isPlayerAirborne()) {
         endRace(selectedTrack.id === "sky" ? "没有翅膀，从天上掉下去了，嘎了。" : "没有翅膀，掉进悬崖，嘎了。");
       } else {
-        airborne = 76;
-        statusEl.textContent = "翅膀自动打开，飞过悬崖!";
+        airborne = Math.max(airborne, selectedWing.id === "none" ? 34 : 76);
+        statusEl.textContent = selectedWing.id === "none" ? "你自己跳起来，飞过悬崖!" : "翅膀自动打开，飞过悬崖!";
         playWing();
       }
     }
@@ -308,6 +326,19 @@ function update() {
 
   draw();
   requestAnimationFrame(update);
+}
+
+function jumpPlayer() {
+  if (!running || won || gameOver || jumpCooldown > 0) return;
+  jumpFrames = 34;
+  jumpCooldown = 44;
+  statusEl.textContent = "你的车跳起来了，别的车不会跳!";
+  playTone(560, 0, 0.08, 0.04, "sine");
+  playTone(760, 0.08, 0.08, 0.04, "sine");
+}
+
+function isPlayerAirborne() {
+  return airborne > 0 || jumpFrames > 0 || flyBoost > 0;
 }
 
 function endRace(message) {
@@ -516,10 +547,15 @@ function drawRivalCar(rival) {
 function drawCar() {
   const x = player.x;
   const flightProgress = airborne > 0 ? (76 - airborne) / 76 : 0;
-  const lift = airborne > 0 ? 24 + Math.sin(flightProgress * Math.PI) * 58 : 0;
+  const gapLift = airborne > 0 ? 24 + Math.sin(flightProgress * Math.PI) * 58 : 0;
+  const jumpProgress = jumpFrames > 0 ? (34 - jumpFrames) / 34 : 0;
+  const jumpLift = jumpFrames > 0 ? Math.sin(jumpProgress * Math.PI) * 72 : 0;
+  const flyLift = flyBoost > 0 ? 36 + flyBoost * 0.75 : 0;
+  const lift = Math.max(gapLift, jumpLift, flyLift);
   const y = player.y - lift;
-  const wingOpen = selectedWing.id !== "none" && airborne > 0;
-  if (airborne > 0) {
+  const playerAirborne = isPlayerAirborne();
+  const wingOpen = selectedWing.id !== "none" && playerAirborne;
+  if (playerAirborne) {
     ctx.fillStyle = "rgba(255,255,255,0.48)";
     ctx.beginPath();
     ctx.ellipse(x, player.y + 44, 54, 12, 0, 0, Math.PI * 2);
@@ -615,17 +651,30 @@ function drawHud() {
   if (airborne > 0) {
     ctx.fillStyle = "#d93a32";
     ctx.fillText("飞行中", 150, 78);
+  } else if (jumpFrames > 0) {
+    ctx.fillStyle = "#d93a32";
+    ctx.fillText("跳跃中", 150, 78);
+  } else if (flyBoost > 0) {
+    ctx.fillStyle = "#d93a32";
+    ctx.fillText("自己飞", 150, 78);
   }
 }
 
 window.addEventListener("keydown", (event) => {
-  keys.add(event.key);
-  if (["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", " "].includes(event.key)) {
+  const key = event.key.length === 1 ? event.key.toLowerCase() : event.key;
+  keys.add(key);
+  if (event.key === " ") {
+    jumpPlayer();
+  }
+  if (["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", " ", "f", "F"].includes(event.key)) {
     event.preventDefault();
   }
 });
 
-window.addEventListener("keyup", (event) => keys.delete(event.key));
+window.addEventListener("keyup", (event) => {
+  const key = event.key.length === 1 ? event.key.toLowerCase() : event.key;
+  keys.delete(key);
+});
 startBtn.addEventListener("click", startRace);
 resetBtn.addEventListener("click", resetRace);
 againBtn.addEventListener("click", startRace);
