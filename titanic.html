@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>泰坦尼克号沉船事件</title>
+    <link rel="stylesheet" href="titanic.css" />
+  </head>
+  <body>
+    <a class="home-link" href="arcade.html">游戏大厅</a>
+    <main class="titanic-shell">
+      <section class="stage" aria-label="泰坦尼克号沉船动画">
+        <div class="ocean-frame" id="oceanFrame" data-scene="intro">
+          <div class="night-sky" aria-hidden="true">
+            <span></span><span></span><span></span><span></span><span></span>
+          </div>
+
+          <div class="iceberg" aria-hidden="true">
+            <span>冰山</span>
+          </div>
+
+          <div class="ship-wrap" aria-hidden="true">
+            <div class="ship ship-bow">
+              <div class="deck"></div>
+              <div class="funnels"><span></span><span></span><span></span><span></span></div>
+              <div class="hull">
+                <span class="damage-label">右舷受损</span>
+                <div class="gash"></div>
+                <div class="compartment c1"><span></span></div>
+                <div class="compartment c2"><span></span></div>
+                <div class="compartment c3"><span></span></div>
+                <div class="compartment c4"><span></span></div>
+                <div class="compartment c5"><span></span></div>
+                <div class="compartment c6"><span></span></div>
+                <div class="break-line"></div>
+              </div>
+            </div>
+            <div class="ship ship-stern">
+              <div class="deck"></div>
+              <div class="funnels"><span></span><span></span></div>
+              <div class="hull stern-hull">
+                <div class="compartment safe"><span></span></div>
+                <div class="compartment safe"><span></span></div>
+                <div class="break-line"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="waterline" aria-hidden="true"></div>
+          <div class="seafloor" aria-hidden="true">
+            <div class="wreck bow-wreck">船头</div>
+            <div class="distance">约 600 米</div>
+            <div class="wreck stern-wreck">船尾</div>
+          </div>
+
+          <div class="clock" id="clock">1912 · 4 月 14 日</div>
+          <div class="scene-badge" id="sceneBadge">历史示意</div>
+          <h1 id="sceneTitle">泰坦尼克号沉船</h1>
+          <p id="sceneText">安全历史动画：看右舷撞冰山、水密舱进水、船头先沉、船体断裂和海底残骸。</p>
+        </div>
+
+        <div class="controls">
+          <button id="playBtn" type="button">播放</button>
+          <button id="restartBtn" type="button">重来</button>
+          <label for="scrubber">进度</label>
+          <input id="scrubber" type="range" min="0" max="6" value="0" step="1" />
+        </div>
+      </section>
+
+      <aside class="timeline">
+        <p class="label">Titanic Timeline</p>
+        <h2>水密舱太多进水，船就保不住了</h2>
+        <ol id="timelineList"></ol>
+        <p class="note">安全示意动画，不展示伤亡画面。资料参考 Britannica 和 NOAA Ocean Exploration。</p>
+      </aside>
+    </main>
+    <script src="titanic.js"></script>
+  </body>
+</html>

@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>财富街区</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <a class="home-link" href="arcade.html">游戏大厅</a>
+    <main class="game-shell">
+      <section class="board-panel" aria-label="游戏棋盘">
+        <div class="board-wrap">
+          <div class="board" id="board">
+            <div class="board-center">
+              <svg class="city-art" viewBox="0 0 420 240" role="img" aria-label="城市天际线">
+                <defs>
+                  <linearGradient id="sky" x1="0" x2="1" y1="0" y2="1">
+                    <stop offset="0" stop-color="#d7f3ff" />
+                    <stop offset="0.55" stop-color="#f9e9b5" />
+                    <stop offset="1" stop-color="#ffd0a6" />
+                  </linearGradient>
+                </defs>
+                <rect width="420" height="240" rx="18" fill="url(#sky)" />
+                <circle cx="344" cy="54" r="30" fill="#ffb45c" opacity="0.86" />
+                <path d="M0 183 C54 150 92 167 134 143 C182 116 226 133 268 107 C315 77 360 93 420 62 L420 240 L0 240 Z" fill="#86b6d2" opacity="0.48" />
+                <g fill="#2d596b">
+                  <rect x="34" y="128" width="34" height="88" rx="3" />
+                  <rect x="78" y="98" width="48" height="116" rx="4" />
+                  <rect x="138" y="116" width="36" height="100" rx="3" />
+                  <rect x="186" y="74" width="56" height="142" rx="5" />
+                  <rect x="255" y="106" width="42" height="110" rx="4" />
+                  <rect x="312" y="88" width="62" height="128" rx="5" />
+                </g>
+                <g fill="#f9f6dc" opacity="0.86">
+                  <rect x="88" y="114" width="8" height="10" rx="1" />
+                  <rect x="106" y="114" width="8" height="10" rx="1" />
+                  <rect x="88" y="142" width="8" height="10" rx="1" />
+                  <rect x="106" y="142" width="8" height="10" rx="1" />
+                  <rect x="202" y="94" width="10" height="12" rx="1" />
+                  <rect x="224" y="94" width="10" height="12" rx="1" />
+                  <rect x="202" y="126" width="10" height="12" rx="1" />
+                  <rect x="224" y="126" width="10" height="12" rx="1" />
+                  <rect x="330" y="108" width="10" height="12" rx="1" />
+                  <rect x="352" y="108" width="10" height="12" rx="1" />
+                  <rect x="330" y="141" width="10" height="12" rx="1" />
+                  <rect x="352" y="141" width="10" height="12" rx="1" />
+                </g>
+                <path d="M0 213 L420 213 L420 240 L0 240 Z" fill="#235064" />
+                <path d="M44 226 H376" stroke="#ffdc7d" stroke-width="5" stroke-linecap="round" stroke-dasharray="23 19" />
+              </svg>
+              <div class="brand-block">
+                <p class="eyebrow">CITY TYCOON</p>
+                <h1>财富街区</h1>
+                <p>买地、收租、抽卡，先让对手破产。</p>
+              </div>
+              <div class="mini-ledger" id="miniLedger"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <aside class="control-panel" aria-label="游戏控制台">
+        <section class="status-card">
+          <div class="turn-row">
+            <span class="turn-dot" id="turnDot"></span>
+            <div>
+              <p class="label">当前回合</p>
+              <h2 id="turnTitle">超级马里奥</h2>
+            </div>
+          </div>
+          <div class="dice-area">
+            <div class="die" id="dieOne">1</div>
+            <div class="die" id="dieTwo">1</div>
+          </div>
+          <div class="button-row">
+            <button class="primary" id="rollBtn" type="button">掷骰</button>
+            <button id="buyBtn" type="button" disabled>购买</button>
+            <button id="skipBuyBtn" type="button" disabled>不买</button>
+            <button id="endBtn" type="button" disabled>结束回合</button>
+          </div>
+        </section>
+
+        <section class="players" id="players"></section>
+
+        <section class="property-card" id="propertyCard">
+          <p class="label">当前城市/国家</p>
+          <h3>起点</h3>
+          <p>经过或停留可获得 50万。</p>
+        </section>
+
+        <section class="log-card">
+          <div class="log-head">
+            <p class="label">事件记录</p>
+            <button id="resetBtn" class="icon-button" type="button" title="重新开始" aria-label="重新开始">
+              <span aria-hidden="true">↻</span>
+            </button>
+          </div>
+          <ol id="log"></ol>
+        </section>
+      </aside>
+    </main>
+
+    <div class="modal" id="cardModal" hidden>
+      <div class="modal-panel">
+        <p class="label" id="modalLabel">机会卡</p>
+        <h2 id="modalTitle">好运降临</h2>
+        <p id="modalText"></p>
+        <button class="primary" id="modalClose" type="button">知道了</button>
+      </div>
+    </div>
+
+    <script src="game.js"></script>
+  </body>
+</html>

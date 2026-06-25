@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>甜甜猜谜游戏</title>
+    <link rel="stylesheet" href="riddle.css" />
+  </head>
+  <body>
+    <a class="home-link" href="arcade.html">游戏大厅</a>
+    <main class="riddle-shell">
+      <section class="riddle-card">
+        <p class="label">Sweet Riddle</p>
+        <h1>甜甜猜谜游戏</h1>
+        <div class="score" id="score">第 1 题 / 8</div>
+        <div class="question" id="question"></div>
+        <div class="answer-grid" id="answerGrid"></div>
+        <p class="result" id="result">选一个答案看看甜不甜。</p>
+        <div class="actions">
+          <button id="nextBtn" type="button">下一题</button>
+          <button id="restartBtn" type="button">重新开始</button>
+        </div>
+      </section>
+      <section class="love-stage" aria-hidden="true">
+        <div class="heart heart-one"></div>
+        <div class="heart heart-two"></div>
+        <div class="jar">盐</div>
+        <div class="dumpling">饺子</div>
+        <div class="speech" id="speech">爱你无需多言</div>
+      </section>
+    </main>
+    <script src="riddle.js"></script>
+  </body>
+</html>

@@ -1,0 +1,303 @@
+:root {
+  --ink: #172632;
+  --muted: #64717b;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  color: var(--ink);
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.34) 1px, transparent 1px),
+    linear-gradient(rgba(255, 255, 255, 0.3) 1px, transparent 1px),
+    linear-gradient(135deg, #f3ead7 0%, #e5f1ee 43%, #f7dfc7 100%);
+  background-size: 42px 42px, 42px 42px, auto;
+}
+
+.arcade-shell {
+  width: min(1180px, calc(100vw - 32px));
+  margin: 0 auto;
+  padding: 42px 0 60px;
+}
+
+.hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(240px, 320px);
+  gap: 24px;
+  align-items: end;
+  margin-bottom: 28px;
+}
+
+.label {
+  margin: 0 0 8px;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.hero h1 {
+  margin: 0;
+  font-size: clamp(2.7rem, 7vw, 6.4rem);
+  line-height: 0.94;
+  letter-spacing: 0;
+}
+
+.hero > div:first-child p:last-child {
+  max-width: 720px;
+  margin: 16px 0 0;
+  color: #4e5e69;
+  font-size: 1.08rem;
+  font-weight: 700;
+  line-height: 1.55;
+}
+
+.hero-panel {
+  padding: 20px;
+  border: 1px solid rgba(23, 38, 50, 0.14);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.64);
+  box-shadow: 0 18px 42px rgba(23, 38, 50, 0.1);
+}
+
+.hero-panel span {
+  color: #4b6b61;
+  font-size: 0.82rem;
+  font-weight: 900;
+}
+
+.hero-panel strong {
+  display: block;
+  margin-top: 6px;
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.hero-panel p {
+  margin: 10px 0 0;
+  color: #51616c;
+  font-weight: 800;
+  line-height: 1.45;
+}
+
+.game-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.game-card {
+  display: grid;
+  align-content: end;
+  gap: 8px;
+  min-height: 250px;
+  padding: 22px;
+  border: 1px solid rgba(23, 38, 50, 0.12);
+  border-radius: 8px;
+  overflow: hidden;
+  color: #fff;
+  text-decoration: none;
+  box-shadow: 0 18px 42px rgba(23, 38, 50, 0.16);
+  transition: transform 160ms ease, box-shadow 160ms ease;
+}
+
+.game-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 24px 52px rgba(23, 38, 50, 0.2);
+}
+
+.game-card span {
+  font-size: 0.82rem;
+  font-weight: 900;
+  opacity: 0.8;
+}
+
+.game-card strong {
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.game-card p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.82);
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+.game-card em {
+  width: fit-content;
+  margin-top: 8px;
+  padding: 8px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.18);
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 0.82rem;
+  font-style: normal;
+  font-weight: 900;
+}
+
+.wealth {
+  background: linear-gradient(135deg, #0f7c75, #24313d);
+}
+
+.metro {
+  background: linear-gradient(135deg, #1d5b7a, #d94a44);
+}
+
+.flight {
+  background: linear-gradient(135deg, #23669a, #6fb36d);
+}
+
+.ludo {
+  background: linear-gradient(135deg, #c7354f, #2861a6);
+}
+
+.checkers {
+  background: linear-gradient(135deg, #6e4aa5, #2b7c70);
+}
+
+.rail {
+  background: linear-gradient(135deg, #bd6a1d, #334655);
+}
+
+.history {
+  background: linear-gradient(135deg, #315b74, #8b6b3f);
+}
+
+.titanic {
+  background: linear-gradient(135deg, #164a63, #d7a249);
+}
+
+.train-history {
+  background: linear-gradient(135deg, #2d596b, #6d7580);
+}
+
+.dorothy {
+  background: linear-gradient(135deg, #6aa6d8, #4d8c42);
+}
+
+.mario {
+  background: linear-gradient(135deg, #d93a32, #245bb8);
+}
+
+.maze {
+  background: linear-gradient(135deg, #245b8f, #39a657);
+}
+
+.riddle {
+  background: linear-gradient(135deg, #d94a78, #ffd15f);
+}
+
+.racing {
+  background: linear-gradient(135deg, #d93a32, #172632 54%, #ffd15f);
+}
+
+.drawing {
+  background: linear-gradient(135deg, #245b8f, #d94a78 52%, #ffd15f);
+}
+
+.elevator-tower {
+  background: linear-gradient(135deg, #172632, #607786 58%, #ffd15f);
+}
+
+.quick-section {
+  display: grid;
+  grid-template-columns: minmax(220px, 320px) minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+  margin-top: 26px;
+  padding: 20px;
+  border: 1px solid rgba(23, 38, 50, 0.14);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.68);
+  box-shadow: 0 18px 42px rgba(23, 38, 50, 0.1);
+}
+
+.quick-section h2 {
+  margin: 0;
+  font-size: clamp(1.8rem, 3vw, 3rem);
+  line-height: 1;
+}
+
+.quick-section p:last-child {
+  margin: 10px 0 0;
+  color: #51616c;
+  font-weight: 800;
+  line-height: 1.45;
+}
+
+.quick-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.impact-link {
+  display: grid;
+  gap: 7px;
+  min-height: 138px;
+  padding: 16px;
+  border: 1px solid rgba(23, 38, 50, 0.12);
+  border-radius: 8px;
+  color: #172632;
+  background: #fffaf0;
+  text-decoration: none;
+  box-shadow: 0 12px 28px rgba(23, 38, 50, 0.09);
+  transition: transform 160ms ease, box-shadow 160ms ease;
+}
+
+.impact-link:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 18px 34px rgba(23, 38, 50, 0.14);
+}
+
+.impact-link span {
+  color: #65717b;
+  font-size: 0.78rem;
+  font-weight: 900;
+}
+
+.impact-link strong {
+  font-size: 1.22rem;
+  line-height: 1.08;
+}
+
+.impact-link em {
+  align-self: end;
+  width: fit-content;
+  padding: 7px 9px;
+  border-radius: 999px;
+  color: #fff;
+  background: #315b74;
+  font-size: 0.78rem;
+  font-style: normal;
+  font-weight: 950;
+}
+
+.soon {
+  background: linear-gradient(135deg, #6d7580, #343f48);
+}
+
+@media (max-width: 880px) {
+  .hero {
+    grid-template-columns: 1fr;
+  }
+
+  .game-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .quick-section {
+    grid-template-columns: 1fr;
+  }
+
+  .quick-grid {
+    grid-template-columns: 1fr;
+  }
+}

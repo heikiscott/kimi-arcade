@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>飞行棋</title>
+    <link rel="stylesheet" href="mini-games.css?v=super-ludo3" />
+  </head>
+  <body>
+    <main class="game-shell">
+      <section>
+        <div class="topbar">
+          <div>
+            <p class="label">Ludo</p>
+            <h1>飞行棋</h1>
+          </div>
+          <a href="arcade.html">游戏大厅</a>
+        </div>
+        <div class="stage">
+          <div class="ludo-board" id="ludoBoard"></div>
+        </div>
+      </section>
+      <aside class="side">
+        <section class="panel">
+          <p class="label">当前回合</p>
+          <h2 id="turnText">红方</h2>
+          <p>骰子：<strong id="diceText">-</strong></p>
+          <p class="hint">空格掷骰，1-4 选择飞机，Enter 自动移动。</p>
+        </section>
+        <section class="panel controls">
+          <button class="primary" id="rollBtn" type="button" onclick="roll()">掷骰</button>
+          <button id="moveBtn" type="button" onclick="moveSelectedPiece()" disabled>移动选中飞机</button>
+          <button id="resetBtn" type="button" onclick="reset()">重来</button>
+        </section>
+        <section class="panel">
+          <p class="label">记录</p>
+          <ol class="log" id="log"></ol>
+        </section>
+      </aside>
+    </main>
+    <script src="ludo.js?v=super-ludo3"></script>
+  </body>
+</html>

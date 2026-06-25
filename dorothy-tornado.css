@@ -1,0 +1,826 @@
+:root {
+  --ink: #1f2d3a;
+  --muted: #65717b;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  color: var(--ink);
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: linear-gradient(135deg, #d6eef7, #f6e6c8);
+}
+
+button {
+  border: 0;
+  font: inherit;
+}
+
+.home-link {
+  position: fixed;
+  top: 16px;
+  left: 16px;
+  z-index: 12;
+  padding: 9px 13px;
+  border: 1px solid rgba(31, 45, 58, 0.14);
+  border-radius: 8px;
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.88);
+  font-weight: 900;
+  text-decoration: none;
+}
+
+.dream-shell {
+  width: min(1180px, calc(100vw - 32px));
+  margin: 0 auto;
+  padding: 68px 0 34px;
+}
+
+.dream-stage {
+  position: relative;
+  min-height: min(78vh, 820px);
+  overflow: hidden;
+  border: 1px solid rgba(31, 45, 58, 0.14);
+  border-radius: 8px;
+  background: linear-gradient(180deg, #9ed8f0 0%, #eaf6fb 45%, #8fbf62 46%, #4d8c42 100%);
+  box-shadow: 0 24px 58px rgba(31, 45, 58, 0.16);
+}
+
+.sun {
+  position: absolute;
+  right: 10%;
+  top: 10%;
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  background: #ffd15f;
+  box-shadow: 0 0 58px rgba(255, 209, 95, 0.65);
+}
+
+.farm {
+  position: absolute;
+  inset: auto 0 0;
+  height: 34%;
+  background:
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.12) 0 2px, transparent 2px 58px),
+    linear-gradient(180deg, #76aa4f, #417a38);
+}
+
+.tornado {
+  position: absolute;
+  left: 50%;
+  top: 22%;
+  width: 220px;
+  height: 440px;
+  opacity: 0.9;
+  transform: translateX(-50%);
+}
+
+.tornado span {
+  position: absolute;
+  left: 50%;
+  border-radius: 50%;
+  border: 16px solid rgba(118, 122, 126, 0.42);
+  transform: translateX(-50%) rotate(-8deg);
+  animation: spin 900ms linear infinite;
+}
+
+.tornado span:nth-child(1) { top: 0; width: 210px; height: 70px; }
+.tornado span:nth-child(2) { top: 98px; width: 160px; height: 60px; animation-duration: 760ms; }
+.tornado span:nth-child(3) { top: 198px; width: 105px; height: 48px; animation-duration: 650ms; }
+.tornado span:nth-child(4) { top: 286px; width: 56px; height: 42px; animation-duration: 520ms; }
+
+.house {
+  position: absolute;
+  left: 16%;
+  bottom: 26%;
+  width: 140px;
+  height: 120px;
+  z-index: 4;
+  transform-origin: 50% 80%;
+}
+
+.roof {
+  width: 150px;
+  height: 54px;
+  background: #b94945;
+  clip-path: polygon(50% 0, 100% 100%, 0 100%);
+}
+
+.body {
+  position: absolute;
+  left: 14px;
+  top: 48px;
+  width: 112px;
+  height: 76px;
+  border: 3px solid #7b6043;
+  border-radius: 6px;
+  background: #f5d9a6;
+}
+
+.window {
+  position: absolute;
+  left: 16px;
+  top: 17px;
+  width: 28px;
+  height: 24px;
+  border-radius: 4px;
+  background: #7ec7e6;
+}
+
+.door {
+  position: absolute;
+  right: 18px;
+  bottom: 0;
+  width: 26px;
+  height: 42px;
+  border-radius: 5px 5px 0 0;
+  background: #7b6043;
+}
+
+.girl {
+  position: absolute;
+  right: -18px;
+  bottom: 6px;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 42px;
+  border: 2px solid #fff;
+  border-radius: 999px 999px 8px 8px;
+  background: #6aa6d8;
+  color: #fff;
+  font-weight: 950;
+}
+
+.landing-dust {
+  position: absolute;
+  left: calc(16% + 520px);
+  bottom: 20%;
+  width: 170px;
+  height: 42px;
+  z-index: 3;
+  border-radius: 50%;
+  background: radial-gradient(ellipse, rgba(188, 162, 114, 0.55), transparent 68%);
+  opacity: 0;
+  transform: scale(0.4);
+}
+
+.inside-scene {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: grid;
+  place-items: center;
+  opacity: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 50% 35%, rgba(255, 241, 184, 0.35), transparent 38%),
+    linear-gradient(180deg, rgba(65, 69, 76, 0.08), rgba(58, 43, 45, 0.2));
+  transition: opacity 180ms ease;
+}
+
+.room {
+  position: relative;
+  width: min(720px, 82vw);
+  height: min(430px, 58vh);
+  overflow: hidden;
+  border: 8px solid #795b42;
+  border-radius: 8px;
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.18) 0 2px, transparent 2px 82px),
+    linear-gradient(180deg, #f4c989 0 62%, #9b6f4f 62% 100%);
+  box-shadow: 0 26px 70px rgba(31, 45, 58, 0.32);
+}
+
+.room-window {
+  position: absolute;
+  right: 8%;
+  top: 10%;
+  width: 42%;
+  height: 50%;
+  overflow: hidden;
+  border: 8px solid #73462d;
+  border-radius: 8px;
+  background: linear-gradient(180deg, #687a8a, #c9d2d5);
+}
+
+.room-window::before,
+.room-window::after {
+  content: "";
+  position: absolute;
+  z-index: 2;
+  background: rgba(115, 70, 45, 0.9);
+}
+
+.room-window::before {
+  left: 50%;
+  top: 0;
+  width: 8px;
+  height: 100%;
+  transform: translateX(-50%);
+}
+
+.room-window::after {
+  left: 0;
+  top: 50%;
+  width: 100%;
+  height: 8px;
+  transform: translateY(-50%);
+}
+
+.vision {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  display: grid;
+  place-items: center;
+  gap: 6px;
+  min-width: 132px;
+  min-height: 78px;
+  padding: 10px;
+  border: 4px solid rgba(255, 255, 255, 0.8);
+  border-radius: 8px;
+  color: #1f2d3a;
+  background: rgba(255, 250, 232, 0.88);
+  font-size: clamp(0.82rem, 2vw, 1.05rem);
+  font-weight: 950;
+  text-align: center;
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0.72) rotate(-8deg);
+}
+
+.vision strong {
+  font-size: 0.82rem;
+  line-height: 1.1;
+}
+
+.little-person {
+  position: relative;
+  width: 48px;
+  height: 64px;
+}
+
+.person-head {
+  position: absolute;
+  left: 14px;
+  top: 4px;
+  width: 22px;
+  height: 22px;
+  border: 2px solid #73462d;
+  border-radius: 50%;
+  background: #f2c58e;
+}
+
+.person-hair {
+  position: absolute;
+  left: 9px;
+  top: 0;
+  width: 32px;
+  height: 22px;
+  border-radius: 50% 50% 8px 8px;
+  background: #ddd8cf;
+}
+
+.person-body {
+  position: absolute;
+  left: 9px;
+  bottom: 2px;
+  width: 32px;
+  height: 38px;
+  border: 2px solid #73462d;
+  border-radius: 14px 14px 7px 7px;
+  background: #7bbf84;
+}
+
+.snack {
+  position: absolute;
+  right: 0;
+  top: 32px;
+  width: 18px;
+  height: 12px;
+  border-radius: 50%;
+  background: #e7ad55;
+  box-shadow: 0 0 0 2px #8b5a2b;
+}
+
+.chicken {
+  background: #fff8d8;
+}
+
+.coop {
+  position: relative;
+  width: 66px;
+  height: 48px;
+  border: 3px solid #8b5a2b;
+  border-radius: 8px 8px 4px 4px;
+  background:
+    linear-gradient(90deg, transparent 45%, #8b5a2b 45% 55%, transparent 55%),
+    repeating-linear-gradient(90deg, #d89b55 0 10px, #c38342 10px 20px);
+}
+
+.coop::before {
+  content: "";
+  position: absolute;
+  left: 5px;
+  top: -24px;
+  width: 58px;
+  height: 28px;
+  background: #a34a3c;
+  clip-path: polygon(50% 0, 100% 100%, 0 100%);
+}
+
+.little-chicken {
+  position: absolute;
+  right: 14px;
+  bottom: 22px;
+  width: 36px;
+  height: 30px;
+  border: 2px solid #8b5a2b;
+  border-radius: 50% 50% 45% 45%;
+  background: #fff;
+}
+
+.little-chicken::before {
+  content: "";
+  position: absolute;
+  right: -10px;
+  top: 8px;
+  border-left: 12px solid #e89b38;
+  border-top: 6px solid transparent;
+  border-bottom: 6px solid transparent;
+}
+
+.little-chicken::after {
+  content: "";
+  position: absolute;
+  left: 10px;
+  top: -9px;
+  width: 18px;
+  height: 10px;
+  border-radius: 999px 999px 0 0;
+  background: #d93a32;
+}
+
+.brothers {
+  background: #d7eff7;
+}
+
+.witch {
+  color: #fff;
+  background: #3b2c58;
+}
+
+.gulch-change {
+  position: relative;
+  width: 116px;
+  height: 82px;
+  margin-top: 4px;
+}
+
+.lady-person {
+  position: absolute;
+  left: 6px;
+  top: 8px;
+}
+
+.lady-person .person-body {
+  background: #764b7d;
+}
+
+.witch-person {
+  position: absolute;
+  right: 4px;
+  top: 8px;
+  width: 52px;
+  height: 72px;
+}
+
+.witch-hat {
+  position: absolute;
+  left: 6px;
+  top: 5px;
+  width: 40px;
+  height: 30px;
+  background: #111827;
+  clip-path: polygon(50% 0, 100% 100%, 0 100%);
+}
+
+.witch-head {
+  position: absolute;
+  left: 15px;
+  top: 30px;
+  width: 23px;
+  height: 20px;
+  border-radius: 50%;
+  background: #72b45f;
+}
+
+.witch-body {
+  position: absolute;
+  left: 8px;
+  bottom: 1px;
+  width: 38px;
+  height: 31px;
+  background: #161827;
+  clip-path: polygon(50% 0, 100% 100%, 0 100%);
+}
+
+.dream-stage[data-view="inside"].playing .lady-person {
+  animation: fadeLady 1.7s ease 4.95s forwards;
+}
+
+.dream-stage[data-view="inside"].playing .witch-person {
+  animation: growWitch 1.7s ease 4.95s forwards;
+}
+
+.bed {
+  position: absolute;
+  left: 8%;
+  bottom: 11%;
+  width: 310px;
+  height: 132px;
+  border-radius: 8px 8px 18px 18px;
+  background: #7e4c38;
+}
+
+.bed::before {
+  content: "";
+  position: absolute;
+  left: 16px;
+  top: -36px;
+  width: 92px;
+  height: 62px;
+  border-radius: 10px;
+  background: #fff2d0;
+}
+
+.blanket {
+  position: absolute;
+  inset: 28px 0 0;
+  border-radius: 0 0 18px 18px;
+  background: linear-gradient(135deg, #6aa6d8, #426aa8);
+}
+
+.dorothy-bed {
+  position: absolute;
+  left: 76px;
+  top: -22px;
+  display: block;
+  width: 132px;
+  height: 96px;
+  border: 4px solid #fff;
+  border-radius: 999px 999px 18px 18px;
+  color: #fff;
+  background: #5f91ca;
+  font-weight: 950;
+  text-align: center;
+}
+
+.dorothy-head {
+  position: absolute;
+  left: 48px;
+  top: 8px;
+  width: 30px;
+  height: 30px;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: #f2c58e;
+}
+
+.dorothy-head::before,
+.dorothy-head::after {
+  content: "";
+  position: absolute;
+  top: 5px;
+  width: 14px;
+  height: 22px;
+  border-radius: 50%;
+  background: #7b4b2a;
+}
+
+.dorothy-head::before {
+  left: -11px;
+}
+
+.dorothy-head::after {
+  right: -11px;
+}
+
+.dorothy-dress {
+  position: absolute;
+  left: 44px;
+  top: 40px;
+  width: 40px;
+  height: 38px;
+  background: #7db8e8;
+  clip-path: polygon(50% 0, 100% 100%, 0 100%);
+}
+
+.toto-dog {
+  position: absolute;
+  right: 14px;
+  bottom: 12px;
+  width: 32px;
+  height: 22px;
+  border-radius: 50% 50% 35% 35%;
+  background: #4b3a31;
+}
+
+.toto-dog::before {
+  content: "";
+  position: absolute;
+  left: -8px;
+  top: 3px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #4b3a31;
+}
+
+.toto-dog::after {
+  content: "";
+  position: absolute;
+  right: -8px;
+  top: 7px;
+  width: 14px;
+  height: 4px;
+  border-radius: 999px;
+  background: #4b3a31;
+  transform: rotate(-24deg);
+}
+
+.dorothy-bed strong {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 4px;
+  font-size: 0.74rem;
+  line-height: 1.05;
+}
+
+.room-shake-line {
+  position: absolute;
+  width: 120px;
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.45);
+  opacity: 0;
+}
+
+.line-one {
+  left: 18%;
+  top: 22%;
+}
+
+.line-two {
+  right: 16%;
+  bottom: 22%;
+}
+
+.dream-card {
+  display: none;
+}
+
+.label {
+  margin: 0 0 8px;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.dream-card h1 {
+  margin: 0;
+  font-size: clamp(2.3rem, 5vw, 5.4rem);
+  line-height: 0.96;
+}
+
+.dream-card p:last-child {
+  margin: 12px 0 0;
+  color: #465a67;
+  font-weight: 800;
+  line-height: 1.45;
+}
+
+.controls {
+  position: absolute;
+  left: 6%;
+  right: 6%;
+  top: 5%;
+  z-index: 20;
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 12px;
+}
+
+.controls button {
+  min-height: 58px;
+  padding: 0 20px;
+  border: 3px solid rgba(255, 255, 255, 0.9);
+  border-radius: 8px;
+  background: #1f6b5e;
+  color: #fff;
+  cursor: pointer;
+  font-size: clamp(1rem, 2vw, 1.3rem);
+  font-weight: 950;
+  box-shadow: 0 12px 28px rgba(31, 45, 58, 0.22);
+}
+
+.controls button.active {
+  background: #bb5136;
+  transform: translateY(-2px);
+}
+
+.dream-stage[data-view="inside"] .sun,
+.dream-stage[data-view="inside"] .farm,
+.dream-stage[data-view="inside"] .tornado,
+.dream-stage[data-view="inside"] .house,
+.dream-stage[data-view="inside"] .landing-dust {
+  opacity: 0.08;
+}
+
+.dream-stage[data-view="inside"] .inside-scene {
+  opacity: 1;
+}
+
+.dream-stage.playing .house {
+  animation: houseFly 8s cubic-bezier(0.26, 0.82, 0.24, 1) forwards;
+}
+
+.dream-stage.playing .girl {
+  animation: hideGirl 600ms 1.2s ease forwards;
+}
+
+.dream-stage.playing .landing-dust {
+  animation: dustPuff 8s ease forwards;
+}
+
+.dream-stage[data-view="inside"].playing .room {
+  animation: roomRock 8s ease-in-out forwards;
+}
+
+.dream-stage[data-view="inside"].playing .grandma {
+  animation: visionPass 1.35s ease 0.6s forwards;
+}
+
+.dream-stage[data-view="inside"].playing .chicken {
+  animation: visionPass 1.35s ease 2.05s forwards;
+}
+
+.dream-stage[data-view="inside"].playing .brothers {
+  animation: visionPass 1.35s ease 3.5s forwards;
+}
+
+.dream-stage[data-view="inside"].playing .witch {
+  animation: visionPass 1.7s ease 4.95s forwards;
+}
+
+.dream-stage[data-view="inside"].playing .dorothy-bed {
+  animation: scaredHold 8s ease-in-out forwards;
+}
+
+.dream-stage[data-view="inside"].playing .room-shake-line {
+  animation: flashLine 800ms ease-in-out 8;
+}
+
+@keyframes spin {
+  to {
+    transform: translateX(-50%) rotate(352deg);
+  }
+}
+
+@keyframes hideGirl {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes houseFly {
+  0% { transform: translate(0, 0) rotate(0deg); }
+  18% { transform: translate(210px, -120px) rotate(35deg); }
+  42% { transform: translate(420px, -245px) rotate(170deg); }
+  66% { transform: translate(560px, -160px) rotate(300deg); }
+  84% { transform: translate(570px, -42px) rotate(378deg); }
+  93% { transform: translate(520px, 48px) rotate(360deg); }
+  97% { transform: translate(520px, 26px) rotate(360deg); }
+  100% { transform: translate(520px, 48px) rotate(360deg); }
+}
+
+@keyframes dustPuff {
+  0%, 86% {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+
+  94% {
+    opacity: 0.9;
+    transform: scale(1.15);
+  }
+
+  100% {
+    opacity: 0.35;
+    transform: scale(1.35);
+  }
+}
+
+@keyframes roomRock {
+  0% { transform: rotate(0deg) translateY(0); }
+  12% { transform: rotate(-1.5deg) translateY(-6px); }
+  28% { transform: rotate(2deg) translateY(8px); }
+  44% { transform: rotate(-2.4deg) translateY(-10px); }
+  62% { transform: rotate(1.7deg) translateY(6px); }
+  82% { transform: rotate(-0.8deg) translateY(-4px); }
+  94% { transform: rotate(0deg) translateY(18px); }
+  100% { transform: rotate(0deg) translateY(0); }
+}
+
+@keyframes visionPass {
+  0% {
+    opacity: 0;
+    transform: translate(-120%, -50%) scale(0.72) rotate(-10deg);
+  }
+
+  22%, 78% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1) rotate(2deg);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translate(30%, -50%) scale(0.84) rotate(12deg);
+  }
+}
+
+@keyframes scaredHold {
+  0%, 100% { transform: translateY(0); }
+  22%, 45%, 68% { transform: translateY(6px); }
+}
+
+@keyframes fadeLady {
+  0%, 42% { opacity: 1; transform: translateX(0); }
+  100% { opacity: 0.18; transform: translateX(-10px); }
+}
+
+@keyframes growWitch {
+  0%, 36% { opacity: 0.25; transform: scale(0.72); }
+  100% { opacity: 1; transform: scale(1.08); }
+}
+
+@keyframes flashLine {
+  0%, 100% { opacity: 0; transform: translateX(0); }
+  50% { opacity: 1; transform: translateX(18px); }
+}
+
+@media (max-width: 700px) {
+  .controls {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  #playBtn {
+    grid-column: 1 / -1;
+  }
+
+  .dream-card {
+    top: 24%;
+    max-width: 86%;
+  }
+
+  .house {
+    left: 8%;
+  }
+
+  .landing-dust {
+    left: calc(8% + 250px);
+  }
+
+  .room {
+    height: 64vh;
+  }
+
+  .room-window {
+    right: 6%;
+    width: 50%;
+  }
+
+  .bed {
+    left: 5%;
+    width: 250px;
+  }
+
+  @keyframes houseFly {
+    0% { transform: translate(0, 0) rotate(0deg); }
+    18% { transform: translate(95px, -100px) rotate(35deg); }
+    42% { transform: translate(210px, -215px) rotate(170deg); }
+    66% { transform: translate(300px, -140px) rotate(300deg); }
+    84% { transform: translate(280px, -42px) rotate(378deg); }
+    93% { transform: translate(250px, 48px) rotate(360deg); }
+    97% { transform: translate(250px, 26px) rotate(360deg); }
+    100% { transform: translate(250px, 48px) rotate(360deg); }
+  }
+}

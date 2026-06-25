@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>9/11 历史时间线</title>
+    <link rel="stylesheet" href="history-911.css" />
+  </head>
+  <body>
+    <a class="home-link" href="arcade.html">游戏大厅</a>
+    <main class="history-shell">
+      <section class="stage" aria-label="9/11 历史讲解视频">
+        <div class="video-frame">
+          <div class="skyline" aria-hidden="true">
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+          <div class="wtc-visual" aria-hidden="true">
+            <div class="plane plane-one">
+              <span class="wing"></span>
+              <span class="body"></span>
+              <span class="tail"></span>
+            </div>
+            <div class="plane plane-two">
+              <span class="wing"></span>
+              <span class="body"></span>
+              <span class="tail"></span>
+            </div>
+            <div class="tower-group">
+              <div class="tower tower-north">
+                <span class="antenna"></span>
+                <span class="elevator-shaft">
+                  <span class="elevator-cable"></span>
+                  <span class="elevator-car">空</span>
+                </span>
+                <span class="impact-mark north-mark"></span>
+              </div>
+              <div class="tower tower-south">
+                <span class="elevator-shaft">
+                  <span class="elevator-cable"></span>
+                  <span class="elevator-car">空</span>
+                </span>
+                <span class="impact-mark south-mark"></span>
+              </div>
+            </div>
+            <div class="smoke smoke-north"></div>
+            <div class="smoke smoke-south"></div>
+            <div class="dust-cloud"></div>
+          </div>
+          <div class="extra-visual empire-visual" aria-hidden="true">
+            <div class="fog"></div>
+            <div class="small-plane empire-plane"><span class="wing"></span><span class="body"></span></div>
+            <div class="empire-building">
+              <span class="spire"></span>
+              <span class="empire-hit"></span>
+            </div>
+            <strong>帝国大厦 · 1945 意外事故</strong>
+          </div>
+          <div class="extra-visual pentagon-visual" aria-hidden="true">
+            <div class="small-plane pentagon-plane"><span class="wing"></span><span class="body"></span></div>
+            <div class="pentagon-building">
+              <span></span><span></span><span></span><span></span><span></span>
+              <i></i>
+            </div>
+            <strong>五角大楼 · 华盛顿附近</strong>
+          </div>
+          <div class="extra-visual field-visual" aria-hidden="true">
+            <div class="small-plane field-plane"><span class="wing"></span><span class="body"></span></div>
+            <div class="field-ground">
+              <span></span>
+            </div>
+            <strong>宾夕法尼亚州 · 田野坠机</strong>
+          </div>
+          <div class="map" aria-hidden="true">
+            <div class="point ny" data-label="纽约"></div>
+            <div class="point dc" data-label="华盛顿附近"></div>
+            <div class="point pa" data-label="宾夕法尼亚"></div>
+            <div class="route route-ny"></div>
+            <div class="route route-dc"></div>
+            <div class="route route-pa"></div>
+          </div>
+          <div class="clock" id="clock">8:00 AM</div>
+          <div class="scene-badge" id="sceneBadge">历史讲解</div>
+          <h1 id="sceneTitle">9/11 事件时间线</h1>
+          <p id="sceneText">这是一个非血腥、非复现攻击的安全版讲解，帮助你知道 2001 年 9 月 11 日发生了什么。</p>
+        </div>
+
+        <div class="controls">
+          <button id="playBtn" type="button">播放</button>
+          <button id="soundBtn" type="button">声音：关</button>
+          <button id="restartBtn" type="button">重来</button>
+          <label class="scrubber-label" for="scrubber">进度</label>
+          <input id="scrubber" type="range" min="0" max="5" value="0" step="1" />
+        </div>
+      </section>
+
+      <aside class="timeline" aria-label="事件时间线">
+        <p class="label">安全历史版</p>
+        <h2>只讲事实，不做可怕画面</h2>
+        <ol id="timelineList"></ol>
+        <p class="note">资料参考：9/11 Memorial & Museum、Flight 93 National Memorial、Britannica。这个页面避免展示真实伤亡画面。</p>
+      </aside>
+    </main>
+    <script src="history-911.js"></script>
+  </body>
+</html>

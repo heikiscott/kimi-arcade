@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>新加坡地铁驾驶</title>
+    <link rel="stylesheet" href="metro.css" />
+  </head>
+  <body>
+    <main class="metro-shell">
+      <section class="map-panel" aria-label="地铁线路">
+        <div class="map-head">
+          <div>
+            <p class="label">Singapore Rail</p>
+            <h1>新加坡地铁驾驶</h1>
+          </div>
+          <a class="back-link" href="arcade.html">游戏大厅</a>
+        </div>
+
+        <div class="rail-map">
+          <svg id="trackSvg" viewBox="0 0 980 660" role="img" aria-label="新加坡地铁线路图">
+            <defs>
+              <filter id="trainShadow" x="-40%" y="-40%" width="180%" height="180%">
+                <feDropShadow dx="0" dy="8" stdDeviation="9" flood-color="#14212b" flood-opacity="0.25" />
+              </filter>
+            </defs>
+            <g id="trackLayer"></g>
+            <g id="stationLayer"></g>
+            <g id="trainLayer"></g>
+          </svg>
+        </div>
+      </section>
+
+      <aside class="cab-panel" aria-label="驾驶室">
+        <section class="cab-card cab-status">
+          <p class="label">当前列车</p>
+          <h2 id="stationTitle">裕廊东</h2>
+          <div class="status-grid">
+            <div>
+              <span>下一站</span>
+              <strong id="nextStation">金文泰</strong>
+            </div>
+            <div>
+              <span>速度</span>
+              <strong id="speedText">0 km/h</strong>
+            </div>
+            <div>
+              <span>乘客</span>
+              <strong id="passengerText">0</strong>
+            </div>
+            <div>
+              <span>准点</span>
+              <strong id="scoreText">100</strong>
+            </div>
+          </div>
+        </section>
+
+        <section class="cab-card platform-view">
+          <div class="platform-name">
+            <span id="platformLine">NS</span>
+            <strong id="platformStation">裕廊东</strong>
+          </div>
+          <div class="platform-scene">
+            <div class="tunnel"></div>
+            <div class="platform-train">
+              <div class="window-row">
+                <span></span><span></span><span></span><span></span>
+              </div>
+              <div class="door left-door"></div>
+              <div class="door right-door"></div>
+            </div>
+            <div class="platform-edge"></div>
+          </div>
+        </section>
+
+        <section class="cab-card controls">
+          <div class="control-row">
+            <button id="accelerateBtn" class="primary" type="button">A 加速</button>
+            <button id="brakeBtn" type="button">S 刹车</button>
+            <button id="doorBtn" type="button" disabled>D 开门</button>
+          </div>
+          <div class="route-choices" id="routeChoices"></div>
+        </section>
+
+        <section class="cab-card log-card">
+          <p class="label">行车记录</p>
+          <ol id="metroLog"></ol>
+        </section>
+      </aside>
+    </main>
+
+    <script src="metro.js"></script>
+  </body>
+</html>

@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>马里奥跳跃小游戏</title>
+    <link rel="stylesheet" href="mario.css" />
+  </head>
+  <body>
+    <a class="home-link" href="arcade.html">游戏大厅</a>
+    <main class="mario-shell">
+      <section class="game-wrap">
+        <div class="canvas-wrap">
+          <canvas id="game" width="960" height="540" aria-label="马里奥风格跳跃小游戏"></canvas>
+          <div class="intro-overlay" id="introOverlay">
+            <p>Original Opening</p>
+            <h1>马里奥银河跳跃</h1>
+            <span id="introStatus">先听片头音乐，然后开始游戏</span>
+            <button id="startIntroBtn" type="button">播放片头</button>
+          </div>
+        </div>
+        <div class="hud">
+          <strong id="score">金币 0 / 6</strong>
+          <span>先播放片头音乐，再用 A/D 或方向键移动，空格跳跃，到旗子就赢</span>
+          <button id="restartBtn" type="button">重来</button>
+        </div>
+      </section>
+    </main>
+    <script src="mario.js"></script>
+  </body>
+</html>

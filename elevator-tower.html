@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>高塔电梯短片</title>
+    <link rel="stylesheet" href="elevator-tower.css" />
+  </head>
+  <body>
+    <a class="home-link" href="arcade.html">游戏大厅</a>
+    <main class="tower-shell">
+      <section class="tower-stage" id="stage" aria-label="高塔电梯钢缆断裂安全示意">
+        <div class="sky"></div>
+        <div class="city"></div>
+        <div class="tower">
+          <div class="spire"></div>
+          <div class="shaft">
+            <span class="cable cable-left"></span>
+            <span class="cable cable-right"></span>
+            <span class="snap snap-left"></span>
+            <span class="snap snap-right"></span>
+            <div class="elevator">
+              <span>空</span>
+            </div>
+          </div>
+          <div class="windows"></div>
+        </div>
+        <div class="dust"></div>
+        <div class="title-card">
+          <p class="label">Safety Short</p>
+          <h1>高塔电梯绳子断了</h1>
+          <p>哈利法塔风格高塔，空电梯安全示意。</p>
+        </div>
+        <div class="controls">
+          <button id="playBtn" type="button">播放短片</button>
+          <button id="resetBtn" type="button">重来</button>
+        </div>
+      </section>
+    </main>
+    <script src="elevator-tower.js"></script>
+  </body>
+</html>

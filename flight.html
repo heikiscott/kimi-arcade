@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>安全降落</title>
+    <link rel="stylesheet" href="flight.css" />
+  </head>
+  <body>
+    <main class="flight-shell">
+      <section class="sky-panel">
+        <div class="topbar">
+          <div>
+            <p class="label">Flight Game</p>
+            <h1>安全降落</h1>
+          </div>
+          <a href="arcade.html">游戏大厅</a>
+        </div>
+
+        <div class="viewport" id="viewport">
+          <div class="cloud c1"></div>
+          <div class="cloud c2"></div>
+          <div class="runway changi" data-airport="樟宜机场">SIN</div>
+          <div class="runway seattle" data-airport="西雅图机场">SEA</div>
+          <div class="runway la" data-airport="洛杉矶机场">LAX</div>
+          <div class="field">空地</div>
+          <div class="buildings" id="buildings"></div>
+          <div class="plane" id="plane">
+            <div class="wing"></div>
+          </div>
+        </div>
+      </section>
+
+      <aside class="cockpit">
+        <section class="panel status">
+          <p class="label">驾驶仪表</p>
+          <h2 id="missionTitle">选择机场，安全降落</h2>
+          <div class="metrics">
+            <div><span>速度</span><strong id="speedText">42</strong></div>
+            <div><span>高度</span><strong id="altitudeText">62</strong></div>
+            <div><span>燃油</span><strong id="fuelText">100</strong></div>
+            <div><span>目标</span><strong id="targetText">SIN</strong></div>
+          </div>
+        </section>
+
+        <section class="panel controls">
+          <button id="upBtn" type="button">W 上升</button>
+          <button id="downBtn" type="button">S 下降</button>
+          <button id="leftBtn" type="button">A 左转</button>
+          <button id="rightBtn" type="button">D 右转</button>
+          <button id="landBtn" class="primary" type="button">L 降落</button>
+          <button id="resetBtn" type="button">R 重来</button>
+        </section>
+
+        <section class="panel airport-panel">
+          <p class="label">目的地</p>
+          <div class="airport-buttons">
+            <button class="active" data-target="changi" type="button">樟宜 SIN</button>
+            <button data-target="seattle" type="button">西雅图 SEA</button>
+            <button data-target="la" type="button">洛杉矶 LAX</button>
+          </div>
+        </section>
+
+        <section class="panel log-panel">
+          <p class="label">飞行记录</p>
+          <ol id="flightLog"></ol>
+        </section>
+      </aside>
+    </main>
+
+    <script src="flight.js"></script>
+  </body>
+</html>

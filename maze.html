@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>小人走迷宫</title>
+    <link rel="stylesheet" href="maze.css" />
+  </head>
+  <body>
+    <a class="home-link" href="arcade.html">游戏大厅</a>
+    <main class="maze-shell">
+      <section class="maze-game">
+        <canvas id="mazeCanvas" width="880" height="660" aria-label="小人走迷宫游戏"></canvas>
+        <div class="win-movie" id="winMovie">
+          <p>Final Scene</p>
+          <h1>你走到终点了!</h1>
+          <span>小人跑进彩色城堡，结尾音乐响起来。</span>
+          <button id="movieRestartBtn" type="button">再玩一次</button>
+        </div>
+      </section>
+      <section class="maze-panel">
+        <div>
+          <p class="label">Maze Adventure</p>
+          <h2>小人走迷宫</h2>
+          <p id="status">从左上角出发，走到右下角的星星门就赢。</p>
+        </div>
+        <div class="mobile-pad" aria-label="方向按钮">
+          <button data-move="up" type="button">上</button>
+          <button data-move="left" type="button">左</button>
+          <button data-move="right" type="button">右</button>
+          <button data-move="down" type="button">下</button>
+        </div>
+        <button id="restartBtn" type="button">重来</button>
+      </section>
+    </main>
+    <script src="maze.js"></script>
+  </body>
+</html>

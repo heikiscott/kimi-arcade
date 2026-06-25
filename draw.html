@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>自由画画板</title>
+    <link rel="stylesheet" href="draw.css" />
+  </head>
+  <body>
+    <a class="home-link" href="arcade.html">游戏大厅</a>
+    <main class="draw-shell">
+      <section class="draw-board">
+        <canvas id="drawCanvas" width="1000" height="700" aria-label="自由画画板"></canvas>
+      </section>
+
+      <section class="tool-panel">
+        <div>
+          <p class="label">Drawing Studio</p>
+          <h1>自由画画板</h1>
+          <p id="status">选颜色和画笔大小，就可以开始画。</p>
+        </div>
+
+        <div class="tool-group">
+          <strong>颜色</strong>
+          <div class="swatches" id="swatches"></div>
+          <input id="colorPicker" type="color" value="#d93a32" aria-label="自定义颜色" />
+        </div>
+
+        <div class="tool-group">
+          <strong>画笔大小</strong>
+          <input id="sizeRange" type="range" min="2" max="44" value="12" />
+          <span id="sizeText">12 px</span>
+        </div>
+
+        <div class="tool-grid">
+          <button id="penBtn" class="active" type="button">画笔</button>
+          <button id="eraserBtn" type="button">橡皮擦</button>
+          <button id="undoBtn" type="button">撤销</button>
+          <button id="clearBtn" type="button">清空</button>
+          <button id="walkBtn" type="button">小人走路</button>
+          <button id="stopWalkBtn" type="button">停止走路</button>
+          <button id="saveBtn" type="button">下载画</button>
+        </div>
+      </section>
+    </main>
+    <script src="draw.js"></script>
+  </body>
+</html>

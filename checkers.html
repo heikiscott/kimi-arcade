@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>跳棋</title>
+    <link rel="stylesheet" href="mini-games.css" />
+  </head>
+  <body>
+    <main class="game-shell">
+      <section>
+        <div class="topbar">
+          <div>
+            <p class="label">Checkers</p>
+            <h1>跳棋</h1>
+          </div>
+          <a href="arcade.html">游戏大厅</a>
+        </div>
+        <div class="stage">
+          <div class="checker-board" id="checkerBoard"></div>
+        </div>
+      </section>
+      <aside class="side">
+        <section class="panel">
+          <p class="label">当前回合</p>
+          <h2 id="turnText">红方</h2>
+          <p id="statusText">点自己的棋子，再点目标格。</p>
+        </section>
+        <section class="panel controls">
+          <button id="resetBtn" class="primary" type="button">重来</button>
+        </section>
+        <section class="panel">
+          <p class="label">记录</p>
+          <ol class="log" id="log"></ol>
+        </section>
+      </aside>
+    </main>
+    <script src="checkers.js"></script>
+  </body>
+</html>

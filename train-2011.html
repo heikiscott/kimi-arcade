@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>2011 温州动车事故短片</title>
+    <link rel="stylesheet" href="train-2011.css" />
+  </head>
+  <body>
+    <a class="home-link" href="arcade.html">游戏大厅</a>
+    <main class="train-shell">
+      <section class="stage" aria-label="温州动车事故安全示意动画">
+        <div class="rail-frame" id="railFrame" data-scene="intro">
+          <div class="sun" aria-hidden="true"></div>
+          <div class="clouds" aria-hidden="true"><span></span><span></span><span></span></div>
+          <div class="rain" aria-hidden="true"></div>
+          <div class="mountains" aria-hidden="true"></div>
+          <div class="valley" aria-hidden="true"></div>
+
+          <div class="viaduct" aria-hidden="true">
+            <div class="track"></div>
+            <div class="pillar p1"></div>
+            <div class="pillar p2"></div>
+            <div class="pillar p3"></div>
+          </div>
+
+          <div class="train main-train" aria-hidden="true">
+            <b>和谐号</b>
+            <div class="car"><span></span><span></span></div>
+            <div class="car"><span></span><span></span></div>
+            <div class="car"><span></span><span></span></div>
+            <div class="car"><span></span><span></span></div>
+            <div class="car"><span></span><span></span></div>
+            <div class="car"><span></span><span></span></div>
+            <div class="car"><span></span><span></span></div>
+            <div class="car"><span></span><span></span></div>
+            <div class="car"><span></span><span></span></div>
+            <div class="car"><span></span><span></span></div>
+          </div>
+          <div class="impact-flash" aria-hidden="true"></div>
+
+          <div class="clock" id="clock">晴朗白天</div>
+          <div class="scene-badge" id="sceneBadge">安全示意</div>
+          <h1 id="sceneTitle">山地高铁事故</h1>
+          <p id="sceneText">晴朗白天，10 节和谐号车厢一开始就在山上高速行驶，之后连接断开，整节车厢慢慢坠落。动画不展示人员画面。</p>
+        </div>
+
+        <div class="controls">
+          <button id="playBtn" type="button">播放</button>
+          <button id="restartBtn" type="button">重来</button>
+          <label for="scrubber">进度</label>
+          <input id="scrubber" type="range" min="0" max="4" value="0" step="1" />
+        </div>
+      </section>
+
+      <aside class="timeline">
+        <p class="label">Railway Timeline</p>
+        <h2>先正常行驶，再断节坠落</h2>
+        <ol id="timelineList"></ol>
+        <p class="note">安全电影示意，不展示人员和伤亡画面。</p>
+      </aside>
+    </main>
+    <script src="train-2011.js"></script>
+  </body>
+</html>
