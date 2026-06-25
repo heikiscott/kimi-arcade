@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>闪电地铁事故安全短片</title>
+    <link rel="stylesheet" href="metro-accident.css" />
+  </head>
+  <body>
+    <a class="home-link" href="arcade.html">游戏大厅</a>
+    <main class="metro-accident-shell">
+      <section class="stage-card">
+        <canvas id="metroCrashCanvas" width="980" height="620" aria-label="闪电地铁事故安全示意"></canvas>
+        <div class="ending-card" id="endingCard">
+          <p>Safety Short</p>
+          <h1 id="endingTitle">地铁停下来了</h1>
+          <span id="endingText">里面只有玩具和行李箱，没有真人。</span>
+          <button id="againBtn" type="button">重来</button>
+        </div>
+      </section>
+
+      <aside class="driver-panel">
+        <p class="label">Toy Metro Control</p>
+        <h1>闪电地铁事故</h1>
+        <p id="statusText">按开始后，你可以控制玩具地铁。全速冲刺会快得像闪电，撞到缓冲墙后玩具和行李箱会乱飞。</p>
+        <div class="meter">
+          <span>速度</span>
+          <strong id="speedText">0 km/h</strong>
+        </div>
+        <div class="meter">
+          <span>车门</span>
+          <strong id="doorText">关闭</strong>
+        </div>
+        <p class="note">安全示意动画：车厢里是玩具假人，不是真人。</p>
+      </aside>
+    </main>
+
+    <div class="bottom-controls" aria-label="地铁事故控制台">
+      <button id="startBtn" type="button">开始</button>
+      <button id="fasterBtn" type="button">W 加速</button>
+      <button id="brakeBtn" type="button">S 刹车</button>
+      <button id="doorBtn" type="button">D 开门</button>
+      <button id="boostBtn" type="button">全速冲刺</button>
+      <button id="resetBtn" type="button">重来</button>
+    </div>
+
+    <script src="metro-accident.js"></script>
+  </body>
+</html>

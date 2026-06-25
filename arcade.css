@@ -178,6 +178,10 @@ body {
   background: linear-gradient(135deg, #2d596b, #6d7580);
 }
 
+.metro-accident {
+  background: linear-gradient(135deg, #172632, #245b8f 48%, #ffd15f);
+}
+
 .dorothy {
   background: linear-gradient(135deg, #6aa6d8, #4d8c42);
 }
