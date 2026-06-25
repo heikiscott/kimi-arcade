@@ -29,9 +29,10 @@ function playTone(freq, start, duration, gainValue = 0.045, type = "triangle") {
 }
 
 function playSound() {
-  playTone(720, 1.06, 0.08, 0.035, "square");
-  playTone(180, 1.2, 0.38, 0.038, "sawtooth");
-  playTone(80, 4.2, 0.55, 0.06, "triangle");
+  playTone(260, 0.1, 4.8, 0.018, "sawtooth");
+  playTone(720, 5.0, 0.08, 0.04, "square");
+  playTone(180, 5.16, 0.45, 0.042, "sawtooth");
+  playTone(80, 8.35, 0.62, 0.065, "triangle");
 }
 
 function playMovie() {

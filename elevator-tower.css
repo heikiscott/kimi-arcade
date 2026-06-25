@@ -114,7 +114,7 @@ button {
   position: absolute;
   top: 0;
   width: 4px;
-  height: 34%;
+  height: 86%;
   border-radius: 999px;
   background: #172632;
   transform-origin: top center;
@@ -129,7 +129,7 @@ button {
 }
 
 .snap {
-  top: 32%;
+  top: 8%;
   height: 20%;
   opacity: 0;
   background: var(--red);
@@ -148,7 +148,7 @@ button {
 .elevator {
   position: absolute;
   left: 50%;
-  top: 30%;
+  top: calc(100% - 92px);
   display: grid;
   place-items: center;
   width: 60px;
@@ -210,6 +210,19 @@ button {
   font-weight: 850;
 }
 
+.speed-tag {
+  position: absolute;
+  right: 5%;
+  top: 8%;
+  z-index: 6;
+  padding: 12px 14px;
+  border-radius: 8px;
+  color: #fff;
+  background: rgba(23, 38, 50, 0.84);
+  font-size: clamp(1rem, 2vw, 1.35rem);
+  font-weight: 950;
+}
+
 .controls {
   position: absolute;
   left: 5%;
@@ -235,29 +248,39 @@ button {
 }
 
 .tower-stage.playing .cable {
-  animation: cableSnap 520ms 1.1s ease forwards;
+  animation: cableRun 5s linear forwards, cableSnap 520ms 5s ease forwards;
 }
 
 .tower-stage.playing .snap {
-  animation: snapShow 700ms 1.08s ease forwards;
+  animation: snapShow 900ms 4.98s ease forwards;
 }
 
 .tower-stage.playing .elevator {
-  animation: elevatorFall 3.4s 1.18s cubic-bezier(0.12, 0.66, 0.14, 1) forwards;
+  animation: elevatorRiseFall 8.7s linear forwards;
 }
 
 .tower-stage.playing .dust {
-  animation: dustPuff 900ms 4.25s ease-out forwards;
+  animation: dustPuff 900ms 8.35s ease-out forwards;
+}
+
+@keyframes cableRun {
+  0% {
+    height: 86%;
+  }
+
+  100% {
+    height: 14%;
+  }
 }
 
 @keyframes cableSnap {
   0% {
-    height: 34%;
+    height: 14%;
     transform: rotate(0deg);
   }
 
   100% {
-    height: 18%;
+    height: 8%;
     opacity: 0.6;
     transform: rotate(-10deg);
   }
@@ -273,25 +296,25 @@ button {
   }
 }
 
-@keyframes elevatorFall {
+@keyframes elevatorRiseFall {
   0% {
-    top: 30%;
+    top: calc(100% - 92px);
     transform: translateX(-50%) rotate(0deg);
   }
 
-  72% {
-    top: calc(100% - 90px);
-    transform: translateX(-50%) rotate(4deg);
+  57.5% {
+    top: 5%;
+    transform: translateX(-50%) rotate(0deg);
   }
 
-  86% {
-    top: calc(100% - 122px);
-    transform: translateX(-50%) rotate(-3deg);
+  62% {
+    top: 8%;
+    transform: translateX(-50%) rotate(-5deg);
   }
 
   100% {
     top: calc(100% - 90px);
-    transform: translateX(-50%) rotate(0deg);
+    transform: translateX(-50%) rotate(4deg);
   }
 }
 
