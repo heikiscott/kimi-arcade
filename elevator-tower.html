@@ -15,12 +15,20 @@
         <div class="tower">
           <div class="spire"></div>
           <div class="shaft">
+            <span class="floor-label floor-two">2 楼 / 顶楼</span>
+            <span class="floor-label floor-one">1 楼 / 最下面</span>
             <span class="cable cable-left"></span>
             <span class="cable cable-right"></span>
             <span class="snap snap-left"></span>
             <span class="snap snap-right"></span>
             <div class="elevator">
-              <span>空</span>
+              <span class="door door-left"></span>
+              <span class="door door-right"></span>
+              <div class="dummy">
+                <span class="dummy-head"></span>
+                <span class="dummy-body"></span>
+              </div>
+              <span class="dummy-label">玩偶</span>
             </div>
           </div>
           <div class="windows"></div>
@@ -28,12 +36,17 @@
         <div class="dust"></div>
         <div class="title-card">
           <p class="label">Safety Short</p>
-          <h1>高塔电梯绳子断了</h1>
-          <p>空电梯先以每秒 64 米上升 5 秒，到最高点时钢缆突然断开，然后落到最底部。</p>
+          <h1>高塔电梯控制台</h1>
+          <p>里面是玩偶假人，不是真人。你可以控制上楼、下楼、开门、关门，也可以让钢缆断开坠到 1 楼。</p>
         </div>
-        <div class="speed-tag">上升速度 64 米/秒</div>
+        <div class="speed-tag" id="statusTag">1 楼 · 门关</div>
         <div class="controls">
-          <button id="playBtn" type="button">播放短片</button>
+          <button id="upBtn" type="button">上到 2 楼</button>
+          <button id="downBtn" type="button">下到 1 楼</button>
+          <button id="openBtn" type="button">开门</button>
+          <button id="closeBtn" type="button">关门</button>
+          <button id="fallBtn" type="button">断绳坠落</button>
+          <button id="playBtn" type="button">自动演示</button>
           <button id="resetBtn" type="button">重来</button>
         </div>
       </section>

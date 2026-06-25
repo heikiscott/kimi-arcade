@@ -45,6 +45,8 @@ button {
 
 .tower-stage {
   position: relative;
+  --elevator-top: calc(100% - 92px);
+  --cable-height: 86%;
   min-height: min(86vh, 900px);
   overflow: hidden;
   border: 1px solid rgba(23, 38, 50, 0.14);
@@ -109,15 +111,37 @@ button {
   transform: translateX(-50%);
 }
 
+.floor-label {
+  position: absolute;
+  left: 105%;
+  z-index: 4;
+  min-width: 98px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  color: #fff;
+  background: rgba(23, 38, 50, 0.78);
+  font-size: 0.8rem;
+  font-weight: 950;
+}
+
+.floor-two {
+  top: 4%;
+}
+
+.floor-one {
+  bottom: 0;
+}
+
 .cable,
 .snap {
   position: absolute;
   top: 0;
   width: 4px;
-  height: 86%;
+  height: var(--cable-height);
   border-radius: 999px;
   background: #172632;
   transform-origin: top center;
+  transition: height 1s ease, opacity 220ms ease, transform 220ms ease;
 }
 
 .cable-left {
@@ -148,7 +172,7 @@ button {
 .elevator {
   position: absolute;
   left: 50%;
-  top: calc(100% - 92px);
+  top: var(--elevator-top);
   display: grid;
   place-items: center;
   width: 60px;
@@ -160,6 +184,98 @@ button {
   font-size: 1.2rem;
   font-weight: 950;
   transform: translateX(-50%);
+  transition: top 1s ease, transform 280ms ease;
+  overflow: hidden;
+}
+
+.door {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  z-index: 3;
+  width: 50%;
+  background: linear-gradient(180deg, #d8e7ee, #7f96a3);
+  transition: transform 420ms ease;
+}
+
+.door-left {
+  left: 0;
+  border-right: 2px solid rgba(23, 38, 50, 0.38);
+}
+
+.door-right {
+  right: 0;
+  border-left: 2px solid rgba(23, 38, 50, 0.38);
+}
+
+.tower-stage.doors-open .door-left {
+  transform: translateX(-82%);
+}
+
+.tower-stage.doors-open .door-right {
+  transform: translateX(82%);
+}
+
+.dummy {
+  position: relative;
+  z-index: 2;
+  width: 34px;
+  height: 48px;
+}
+
+.dummy-head {
+  position: absolute;
+  left: 9px;
+  top: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #ffd15f;
+}
+
+.dummy-body {
+  position: absolute;
+  left: 6px;
+  bottom: 2px;
+  width: 22px;
+  height: 30px;
+  border-radius: 10px 10px 5px 5px;
+  background: #d93a32;
+}
+
+.dummy-label {
+  position: absolute;
+  left: 50%;
+  bottom: 3px;
+  z-index: 4;
+  font-size: 0.62rem;
+  transform: translateX(-50%);
+}
+
+.tower-stage.broken .cable {
+  height: 8%;
+  opacity: 0.6;
+  transform: rotate(-10deg);
+}
+
+.tower-stage.broken .snap {
+  opacity: 1;
+}
+
+.tower-stage.falling {
+  --elevator-top: calc(100% - 90px);
+}
+
+.tower-stage.falling .elevator {
+  transition: top 2.4s cubic-bezier(0.12, 0.66, 0.14, 1), transform 280ms ease;
+}
+
+.tower-stage.falling .dust {
+  animation: dustPuff 900ms 2.15s ease-out forwards;
+}
+
+.tower-stage.bump .elevator {
+  transform: translateX(-50%) rotate(4deg);
 }
 
 .dust {
@@ -245,6 +361,20 @@ button {
 
 #resetBtn {
   background: #172632;
+}
+
+#fallBtn {
+  background: #8b1e2d;
+}
+
+#openBtn,
+#closeBtn {
+  background: #245b8f;
+}
+
+#upBtn,
+#downBtn {
+  background: #0f7c75;
 }
 
 .tower-stage.playing .cable {
