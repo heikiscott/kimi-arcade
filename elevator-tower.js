@@ -157,3 +157,16 @@ downBtn.addEventListener("click", goDown);
 openBtn.addEventListener("click", openDoor);
 closeBtn.addEventListener("click", closeDoor);
 fallBtn.addEventListener("click", fallDown);
+
+document.querySelectorAll("[data-elevator-action]").forEach((button) => {
+  button.addEventListener("click", () => {
+    const action = button.dataset.elevatorAction;
+    if (action === "up") goUp();
+    if (action === "down") goDown();
+    if (action === "open") openDoor();
+    if (action === "close") closeDoor();
+    if (action === "fall") fallDown();
+    if (action === "demo") playMovie();
+    if (action === "reset") resetMovie();
+  });
+});
