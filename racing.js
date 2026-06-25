@@ -394,14 +394,176 @@ function drawBackground() {
     ctx.fill();
   }
   if (selectedTrack.id === "ghost") {
-    ctx.fillStyle = "rgba(255,255,255,0.22)";
-    ctx.beginPath();
-    ctx.arc(130, 120, 40, Math.PI, 0);
-    ctx.lineTo(170, 180);
-    ctx.lineTo(90, 180);
-    ctx.closePath();
-    ctx.fill();
+    drawHauntedHouse();
   }
+}
+
+function drawHauntedHouse() {
+  ctx.fillStyle = "rgba(0,0,0,0.28)";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = "#15101f";
+  ctx.beginPath();
+  ctx.moveTo(42, 360);
+  ctx.lineTo(120, 250);
+  ctx.lineTo(200, 360);
+  ctx.closePath();
+  ctx.fill();
+  ctx.fillRect(58, 360, 126, 130);
+  ctx.fillStyle = "#ffd15f";
+  ctx.fillRect(78, 382, 26, 28);
+  ctx.fillRect(138, 382, 26, 28);
+  ctx.fillStyle = "#15101f";
+  ctx.beginPath();
+  ctx.moveTo(690, 364);
+  ctx.lineTo(782, 238);
+  ctx.lineTo(870, 364);
+  ctx.closePath();
+  ctx.fill();
+  ctx.fillRect(708, 364, 142, 150);
+  ctx.fillStyle = "#ffd15f";
+  ctx.fillRect(733, 392, 28, 30);
+  ctx.fillRect(798, 392, 28, 30);
+
+  drawGhostMonster(126, 116, "鬼");
+  drawZombieMonster(760, 126, "僵尸");
+  drawZombieMonster(84, 536, "丧尸", "#78a56b");
+  drawMummyMonster(806, 536, "逆尸");
+  drawSkeletonHead(246, 214);
+  drawPumpkin(646, 222);
+  drawPumpkin(210, 522);
+  drawGhostMonster(720 + Math.sin(distance / 44) * 18, 312, "幽灵");
+}
+
+function drawGhostMonster(x, y, label) {
+  ctx.save();
+  ctx.translate(x, y + Math.sin(distance / 52 + x) * 8);
+  ctx.fillStyle = "rgba(244,247,250,0.86)";
+  ctx.beginPath();
+  ctx.arc(0, 0, 34, Math.PI, 0);
+  ctx.lineTo(34, 58);
+  ctx.lineTo(18, 46);
+  ctx.lineTo(4, 58);
+  ctx.lineTo(-10, 46);
+  ctx.lineTo(-34, 58);
+  ctx.closePath();
+  ctx.fill();
+  ctx.fillStyle = "#172632";
+  ctx.beginPath();
+  ctx.arc(-12, 6, 5, 0, Math.PI * 2);
+  ctx.arc(12, 6, 5, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.font = "bold 13px system-ui";
+  ctx.textAlign = "center";
+  ctx.fillText(label, 0, 32);
+  ctx.restore();
+}
+
+function drawZombieMonster(x, y, label, skin = "#8dbb7a") {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.fillStyle = skin;
+  ctx.beginPath();
+  ctx.roundRect(-22, -28, 44, 50, 12);
+  ctx.fill();
+  ctx.fillStyle = "#573b58";
+  ctx.fillRect(-28, 22, 56, 54);
+  ctx.fillStyle = "#172632";
+  ctx.beginPath();
+  ctx.arc(-8, -8, 4, 0, Math.PI * 2);
+  ctx.arc(10, -8, 4, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = "#172632";
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(-10, 9);
+  ctx.lineTo(12, 13);
+  ctx.stroke();
+  ctx.fillStyle = "#fffaf0";
+  ctx.font = "bold 14px system-ui";
+  ctx.textAlign = "center";
+  ctx.fillText(label, 0, 54);
+  ctx.restore();
+}
+
+function drawMummyMonster(x, y, label) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.fillStyle = "#d9cbb4";
+  ctx.beginPath();
+  ctx.roundRect(-24, -38, 48, 112, 18);
+  ctx.fill();
+  ctx.strokeStyle = "#fff4df";
+  ctx.lineWidth = 5;
+  for (let line = -28; line < 68; line += 18) {
+    ctx.beginPath();
+    ctx.moveTo(-22, line);
+    ctx.lineTo(22, line + 10);
+    ctx.stroke();
+  }
+  ctx.fillStyle = "#172632";
+  ctx.beginPath();
+  ctx.arc(-8, -14, 4, 0, Math.PI * 2);
+  ctx.arc(9, -14, 4, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = "#fffaf0";
+  ctx.font = "bold 14px system-ui";
+  ctx.textAlign = "center";
+  ctx.fillText(label, 0, 94);
+  ctx.restore();
+}
+
+function drawSkeletonHead(x, y) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.fillStyle = "#f4f0df";
+  ctx.beginPath();
+  ctx.arc(0, 0, 32, 0, Math.PI * 2);
+  ctx.roundRect(-18, 16, 36, 32, 8);
+  ctx.fill();
+  ctx.fillStyle = "#172632";
+  ctx.beginPath();
+  ctx.arc(-11, -4, 8, 0, Math.PI * 2);
+  ctx.arc(12, -4, 8, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillRect(-14, 28, 28, 5);
+  ctx.fillStyle = "#f4f0df";
+  ctx.fillRect(-8, 28, 3, 9);
+  ctx.fillRect(3, 28, 3, 9);
+  ctx.fillStyle = "#fffaf0";
+  ctx.font = "bold 14px system-ui";
+  ctx.textAlign = "center";
+  ctx.fillText("骷髅头", 0, 66);
+  ctx.restore();
+}
+
+function drawPumpkin(x, y) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.fillStyle = "#2f6b35";
+  ctx.fillRect(-5, -34, 10, 22);
+  ctx.fillStyle = "#f08a2d";
+  ctx.beginPath();
+  ctx.ellipse(-18, 0, 22, 30, 0, 0, Math.PI * 2);
+  ctx.ellipse(18, 0, 22, 30, 0, 0, Math.PI * 2);
+  ctx.ellipse(0, 0, 28, 34, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = "#172632";
+  ctx.beginPath();
+  ctx.moveTo(-16, -8);
+  ctx.lineTo(-5, -8);
+  ctx.lineTo(-11, 2);
+  ctx.closePath();
+  ctx.moveTo(16, -8);
+  ctx.lineTo(5, -8);
+  ctx.lineTo(11, 2);
+  ctx.closePath();
+  ctx.fill();
+  ctx.fillRect(-12, 14, 24, 7);
+  ctx.fillStyle = "#fffaf0";
+  ctx.font = "bold 13px system-ui";
+  ctx.textAlign = "center";
+  ctx.fillText("Pumpkin", 0, 52);
+  ctx.restore();
 }
 
 function drawCloud(x, y) {
