@@ -171,6 +171,22 @@ h1 {
   background: #39a657;
 }
 
+#taxiBtn,
+#takeoffBtn {
+  background: #245b8f;
+}
+
+#doorOpenBtn,
+#doorCloseBtn,
+#metroGoBtn,
+#trainGoBtn {
+  background: #7b4bb8;
+}
+
+#stopWalkBtn {
+  background: #172632;
+}
+
 @media (max-width: 900px) {
   .draw-shell {
     grid-template-columns: 1fr;

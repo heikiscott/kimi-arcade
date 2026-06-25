@@ -10,6 +10,12 @@ const eraserBtn = document.querySelector("#eraserBtn");
 const undoBtn = document.querySelector("#undoBtn");
 const clearBtn = document.querySelector("#clearBtn");
 const walkBtn = document.querySelector("#walkBtn");
+const taxiBtn = document.querySelector("#taxiBtn");
+const takeoffBtn = document.querySelector("#takeoffBtn");
+const doorOpenBtn = document.querySelector("#doorOpenBtn");
+const doorCloseBtn = document.querySelector("#doorCloseBtn");
+const metroGoBtn = document.querySelector("#metroGoBtn");
+const trainGoBtn = document.querySelector("#trainGoBtn");
 const stopWalkBtn = document.querySelector("#stopWalkBtn");
 const saveBtn = document.querySelector("#saveBtn");
 
@@ -20,10 +26,11 @@ let tool = "pen";
 let drawing = false;
 let lastPoint = null;
 let history = [];
-let walkFrame = null;
-let walkSprite = null;
-let walkBackground = null;
-let walkStart = 0;
+let animationFrame = null;
+let animationSprite = null;
+let animationBackground = null;
+let animationStart = 0;
+let animationMode = null;
 
 function fillWhite() {
   ctx.fillStyle = "#ffffff";
@@ -31,7 +38,7 @@ function fillWhite() {
 }
 
 function saveHistory() {
-  stopWalk(false);
+  stopAnimation(false);
   history.push(ctx.getImageData(0, 0, canvas.width, canvas.height));
   if (history.length > 18) history.shift();
 }
@@ -118,7 +125,7 @@ function drawDot(point) {
 }
 
 function clearCanvas() {
-  stopWalk(false);
+  stopAnimation(false);
   saveHistory();
   fillWhite();
   statusEl.textContent = "画布清空了。";
@@ -192,66 +199,222 @@ function makeTransparentSprite(source, bounds) {
   return sprite;
 }
 
-function startWalk() {
-  stopWalk(false);
+function prepareAnimation(emptyMessage) {
+  stopAnimation(false);
   const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
   const bounds = findDrawingBounds(imageData);
   if (!bounds || bounds.w < 8 || bounds.h < 8) {
-    statusEl.textContent = "先画一个小人，再点小人走路。";
-    return;
+    statusEl.textContent = emptyMessage;
+    return null;
   }
 
   saveHistory();
-  walkBackground = ctx.getImageData(0, 0, canvas.width, canvas.height);
-  walkSprite = makeTransparentSprite(imageData, bounds);
+  animationBackground = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  animationSprite = makeTransparentSprite(imageData, bounds);
   fillWhite();
-  walkStart = performance.now();
-  statusEl.textContent = "小人开始走路了。";
-  animateWalk();
+  animationStart = performance.now();
+  return bounds;
 }
 
-function animateWalk(time = performance.now()) {
-  if (!walkSprite) return;
-  const elapsed = time - walkStart;
-  const walkWidth = Math.max(1, canvas.width - walkSprite.width - 40);
+function startMode(mode) {
+  const messages = {
+    walk: "先画一个小人，再点小人走路。",
+    taxi: "先画一架飞机，再点飞机滑行。",
+    takeoff: "先画一架飞机，再点飞机起飞。",
+    doorOpen: "先画地铁和站台，再点地铁开门。",
+    doorClose: "先画地铁和站台，再点地铁关门。",
+    metroGo: "先画地铁和站台，再点地铁出发。",
+    trainGo: "先画高铁，再点高铁出发。"
+  };
+  const bounds = prepareAnimation(messages[mode]);
+  if (!bounds) return;
+  animationMode = mode;
+  statusEl.textContent = animationStatus(mode);
+  animateScene();
+}
+
+function animationStatus(mode) {
+  if (mode === "walk") return "小人开始走路了。";
+  if (mode === "taxi") return "飞机在跑道上滑行。";
+  if (mode === "takeoff") return "飞机滑行，然后起飞成功。";
+  if (mode === "doorOpen") return "地铁停在站台，车门打开。";
+  if (mode === "doorClose") return "地铁车门关上。";
+  if (mode === "metroGo") return "地铁关门后加速开走。";
+  if (mode === "trainGo") return "高铁加速出发。";
+  return "动画开始。";
+}
+
+function animateScene(time = performance.now()) {
+  if (!animationSprite || !animationMode) return;
+  const elapsed = time - animationStart;
+  fillWhite();
+
+  if (animationMode === "walk") drawWalkingPerson(elapsed);
+  if (animationMode === "taxi") drawPlaneTaxi(elapsed, false);
+  if (animationMode === "takeoff") drawPlaneTaxi(elapsed, true);
+  if (animationMode === "doorOpen") drawStationTrain(elapsed, "open");
+  if (animationMode === "doorClose") drawStationTrain(elapsed, "close");
+  if (animationMode === "metroGo") drawStationTrain(elapsed, "go");
+  if (animationMode === "trainGo") drawStationTrain(elapsed, "fast");
+
+  animationFrame = requestAnimationFrame(animateScene);
+}
+
+function drawWalkingPerson(elapsed) {
+  const walkWidth = Math.max(1, canvas.width - animationSprite.width - 40);
   const progress = (elapsed * 0.00016) % 2;
   const goingRight = progress < 1;
   const t = goingRight ? progress : 2 - progress;
   const x = 20 + walkWidth * t;
-  const groundY = canvas.height - walkSprite.height - 42;
+  const groundY = canvas.height - animationSprite.height - 42;
   const bob = Math.sin(elapsed * 0.012) * 10;
   const step = Math.sin(elapsed * 0.018);
 
-  fillWhite();
+  drawGround("小人路面");
   ctx.save();
-  ctx.translate(x + walkSprite.width / 2, groundY + bob + walkSprite.height / 2);
+  ctx.translate(x + animationSprite.width / 2, groundY + bob + animationSprite.height / 2);
   if (!goingRight) ctx.scale(-1, 1);
-  ctx.drawImage(walkSprite, -walkSprite.width / 2, -walkSprite.height / 2);
+  ctx.drawImage(animationSprite, -animationSprite.width / 2, -animationSprite.height / 2);
   ctx.strokeStyle = "#172632";
-  ctx.lineWidth = Math.max(4, Math.min(12, walkSprite.width / 18));
+  ctx.lineWidth = Math.max(4, Math.min(12, animationSprite.width / 18));
   ctx.lineCap = "round";
   ctx.beginPath();
-  ctx.moveTo(-walkSprite.width * 0.15, walkSprite.height * 0.38);
-  ctx.lineTo(-walkSprite.width * 0.24 - step * 12, walkSprite.height * 0.5);
-  ctx.moveTo(walkSprite.width * 0.15, walkSprite.height * 0.38);
-  ctx.lineTo(walkSprite.width * 0.24 + step * 12, walkSprite.height * 0.5);
+  ctx.moveTo(-animationSprite.width * 0.15, animationSprite.height * 0.38);
+  ctx.lineTo(-animationSprite.width * 0.24 - step * 12, animationSprite.height * 0.5);
+  ctx.moveTo(animationSprite.width * 0.15, animationSprite.height * 0.38);
+  ctx.lineTo(animationSprite.width * 0.24 + step * 12, animationSprite.height * 0.5);
   ctx.stroke();
   ctx.restore();
-
-  walkFrame = requestAnimationFrame(animateWalk);
 }
 
-function stopWalk(restore = true) {
-  if (walkFrame) {
-    cancelAnimationFrame(walkFrame);
-    walkFrame = null;
+function drawGround(label) {
+  ctx.fillStyle = "#eaf6fb";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = "#5b7485";
+  ctx.fillRect(0, canvas.height - 64, canvas.width, 64);
+  ctx.fillStyle = "rgba(255,255,255,0.74)";
+  ctx.fillRect(0, canvas.height - 36, canvas.width, 8);
+  ctx.fillStyle = "#172632";
+  ctx.font = "bold 22px system-ui";
+  ctx.fillText(label, 26, 44);
+}
+
+function drawRunway() {
+  ctx.fillStyle = "#9ed8f0";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = "#6d7580";
+  ctx.fillRect(0, canvas.height - 150, canvas.width, 150);
+  ctx.strokeStyle = "#fff";
+  ctx.lineWidth = 8;
+  ctx.setLineDash([44, 30]);
+  ctx.beginPath();
+  ctx.moveTo(0, canvas.height - 76);
+  ctx.lineTo(canvas.width, canvas.height - 76);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = "#172632";
+  ctx.font = "bold 22px system-ui";
+  ctx.fillText("机场跑道", 26, 44);
+}
+
+function drawPlaneTaxi(elapsed, takeoff) {
+  drawRunway();
+  const duration = takeoff ? 5200 : 4200;
+  const t = Math.min(1, (elapsed % duration) / duration);
+  const x = -animationSprite.width + (canvas.width + animationSprite.width * 1.5) * t;
+  let y = canvas.height - 170 - animationSprite.height;
+  let angle = 0;
+
+  if (takeoff && t > 0.48) {
+    const fly = (t - 0.48) / 0.52;
+    y -= fly * 430;
+    angle = -0.38 * fly;
   }
-  if (restore && walkBackground) {
-    ctx.putImageData(walkBackground, 0, 0);
-    statusEl.textContent = "小人停下来了。";
+
+  ctx.save();
+  ctx.translate(x + animationSprite.width / 2, y + animationSprite.height / 2);
+  ctx.rotate(angle);
+  ctx.drawImage(animationSprite, -animationSprite.width / 2, -animationSprite.height / 2);
+  ctx.restore();
+
+  if (takeoff && t > 0.86) {
+    drawSuccess("起飞成功");
   }
-  walkSprite = null;
-  walkBackground = null;
+}
+
+function drawStationBackground(trainType) {
+  ctx.fillStyle = "#dbe8ef";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = "#506979";
+  ctx.fillRect(0, canvas.height - 150, canvas.width, 150);
+  ctx.fillStyle = "#fffaf0";
+  ctx.fillRect(0, canvas.height - 198, canvas.width, 46);
+  ctx.fillStyle = "#172632";
+  ctx.fillRect(0, canvas.height - 152, canvas.width, 9);
+  ctx.fillStyle = "#245b8f";
+  ctx.font = "bold 22px system-ui";
+  ctx.fillText(trainType === "fast" ? "高铁站台" : "地铁站台 platform", 26, 44);
+}
+
+function drawStationTrain(elapsed, mode) {
+  drawStationBackground(mode);
+  const go = mode === "go" || mode === "fast";
+  const speed = mode === "fast" ? 0.34 : 0.24;
+  const goT = go ? Math.min(1, elapsed * 0.00022) : 0;
+  const x = go ? 180 + goT * canvas.width * speed * 4.2 : 180;
+  const y = canvas.height - 240 - animationSprite.height * 0.52;
+  const scale = Math.min(1.2, Math.max(0.55, 420 / animationSprite.width));
+  const doorAmount = mode === "open" ? Math.min(1, elapsed * 0.0012) : mode === "close" || go ? Math.max(0, 1 - elapsed * 0.0016) : 0;
+
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.scale(scale, scale);
+  ctx.drawImage(animationSprite, 0, 0);
+  drawTrainDoors(animationSprite.width, animationSprite.height, doorAmount);
+  ctx.restore();
+
+  if (mode === "open" && doorAmount >= 1) drawSuccess("开门成功");
+  if (mode === "close" && doorAmount <= 0.05 && elapsed > 800) drawSuccess("关门成功");
+  if (go && goT >= 1) drawSuccess(mode === "fast" ? "高铁出发成功" : "地铁出发成功");
+}
+
+function drawTrainDoors(w, h, amount) {
+  const doorW = Math.max(24, w * 0.12);
+  const doorH = Math.max(40, h * 0.55);
+  const doorY = h * 0.24;
+  const center = w * 0.5;
+  const gap = amount * doorW * 0.78;
+  ctx.fillStyle = "rgba(230, 240, 244, 0.88)";
+  ctx.strokeStyle = "#172632";
+  ctx.lineWidth = Math.max(2, w / 120);
+  ctx.fillRect(center - doorW - gap, doorY, doorW, doorH);
+  ctx.strokeRect(center - doorW - gap, doorY, doorW, doorH);
+  ctx.fillRect(center + gap, doorY, doorW, doorH);
+  ctx.strokeRect(center + gap, doorY, doorW, doorH);
+}
+
+function drawSuccess(text) {
+  ctx.fillStyle = "rgba(255,250,240,0.92)";
+  ctx.fillRect(canvas.width / 2 - 170, 78, 340, 74);
+  ctx.fillStyle = "#172632";
+  ctx.font = "bold 34px system-ui";
+  ctx.textAlign = "center";
+  ctx.fillText(text, canvas.width / 2, 126);
+  ctx.textAlign = "left";
+}
+
+function stopAnimation(restore = true) {
+  if (animationFrame) {
+    cancelAnimationFrame(animationFrame);
+    animationFrame = null;
+  }
+  if (restore && animationBackground) {
+    ctx.putImageData(animationBackground, 0, 0);
+    statusEl.textContent = "动画停下来了。";
+  }
+  animationSprite = null;
+  animationBackground = null;
+  animationMode = null;
 }
 
 canvas.addEventListener("pointerdown", startDraw);
@@ -282,8 +445,14 @@ eraserBtn.addEventListener("click", () => {
 
 undoBtn.addEventListener("click", restoreLast);
 clearBtn.addEventListener("click", clearCanvas);
-walkBtn.addEventListener("click", startWalk);
-stopWalkBtn.addEventListener("click", () => stopWalk(true));
+walkBtn.addEventListener("click", () => startMode("walk"));
+taxiBtn.addEventListener("click", () => startMode("taxi"));
+takeoffBtn.addEventListener("click", () => startMode("takeoff"));
+doorOpenBtn.addEventListener("click", () => startMode("doorOpen"));
+doorCloseBtn.addEventListener("click", () => startMode("doorClose"));
+metroGoBtn.addEventListener("click", () => startMode("metroGo"));
+trainGoBtn.addEventListener("click", () => startMode("trainGo"));
+stopWalkBtn.addEventListener("click", () => stopAnimation(true));
 saveBtn.addEventListener("click", saveImage);
 
 fillWhite();
