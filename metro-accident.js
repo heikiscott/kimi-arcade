@@ -6,24 +6,33 @@ const doorText = document.querySelector("#doorText");
 const endingCard = document.querySelector("#endingCard");
 const endingTitle = document.querySelector("#endingTitle");
 const endingText = document.querySelector("#endingText");
-const startBtn = document.querySelector("#startBtn");
-const fasterBtn = document.querySelector("#fasterBtn");
-const brakeBtn = document.querySelector("#brakeBtn");
-const doorBtn = document.querySelector("#doorBtn");
-const boostBtn = document.querySelector("#boostBtn");
+const openPlatformBtn = document.querySelector("#openPlatformBtn");
+const closePlatformBtn = document.querySelector("#closePlatformBtn");
+const boardBtn = document.querySelector("#boardBtn");
+const departBtn = document.querySelector("#departBtn");
+const powerBtn = document.querySelector("#powerBtn");
 const resetBtn = document.querySelector("#resetBtn");
 const againBtn = document.querySelector("#againBtn");
 
-const keys = new Set();
-let running = false;
-let crashed = false;
+let mode = "station";
 let doorsOpen = false;
+let boarded = false;
+let powered = true;
 let speed = 0;
-let trainX = -360;
-let sparks = [];
-let toys = [];
+let trainX = 120;
+let trainAngle = 0;
+let departAt = 0;
 let shake = 0;
+let sparks = [];
+let flyingToys = [];
 let audioContext = null;
+
+const robots = [
+  { x: 118, y: 392, color: "#d93a32", label: "R1" },
+  { x: 176, y: 392, color: "#ffd15f", label: "R2" },
+  { x: 234, y: 392, color: "#39a657", label: "R3" },
+  { x: 292, y: 392, color: "#8f5fd9", label: "R4" }
+];
 
 function getAudio() {
   if (!audioContext) {
@@ -48,124 +57,136 @@ function playTone(freq, start, duration, gainValue = 0.04, type = "square") {
   osc.stop(audio.currentTime + start + duration + 0.03);
 }
 
-function playStartSound() {
-  [330, 392, 494].forEach((note, index) => playTone(note, index * 0.1, 0.08, 0.035, "sine"));
+function doorSound(open) {
+  playTone(open ? 520 : 390, 0, 0.12, 0.035, "sine");
+  playTone(open ? 650 : 300, 0.14, 0.12, 0.025, "sine");
 }
 
-function playCrashSound() {
-  playTone(190, 0, 0.24, 0.07, "sawtooth");
-  playTone(90, 0.16, 0.44, 0.07, "triangle");
-  playTone(680, 0.08, 0.08, 0.04, "square");
-  playTone(760, 0.22, 0.08, 0.04, "square");
-  playTone(840, 0.34, 0.08, 0.04, "square");
+function powerSound() {
+  playTone(620, 0, 0.08, 0.04, "square");
+  playTone(180, 0.15, 0.32, 0.06, "sawtooth");
+  playTone(82, 0.45, 0.54, 0.07, "triangle");
 }
 
-function makeToys() {
-  toys = [
-    { x: trainX + 90, y: 360, vx: -8, vy: -10, r: 0, vr: -0.2, kind: "bear", color: "#d7a249" },
-    { x: trainX + 170, y: 360, vx: 7, vy: -13, r: 0, vr: 0.17, kind: "case", color: "#245b8f" },
-    { x: trainX + 260, y: 360, vx: -5, vy: -16, r: 0, vr: 0.22, kind: "block", color: "#d93a32" },
-    { x: trainX + 350, y: 360, vx: 9, vy: -12, r: 0, vr: -0.18, kind: "doll", color: "#39a657" },
-    { x: trainX + 450, y: 360, vx: -3, vy: -15, r: 0, vr: 0.25, kind: "case", color: "#8f5fd9" }
-  ];
-}
-
-function start() {
-  running = true;
-  crashed = false;
-  doorsOpen = false;
-  speed = 6;
-  trainX = -360;
-  sparks = [];
-  toys = [];
-  shake = 0;
+function openDoors() {
+  if (mode === "flipped") return;
+  doorsOpen = true;
+  speed = 0;
+  mode = "station";
+  statusText.textContent = "站台门打开，地铁车门也打开。玩偶机器人可以上车。";
   endingCard.classList.remove("show");
-  statusText.textContent = "玩具地铁出发了。你可以加速、刹车、开门关门。";
-  playStartSound();
+  doorSound(true);
+}
+
+function closeDoors() {
+  if (mode === "flipped") return;
+  doorsOpen = false;
+  statusText.textContent = "站台门关闭，地铁车门也关闭。可以开往克拉码头。";
+  doorSound(false);
+}
+
+function boardRobots() {
+  if (!doorsOpen || mode === "flipped") {
+    statusText.textContent = "要先点站台门开，玩偶机器人才能进去。";
+    return;
+  }
+  boarded = true;
+  statusText.textContent = "几个假的玩偶机器人走进三节车厢了。";
+  [440, 590, 740, 520].forEach((note, index) => playTone(note, index * 0.08, 0.07, 0.035, "sine"));
+}
+
+function depart() {
+  if (mode === "flipped") reset();
+  if (doorsOpen) closeDoors();
+  if (!boarded) boarded = true;
+  mode = "departing";
+  powered = true;
+  departAt = performance.now();
+  speed = 13;
+  trainAngle = 0;
+  endingCard.classList.remove("show");
+  statusText.textContent = "三节地铁开往克拉码头，先正常开 5 秒。";
+  playTone(330, 0, 0.12, 0.04, "sine");
+  playTone(420, 0.14, 0.12, 0.04, "sine");
+}
+
+function powerOffFlip() {
+  if (mode === "flipped") return;
+  mode = "flipped";
+  powered = false;
+  speed = 0;
+  trainAngle = 1.24;
+  shake = 28;
+  makeFlyingToys();
+  makeSparks();
+  statusText.textContent = "突然没电，灯灭了，三节地铁自己翻倒。里面是玩偶机器人和行李箱。";
+  endingTitle.textContent = "断电翻倒";
+  endingText.textContent = "没有墙，地铁是自己翻了。车厢里只有假玩偶机器人。";
+  endingCard.classList.add("show");
+  powerSound();
 }
 
 function reset() {
-  running = false;
-  crashed = false;
+  mode = "station";
   doorsOpen = false;
+  boarded = false;
+  powered = true;
   speed = 0;
-  trainX = -360;
-  sparks = [];
-  toys = [];
+  trainX = 120;
+  trainAngle = 0;
+  departAt = 0;
   shake = 0;
+  sparks = [];
+  flyingToys = [];
   endingCard.classList.remove("show");
-  statusText.textContent = "按开始后，你可以控制玩具地铁。全速冲刺会快得像闪电，撞到缓冲墙后玩具和行李箱会乱飞。";
+  statusText.textContent = "这次没有墙。先开站台门和车门，让假玩偶机器人上车，再开往克拉码头，5 秒后断电翻倒。";
 }
 
-function boost() {
-  if (!running || crashed) start();
-  speed = Math.max(speed, 34);
-  doorsOpen = false;
-  statusText.textContent = "全速冲刺！快得像闪电侠一样，噼里啪啦往前冲。";
+function makeFlyingToys() {
+  const base = trainX + 260;
+  flyingToys = [
+    { x: base - 120, y: 350, vx: -6, vy: -12, r: 0, vr: -0.22, kind: "robot", color: "#d93a32", label: "R1" },
+    { x: base - 30, y: 350, vx: 7, vy: -15, r: 0, vr: 0.25, kind: "case", color: "#245b8f", label: "箱" },
+    { x: base + 70, y: 350, vx: -4, vy: -16, r: 0, vr: 0.2, kind: "robot", color: "#ffd15f", label: "R2" },
+    { x: base + 150, y: 350, vx: 9, vy: -12, r: 0, vr: -0.18, kind: "case", color: "#8f5fd9", label: "箱" },
+    { x: base + 210, y: 350, vx: -2, vy: -14, r: 0, vr: 0.28, kind: "robot", color: "#39a657", label: "R3" }
+  ];
 }
 
-function toggleDoor() {
-  if (crashed) return;
-  doorsOpen = !doorsOpen;
-  doorText.textContent = doorsOpen ? "打开" : "关闭";
-  statusText.textContent = doorsOpen ? "车门慢慢打开。玩具地铁开门时不要全速跑。" : "车门关上，可以继续开。";
-  playTone(doorsOpen ? 520 : 390, 0, 0.12, 0.035, "sine");
-}
-
-function crash() {
-  crashed = true;
-  running = false;
-  speed = 0;
-  shake = 28;
-  makeToys();
-  sparks = Array.from({ length: 52 }, () => ({
-    x: 816 + Math.random() * 54,
-    y: 330 + Math.random() * 90,
-    vx: -8 - Math.random() * 9,
-    vy: -7 + Math.random() * 14,
-    life: 30 + Math.random() * 24
+function makeSparks() {
+  sparks = Array.from({ length: 42 }, () => ({
+    x: trainX + 80 + Math.random() * 560,
+    y: 360 + Math.random() * 88,
+    vx: -7 + Math.random() * 14,
+    vy: -8 + Math.random() * 7,
+    life: 24 + Math.random() * 28
   }));
-  statusText.textContent = "哐哐嚓！地铁撞到缓冲墙停下，玩具和行李箱乱飞。";
-  endingTitle.textContent = "哐哐嚓，停下来了";
-  endingText.textContent = "车厢里是玩具假人和行李箱，安全示意短片结束。";
-  endingCard.classList.add("show");
-  playCrashSound();
 }
 
 function update() {
-  if (running && !crashed) {
-    if (keys.has("w") || keys.has("ArrowUp")) speed += 0.42;
-    if (keys.has("s") || keys.has("ArrowDown")) speed -= 0.62;
-    speed = Math.max(0, Math.min(42, speed));
-    trainX += speed;
-    if (speed > 26) {
-      sparks.push({
-        x: trainX + 44 + Math.random() * 540,
-        y: 416 + Math.random() * 16,
-        vx: -6 - Math.random() * 7,
-        vy: -2 - Math.random() * 4,
-        life: 18
-      });
-    }
-    if (trainX + 610 >= 840) crash();
+  if (mode === "departing") {
+    speed = Math.min(24, speed + 0.08);
+    trainX += speed * 0.36;
+    if (trainX > 330) trainX = 330 + Math.sin(performance.now() / 150) * 3;
+    if (performance.now() - departAt >= 5000) powerOffFlip();
   }
 
-  toys.forEach((toy) => {
+  flyingToys.forEach((toy) => {
     toy.x += toy.vx;
     toy.y += toy.vy;
-    toy.vy += 0.65;
+    toy.vy += 0.62;
     toy.r += toy.vr;
     if (toy.y > 535) {
       toy.y = 535;
-      toy.vy *= -0.32;
-      toy.vx *= 0.82;
+      toy.vy *= -0.28;
+      toy.vx *= 0.84;
     }
   });
 
   sparks.forEach((spark) => {
     spark.x += spark.vx;
     spark.y += spark.vy;
-    spark.vy += 0.25;
+    spark.vy += 0.24;
     spark.life -= 1;
   });
   sparks = sparks.filter((spark) => spark.life > 0);
@@ -176,113 +197,127 @@ function update() {
 
 function draw() {
   ctx.save();
-  if (shake > 0) {
-    ctx.translate((Math.random() - 0.5) * shake, (Math.random() - 0.5) * shake * 0.4);
-  }
-  drawTunnel();
+  if (shake > 0) ctx.translate((Math.random() - 0.5) * shake, (Math.random() - 0.5) * shake * 0.42);
+  drawStation();
+  drawPlatformDoors();
   drawTrain();
-  drawWall();
+  if (!boarded && doorsOpen) robots.forEach((robot) => drawRobot(robot.x, robot.y, robot.color, robot.label));
   sparks.forEach(drawSpark);
-  toys.forEach(drawToy);
+  flyingToys.forEach(drawFlyingToy);
   drawHud();
   ctx.restore();
-  speedText.textContent = `${Math.round(speed * 8)} km/h`;
-  doorText.textContent = doorsOpen ? "打开" : "关闭";
+  speedText.textContent = `${Math.round(speed * 9)} km/h`;
+  doorText.textContent = doorsOpen ? "站台+车门打开" : "站台+车门关闭";
 }
 
-function drawTunnel() {
+function drawStation() {
   const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
-  gradient.addColorStop(0, "#10202d");
-  gradient.addColorStop(0.56, "#253747");
-  gradient.addColorStop(1, "#10161d");
+  gradient.addColorStop(0, powered ? "#d7edf7" : "#26313b");
+  gradient.addColorStop(0.56, powered ? "#edf6fa" : "#18222b");
+  gradient.addColorStop(1, powered ? "#9fb0b9" : "#0f151b");
   ctx.fillStyle = gradient;
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  ctx.strokeStyle = "rgba(255,255,255,0.09)";
-  ctx.lineWidth = 4;
-  for (let x = -80; x < canvas.width + 120; x += 90) {
-    const offset = (trainX * 0.35) % 90;
-    ctx.beginPath();
-    ctx.moveTo(x - offset, 90);
-    ctx.lineTo(x - offset + 160, 500);
-    ctx.stroke();
-  }
+  ctx.fillStyle = powered ? "#eef7fa" : "#2d3842";
+  ctx.fillRect(0, 236, canvas.width, 112);
+  ctx.fillStyle = "#172632";
+  ctx.font = "bold 25px system-ui";
+  ctx.fillText("站台 Platform", 34, 304);
+  ctx.fillStyle = "#ffd15f";
+  ctx.fillText("开往 克拉码头 Clarke Quay", 620, 60);
 
-  ctx.fillStyle = "#384755";
-  ctx.fillRect(0, 442, canvas.width, 48);
-  ctx.fillStyle = "#1b2730";
-  ctx.fillRect(0, 490, canvas.width, 130);
+  ctx.fillStyle = "#596a75";
+  ctx.fillRect(0, 448, canvas.width, 46);
+  ctx.fillStyle = "#1d2a34";
+  ctx.fillRect(0, 494, canvas.width, 126);
   ctx.strokeStyle = "#c5b58d";
   ctx.lineWidth = 9;
   ctx.beginPath();
-  ctx.moveTo(0, 470);
-  ctx.lineTo(canvas.width, 470);
-  ctx.moveTo(0, 526);
-  ctx.lineTo(canvas.width, 526);
+  ctx.moveTo(0, 468);
+  ctx.lineTo(canvas.width, 468);
+  ctx.moveTo(0, 528);
+  ctx.lineTo(canvas.width, 528);
   ctx.stroke();
-  ctx.strokeStyle = "#64717b";
-  ctx.lineWidth = 5;
-  for (let x = -40; x < canvas.width; x += 70) {
-    const offset = (trainX * 0.6) % 70;
-    ctx.beginPath();
-    ctx.moveTo(x - offset, 454);
-    ctx.lineTo(x - offset + 42, 548);
-    ctx.stroke();
+
+  ctx.fillStyle = "#f4d16e";
+  for (let x = 0; x < canvas.width; x += 48) {
+    ctx.fillRect(x, 430, 28, 10);
   }
 
-  if (speed > 25 && running) {
-    ctx.strokeStyle = "rgba(255, 209, 95, 0.55)";
+  if (mode === "departing") {
+    ctx.strokeStyle = "rgba(255, 209, 95, 0.42)";
     ctx.lineWidth = 3;
-    for (let line = 0; line < 18; line += 1) {
-      const y = 80 + line * 24;
+    for (let line = 0; line < 16; line += 1) {
+      const y = 110 + line * 22;
       ctx.beginPath();
       ctx.moveTo(20 + Math.random() * 80, y);
-      ctx.lineTo(280 + Math.random() * 420, y + Math.random() * 20);
+      ctx.lineTo(360 + Math.random() * 440, y + Math.random() * 18);
       ctx.stroke();
     }
   }
 }
 
+function drawPlatformDoors() {
+  const doorXs = [226, 438, 650];
+  doorXs.forEach((x) => {
+    ctx.fillStyle = "rgba(23,38,50,0.14)";
+    ctx.fillRect(x - 76, 254, 152, 176);
+    ctx.strokeStyle = "#172632";
+    ctx.lineWidth = 4;
+    ctx.strokeRect(x - 76, 254, 152, 176);
+    ctx.fillStyle = powered ? "#c7d9e2" : "#40505c";
+    if (doorsOpen) {
+      ctx.fillRect(x - 76, 254, 32, 176);
+      ctx.fillRect(x + 44, 254, 32, 176);
+    } else {
+      ctx.fillRect(x - 74, 254, 74, 176);
+      ctx.fillRect(x, 254, 74, 176);
+    }
+  });
+}
+
 function drawTrain() {
   ctx.save();
-  ctx.translate(trainX, 338);
-  ctx.fillStyle = "rgba(0,0,0,0.25)";
+  ctx.translate(trainX + 300, 356);
+  ctx.rotate(trainAngle);
+  ctx.translate(-300, -58);
+  ctx.fillStyle = "rgba(0,0,0,0.24)";
   ctx.beginPath();
-  ctx.ellipse(300, 132, 310, 22, 0, 0, Math.PI * 2);
+  ctx.ellipse(300, 148, 322, 24, 0, 0, Math.PI * 2);
   ctx.fill();
-
-  ctx.fillStyle = "#d9e6ec";
-  ctx.beginPath();
-  ctx.roundRect(0, 0, 610, 116, 28);
-  ctx.fill();
-  ctx.fillStyle = "#245b8f";
-  ctx.fillRect(20, 62, 560, 18);
-  ctx.fillStyle = "#172632";
-  ctx.font = "bold 24px system-ui";
-  ctx.fillText("闪电号 MRT", 32, 44);
-
-  for (let x = 170; x < 550; x += 94) {
-    ctx.fillStyle = "#7ec5df";
-    ctx.beginPath();
-    ctx.roundRect(x, 22, 58, 32, 8);
-    ctx.fill();
+  for (let car = 0; car < 3; car += 1) {
+    drawCarriage(car * 204, car);
   }
-
-  drawDoor(92, doorsOpen);
-  drawDoor(282, doorsOpen);
-  drawDoor(472, doorsOpen);
-  drawInsideToys();
-
-  ctx.fillStyle = "#111821";
-  ctx.beginPath();
-  ctx.arc(116, 118, 18, 0, Math.PI * 2);
-  ctx.arc(494, 118, 18, 0, Math.PI * 2);
-  ctx.fill();
+  if (boarded && mode !== "flipped") drawOnboardRobots();
   ctx.restore();
 }
 
-function drawDoor(x, open) {
-  ctx.fillStyle = "#b8cbd4";
+function drawCarriage(x, car) {
+  ctx.fillStyle = powered ? "#d9e6ec" : "#87939b";
+  ctx.beginPath();
+  ctx.roundRect(x, 0, 196, 116, 22);
+  ctx.fill();
+  ctx.fillStyle = "#245b8f";
+  ctx.fillRect(x + 14, 63, 168, 18);
+  ctx.fillStyle = "#172632";
+  ctx.font = "bold 17px system-ui";
+  ctx.fillText(car === 0 ? "闪电号" : `车厢 ${car + 1}`, x + 20, 42);
+  for (let win = 0; win < 2; win += 1) {
+    ctx.fillStyle = powered ? "#7ec5df" : "#40505c";
+    ctx.beginPath();
+    ctx.roundRect(x + 98 + win * 50, 20, 36, 30, 7);
+    ctx.fill();
+  }
+  drawTrainDoor(x + 52, doorsOpen);
+  ctx.fillStyle = "#111821";
+  ctx.beginPath();
+  ctx.arc(x + 44, 118, 17, 0, Math.PI * 2);
+  ctx.arc(x + 154, 118, 17, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+function drawTrainDoor(x, open) {
+  ctx.fillStyle = powered ? "#b8cbd4" : "#586672";
   if (open) {
     ctx.fillRect(x - 34, 20, 18, 70);
     ctx.fillRect(x + 16, 20, 18, 70);
@@ -294,38 +329,35 @@ function drawDoor(x, open) {
   ctx.strokeRect(x - 26, 20, 52, 70);
 }
 
-function drawInsideToys() {
-  const passengers = [
-    { x: 178, color: "#d93a32", label: "玩具" },
-    { x: 250, color: "#ffd15f", label: "熊" },
-    { x: 360, color: "#39a657", label: "娃娃" },
-    { x: 430, color: "#8f5fd9", label: "箱" }
-  ];
-  passengers.forEach((toy) => {
-    ctx.fillStyle = toy.color;
-    ctx.beginPath();
-    ctx.arc(toy.x, 86, 13, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = "#172632";
-    ctx.font = "bold 10px system-ui";
-    ctx.textAlign = "center";
-    ctx.fillText(toy.label, toy.x, 107);
-    ctx.textAlign = "left";
-  });
+function drawOnboardRobots() {
+  [
+    { x: 132, y: 84, color: "#d93a32", label: "R1" },
+    { x: 292, y: 84, color: "#ffd15f", label: "R2" },
+    { x: 446, y: 84, color: "#39a657", label: "R3" },
+    { x: 548, y: 84, color: "#8f5fd9", label: "R4" }
+  ].forEach((robot) => drawRobot(robot.x, robot.y, robot.color, robot.label, 0.72));
 }
 
-function drawWall() {
-  ctx.fillStyle = "#6b4b3b";
-  ctx.fillRect(846, 266, 72, 235);
-  ctx.fillStyle = "#ffd15f";
-  ctx.font = "bold 18px system-ui";
+function drawRobot(x, y, color, label, scale = 1) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.scale(scale, scale);
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.roundRect(-18, -24, 36, 34, 8);
+  ctx.fill();
+  ctx.fillStyle = "#172632";
+  ctx.beginPath();
+  ctx.arc(-7, -10, 3, 0, Math.PI * 2);
+  ctx.arc(7, -10, 3, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = "#64717b";
+  ctx.fillRect(-12, 12, 24, 30);
+  ctx.fillStyle = "#fff";
+  ctx.font = "bold 11px system-ui";
   ctx.textAlign = "center";
-  ctx.fillText("缓冲墙", 882, 252);
-  ctx.textAlign = "left";
-  ctx.fillStyle = "rgba(255,255,255,0.18)";
-  for (let y = 282; y < 492; y += 36) {
-    ctx.fillRect(852, y, 60, 12);
-  }
+  ctx.fillText(label, 0, 32);
+  ctx.restore();
 }
 
 function drawSpark(spark) {
@@ -335,68 +367,51 @@ function drawSpark(spark) {
   ctx.fill();
 }
 
-function drawToy(toy) {
+function drawFlyingToy(toy) {
   ctx.save();
   ctx.translate(toy.x, toy.y);
   ctx.rotate(toy.r);
-  ctx.fillStyle = toy.color;
   if (toy.kind === "case") {
+    ctx.fillStyle = toy.color;
     ctx.fillRect(-24, -18, 48, 36);
     ctx.strokeStyle = "#172632";
     ctx.lineWidth = 4;
     ctx.strokeRect(-24, -18, 48, 36);
-  } else if (toy.kind === "bear") {
-    ctx.beginPath();
-    ctx.arc(0, 0, 22, 0, Math.PI * 2);
-    ctx.arc(-15, -16, 9, 0, Math.PI * 2);
-    ctx.arc(15, -16, 9, 0, Math.PI * 2);
-    ctx.fill();
-  } else if (toy.kind === "doll") {
-    ctx.beginPath();
-    ctx.arc(0, -14, 14, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillRect(-14, 0, 28, 34);
+    ctx.fillStyle = "#fff";
+    ctx.font = "bold 13px system-ui";
+    ctx.textAlign = "center";
+    ctx.fillText(toy.label, 0, 5);
   } else {
-    ctx.fillRect(-20, -20, 40, 40);
+    drawRobot(0, 0, toy.color, toy.label, 1);
   }
   ctx.restore();
 }
 
 function drawHud() {
-  ctx.fillStyle = "rgba(255,250,240,0.9)";
-  ctx.fillRect(22, 20, 242, 86);
+  ctx.fillStyle = "rgba(255,250,240,0.92)";
+  ctx.fillRect(22, 20, 276, 92);
   ctx.fillStyle = "#172632";
   ctx.font = "bold 19px system-ui";
-  ctx.fillText("玩具地铁安全示意", 40, 52);
-  ctx.fillText(`${Math.round(speed * 8)} km/h`, 40, 84);
+  ctx.fillText("三节玩具地铁", 40, 52);
+  ctx.fillText(powered ? `${Math.round(speed * 9)} km/h` : "断电", 40, 84);
 }
 
-startBtn.addEventListener("click", start);
-fasterBtn.addEventListener("click", () => {
-  if (!running) start();
-  speed = Math.min(42, speed + 6);
-  statusText.textContent = "正在加速。";
-});
-brakeBtn.addEventListener("click", () => {
-  speed = Math.max(0, speed - 9);
-  statusText.textContent = "正在刹车。";
-});
-doorBtn.addEventListener("click", toggleDoor);
-boostBtn.addEventListener("click", boost);
+openPlatformBtn.addEventListener("click", openDoors);
+closePlatformBtn.addEventListener("click", closeDoors);
+boardBtn.addEventListener("click", boardRobots);
+departBtn.addEventListener("click", depart);
+powerBtn.addEventListener("click", powerOffFlip);
 resetBtn.addEventListener("click", reset);
 againBtn.addEventListener("click", reset);
 
 window.addEventListener("keydown", (event) => {
   const key = event.key.length === 1 ? event.key.toLowerCase() : event.key;
-  keys.add(key);
-  if (key === "d") toggleDoor();
-  if (key === " ") boost();
-  if (["w", "s", "d", " ", "ArrowUp", "ArrowDown"].includes(key)) event.preventDefault();
-});
-
-window.addEventListener("keyup", (event) => {
-  const key = event.key.length === 1 ? event.key.toLowerCase() : event.key;
-  keys.delete(key);
+  if (key === "o") openDoors();
+  if (key === "c") closeDoors();
+  if (key === "b") boardRobots();
+  if (key === "d") depart();
+  if (key === "p" || key === " ") powerOffFlip();
+  if (["o", "c", "b", "d", "p", " "].includes(key)) event.preventDefault();
 });
 
 if (!CanvasRenderingContext2D.prototype.roundRect) {
