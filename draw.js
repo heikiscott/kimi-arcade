@@ -172,6 +172,86 @@ function findDrawingBounds(imageData) {
   };
 }
 
+function isInkPixel(data, pixelIndex) {
+  const red = data[pixelIndex];
+  const green = data[pixelIndex + 1];
+  const blue = data[pixelIndex + 2];
+  const alpha = data[pixelIndex + 3];
+  return alpha > 0 && !(red > 245 && green > 245 && blue > 245);
+}
+
+function paddedBounds(component) {
+  return {
+    x: Math.max(0, component.minX - 12),
+    y: Math.max(0, component.minY - 12),
+    w: Math.min(canvas.width - component.minX + 12, component.maxX - component.minX + 25),
+    h: Math.min(canvas.height - component.minY + 12, component.maxY - component.minY + 25)
+  };
+}
+
+function findMainObjectBounds(imageData, mode) {
+  if (mode !== "taxi" && mode !== "takeoff") return findDrawingBounds(imageData);
+
+  const data = imageData.data;
+  const visited = new Uint8Array(canvas.width * canvas.height);
+  const components = [];
+
+  for (let y = 0; y < canvas.height; y += 1) {
+    for (let x = 0; x < canvas.width; x += 1) {
+      const start = y * canvas.width + x;
+      if (visited[start] || !isInkPixel(data, start * 4)) continue;
+
+      const stack = [start];
+      visited[start] = 1;
+      const component = { count: 0, minX: x, minY: y, maxX: x, maxY: y };
+
+      while (stack.length) {
+        const current = stack.pop();
+        const cx = current % canvas.width;
+        const cy = Math.floor(current / canvas.width);
+        component.count += 1;
+        component.minX = Math.min(component.minX, cx);
+        component.minY = Math.min(component.minY, cy);
+        component.maxX = Math.max(component.maxX, cx);
+        component.maxY = Math.max(component.maxY, cy);
+
+        const neighbors = [current - 1, current + 1, current - canvas.width, current + canvas.width];
+        neighbors.forEach((next) => {
+          if (next < 0 || next >= visited.length || visited[next]) return;
+          const nx = next % canvas.width;
+          const ny = Math.floor(next / canvas.width);
+          if (Math.abs(nx - cx) + Math.abs(ny - cy) !== 1) return;
+          if (!isInkPixel(data, next * 4)) return;
+          visited[next] = 1;
+          stack.push(next);
+        });
+      }
+
+      if (component.count > 12) components.push(component);
+    }
+  }
+
+  if (!components.length) return findDrawingBounds(imageData);
+
+  const candidates = components.filter((component) => {
+    const width = component.maxX - component.minX + 1;
+    const height = component.maxY - component.minY + 1;
+    const isRunway = width > canvas.width * 0.55 && height < canvas.height * 0.22 && component.minY > canvas.height * 0.45;
+    const isTooTiny = width < 8 || height < 8;
+    return !isRunway && !isTooTiny;
+  });
+
+  const best = (candidates.length ? candidates : components).sort((a, b) => {
+    const aWidth = a.maxX - a.minX + 1;
+    const aHeight = a.maxY - a.minY + 1;
+    const bWidth = b.maxX - b.minX + 1;
+    const bHeight = b.maxY - b.minY + 1;
+    return bWidth * bHeight - aWidth * aHeight;
+  })[0];
+
+  return paddedBounds(best);
+}
+
 function makeTransparentSprite(source, bounds) {
   const sprite = document.createElement("canvas");
   sprite.width = bounds.w;
@@ -199,10 +279,10 @@ function makeTransparentSprite(source, bounds) {
   return sprite;
 }
 
-function prepareAnimation(emptyMessage) {
+function prepareAnimation(emptyMessage, mode) {
   stopAnimation(false);
   const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-  const bounds = findDrawingBounds(imageData);
+  const bounds = findMainObjectBounds(imageData, mode);
   if (!bounds || bounds.w < 8 || bounds.h < 8) {
     statusEl.textContent = emptyMessage;
     return null;
@@ -226,7 +306,7 @@ function startMode(mode) {
     metroGo: "先画地铁和站台，再点地铁出发。",
     trainGo: "先画高铁，再点高铁出发。"
   };
-  const bounds = prepareAnimation(messages[mode]);
+  const bounds = prepareAnimation(messages[mode], mode);
   if (!bounds) return;
   animationMode = mode;
   statusEl.textContent = animationStatus(mode);
