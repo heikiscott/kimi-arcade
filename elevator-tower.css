@@ -340,19 +340,27 @@ button {
 }
 
 .controls {
-  position: absolute;
-  right: 5%;
-  top: 18%;
-  z-index: 20;
+  position: fixed;
+  left: 50%;
+  bottom: 14px;
+  z-index: 9999;
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(4, minmax(96px, 1fr));
   gap: 10px;
-  width: min(340px, 36vw);
+  width: min(920px, calc(100vw - 28px));
   padding: 14px;
   border: 2px solid rgba(255, 255, 255, 0.72);
   border-radius: 8px;
   background: rgba(255, 250, 240, 0.9);
   box-shadow: 0 18px 42px rgba(23, 38, 50, 0.18);
+  transform: translateX(-50%);
+}
+
+.control-title {
+  grid-column: 1 / -1;
+  color: #172632;
+  font-size: 1.05rem;
+  font-weight: 950;
 }
 
 .controls button {
@@ -366,7 +374,7 @@ button {
 }
 
 #fallBtn {
-  grid-column: 1 / -1;
+  grid-column: auto;
 }
 
 #resetBtn {
@@ -481,10 +489,7 @@ button {
   }
 
   .controls {
-    left: 5%;
-    right: 5%;
-    top: auto;
-    bottom: 5%;
-    width: auto;
+    grid-template-columns: 1fr 1fr;
+    bottom: 10px;
   }
 }
