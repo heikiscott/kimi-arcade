@@ -62,6 +62,57 @@
         </div>
       </section>
     </main>
+    <div class="bottom-remote" aria-label="屏幕下方电梯控制器">
+      <strong>电梯按钮</strong>
+      <button data-elevator-action="up" type="button">上到 2 楼</button>
+      <button data-elevator-action="down" type="button">下到 1 楼</button>
+      <button data-elevator-action="open" type="button">开门</button>
+      <button data-elevator-action="close" type="button">关门</button>
+      <button data-elevator-action="fall" type="button">断绳坠落</button>
+      <button data-elevator-action="demo" type="button">自动演示</button>
+      <button data-elevator-action="reset" type="button">重来</button>
+    </div>
+    <style>
+      .bottom-remote {
+        position: fixed !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: 0 !important;
+        z-index: 2147483647 !important;
+        display: grid !important;
+        grid-template-columns: repeat(4, minmax(74px, 1fr)) !important;
+        gap: 8px !important;
+        padding: 10px 12px 12px !important;
+        border-top: 5px solid #172632 !important;
+        background: #ffd15f !important;
+        box-shadow: 0 -12px 38px rgba(23, 38, 50, 0.3) !important;
+      }
+
+      .bottom-remote strong {
+        grid-column: 1 / -1 !important;
+        font-size: 18px !important;
+        font-weight: 950 !important;
+      }
+
+      .bottom-remote button {
+        min-height: 48px !important;
+        border: 0 !important;
+        border-radius: 8px !important;
+        color: white !important;
+        background: #245b8f !important;
+        font: 950 15px/1.1 ui-sans-serif, system-ui, sans-serif !important;
+      }
+
+      .bottom-remote button[data-elevator-action="fall"] {
+        background: #8b1e2d !important;
+      }
+
+      @media (max-width: 680px) {
+        .bottom-remote {
+          grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        }
+      }
+    </style>
     <script src="elevator-tower.js"></script>
   </body>
 </html>
