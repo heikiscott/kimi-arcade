@@ -120,7 +120,10 @@ const historyQuestions = [
   { q: "古埃及早期统一上下埃及的第一位法老通常说是谁？", answer: "纳尔迈", hint: "也常和传说中的美尼斯联系在一起。", options: ["纳尔迈", "图坦卡蒙", "拉美西斯二世", "克娄巴特拉"] },
   { q: "吉萨最高、最著名的大金字塔是哪一座？", answer: "胡夫金字塔", hint: "它也叫吉萨大金字塔。", options: ["胡夫金字塔", "弯曲金字塔", "阶梯金字塔", "太阳金字塔"] },
   { q: "狮身人面像是什么样的巨大雕像？", answer: "狮子身体、人类头部", hint: "它在埃及吉萨，非常有名。", options: ["狮子身体、人类头部", "鱼身体、鸟头", "马身体、牛头", "龙身体、虎头"] },
-  { q: "狮身人面像通常被理解为有什么作用？", answer: "守护陵墓和神圣区域", hint: "它不是普通装饰，常和守护象征联系在一起。", options: ["守护陵墓和神圣区域", "当船用", "当市场入口", "当学校黑板"] },
+  { q: "狮身人面像通常被理解为有什么作用？", answer: "守护陵墓和神圣区域", hint: "它不是普通装饰，常和守护象征联系在一起。", options: ["守护陵墓和神圣区域", "当船用", "当市场入口", "当学校黑板"] }
+];
+
+const festivalQuestions = [
   { q: "春节是农历哪一天？", answer: "正月初一", hint: "中国传统新年的第一天。", options: ["正月初一", "正月十五", "五月初五", "八月十五"] },
   { q: "元宵节是农历哪一天？", answer: "正月十五", hint: "常见习俗有吃元宵、看花灯。", options: ["正月十五", "七月初七", "九月初九", "腊月初八"] },
   { q: "端午节是农历哪一天？", answer: "五月初五", hint: "常见习俗有吃粽子、赛龙舟。", options: ["五月初五", "八月十五", "正月初一", "三月初三"] },
@@ -302,6 +305,22 @@ function startHistory() {
   updateScore();
 }
 
+function startFestival() {
+  locked = false;
+  current = pick(festivalQuestions);
+  questionText.textContent = current.q;
+  hintText.textContent = current.hint;
+  answerGrid.innerHTML = "";
+  shuffle(current.options).forEach((option) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.textContent = option;
+    button.addEventListener("click", () => answerChoice(button, option));
+    answerGrid.appendChild(button);
+  });
+  updateScore();
+}
+
 function restart() {
   score = 0;
   round = 1;
@@ -316,14 +335,17 @@ function restart() {
         : game === "grammar"
           ? "选择正确单词，练 am/is/are、时态、冠词、介词、代词和比较级。"
           : game === "history"
-            ? "历史与节日题：丝绸之路、特洛伊、荷马史诗、埃及、金字塔和节日日期。"
-            : "看中文，点正确的英文。答对会加分，答错也能继续练。";
+            ? "历史题：丝绸之路、特洛伊战争、荷马史诗、埃及法老、胡夫金字塔。"
+            : game === "festival"
+              ? "节日题：春节、元宵、端午、中秋、清明、圣诞节、万圣节等日期。"
+              : "看中文，点正确的英文。答对会加分，答错也能继续练。";
   if (game === "words") startWords();
   if (game === "typing") startTyping();
   if (game === "math") startMath();
   if (game === "chinese") startChinese();
   if (game === "grammar") startGrammar();
   if (game === "history") startHistory();
+  if (game === "festival") startFestival();
 }
 
 nextBtn.addEventListener("click", () => {
@@ -333,6 +355,7 @@ nextBtn.addEventListener("click", () => {
   if (game === "chinese") startChinese();
   if (game === "grammar") startGrammar();
   if (game === "history") startHistory();
+  if (game === "festival") startFestival();
 });
 
 restartBtn.addEventListener("click", restart);

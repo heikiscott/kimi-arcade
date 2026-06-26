@@ -238,6 +238,10 @@ body {
   background: linear-gradient(135deg, #315b74, #9b6a3c 52%, #d7a249);
 }
 
+.festival-quiz {
+  background: linear-gradient(135deg, #d94a78, #d7a249 52%, #39a657);
+}
+
 .home-play {
   background: linear-gradient(135deg, #39a657, #f2c45f 52%, #d94a78);
 }
