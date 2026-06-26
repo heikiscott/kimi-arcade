@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>家里过家家</title>
+    <link rel="stylesheet" href="home-play.css" />
+  </head>
+  <body>
+    <a class="home-link" href="arcade.html">游戏大厅</a>
+    <main class="home-shell">
+      <section class="play-stage">
+        <canvas id="homeCanvas" width="960" height="620" aria-label="家里过家家小游戏"></canvas>
+        <div class="message-card" id="messageCard">
+          <strong id="messageTitle">家里过家家</strong>
+          <span id="messageText">选择一个娃娃，然后用下面的遥控器控制她或他。</span>
+        </div>
+      </section>
+
+      <section class="control-panel">
+        <div>
+          <p class="label">Doll House</p>
+          <h1>家里过家家</h1>
+          <p id="statusText">现在控制：一号小娃娃。可以走路、拿东西、看电视、打游戏、出门打球。</p>
+        </div>
+
+        <div class="doll-select" id="dollSelect" aria-label="选择娃娃"></div>
+
+        <div class="remote-panel" aria-label="遥控器">
+          <button id="upBtn" type="button">上走</button>
+          <button id="leftBtn" type="button">左走</button>
+          <button id="rightBtn" type="button">右走</button>
+          <button id="downBtn" type="button">下走</button>
+          <button id="frontBtn" type="button">拿前面</button>
+          <button id="leftPickBtn" type="button">拿左边</button>
+          <button id="rightPickBtn" type="button">拿右边</button>
+          <button id="backBtn" type="button">拿后面</button>
+          <button id="tvBtn" type="button">看电视</button>
+          <button id="gameBtn" type="button">打游戏</button>
+          <button id="remoteBtn" type="button">拿遥控器</button>
+          <button id="ballBtn" type="button">出门打球</button>
+        </div>
+
+        <div class="inventory" aria-label="手里拿的东西">
+          <strong>四个娃娃手里拿的东西</strong>
+          <div id="inventoryList"></div>
+        </div>
+
+        <p class="hint">键盘：1/2/3/4 选娃娃，W/A/S/D 或方向键走路，E 拿前面，Q 拿左边，R 拿右边，X 拿后面。</p>
+      </section>
+    </main>
+    <script src="home-play.js"></script>
+  </body>
+</html>
