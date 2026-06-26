@@ -3,6 +3,7 @@ const ctx = canvas.getContext("2d");
 const placeText = document.querySelector("#placeText");
 const statusText = document.querySelector("#statusText");
 const blockGrid = document.querySelector("#blockGrid");
+const memberGrid = document.querySelector("#memberGrid");
 const villaFloorText = document.querySelector("#villaFloorText");
 const villaFloorGrid = document.querySelector("#villaFloorGrid");
 
@@ -24,6 +25,7 @@ const scenes = {
   home: "家园空地",
   villa: "我的别墅里面",
   wild: "野地建楼区",
+  zipline: "田野滑索频道",
   village: "乡村",
   city: "高楼城市",
   subway: "免费地铁站",
@@ -52,13 +54,15 @@ const villaGrids = Object.fromEntries(villaFloors.map((floor) => [floor, makeGri
 const villaInitialized = new Set();
 let currentVillaFloor = "1";
 let elevatorHandTimer = 0;
+let ziplineTimer = 0;
 const player = { col: 8, row: 8, pose: 0, dir: "down" };
 const villaTeam = [
-  { name: "一号女生", color: "#d94a78" },
-  { name: "二号女生", color: "#7b4dc5" },
-  { name: "三号男生", color: "#39a657" },
-  { name: "四号男生", color: "#245b8f" }
+  { name: "一号女生", color: "#d94a78", col: 8, row: 8 },
+  { name: "二号女生", color: "#7b4dc5", col: 9, row: 8 },
+  { name: "三号男生", color: "#39a657", col: 10, row: 8 },
+  { name: "四号男生", color: "#245b8f", col: 11, row: 8 }
 ];
+let activeMember = 0;
 
 function makeGrid() {
   return Array.from({ length: rows }, () => Array.from({ length: cols }, () => null));
@@ -84,6 +88,38 @@ function renderBlockButtons() {
   });
 }
 
+function renderMemberButtons() {
+  memberGrid.innerHTML = "";
+  villaTeam.forEach((member, index) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = index === activeMember ? "active" : "";
+    button.textContent = member.name;
+    button.addEventListener("click", () => selectMember(index));
+    memberGrid.appendChild(button);
+  });
+}
+
+function selectMember(index) {
+  activeMember = index;
+  const member = villaTeam[activeMember];
+  player.col = member.col;
+  player.row = member.row;
+  player.pose += 1;
+  setStatus(`现在控制：${member.name}。用 W/A/S/D 或按钮走路。`);
+  renderMemberButtons();
+}
+
+function activePerson() {
+  return villaTeam[activeMember];
+}
+
+function saveActivePersonPosition() {
+  const member = activePerson();
+  member.col = player.col;
+  member.row = player.row;
+}
+
 function renderVillaFloorButtons() {
   villaFloorText.textContent = scene === "villa" ? `别墅电梯屏幕 · ${currentVillaFloor} 楼` : "别墅电梯屏幕 · 还没进别墅";
   villaFloorGrid.innerHTML = "";
@@ -107,6 +143,7 @@ function saveCurrentGrid() {
 }
 
 function changeScene(next) {
+  saveActivePersonPosition();
   saveCurrentGrid();
   scene = next;
   if (scene !== "villa") {
@@ -115,9 +152,11 @@ function changeScene(next) {
   }
   placeText.textContent = scenes[scene];
   vehicleTimer = 0;
+  ziplineTimer = 0;
   pilotingPlane = false;
-  player.col = scene === "city" ? 6 : scene === "airport" ? 4 : scene === "rail" ? 5 : scene === "subway" ? 9 : scene === "wild" ? 4 : 8;
-  player.row = scene === "subway" ? 7 : 8;
+  player.col = scene === "city" ? 6 : scene === "airport" ? 4 : scene === "rail" ? 5 : scene === "subway" ? 9 : scene === "wild" ? 4 : scene === "zipline" ? 3 : 8;
+  player.row = scene === "subway" ? 7 : scene === "zipline" ? 7 : 8;
+  saveActivePersonPosition();
   player.pose += 1;
   renderVillaFloorButtons();
   setStatus(`到了${scenes[scene]}。这里盖东西、坐车、坐飞机、坐高铁都免费。`);
@@ -269,7 +308,17 @@ function ride(type) {
   vehicleType = type;
   vehicleTimer = 140;
   const names = { subway: "地铁", plane: "飞机", train: "高铁" };
-  setStatus(`${names[type]}免费出发，没有进站口，也不用买票。`);
+  setStatus(type === "plane" ? `${activePerson().name}免费坐在飞机里面出发。` : `${names[type]}免费出发，没有进站口，也不用买票。`);
+}
+
+function rideZipline() {
+  scene = "zipline";
+  placeText.textContent = scenes.zipline;
+  ziplineTimer = 150;
+  player.col = 3;
+  player.row = 7;
+  saveActivePersonPosition();
+  setStatus(`${activePerson().name}开始玩田野滑索，从高台滑到草地终点。`);
 }
 
 function boardDisposablePlane() {
@@ -342,7 +391,8 @@ function movePlayer(dc, dr, dir) {
   player.row = Math.max(0, Math.min(rows - 1, player.row + dr));
   player.dir = dir;
   player.pose += 1;
-  setStatus(`方块小人往${{ up: "上", down: "下", left: "左", right: "右" }[dir]}走。`);
+  saveActivePersonPosition();
+  setStatus(`${activePerson().name}往${{ up: "上", down: "下", left: "左", right: "右" }[dir]}走。`);
 }
 
 function placeBlock(clientX, clientY) {
@@ -430,11 +480,50 @@ function drawScene() {
   if (scene === "home") drawVillaAirport();
   if (scene === "villa") drawVillaInterior();
   if (scene === "wild") drawWildLand();
+  if (scene === "zipline") drawZiplineField();
   if (scene === "village") drawVillage();
   if (scene === "city") drawCity();
   if (scene === "subway") drawSubwayStation();
   if (scene === "airport") drawAirport();
   if (scene === "rail") drawRailStation();
+}
+
+function drawZiplineField() {
+  ctx.fillStyle = "#4d8c42";
+  ctx.fillRect(76, 492, 828, 62);
+  ctx.strokeStyle = "#172632";
+  ctx.lineWidth = 6;
+  ctx.beginPath();
+  ctx.moveTo(150, 190);
+  ctx.lineTo(820, 416);
+  ctx.stroke();
+  ctx.fillStyle = "#9b6a3c";
+  ctx.fillRect(112, 184, 76, 246);
+  ctx.fillRect(792, 396, 76, 98);
+  ctx.fillStyle = "#ffd15f";
+  ctx.font = "bold 18px system-ui";
+  ctx.fillText("田野滑索高台", 92, 164);
+  ctx.fillText("终点平台", 780, 382);
+  if (ziplineTimer > 0) {
+    const t = 1 - ziplineTimer / 150;
+    const x = 150 + (820 - 150) * t;
+    const y = 190 + (416 - 190) * t;
+    drawZiplineRider(x, y);
+    player.col = Math.round((x - originX) / tile);
+    player.row = Math.round((y - originY) / tile);
+    saveActivePersonPosition();
+    ziplineTimer -= 1;
+  }
+}
+
+function drawZiplineRider(x, y) {
+  ctx.strokeStyle = "#172632";
+  ctx.lineWidth = 4;
+  ctx.beginPath();
+  ctx.moveTo(x, y);
+  ctx.lineTo(x, y + 38);
+  ctx.stroke();
+  drawPersonAt(x, y + 68, activePerson(), true);
 }
 
 function drawVillaInterior() {
@@ -687,7 +776,7 @@ function drawVehicle() {
     ctx.fillRect(x + 40, 574, 44, 18);
     ctx.fillRect(x + 118, 574, 44, 18);
   }
-  if (vehicleType === "plane") drawPlane(x, 556 - Math.min(t * 2, 170));
+  if (vehicleType === "plane") drawPlane(x, 556 - Math.min(t * 2, 170), true);
   if (vehicleType === "train") {
     ctx.fillStyle = "#d9e6ec";
     roundRect(x, 552, 292, 54, 16);
@@ -799,20 +888,40 @@ function drawTinyPlane(x, y, color, scale = 1) {
 }
 
 function drawPlayer() {
+  if (ziplineTimer > 0 || pilotingPlane) return;
   const x = originX + player.col * tile + tile / 2;
   const y = originY + player.row * tile + tile / 2;
   const bob = Math.sin((player.pose + performance.now() / 130) * 0.9) * 3;
+  drawOtherMembers();
+  drawPersonAt(x, y + bob, activePerson(), true);
+}
+
+function drawOtherMembers() {
+  villaTeam.forEach((member, index) => {
+    if (index === activeMember) return;
+    const x = originX + member.col * tile + tile / 2;
+    const y = originY + member.row * tile + tile / 2;
+    drawPersonAt(x, y, member, false);
+  });
+}
+
+function drawPersonAt(x, y, member, active) {
   ctx.save();
-  ctx.translate(x, y + bob);
+  ctx.translate(x, y);
   ctx.fillStyle = "rgba(0,0,0,0.22)";
   ctx.beginPath();
   ctx.ellipse(0, 24, 24, 8, 0, 0, Math.PI * 2);
   ctx.fill();
+  if (active) {
+    ctx.strokeStyle = "#ffd15f";
+    ctx.lineWidth = 4;
+    ctx.strokeRect(-26, -56, 52, 102);
+  }
   ctx.fillStyle = "#f0bb87";
   ctx.fillRect(-13, -42, 26, 24);
-  ctx.fillStyle = "#245b8f";
+  ctx.fillStyle = member.color;
   ctx.fillRect(-15, -50, 30, 12);
-  ctx.fillStyle = "#d94a78";
+  ctx.fillStyle = member.color;
   ctx.fillRect(-16, -18, 32, 34);
   ctx.fillStyle = "#172632";
   ctx.fillRect(-8, 16, 7, 25);
@@ -822,7 +931,7 @@ function drawPlayer() {
   ctx.fillStyle = "#172632";
   ctx.font = "bold 13px system-ui";
   ctx.textAlign = "center";
-  ctx.fillText("我", 0, -25);
+  ctx.fillText(member.name.slice(0, 2), 0, -25);
   ctx.fillStyle = "#fff";
   ctx.fillRect(-7, -34, 5, 5);
   ctx.fillRect(4, -34, 5, 5);
@@ -830,7 +939,7 @@ function drawPlayer() {
   ctx.textAlign = "left";
 }
 
-function drawPlane(x, y) {
+function drawPlane(x, y, passenger = false) {
   ctx.fillStyle = "#ffffff";
   ctx.beginPath();
   ctx.ellipse(x, y, 78, 18, 0, 0, Math.PI * 2);
@@ -848,6 +957,17 @@ function drawPlane(x, y) {
   ctx.lineTo(x + 78, y + 2);
   ctx.closePath();
   ctx.fill();
+  if (passenger) {
+    ctx.fillStyle = activePerson().color;
+    ctx.beginPath();
+    ctx.arc(x + 12, y - 10, 8, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#172632";
+    ctx.font = "bold 12px system-ui";
+    ctx.textAlign = "center";
+    ctx.fillText("坐里面", x + 16, y - 25);
+    ctx.textAlign = "left";
+  }
 }
 
 function roundRect(x, y, width, height, radius) {
@@ -865,6 +985,8 @@ document.querySelector("#villaBtn").addEventListener("click", buildVilla);
 document.querySelector("#enterVillaBtn").addEventListener("click", enterVilla);
 document.querySelector("#wildBtn").addEventListener("click", () => changeScene("wild"));
 document.querySelector("#towerBtn").addEventListener("click", buildWildTower);
+document.querySelector("#ziplineBtn").addEventListener("click", () => changeScene("zipline"));
+document.querySelector("#rideZiplineBtn").addEventListener("click", rideZipline);
 document.querySelector("#hangarBtn").addEventListener("click", showHangar);
 document.querySelector("#demoPlaneBtn").addEventListener("click", boardDisposablePlane);
 document.querySelector("#collapseBtn").addEventListener("click", startSafeCollapse);
@@ -903,6 +1025,7 @@ window.addEventListener("keydown", (event) => {
   if (key === "i") enterVilla();
   if (key === "n") changeScene("wild");
   if (key === "t") buildWildTower();
+  if (key === "z") changeScene("zipline");
   if (key === "v") changeScene("village");
   if (key === "c") changeScene("city");
   if (key === "m") changeScene("subway");
@@ -911,5 +1034,6 @@ window.addEventListener("keydown", (event) => {
 });
 
 renderBlockButtons();
+renderMemberButtons();
 renderVillaFloorButtons();
 draw();
