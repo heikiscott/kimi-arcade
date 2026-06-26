@@ -295,6 +295,31 @@ function buildWildTower() {
   setStatus("野地高楼盖好了。这是你自己在野地盖的楼，可以用一次性飞机做安全拆除。");
 }
 
+function buildUselessBuildings() {
+  scene = "wild";
+  placeText.textContent = scenes.wild;
+  grid = makeGrid();
+  protectedCells = new Set();
+  const buildings = [
+    { x1: 3, x2: 5, y1: 5, y2: 9, key: "wood" },
+    { x1: 8, x2: 10, y1: 3, y2: 9, key: "stone" },
+    { x1: 13, x2: 15, y1: 4, y2: 9, key: "glass" }
+  ];
+  buildings.forEach((building, index) => {
+    for (let y = building.y1; y <= building.y2; y += 1) {
+      for (let x = building.x1; x <= building.x2; x += 1) {
+        grid[y][x] = y === building.y1 ? "light" : building.key;
+      }
+    }
+    grid[building.y2][building.x1 + 1] = null;
+    grid[building.y1 - 1] = "light";
+  });
+  player.col = 2;
+  player.row = 9;
+  pilotingPlane = false;
+  setStatus("没用楼房盖好了：这些是你自己的玩具楼房，可以驾驶一次性飞机撞到后自动拆掉。");
+}
+
 function showHangar() {
   scene = "home";
   placeText.textContent = scenes.home;
@@ -355,6 +380,19 @@ function startSafeCollapse() {
   setStatus("安全拆楼开始：10 秒以内，从上往下压掉你自己在野地盖的楼。你的别墅和别人的楼不会被拆。");
 }
 
+function startCollapseFromPlaneCollision() {
+  if (!pilotingPlane || disposablePlanes <= 0) return false;
+  if (!grid[pilotPlane.row]?.[pilotPlane.col] || protectedCells.has(`${pilotPlane.col},${pilotPlane.row}`)) return false;
+  const targets = collectDemolitionTargets();
+  if (targets.length === 0) return false;
+  disposablePlanes -= 1;
+  collapse = { started: performance.now(), duration: 10000, targets };
+  pilotingPlane = false;
+  demoPlaneTimer = 0;
+  setStatus("一次性飞机撞到你自己的没用楼房，安全拆楼开始：10 秒内从上往下塌成空气。");
+  return true;
+}
+
 function collectDemolitionTargets() {
   const targets = [];
   for (let row = 0; row < rows; row += 1) {
@@ -384,6 +422,7 @@ function movePlayer(dc, dr, dir) {
     pilotPlane.col = Math.max(0, Math.min(cols - 1, pilotPlane.col + dc));
     pilotPlane.row = Math.max(0, Math.min(rows - 1, pilotPlane.row + dr));
     pilotPlane.pose += 1;
+    if (startCollapseFromPlaneCollision()) return;
     setStatus(`你正在驾驶一次性飞机往${{ up: "上", down: "下", left: "左", right: "右" }[dir]}飞。`);
     return;
   }
@@ -985,6 +1024,7 @@ document.querySelector("#villaBtn").addEventListener("click", buildVilla);
 document.querySelector("#enterVillaBtn").addEventListener("click", enterVilla);
 document.querySelector("#wildBtn").addEventListener("click", () => changeScene("wild"));
 document.querySelector("#towerBtn").addEventListener("click", buildWildTower);
+document.querySelector("#uselessBtn").addEventListener("click", buildUselessBuildings);
 document.querySelector("#ziplineBtn").addEventListener("click", () => changeScene("zipline"));
 document.querySelector("#rideZiplineBtn").addEventListener("click", rideZipline);
 document.querySelector("#hangarBtn").addEventListener("click", showHangar);
@@ -1025,6 +1065,7 @@ window.addEventListener("keydown", (event) => {
   if (key === "i") enterVilla();
   if (key === "n") changeScene("wild");
   if (key === "t") buildWildTower();
+  if (key === "u") buildUselessBuildings();
   if (key === "z") changeScene("zipline");
   if (key === "v") changeScene("village");
   if (key === "c") changeScene("city");
