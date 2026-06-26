@@ -118,6 +118,16 @@ canvas {
   font-size: 1.4rem;
 }
 
+.announcement {
+  align-items: flex-start;
+  flex-direction: column;
+}
+
+.announcement strong {
+  font-size: 0.92rem;
+  line-height: 1.45;
+}
+
 .note {
   padding: 12px;
   border-left: 6px solid var(--gold);

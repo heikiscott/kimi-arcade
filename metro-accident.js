@@ -3,6 +3,7 @@ const ctx = canvas.getContext("2d");
 const statusText = document.querySelector("#statusText");
 const speedText = document.querySelector("#speedText");
 const doorText = document.querySelector("#doorText");
+const announcementText = document.querySelector("#announcementText");
 const endingCard = document.querySelector("#endingCard");
 const endingTitle = document.querySelector("#endingTitle");
 const endingText = document.querySelector("#endingText");
@@ -41,7 +42,7 @@ const routeStations = [
   { cn: "牛车水", en: "Chinatown", ms: "Pecinan", ta: "சைனாடவுன்" },
   { cn: "克拉码头", en: "Clarke Quay", ms: "Clarke Quay", ta: "கிளார்க் கீ" }
 ];
-const scenicSpots = ["滨海湾花园", "滨海湾金沙酒店", "滨海湾", "装义基石", "鱼尾狮公园", "鱼尾狮"];
+const scenicSpots = ["滨海湾花园", "滨海湾金沙酒店", "滨海湾", "装义基石", "鱼尾狮公园 / 鱼尾狮"];
 const routeDurations = [1200, 1200, 10000];
 const totalRouteDuration = routeDurations.reduce((sum, duration) => sum + duration, 0);
 const finalLegDistanceKm = 300;
@@ -286,6 +287,7 @@ function draw() {
   ctx.restore();
   speedText.textContent = `${Math.round(speed)} km/h`;
   doorText.textContent = doorsOpen ? "站台+车门打开" : "站台+车门关闭";
+  announcementText.textContent = getAnnouncement(getCurrentRouteState());
 }
 
 function drawStation() {
@@ -411,9 +413,10 @@ function drawRouteRibbon(route) {
   ctx.fillText("港线 Harbour Line", 42, 144);
   ctx.fillText("港湾 HarbourFront / Pelabuhan / ஹார்பர்ஃப்ரண்ட்", 42, 168);
   ctx.fillText("欧南园 Outram Park / Taman Outram / ஊட்ரம் பார்க்", 42, 190);
+  ctx.fillText("牛车水 Chinatown / Pecinan / சைனாடவுன்", 42, 212);
   if (route.isFinalLongLeg) {
     ctx.fillStyle = "#8b1e2d";
-    ctx.fillText("牛车水到克拉码头：300 km long run", 42, 212);
+    ctx.fillText("牛车水到克拉码头：300 km long run", 42, 234);
   }
 }
 
@@ -436,6 +439,22 @@ function drawScenicSpots(progress) {
     ctx.fillText(spot.name, spot.x, spot.y + 5);
     ctx.textAlign = "left";
   });
+}
+
+function getAnnouncement(route) {
+  if (mode === "flipped") {
+    return "中文：列车断电，请保持冷静。 English: Power failure, please stay calm. Malay: Bekalan kuasa terputus, sila bertenang. தமிழ்: மின்சாரம் நிறுத்தப்பட்டது, அமைதியாக இருங்கள்.";
+  }
+  if (doorsOpen) {
+    return `中文：本站 ${route.from.cn}，请小心上下车。 English: This is ${route.from.en}, please mind the doors. Malay: Ini ${route.from.ms}, sila berhati-hati. தமிழ்: இது ${route.from.ta}, கதவுகளைக் கவனியுங்கள்.`;
+  }
+  if (route.isArrived) {
+    return "中文：终点站克拉码头到了。 English: We have arrived at Clarke Quay. Malay: Kita telah tiba di Clarke Quay. தமிழ்: கிளார்க் கீ வந்துவிட்டோம்.";
+  }
+  if (route.isFinalLongLeg) {
+    return "中文：下一站克拉码头，本段 300 公里，途经滨海湾花园、滨海湾金沙酒店、滨海湾、装义基石、鱼尾狮公园。 English: Next station Clarke Quay, a 300 km express sector via Marina Bay sights. Malay: Stesen seterusnya Clarke Quay, laluan ekspres 300 km melalui tarikan Marina Bay. தமிழ்: அடுத்த நிலையம் கிளார்க் கீ, 300 கி.மீ வேகப் பயணம்.";
+  }
+  return `中文：下一站 ${route.to.cn}。 English: Next station ${route.to.en}. Malay: Stesen seterusnya ${route.to.ms}. தமிழ்: அடுத்த நிலையம் ${route.to.ta}.`;
 }
 
 function drawTrain() {
