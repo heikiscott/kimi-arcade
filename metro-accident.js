@@ -10,6 +10,7 @@ const endingText = document.querySelector("#endingText");
 const openPlatformBtn = document.querySelector("#openPlatformBtn");
 const closePlatformBtn = document.querySelector("#closePlatformBtn");
 const boardBtn = document.querySelector("#boardBtn");
+const announceBtn = document.querySelector("#announceBtn");
 const departBtn = document.querySelector("#departBtn");
 const powerBtn = document.querySelector("#powerBtn");
 const resetBtn = document.querySelector("#resetBtn");
@@ -80,6 +81,14 @@ function powerSound() {
   playTone(620, 0, 0.08, 0.04, "square");
   playTone(180, 0.15, 0.32, 0.06, "sawtooth");
   playTone(82, 0.45, 0.54, 0.07, "triangle");
+}
+
+function playAnnouncement() {
+  const route = getCurrentRouteState();
+  announcementText.textContent = getAnnouncement(route);
+  statusText.textContent = "叮咚，正在播放四语广播。";
+  playTone(660, 0, 0.1, 0.04, "sine");
+  playTone(880, 0.13, 0.12, 0.04, "sine");
 }
 
 function openDoors() {
@@ -580,6 +589,7 @@ function drawHud() {
 openPlatformBtn.addEventListener("click", openDoors);
 closePlatformBtn.addEventListener("click", closeDoors);
 boardBtn.addEventListener("click", boardRobots);
+announceBtn.addEventListener("click", playAnnouncement);
 departBtn.addEventListener("click", depart);
 powerBtn.addEventListener("click", powerOffFlip);
 resetBtn.addEventListener("click", reset);
@@ -590,9 +600,10 @@ window.addEventListener("keydown", (event) => {
   if (key === "o") openDoors();
   if (key === "c") closeDoors();
   if (key === "b") boardRobots();
+  if (key === "a") playAnnouncement();
   if (key === "d") depart();
   if (key === "p" || key === " ") powerOffFlip();
-  if (["o", "c", "b", "d", "p", " "].includes(key)) event.preventDefault();
+  if (["o", "c", "b", "a", "d", "p", " "].includes(key)) event.preventDefault();
 });
 
 if (!CanvasRenderingContext2D.prototype.roundRect) {
