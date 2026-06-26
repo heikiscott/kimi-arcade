@@ -10,6 +10,7 @@ const player = { x: 480, y: 510, pose: 0, dir: "down" };
 let money = 800;
 let sparkle = 0;
 let currentFloor = 1;
+let elevatorFlash = 0;
 let trainTimer = 0;
 let trainDestination = "";
 const bag = [];
@@ -151,13 +152,18 @@ function setStatus(text) {
 }
 
 function changeFloor(id) {
+  if (id === currentFloor) {
+    setStatus(`你已经在${floor().label}了。`);
+    return;
+  }
   currentFloor = id;
-  player.x = 480;
-  player.y = 510;
+  player.x = 478;
+  player.y = 360;
   player.pose += 1;
+  elevatorFlash = 80;
   trainTimer = 0;
-  floorText.textContent = floor().label;
-  setStatus(floor().intro);
+  floorText.textContent = `电梯按钮 · ${floor().label}`;
+  setStatus(`电梯门关上，叮，到了${floor().label}。${floor().intro}`);
   renderFloorButtons();
 }
 
@@ -167,7 +173,7 @@ function renderFloorButtons() {
     const button = document.createElement("button");
     button.type = "button";
     button.className = item.id === currentFloor ? "active" : "";
-    button.textContent = item.short;
+    button.textContent = `按 ${item.short}`;
     button.addEventListener("click", () => changeFloor(item.id));
     floorGrid.appendChild(button);
   });
@@ -279,9 +285,21 @@ function drawAtrium() {
   ctx.fillRect(54, 276, 852, 44);
   ctx.fillRect(306, 62, 44, 496);
   ctx.fillRect(610, 62, 44, 496);
+  ctx.fillStyle = elevatorFlash > 0 ? "#ffd15f" : "#d9e6ec";
+  roundRect(410, 244, 144, 132, 12);
+  ctx.fill();
+  ctx.fillStyle = "#172632";
+  ctx.fillRect(478, 254, 8, 110);
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "bold 16px system-ui";
+  ctx.textAlign = "center";
+  ctx.fillText("电梯", 482, 238);
+  ctx.fillText(floor().short, 482, 306);
+  ctx.textAlign = "left";
   ctx.fillStyle = "#172632";
   ctx.font = "bold 18px system-ui";
-  ctx.fillText("电梯 / 扶梯", 402, 304);
+  ctx.fillText("到这里搭电梯，再按 1-6 楼", 352, 404);
+  elevatorFlash = Math.max(0, elevatorFlash - 1);
 }
 
 function drawFloorSign() {
@@ -473,5 +491,6 @@ window.addEventListener("keydown", (event) => {
 
 renderFloorButtons();
 renderInfo();
+floorText.textContent = `电梯按钮 · ${floor().label}`;
 setStatus(floor().intro);
 draw();
