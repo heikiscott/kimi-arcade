@@ -22,16 +22,18 @@ let speed = 0;
 let trainX = 120;
 let trainAngle = 0;
 let departAt = 0;
+let travelProgress = 0;
+let arrivalTimer = null;
 let shake = 0;
 let sparks = [];
 let flyingToys = [];
 let audioContext = null;
 
 const robots = [
-  { x: 118, y: 392, color: "#d93a32", label: "R1" },
-  { x: 176, y: 392, color: "#ffd15f", label: "R2" },
-  { x: 234, y: 392, color: "#39a657", label: "R3" },
-  { x: 292, y: 392, color: "#8f5fd9", label: "R4" }
+  { x: 196, y: 398, color: "#d93a32", label: "R1" },
+  { x: 256, y: 398, color: "#ffd15f", label: "R2" },
+  { x: 420, y: 398, color: "#39a657", label: "R3" },
+  { x: 650, y: 398, color: "#8f5fd9", label: "R4" }
 ];
 
 function getAudio() {
@@ -99,13 +101,16 @@ function depart() {
   if (mode === "flipped") reset();
   if (doorsOpen) closeDoors();
   if (!boarded) boarded = true;
+  clearTimeout(arrivalTimer);
   mode = "departing";
   powered = true;
   departAt = performance.now();
-  speed = 13;
+  travelProgress = 0;
+  speed = 16;
+  trainX = 120;
   trainAngle = 0;
   endingCard.classList.remove("show");
-  statusText.textContent = "三节地铁开往克拉码头，先正常开 5 秒。";
+  statusText.textContent = "三节地铁开往克拉码头，会一直开到前面的下一组站台门。";
   playTone(330, 0, 0.12, 0.04, "sine");
   playTone(420, 0.14, 0.12, 0.04, "sine");
 }
@@ -127,6 +132,7 @@ function powerOffFlip() {
 }
 
 function reset() {
+  clearTimeout(arrivalTimer);
   mode = "station";
   doorsOpen = false;
   boarded = false;
@@ -135,11 +141,12 @@ function reset() {
   trainX = 120;
   trainAngle = 0;
   departAt = 0;
+  travelProgress = 0;
   shake = 0;
   sparks = [];
   flyingToys = [];
   endingCard.classList.remove("show");
-  statusText.textContent = "这次没有墙。先开站台门和车门，让假玩偶机器人上车，再开往克拉码头，5 秒后断电翻倒。";
+  statusText.textContent = "这次没有墙。先开站台门和车门，让假玩偶机器人站在门前再上车，然后一路开到下一个站台。";
 }
 
 function makeFlyingToys() {
@@ -165,10 +172,17 @@ function makeSparks() {
 
 function update() {
   if (mode === "departing") {
-    speed = Math.min(24, speed + 0.08);
-    trainX += speed * 0.36;
-    if (trainX > 330) trainX = 330 + Math.sin(performance.now() / 150) * 3;
-    if (performance.now() - departAt >= 5000) powerOffFlip();
+    const elapsed = performance.now() - departAt;
+    travelProgress = Math.min(1, elapsed / 6500);
+    speed = Math.round(48 + Math.sin(travelProgress * Math.PI) * 112);
+    trainX = 120 + Math.sin(travelProgress * Math.PI) * 150;
+    if (travelProgress >= 1) {
+      mode = "arrived";
+      speed = 0;
+      trainX = 120;
+      statusText.textContent = "已经开到下一个站台，前面三扇站台门也到了。马上断电。";
+      arrivalTimer = setTimeout(() => powerOffFlip(), 850);
+    }
   }
 
   flyingToys.forEach((toy) => {
@@ -211,6 +225,7 @@ function draw() {
 }
 
 function drawStation() {
+  const progress = getTravelProgress();
   const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
   gradient.addColorStop(0, powered ? "#d7edf7" : "#26313b");
   gradient.addColorStop(0.56, powered ? "#edf6fa" : "#18222b");
@@ -222,7 +237,7 @@ function drawStation() {
   ctx.fillRect(0, 236, canvas.width, 112);
   ctx.fillStyle = "#172632";
   ctx.font = "bold 25px system-ui";
-  ctx.fillText("站台 Platform", 34, 304);
+  ctx.fillText(progress < 0.5 ? "本站 Platform" : "下一站 Platform", 34, 304);
   ctx.fillStyle = "#ffd15f";
   ctx.fillText("开往 克拉码头 Clarke Quay", 620, 60);
 
@@ -258,8 +273,33 @@ function drawStation() {
 }
 
 function drawPlatformDoors() {
+  const progress = getTravelProgress();
+  drawPlatformDoorSet(-progress * 760, "本站三扇门");
+  drawPlatformDoorSet(760 - progress * 760, "前方三扇门");
+}
+
+function getTravelProgress() {
+  if (mode === "departing") return travelProgress;
+  if (mode === "arrived" || mode === "flipped") return 1;
+  return 0;
+}
+
+function drawPlatformDoorSet(offsetX, label) {
   const doorXs = [226, 438, 650];
+  ctx.save();
+  ctx.translate(offsetX, 0);
+  ctx.fillStyle = "rgba(255,250,240,0.9)";
+  ctx.fillRect(132, 218, 608, 30);
+  ctx.fillStyle = "#172632";
+  ctx.font = "bold 16px system-ui";
+  ctx.fillText(label, 148, 240);
   doorXs.forEach((x) => {
+    ctx.fillStyle = "rgba(23,38,50,0.1)";
+    ctx.fillRect(x - 58, 276, 152, 176);
+    ctx.strokeStyle = "rgba(23,38,50,0.26)";
+    ctx.lineWidth = 3;
+    ctx.strokeRect(x - 58, 276, 152, 176);
+
     ctx.fillStyle = "rgba(23,38,50,0.14)";
     ctx.fillRect(x - 76, 254, 152, 176);
     ctx.strokeStyle = "#172632";
@@ -274,6 +314,7 @@ function drawPlatformDoors() {
       ctx.fillRect(x, 254, 74, 176);
     }
   });
+  ctx.restore();
 }
 
 function drawTrain() {
