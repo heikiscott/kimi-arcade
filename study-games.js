@@ -15,6 +15,7 @@ let current = null;
 let locked = false;
 let typed = 0;
 let mistakes = 0;
+let questionPools = {};
 
 const wordQuestions = [
   { zh: "苹果", answer: "apple", options: ["apple", "train", "cloud", "house"] },
@@ -146,6 +147,23 @@ function pick(items) {
   return items[Math.floor(Math.random() * items.length)];
 }
 
+function nextQueuedQuestion(key, questions) {
+  if (!questionPools[key] || questionPools[key].length === 0) {
+    questionPools[key] = shuffle(questions);
+  }
+  return questionPools[key][0];
+}
+
+function completeQueuedQuestion() {
+  const pool = questionPools[game];
+  if (!pool || !current) return;
+  if (pool[0] === current) {
+    pool.shift();
+    return;
+  }
+  questionPools[game] = pool.filter((item) => item !== current);
+}
+
 function updateScore() {
   scoreText.textContent = String(score);
   roundText.textContent = game === "typing" ? accuracyText() : String(round);
@@ -159,7 +177,7 @@ function accuracyText() {
 
 function startWords() {
   locked = false;
-  current = pick(wordQuestions);
+  current = nextQueuedQuestion("words", wordQuestions);
   questionText.textContent = current.zh;
   hintText.textContent = "选出这个中文的英文单词。";
   answerGrid.innerHTML = "";
@@ -180,16 +198,17 @@ function answerChoice(button, option) {
   button.classList.add(correct ? "correct" : "wrong");
   if (correct) {
     score += 10;
+    completeQueuedQuestion();
     statusText.textContent = current.zh
-      ? `答对了：${current.zh} = ${current.answer}。`
-      : `答对了，答案是 ${current.answer}。`;
+      ? `答对了：${current.zh} = ${current.answer}。这题这一轮不会再重复。`
+      : `答对了，答案是 ${current.answer}。这题这一轮不会再重复。`;
+    round += 1;
   } else {
-    statusText.textContent = `差一点，正确答案是 ${current.answer}。`;
+    statusText.textContent = `差一点，正确答案是 ${current.answer}。这题会反复出现，点“下一题”再做一遍。`;
     [...answerGrid.children].forEach((child) => {
       if (child.textContent === current.answer) child.classList.add("correct");
     });
   }
-  round += 1;
   updateScore();
 }
 
@@ -236,7 +255,7 @@ function handleTyping() {
 
 function startMath() {
   locked = false;
-  current = pick(mathQuestions);
+  current = nextQueuedQuestion("math", mathQuestions);
   questionText.textContent = current.q;
   hintText.textContent = current.hint;
   answerGrid.innerHTML = "";
@@ -259,7 +278,7 @@ function startMath() {
 
 function startChinese() {
   locked = false;
-  current = pick(chineseQuestions);
+  current = nextQueuedQuestion("chinese", chineseQuestions);
   questionText.textContent = current.q;
   hintText.textContent = current.hint;
   answerGrid.innerHTML = "";
@@ -275,7 +294,7 @@ function startChinese() {
 
 function startGrammar() {
   locked = false;
-  current = pick(grammarQuestions);
+  current = nextQueuedQuestion("grammar", grammarQuestions);
   questionText.textContent = current.q;
   hintText.textContent = current.hint;
   answerGrid.innerHTML = "";
@@ -291,7 +310,7 @@ function startGrammar() {
 
 function startHistory() {
   locked = false;
-  current = pick(historyQuestions);
+  current = nextQueuedQuestion("history", historyQuestions);
   questionText.textContent = current.q;
   hintText.textContent = current.hint;
   answerGrid.innerHTML = "";
@@ -307,7 +326,7 @@ function startHistory() {
 
 function startFestival() {
   locked = false;
-  current = pick(festivalQuestions);
+  current = nextQueuedQuestion("festival", festivalQuestions);
   questionText.textContent = current.q;
   hintText.textContent = current.hint;
   answerGrid.innerHTML = "";
@@ -326,6 +345,7 @@ function restart() {
   round = 1;
   typed = 0;
   mistakes = 0;
+  questionPools = {};
   statusText.textContent = game === "typing"
     ? "输入框里打字。完全一样就自动进入下一句。"
     : game === "math"
