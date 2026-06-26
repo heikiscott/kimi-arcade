@@ -3,6 +3,8 @@ const ctx = canvas.getContext("2d");
 const placeText = document.querySelector("#placeText");
 const statusText = document.querySelector("#statusText");
 const blockGrid = document.querySelector("#blockGrid");
+const villaFloorText = document.querySelector("#villaFloorText");
+const villaFloorGrid = document.querySelector("#villaFloorGrid");
 
 const cols = 18;
 const rows = 11;
@@ -20,6 +22,7 @@ const blocks = [
 
 const scenes = {
   home: "家园空地",
+  villa: "我的别墅里面",
   wild: "野地建楼区",
   village: "乡村",
   city: "高楼城市",
@@ -31,6 +34,7 @@ const scenes = {
 let selected = 0;
 let scene = "home";
 let grid = makeGrid();
+let outsideGrid = grid;
 let vehicleTimer = 0;
 let vehicleType = "";
 let elevatorLevel = 1;
@@ -42,7 +46,19 @@ let pilotingPlane = false;
 let pilotPlane = { col: 14, row: 2, pose: 0 };
 let collapse = null;
 let protectedCells = new Set();
+let outsideProtectedCells = protectedCells;
+const villaFloors = ["B4", "B3", "B2", "B1", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15"];
+const villaGrids = Object.fromEntries(villaFloors.map((floor) => [floor, makeGrid()]));
+const villaInitialized = new Set();
+let currentVillaFloor = "1";
+let elevatorHandTimer = 0;
 const player = { col: 8, row: 8, pose: 0, dir: "down" };
+const villaTeam = [
+  { name: "一号女生", color: "#d94a78" },
+  { name: "二号女生", color: "#7b4dc5" },
+  { name: "三号男生", color: "#39a657" },
+  { name: "四号男生", color: "#245b8f" }
+];
 
 function makeGrid() {
   return Array.from({ length: rows }, () => Array.from({ length: cols }, () => null));
@@ -68,25 +84,60 @@ function renderBlockButtons() {
   });
 }
 
+function renderVillaFloorButtons() {
+  villaFloorText.textContent = scene === "villa" ? `别墅电梯屏幕 · ${currentVillaFloor} 楼` : "别墅电梯屏幕 · 还没进别墅";
+  villaFloorGrid.innerHTML = "";
+  villaFloors.forEach((floor) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = scene === "villa" && floor === currentVillaFloor ? "active" : "";
+    button.textContent = floor;
+    button.addEventListener("click", () => selectVillaFloor(floor));
+    villaFloorGrid.appendChild(button);
+  });
+}
+
+function saveCurrentGrid() {
+  if (scene === "villa") {
+    villaGrids[currentVillaFloor] = grid;
+    return;
+  }
+  outsideGrid = grid;
+  outsideProtectedCells = protectedCells;
+}
+
 function changeScene(next) {
+  saveCurrentGrid();
   scene = next;
+  if (scene !== "villa") {
+    grid = outsideGrid;
+    protectedCells = outsideProtectedCells;
+  }
   placeText.textContent = scenes[scene];
   vehicleTimer = 0;
   pilotingPlane = false;
   player.col = scene === "city" ? 6 : scene === "airport" ? 4 : scene === "rail" ? 5 : scene === "subway" ? 9 : scene === "wild" ? 4 : 8;
   player.row = scene === "subway" ? 7 : 8;
   player.pose += 1;
+  renderVillaFloorButtons();
   setStatus(`到了${scenes[scene]}。这里盖东西、坐车、坐飞机、坐高铁都免费。`);
 }
 
 function clearLand() {
   grid = makeGrid();
-  protectedCells = new Set();
+  if (scene === "villa") {
+    villaGrids[currentVillaFloor] = grid;
+  } else {
+    protectedCells = new Set();
+    outsideGrid = grid;
+    outsideProtectedCells = protectedCells;
+  }
   collapse = null;
   setStatus("空地清空了，可以重新盖。");
 }
 
 function buildVilla() {
+  saveCurrentGrid();
   grid = makeGrid();
   protectedCells = new Set();
   for (let y = 4; y <= 8; y += 1) {
@@ -101,8 +152,66 @@ function buildVilla() {
   player.col = 9;
   player.row = 9;
   scene = "home";
+  outsideGrid = grid;
+  outsideProtectedCells = protectedCells;
   placeText.textContent = scenes.home;
+  renderVillaFloorButtons();
   setStatus("我的超高别墅建好了，有电梯，10000 平米，比世贸大厦还高，而且是保护建筑，不会被拆。");
+}
+
+function enterVilla() {
+  saveCurrentGrid();
+  scene = "villa";
+  initializeVillaFloor(currentVillaFloor);
+  grid = villaGrids[currentVillaFloor];
+  protectedCells = new Set();
+  placeText.textContent = scenes.villa;
+  player.col = 4;
+  player.row = 8;
+  player.pose += 1;
+  elevatorHandTimer = 0;
+  renderVillaFloorButtons();
+  setStatus("进到别墅里面了。电梯屏幕有 B4 到 B1，还有 1 楼到 15 楼。");
+}
+
+function selectVillaFloor(floor) {
+  if (scene !== "villa") enterVilla();
+  villaGrids[currentVillaFloor] = grid;
+  currentVillaFloor = floor;
+  initializeVillaFloor(floor);
+  grid = villaGrids[floor];
+  protectedCells = new Set();
+  elevatorHandTimer = 52;
+  player.col = 5;
+  player.row = 7;
+  player.pose += 1;
+  renderVillaFloorButtons();
+  setStatus(`你的手按下了 ${floor} 楼电梯按钮，叮，到了 ${floor} 楼。这里可以盖你想要的东西。`);
+}
+
+function initializeVillaFloor(floor) {
+  if (villaInitialized.has(floor)) return;
+  const floorGrid = villaGrids[floor];
+  if (floor === "15") {
+    for (let x = 4; x <= 13; x += 1) floorGrid[3][x] = "glass";
+    for (let x = 5; x <= 12; x += 1) floorGrid[7][x] = "glass";
+    floorGrid[5][8] = "light";
+    floorGrid[5][9] = "light";
+    floorGrid[6][8] = "water";
+    floorGrid[6][9] = "water";
+  } else if (floor.startsWith("B")) {
+    for (let x = 4; x <= 13; x += 3) {
+      floorGrid[5][x] = "stone";
+      floorGrid[6][x] = "light";
+    }
+    floorGrid[8][6] = "water";
+    floorGrid[8][10] = "water";
+  } else {
+    floorGrid[6][5] = "wood";
+    floorGrid[6][6] = "glass";
+    floorGrid[7][10] = "light";
+  }
+  villaInitialized.add(floor);
 }
 
 function setProtectedBlock(x, y, key) {
@@ -263,7 +372,7 @@ function draw() {
 }
 
 function drawBackground() {
-  ctx.fillStyle = scene === "airport" ? "#dceeff" : scene === "subway" ? "#dfe8f1" : "#dff0df";
+  ctx.fillStyle = scene === "airport" ? "#dceeff" : scene === "subway" || scene === "villa" ? "#dfe8f1" : "#dff0df";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
   ctx.fillStyle = "#172632";
   ctx.font = "bold 24px system-ui";
@@ -278,6 +387,7 @@ function drawGrid() {
       const x = originX + col * tile;
       const y = originY + row * tile;
       ctx.fillStyle = (row + col) % 2 === 0 ? "#78bf63" : "#6db45b";
+      if (scene === "villa") ctx.fillStyle = (row + col) % 2 === 0 ? "#ece5d8" : "#dfd4c3";
       if (scene === "subway") ctx.fillStyle = (row + col) % 2 === 0 ? "#cfd8df" : "#bfcbd4";
       if (scene === "airport" || scene === "rail") ctx.fillStyle = (row + col) % 2 === 0 ? "#d7dde2" : "#c8d0d6";
       ctx.fillRect(x, y, tile, tile);
@@ -318,12 +428,100 @@ function shade(color) {
 
 function drawScene() {
   if (scene === "home") drawVillaAirport();
+  if (scene === "villa") drawVillaInterior();
   if (scene === "wild") drawWildLand();
   if (scene === "village") drawVillage();
   if (scene === "city") drawCity();
   if (scene === "subway") drawSubwayStation();
   if (scene === "airport") drawAirport();
   if (scene === "rail") drawRailStation();
+}
+
+function drawVillaInterior() {
+  ctx.fillStyle = "#172632";
+  roundRect(96, 98, 174, 314, 14);
+  ctx.fill();
+  ctx.fillStyle = "#d9e6ec";
+  roundRect(116, 126, 134, 212, 12);
+  ctx.fill();
+  ctx.fillStyle = "#607786";
+  ctx.fillRect(180, 140, 8, 184);
+  ctx.fillStyle = "#ffd15f";
+  ctx.font = "bold 18px system-ui";
+  ctx.fillText("别墅电梯", 132, 118);
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "bold 15px system-ui";
+  ctx.fillText(`当前：${currentVillaFloor} 楼`, 138, 174);
+  ctx.fillStyle = "#245b8f";
+  roundRect(128, 194, 110, 96, 8);
+  ctx.fill();
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "bold 12px system-ui";
+  ctx.fillText("B4 B3 B2 B1", 142, 222);
+  ctx.fillText("1 2 3 4 5", 144, 244);
+  ctx.fillText("6 7 8 9 10", 142, 266);
+  ctx.fillText("11 12 13 14 15", 132, 288);
+  if (elevatorHandTimer > 0) drawPressingHand();
+  drawVillaFloorLabel();
+  drawVillaTeam();
+  elevatorHandTimer = Math.max(0, elevatorHandTimer - 1);
+}
+
+function drawPressingHand() {
+  ctx.fillStyle = "#f0bb87";
+  ctx.beginPath();
+  ctx.arc(252, 246, 16, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillRect(232, 240, 42, 10);
+  ctx.fillStyle = "#172632";
+  ctx.font = "bold 13px system-ui";
+  ctx.fillText("我的手按按钮", 222, 320);
+}
+
+function drawVillaFloorLabel() {
+  ctx.fillStyle = "#172632";
+  roundRect(332, 104, 420, 46, 10);
+  ctx.fill();
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "bold 22px system-ui";
+  const label = currentVillaFloor === "15"
+    ? "15 楼观景台：可以看很多风景"
+    : currentVillaFloor.startsWith("B")
+      ? `${currentVillaFloor} 楼：健身和游乐层`
+      : `${currentVillaFloor} 楼：自由建造层`;
+  ctx.fillText(label, 350, 134);
+  if (currentVillaFloor === "15") drawSkylineView();
+}
+
+function drawSkylineView() {
+  ctx.fillStyle = "#d6ecff";
+  roundRect(626, 172, 256, 130, 12);
+  ctx.fill();
+  ctx.fillStyle = "#607786";
+  [650, 704, 762, 820].forEach((x, index) => {
+    ctx.fillRect(x, 270 - index * 22, 34, 78 + index * 22);
+  });
+  ctx.fillStyle = "#172632";
+  ctx.font = "bold 14px system-ui";
+  ctx.fillText("窗外风景", 714, 326);
+}
+
+function drawVillaTeam() {
+  villaTeam.forEach((member, index) => {
+    const x = 356 + index * 72;
+    const y = 520;
+    ctx.fillStyle = member.color;
+    ctx.beginPath();
+    ctx.arc(x, y - 42, 14, 0, Math.PI * 2);
+    ctx.fill();
+    roundRect(x - 14, y - 28, 28, 34, 8);
+    ctx.fill();
+    ctx.fillStyle = "#172632";
+    ctx.font = "bold 12px system-ui";
+    ctx.textAlign = "center";
+    ctx.fillText(member.name, x, y + 28);
+    ctx.textAlign = "left";
+  });
 }
 
 function drawVillaAirport() {
@@ -664,6 +862,7 @@ document.querySelector("#leftBtn").addEventListener("click", () => movePlayer(-1
 document.querySelector("#rightBtn").addEventListener("click", () => movePlayer(1, 0, "right"));
 document.querySelector("#houseBtn").addEventListener("click", buildHouse);
 document.querySelector("#villaBtn").addEventListener("click", buildVilla);
+document.querySelector("#enterVillaBtn").addEventListener("click", enterVilla);
 document.querySelector("#wildBtn").addEventListener("click", () => changeScene("wild"));
 document.querySelector("#towerBtn").addEventListener("click", buildWildTower);
 document.querySelector("#hangarBtn").addEventListener("click", showHangar);
@@ -701,6 +900,7 @@ window.addEventListener("keydown", (event) => {
   if (key === "d" || event.key === "ArrowRight") movePlayer(1, 0, "right");
   if (key === "h") buildHouse();
   if (key === "b") buildVilla();
+  if (key === "i") enterVilla();
   if (key === "n") changeScene("wild");
   if (key === "t") buildWildTower();
   if (key === "v") changeScene("village");
@@ -711,4 +911,5 @@ window.addEventListener("keydown", (event) => {
 });
 
 renderBlockButtons();
+renderVillaFloorButtons();
 draw();

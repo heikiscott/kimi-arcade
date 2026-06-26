@@ -128,14 +128,16 @@ h1 {
 }
 
 .block-grid,
-.button-grid {
+.button-grid,
+.villa-floor-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
 }
 
 .block-grid button,
-.button-grid button {
+.button-grid button,
+.villa-floor-grid button {
   min-height: 48px;
   border: 3px solid var(--ink);
   border-radius: 8px;
@@ -152,8 +154,37 @@ h1 {
   background: var(--blue);
 }
 
+.villa-floor-panel {
+  padding: 14px;
+  border: 1px solid rgba(23, 38, 50, 0.14);
+  border-radius: 8px;
+  background: #fffaf0;
+}
+
+.villa-floor-panel strong {
+  display: block;
+  margin-bottom: 10px;
+}
+
+.villa-floor-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.villa-floor-grid button {
+  min-height: 40px;
+  padding: 6px;
+  font-size: 0.82rem;
+}
+
+.villa-floor-grid button.active {
+  color: #fff;
+  background: var(--green);
+}
+
 .block-grid button:hover,
-.button-grid button:hover {
+.button-grid button:hover,
+.villa-floor-grid button:hover {
   transform: translateY(-2px);
 }
 
@@ -170,7 +201,8 @@ h1 {
   }
 
   .block-grid,
-  .button-grid {
+  .button-grid,
+  .villa-floor-grid {
     grid-template-columns: 1fr;
   }
 }
