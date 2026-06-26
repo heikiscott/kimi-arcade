@@ -38,6 +38,8 @@ const robots = [
 const routeStations = ["港南", "Ocean Park", "东南远", "牛车水 Chinatown", "台南 Town", "克拉码头"];
 const routeDurations = [1200, 1200, 1200, 1500, 10000];
 const totalRouteDuration = routeDurations.reduce((sum, duration) => sum + duration, 0);
+const finalLegDistanceKm = 300;
+const finalLegSpeedKmh = 108000;
 
 function getAudio() {
   if (!audioContext) {
@@ -112,7 +114,7 @@ function depart() {
   trainX = 120;
   trainAngle = 0;
   endingCard.classList.remove("show");
-  statusText.textContent = "从港南出发：前面几站很近，最后到克拉码头要跑 10 秒。";
+  statusText.textContent = "从港南出发：前面几站很近，台南 Town 到克拉码头有 300 公里，要超高速跑 10 秒。";
   playTone(330, 0, 0.12, 0.04, "sine");
   playTone(420, 0.14, 0.12, 0.04, "sine");
 }
@@ -147,7 +149,7 @@ function reset() {
   sparks = [];
   flyingToys = [];
   endingCard.classList.remove("show");
-  statusText.textContent = "路线：港南、Ocean Park、东南远、牛车水 Chinatown、台南 Town、克拉码头。最后一段要跑 10 秒。";
+  statusText.textContent = "路线：港南、Ocean Park、东南远、牛车水 Chinatown、台南 Town、克拉码头。最后 300 公里要跑 10 秒。";
 }
 
 function makeFlyingToys() {
@@ -176,11 +178,11 @@ function update() {
     const elapsed = performance.now() - departAt;
     const route = getRouteState(elapsed);
     travelProgress = route.segmentProgress;
-    speed = Math.round(route.isFinalLongLeg ? 260 : 340 + Math.sin(elapsed / 180) * 32);
+    speed = Math.round(route.isFinalLongLeg ? finalLegSpeedKmh : 3400 + Math.sin(elapsed / 180) * 320);
     trainX = 120 + Math.sin(elapsed / 130) * 8;
     statusText.textContent = route.isArrived
       ? "已经到达克拉码头。要翻倒的话，点断电翻倒。"
-      : `从 ${route.from} 开往 ${route.to}${route.isFinalLongLeg ? "，这段要跑 10 秒" : "，这一站很近"}`;
+      : `从 ${route.from} 开往 ${route.to}${route.isFinalLongLeg ? `，距离 ${finalLegDistanceKm} 公里，超高速 10 秒到` : "，这一站很近"}`;
     if (route.isArrived) {
       mode = "arrived";
       speed = 0;
@@ -276,7 +278,7 @@ function draw() {
   flyingToys.forEach(drawFlyingToy);
   drawHud();
   ctx.restore();
-  speedText.textContent = `${Math.round(speed * 9)} km/h`;
+  speedText.textContent = `${Math.round(speed)} km/h`;
   doorText.textContent = doorsOpen ? "站台+车门打开" : "站台+车门关闭";
 }
 
@@ -495,7 +497,7 @@ function drawHud() {
   ctx.fillStyle = "#172632";
   ctx.font = "bold 19px system-ui";
   ctx.fillText("三节玩具地铁", 40, 52);
-  ctx.fillText(powered ? `${Math.round(speed * 9)} km/h` : "断电", 40, 84);
+  ctx.fillText(powered ? `${Math.round(speed)} km/h` : "断电", 40, 84);
 }
 
 openPlatformBtn.addEventListener("click", openDoors);
