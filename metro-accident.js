@@ -83,12 +83,42 @@ function powerSound() {
   playTone(82, 0.45, 0.54, 0.07, "triangle");
 }
 
+function extractAnnouncementPart(text, startLabel, endLabel) {
+  const start = text.indexOf(startLabel);
+  if (start === -1) return "";
+  const contentStart = start + startLabel.length;
+  const end = endLabel ? text.indexOf(endLabel, contentStart) : -1;
+  return text.slice(contentStart, end === -1 ? text.length : end).trim();
+}
+
+function speakAnnouncement(text) {
+  if (!("speechSynthesis" in window)) return;
+  window.speechSynthesis.cancel();
+  const parts = [
+    { lang: "zh-CN", text: extractAnnouncementPart(text, "中文：", "English:") },
+    { lang: "en-US", text: extractAnnouncementPart(text, "English:", "Malay:") },
+    { lang: "ms-MY", text: extractAnnouncementPart(text, "Malay:", "தமிழ்:") },
+    { lang: "ta-IN", text: extractAnnouncementPart(text, "தமிழ்:", "") }
+  ].filter((part) => part.text);
+
+  parts.forEach((part) => {
+    const utterance = new SpeechSynthesisUtterance(part.text);
+    utterance.lang = part.lang;
+    utterance.rate = 0.9;
+    utterance.pitch = 1;
+    utterance.volume = 1;
+    window.speechSynthesis.speak(utterance);
+  });
+}
+
 function playAnnouncement() {
   const route = getCurrentRouteState();
-  announcementText.textContent = getAnnouncement(route);
+  const announcement = getAnnouncement(route);
+  announcementText.textContent = announcement;
   statusText.textContent = "叮咚，正在播放四语广播。";
   playTone(660, 0, 0.1, 0.04, "sine");
   playTone(880, 0.13, 0.12, 0.04, "sine");
+  speakAnnouncement(announcement);
 }
 
 function openDoors() {
