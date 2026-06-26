@@ -18,7 +18,10 @@ const controls = {
   tv: document.querySelector("#tvBtn"),
   game: document.querySelector("#gameBtn"),
   remote: document.querySelector("#remoteBtn"),
-  ball: document.querySelector("#ballBtn")
+  ball: document.querySelector("#ballBtn"),
+  station: document.querySelector("#stationBtn"),
+  mallTrain: document.querySelector("#mallTrainBtn"),
+  parkTrain: document.querySelector("#parkTrainBtn")
 };
 
 const dolls = [
@@ -41,6 +44,8 @@ let selected = 0;
 let tvFlash = 0;
 let gameFlash = 0;
 let ballFlash = 0;
+let trainTimer = 0;
+let trainDestination = "";
 
 function activeDoll() {
   return dolls[selected];
@@ -183,6 +188,28 @@ function goBall() {
   renderInventory();
 }
 
+function goStation() {
+  const doll = activeDoll();
+  doll.x = 812;
+  doll.y = 372;
+  doll.dir = "right";
+  doll.pose += 1;
+  doll.action = "在家门口地铁站";
+  setMessage("家门口地铁站", `${doll.name}出门到了地铁站，可以坐去商场，也可以坐去超级游乐园。`);
+}
+
+function rideTrain(destination) {
+  const doll = activeDoll();
+  goStation();
+  trainDestination = destination;
+  trainTimer = 95;
+  doll.action = destination === "mall" ? "坐地铁去商场" : "坐地铁去游乐园";
+  setMessage("地铁出发", destination === "mall" ? "地铁从家门口开往六层大商场。" : "地铁从家门口开往超级游乐园。");
+  setTimeout(() => {
+    window.location.href = destination === "mall" ? "mall.html" : "amusement.html";
+  }, 1300);
+}
+
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   drawHouse();
@@ -210,12 +237,35 @@ function drawHouse() {
   ctx.font = "bold 20px system-ui";
   ctx.fillText("客厅", 82, 48);
   ctx.fillText("门外院子", 716, 432);
+  ctx.fillText("家门口地铁站", 724, 292);
   ctx.fillStyle = "#9b6a3c";
   ctx.fillRect(642, 392, 62, 136);
   ctx.fillStyle = "#ffd15f";
   ctx.beginPath();
   ctx.arc(690, 462, 5, 0, Math.PI * 2);
   ctx.fill();
+  drawHomeStation();
+}
+
+function drawHomeStation() {
+  ctx.fillStyle = "#245b8f";
+  roundRect(724, 306, 198, 82, 12);
+  ctx.fill();
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "bold 18px system-ui";
+  ctx.fillText("MRT", 746, 338);
+  ctx.font = "bold 13px system-ui";
+  ctx.fillText("商场 / 超级游乐园", 746, 366);
+  if (trainTimer > 0) {
+    const x = 720 + (95 - trainTimer) * 2.6;
+    ctx.fillStyle = "#d9e6ec";
+    roundRect(x, 388, 164, 42, 18);
+    ctx.fill();
+    ctx.fillStyle = "#172632";
+    ctx.font = "bold 12px system-ui";
+    ctx.fillText(trainDestination === "mall" ? "开往商场" : "开往游乐园", x + 42, 415);
+    trainTimer = Math.max(0, trainTimer - 1);
+  }
 }
 
 function drawFurniture() {
@@ -364,6 +414,9 @@ controls.tv.addEventListener("click", watchTv);
 controls.game.addEventListener("click", playGame);
 controls.remote.addEventListener("click", takeRemote);
 controls.ball.addEventListener("click", goBall);
+controls.station.addEventListener("click", goStation);
+controls.mallTrain.addEventListener("click", () => rideTrain("mall"));
+controls.parkTrain.addEventListener("click", () => rideTrain("park"));
 
 window.addEventListener("keydown", (event) => {
   const key = event.key.toLowerCase();
@@ -376,6 +429,7 @@ window.addEventListener("keydown", (event) => {
   if (key === "q") pick("left");
   if (key === "r") pick("right");
   if (key === "x") pick("back");
+  if (key === "m") goStation();
 });
 
 renderDollButtons();

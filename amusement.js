@@ -20,6 +20,8 @@ let selected = 0;
 let mode = "idle";
 let rideTime = 0;
 let hauntOffset = 0;
+let trainTimer = 0;
+let trainDestination = "";
 
 function setStatus(text) {
   statusText.textContent = text;
@@ -68,6 +70,24 @@ function goFood() {
   setStatus("到了餐厅区，吃汉堡、薯条、冰淇淋，然后继续玩。");
 }
 
+function goStation() {
+  mode = "station";
+  rideTime = 0;
+  rideText.textContent = "游乐园地铁站";
+  setStatus("到了超级游乐园出口地铁站，可以坐地铁到商场，也可以坐地铁回家。");
+}
+
+function rideTrain(destination) {
+  mode = "station";
+  trainDestination = destination;
+  trainTimer = 110;
+  rideText.textContent = "地铁出发";
+  setStatus(destination === "mall" ? "地铁从超级游乐园开往六层大商场。" : "地铁从超级游乐园开回家门口。");
+  setTimeout(() => {
+    window.location.href = destination === "mall" ? "mall.html" : "home-play.html";
+  }, 1400);
+}
+
 function drawPark() {
   ctx.fillStyle = "#eef9f1";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -76,6 +96,7 @@ function drawPark() {
   drawRides();
   if (mode === "haunt") drawHauntedHouse();
   if (mode === "food") drawFood();
+  if (mode === "station") drawStation();
   drawVisitor();
 }
 
@@ -283,11 +304,38 @@ function drawFood() {
   ctx.textAlign = "left";
 }
 
+function drawStation() {
+  ctx.fillStyle = "rgba(231,241,255,0.94)";
+  roundRect(236, 164, 520, 286, 16);
+  ctx.fill();
+  ctx.fillStyle = "#172632";
+  ctx.font = "bold 30px system-ui";
+  ctx.textAlign = "center";
+  ctx.fillText("超级游乐园地铁站", 496, 222);
+  ctx.fillStyle = "#245b8f";
+  roundRect(294, 258, 404, 70, 20);
+  ctx.fill();
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "bold 18px system-ui";
+  ctx.fillText("下一站：商场 / 家门口", 496, 300);
+  if (trainTimer > 0) {
+    const x = 272 + (110 - trainTimer) * 3.8;
+    ctx.fillStyle = "#d9e6ec";
+    roundRect(x, 350, 188, 48, 20);
+    ctx.fill();
+    ctx.fillStyle = "#172632";
+    ctx.font = "bold 14px system-ui";
+    ctx.fillText(trainDestination === "mall" ? "开往商场" : "开回家", x + 94, 380);
+    trainTimer = Math.max(0, trainTimer - 1);
+  }
+  ctx.textAlign = "left";
+}
+
 function drawVisitor() {
   const ride = rides[selected];
   const angle = mode === "ride" ? rideTime / 14 : 0;
-  const x = mode === "food" ? 490 : ride.x + Math.cos(angle) * 28;
-  const y = mode === "food" ? 286 : ride.y + Math.sin(angle) * 20;
+  const x = mode === "food" ? 490 : mode === "station" ? 496 : ride.x + Math.cos(angle) * 28;
+  const y = mode === "food" ? 286 : mode === "station" ? 336 : ride.y + Math.sin(angle) * 20;
   ctx.fillStyle = "#f0bb87";
   ctx.beginPath();
   ctx.arc(x, y - 38, 14, 0, Math.PI * 2);
@@ -317,6 +365,9 @@ function draw() {
 document.querySelector("#startBtn").addEventListener("click", startRide);
 document.querySelector("#hauntBtn").addEventListener("click", enterHaunt);
 document.querySelector("#foodBtn").addEventListener("click", goFood);
+document.querySelector("#stationBtn").addEventListener("click", goStation);
+document.querySelector("#toMallBtn").addEventListener("click", () => rideTrain("mall"));
+document.querySelector("#toHomeBtn").addEventListener("click", () => rideTrain("home"));
 
 renderButtons();
 draw();
