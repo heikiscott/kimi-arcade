@@ -210,6 +210,14 @@ body {
   background: linear-gradient(135deg, #39a657, #f2c45f 52%, #d94a78);
 }
 
+.mall {
+  background: linear-gradient(135deg, #245b8f, #39a657 52%, #ffd15f);
+}
+
+.amusement {
+  background: linear-gradient(135deg, #7b4dc5, #d94a78 48%, #ffd15f);
+}
+
 .elevator-tower {
   background: linear-gradient(135deg, #172632, #607786 58%, #ffd15f);
 }

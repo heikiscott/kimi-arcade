@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>商场买东西</title>
+    <link rel="stylesheet" href="mall.css" />
+  </head>
+  <body>
+    <a class="home-link" href="arcade.html">游戏大厅</a>
+    <main class="mall-shell">
+      <section class="stage">
+        <canvas id="mallCanvas" width="960" height="620" aria-label="商场买东西小游戏"></canvas>
+        <div class="money-card">
+          <span>零钱包</span>
+          <strong id="moneyText">500 元</strong>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div>
+          <p class="label">Shopping Mall</p>
+          <h1>商场买东西</h1>
+          <p id="statusText">走到店门口，点“买东西”就会买最近的商品。</p>
+        </div>
+
+        <div class="remote">
+          <button id="upBtn" type="button">上走</button>
+          <button id="leftBtn" type="button">左走</button>
+          <button id="rightBtn" type="button">右走</button>
+          <button id="downBtn" type="button">下走</button>
+          <button id="buyBtn" type="button">买东西</button>
+          <button id="eatBtn" type="button">去餐厅</button>
+          <button id="toyBtn" type="button">去玩具店</button>
+          <button id="payBtn" type="button">结账</button>
+        </div>
+
+        <div class="bag">
+          <strong>购物袋</strong>
+          <div id="bagList">还没有买东西。</div>
+        </div>
+
+        <p class="hint">键盘：W/A/S/D 或方向键走路，空格买东西，E 去餐厅，T 去玩具店。</p>
+      </section>
+    </main>
+    <script src="mall.js"></script>
+  </body>
+</html>

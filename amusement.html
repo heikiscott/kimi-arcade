@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>超级游乐园</title>
+    <link rel="stylesheet" href="amusement.css" />
+  </head>
+  <body>
+    <a class="home-link" href="arcade.html">游戏大厅</a>
+    <main class="park-shell">
+      <section class="park-stage">
+        <canvas id="parkCanvas" width="980" height="640" aria-label="超级游乐园小游戏"></canvas>
+        <div class="ride-card">
+          <span>当前项目</span>
+          <strong id="rideText">游乐园入口</strong>
+        </div>
+      </section>
+
+      <section class="park-panel">
+        <div>
+          <p class="label">Theme Park</p>
+          <h1>超级游乐园</h1>
+          <p id="statusText">选择园区和项目，然后点开始玩。</p>
+        </div>
+
+        <div class="ride-grid" id="rideGrid"></div>
+        <div class="button-row">
+          <button id="startBtn" type="button">开始玩</button>
+          <button id="hauntBtn" type="button">进入鬼屋</button>
+          <button id="foodBtn" type="button">去餐厅</button>
+        </div>
+
+        <div class="zone-board">
+          <strong>园区</strong>
+          <p>哈利波特魔法园区、小黄人园区、小猪佩奇园区、马里奥园区、侏罗纪园区、鬼屋街、餐厅区。</p>
+        </div>
+
+        <p class="hint">鬼屋里会出现：丧尸、逆尸、骷髅头、怪物、僵尸、幽灵、南瓜、伏地魔和伏地魔的手下。</p>
+      </section>
+    </main>
+    <script src="amusement.js"></script>
+  </body>
+</html>
