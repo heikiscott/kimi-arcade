@@ -110,6 +110,31 @@ const grammarQuestions = [
   { q: "How ___ water do you need?", answer: "much", hint: "water 不可数，用 how much。", options: ["much", "many", "old", "long"] }
 ];
 
+const historyQuestions = [
+  { q: "丝绸之路主要连接了中国和哪里？", answer: "中亚、西亚和欧洲", hint: "它是古代东西方贸易和文化交流路线。", options: ["中亚、西亚和欧洲", "南极洲", "月球基地", "只有日本"] },
+  { q: "汉代出使西域、推动丝绸之路交流的人是谁？", answer: "张骞", hint: "西汉时期的重要使者。", options: ["张骞", "郑和", "司马迁", "李白"] },
+  { q: "特洛伊战争属于哪个文明圈的著名传说？", answer: "古希腊", hint: "和希腊英雄、特洛伊城有关。", options: ["古希腊", "古埃及", "古印度", "玛雅文明"] },
+  { q: "《伊利亚特》和《奥德赛》通常合称为什么？", answer: "荷马史诗", hint: "相传与古希腊诗人荷马有关。", options: ["荷马史诗", "莎士比亚戏剧", "山海经", "格林童话"] },
+  { q: "《伊利亚特》主要围绕哪场战争的故事？", answer: "特洛伊战争", hint: "阿喀琉斯、赫克托尔都出现在这类故事中。", options: ["特洛伊战争", "鸦片战争", "百年战争", "玫瑰战争"] },
+  { q: "古埃及国王通常叫什么？", answer: "法老", hint: "法老既是统治者，也有宗教象征意义。", options: ["法老", "骑士", "将军", "城主"] },
+  { q: "古埃及早期统一上下埃及的第一位法老通常说是谁？", answer: "纳尔迈", hint: "也常和传说中的美尼斯联系在一起。", options: ["纳尔迈", "图坦卡蒙", "拉美西斯二世", "克娄巴特拉"] },
+  { q: "吉萨最高、最著名的大金字塔是哪一座？", answer: "胡夫金字塔", hint: "它也叫吉萨大金字塔。", options: ["胡夫金字塔", "弯曲金字塔", "阶梯金字塔", "太阳金字塔"] },
+  { q: "狮身人面像是什么样的巨大雕像？", answer: "狮子身体、人类头部", hint: "它在埃及吉萨，非常有名。", options: ["狮子身体、人类头部", "鱼身体、鸟头", "马身体、牛头", "龙身体、虎头"] },
+  { q: "狮身人面像通常被理解为有什么作用？", answer: "守护陵墓和神圣区域", hint: "它不是普通装饰，常和守护象征联系在一起。", options: ["守护陵墓和神圣区域", "当船用", "当市场入口", "当学校黑板"] },
+  { q: "春节是农历哪一天？", answer: "正月初一", hint: "中国传统新年的第一天。", options: ["正月初一", "正月十五", "五月初五", "八月十五"] },
+  { q: "元宵节是农历哪一天？", answer: "正月十五", hint: "常见习俗有吃元宵、看花灯。", options: ["正月十五", "七月初七", "九月初九", "腊月初八"] },
+  { q: "端午节是农历哪一天？", answer: "五月初五", hint: "常见习俗有吃粽子、赛龙舟。", options: ["五月初五", "八月十五", "正月初一", "三月初三"] },
+  { q: "中秋节是农历哪一天？", answer: "八月十五", hint: "常见习俗是赏月、吃月饼。", options: ["八月十五", "五月初五", "九月初九", "腊月二十三"] },
+  { q: "重阳节是农历哪一天？", answer: "九月初九", hint: "两个九，所以叫重阳。", options: ["九月初九", "正月初九", "六月初六", "十月初一"] },
+  { q: "七夕节是农历哪一天？", answer: "七月初七", hint: "和牛郎织女传说有关。", options: ["七月初七", "二月初二", "八月十五", "十二月初八"] },
+  { q: "清明节通常在公历什么时候前后？", answer: "4月5日前后", hint: "它是节日，也是二十四节气之一。", options: ["4月5日前后", "1月1日前后", "10月31日前后", "12月25日前后"] },
+  { q: "圣诞节是公历几月几日？", answer: "12月25日", hint: "很多国家会过这个节日。", options: ["12月25日", "10月31日", "2月14日", "1月1日"] },
+  { q: "万圣节前夜通常是公历几月几日？", answer: "10月31日", hint: "英文常叫 Halloween。", options: ["10月31日", "12月25日", "7月4日", "5月1日"] },
+  { q: "情人节通常是公历几月几日？", answer: "2月14日", hint: "英文是 Valentine's Day。", options: ["2月14日", "3月8日", "6月1日", "9月10日"] },
+  { q: "美国感恩节通常是哪一天？", answer: "11月第四个星期四", hint: "它不是固定几月几号。", options: ["11月第四个星期四", "1月1日", "8月15日", "12月最后一天"] },
+  { q: "复活节的公历日期有什么特点？", answer: "每年会变化", hint: "它不是固定某一个公历日期。", options: ["每年会变化", "永远是1月1日", "永远是5月5日", "永远是10月31日"] }
+];
+
 function shuffle(items) {
   return [...items].sort(() => Math.random() - 0.5);
 }
@@ -261,6 +286,22 @@ function startGrammar() {
   updateScore();
 }
 
+function startHistory() {
+  locked = false;
+  current = pick(historyQuestions);
+  questionText.textContent = current.q;
+  hintText.textContent = current.hint;
+  answerGrid.innerHTML = "";
+  shuffle(current.options).forEach((option) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.textContent = option;
+    button.addEventListener("click", () => answerChoice(button, option));
+    answerGrid.appendChild(button);
+  });
+  updateScore();
+}
+
 function restart() {
   score = 0;
   round = 1;
@@ -274,12 +315,15 @@ function restart() {
         ? "这是原创四年级语文练习：成语、修辞、标点、阅读和作文方法。"
         : game === "grammar"
           ? "选择正确单词，练 am/is/are、时态、冠词、介词、代词和比较级。"
-          : "看中文，点正确的英文。答对会加分，答错也能继续练。";
+          : game === "history"
+            ? "历史与节日题：丝绸之路、特洛伊、荷马史诗、埃及、金字塔和节日日期。"
+            : "看中文，点正确的英文。答对会加分，答错也能继续练。";
   if (game === "words") startWords();
   if (game === "typing") startTyping();
   if (game === "math") startMath();
   if (game === "chinese") startChinese();
   if (game === "grammar") startGrammar();
+  if (game === "history") startHistory();
 }
 
 nextBtn.addEventListener("click", () => {
@@ -288,6 +332,7 @@ nextBtn.addEventListener("click", () => {
   if (game === "math") startMath();
   if (game === "chinese") startChinese();
   if (game === "grammar") startGrammar();
+  if (game === "history") startHistory();
 });
 
 restartBtn.addEventListener("click", restart);

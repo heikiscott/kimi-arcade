@@ -132,7 +132,8 @@ p {
 
 body[data-game="math"] .big-card h1,
 body[data-game="chinese"] .big-card h1,
-body[data-game="grammar"] .big-card h1 {
+body[data-game="grammar"] .big-card h1,
+body[data-game="history"] .big-card h1 {
   font-size: clamp(1.7rem, 4.2vw, 3.2rem);
   line-height: 1.15;
 }
@@ -217,6 +218,10 @@ button:hover,
 
 .grammar-stage .big-card {
   background: linear-gradient(135deg, #ffffff 0%, #eee8ff 100%);
+}
+
+.history-stage .big-card {
+  background: linear-gradient(135deg, #ffffff 0%, #f1eadc 100%);
 }
 
 @media (max-width: 860px) {
