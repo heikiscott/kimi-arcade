@@ -35,6 +35,10 @@ const robots = [
   { x: 650, y: 398, color: "#8f5fd9", label: "R4" }
 ];
 
+const routeStations = ["港南", "Ocean Park", "东南远", "牛车水 Chinatown", "台南 Town", "克拉码头"];
+const routeDurations = [1200, 1200, 1200, 1500, 10000];
+const totalRouteDuration = routeDurations.reduce((sum, duration) => sum + duration, 0);
+
 function getAudio() {
   if (!audioContext) {
     audioContext = new (window.AudioContext || window.webkitAudioContext)();
@@ -82,7 +86,7 @@ function openDoors() {
 function closeDoors() {
   if (mode === "flipped") return;
   doorsOpen = false;
-  statusText.textContent = "站台门关闭，地铁车门也关闭。可以开往克拉码头。";
+  statusText.textContent = "站台门关闭，地铁车门也关闭。可以从港南出发。";
   doorSound(false);
 }
 
@@ -108,7 +112,7 @@ function depart() {
   trainX = 120;
   trainAngle = 0;
   endingCard.classList.remove("show");
-  statusText.textContent = "三节地铁开往克拉码头，像闪电一般一直飞驰，站台门一组一组从前面冲过去。";
+  statusText.textContent = "从港南出发：前面几站很近，最后到克拉码头要跑 10 秒。";
   playTone(330, 0, 0.12, 0.04, "sine");
   playTone(420, 0.14, 0.12, 0.04, "sine");
 }
@@ -143,7 +147,7 @@ function reset() {
   sparks = [];
   flyingToys = [];
   endingCard.classList.remove("show");
-  statusText.textContent = "这次没有墙。先开站台门和车门，让假玩偶机器人站在门前再上车，然后一直飞驰。";
+  statusText.textContent = "路线：港南、Ocean Park、东南远、牛车水 Chinatown、台南 Town、克拉码头。最后一段要跑 10 秒。";
 }
 
 function makeFlyingToys() {
@@ -170,9 +174,18 @@ function makeSparks() {
 function update() {
   if (mode === "departing") {
     const elapsed = performance.now() - departAt;
-    travelProgress = (elapsed % 2200) / 2200;
-    speed = Math.round(300 + Math.sin(elapsed / 220) * 24);
+    const route = getRouteState(elapsed);
+    travelProgress = route.segmentProgress;
+    speed = Math.round(route.isFinalLongLeg ? 260 : 340 + Math.sin(elapsed / 180) * 32);
     trainX = 120 + Math.sin(elapsed / 130) * 8;
+    statusText.textContent = route.isArrived
+      ? "已经到达克拉码头。要翻倒的话，点断电翻倒。"
+      : `从 ${route.from} 开往 ${route.to}${route.isFinalLongLeg ? "，这段要跑 10 秒" : "，这一站很近"}`;
+    if (route.isArrived) {
+      mode = "arrived";
+      speed = 0;
+      travelProgress = 1;
+    }
     if (Math.random() < 0.6) {
       sparks.push({
         x: 110 + Math.random() * 640,
@@ -208,6 +221,50 @@ function update() {
   requestAnimationFrame(update);
 }
 
+function getRouteState(elapsed) {
+  if (elapsed >= totalRouteDuration) {
+    const last = routeStations[routeStations.length - 1];
+    return {
+      from: last,
+      to: last,
+      segmentIndex: routeDurations.length - 1,
+      segmentProgress: 1,
+      isFinalLongLeg: false,
+      isArrived: true
+    };
+  }
+
+  let remaining = elapsed;
+  for (let index = 0; index < routeDurations.length; index += 1) {
+    const duration = routeDurations[index];
+    if (remaining <= duration) {
+      return {
+        from: routeStations[index],
+        to: routeStations[index + 1],
+        segmentIndex: index,
+        segmentProgress: remaining / duration,
+        isFinalLongLeg: index === routeDurations.length - 1,
+        isArrived: false
+      };
+    }
+    remaining -= duration;
+  }
+  return getRouteState(totalRouteDuration);
+}
+
+function getCurrentRouteState() {
+  if (mode === "departing") return getRouteState(performance.now() - departAt);
+  if (mode === "arrived" || mode === "flipped") return getRouteState(totalRouteDuration);
+  return {
+    from: routeStations[0],
+    to: routeStations[1],
+    segmentIndex: 0,
+    segmentProgress: 0,
+    isFinalLongLeg: false,
+    isArrived: false
+  };
+}
+
 function draw() {
   ctx.save();
   if (shake > 0) ctx.translate((Math.random() - 0.5) * shake, (Math.random() - 0.5) * shake * 0.42);
@@ -224,7 +281,7 @@ function draw() {
 }
 
 function drawStation() {
-  const progress = getTravelProgress();
+  const route = getCurrentRouteState();
   const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
   gradient.addColorStop(0, powered ? "#d7edf7" : "#26313b");
   gradient.addColorStop(0.56, powered ? "#edf6fa" : "#18222b");
@@ -236,9 +293,9 @@ function drawStation() {
   ctx.fillRect(0, 236, canvas.width, 112);
   ctx.fillStyle = "#172632";
   ctx.font = "bold 25px system-ui";
-  ctx.fillText(progress < 0.5 ? "本站 Platform" : "下一站 Platform", 34, 304);
+  ctx.fillText(route.isArrived ? "克拉码头 Platform" : `${route.from} Platform`, 34, 304);
   ctx.fillStyle = "#ffd15f";
-  ctx.fillText("开往 克拉码头 Clarke Quay", 620, 60);
+  ctx.fillText(route.isArrived ? "已到 克拉码头 Clarke Quay" : `下一站 ${route.to}`, 590, 60);
 
   ctx.fillStyle = "#596a75";
   ctx.fillRect(0, 448, canvas.width, 46);
@@ -272,10 +329,14 @@ function drawStation() {
 }
 
 function drawPlatformDoors() {
-  const progress = getTravelProgress();
-  drawPlatformDoorSet(-progress * 760, "正在经过的三扇门");
-  drawPlatformDoorSet(760 - progress * 760, "下一组三扇门");
-  drawPlatformDoorSet(1520 - progress * 760, "再下一组三扇门");
+  const route = getCurrentRouteState();
+  const progress = route.segmentProgress;
+  drawPlatformDoorSet(-progress * 760, `${route.from} 三扇门`);
+  drawPlatformDoorSet(760 - progress * 760, `${route.to} 三扇门`);
+  const nextStation = routeStations[Math.min(route.segmentIndex + 2, routeStations.length - 1)];
+  if (nextStation !== route.to) {
+    drawPlatformDoorSet(1520 - progress * 760, `${nextStation} 三扇门`);
+  }
 }
 
 function getTravelProgress() {
