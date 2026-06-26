@@ -33,6 +33,10 @@ let grid = makeGrid();
 let vehicleTimer = 0;
 let vehicleType = "";
 let elevatorLevel = 1;
+let goodPlanes = 30;
+let disposablePlanes = 30;
+let demoPlaneTimer = 0;
+let demoPlaneTarget = null;
 const player = { col: 8, row: 8, pose: 0, dir: "down" };
 
 function makeGrid() {
@@ -74,6 +78,24 @@ function clearLand() {
   setStatus("空地清空了，可以重新盖。");
 }
 
+function buildVilla() {
+  grid = makeGrid();
+  for (let y = 4; y <= 8; y += 1) {
+    for (let x = 3; x <= 8; x += 1) grid[y][x] = "stone";
+    for (let x = 10; x <= 14; x += 1) grid[y][x] = "glass";
+  }
+  for (let x = 2; x <= 15; x += 1) grid[3][x] = "light";
+  grid[8][5] = null;
+  grid[8][6] = null;
+  grid[8][11] = null;
+  grid[8][12] = null;
+  player.col = 9;
+  player.row = 9;
+  scene = "home";
+  placeText.textContent = scenes.home;
+  setStatus("我的别墅建好了，旁边有飞机库，30 架好飞机不会被毁掉。");
+}
+
 function buildHouse() {
   grid = makeGrid();
   for (let y = 5; y <= 8; y += 1) {
@@ -94,11 +116,57 @@ function buildHouse() {
   setStatus("一键盖好了小房子，门窗和屋顶都有了。");
 }
 
+function showHangar() {
+  scene = "home";
+  placeText.textContent = scenes.home;
+  player.col = 14;
+  player.row = 8;
+  player.pose += 1;
+  setStatus(`飞机库：好飞机 ${goodPlanes} 架，不能毁掉；一次性拆楼飞机 ${disposablePlanes} 架，只能拆自己的方块楼。`);
+}
+
 function ride(type) {
   vehicleType = type;
   vehicleTimer = 140;
   const names = { subway: "地铁", plane: "飞机", train: "高铁" };
   setStatus(`${names[type]}免费出发，没有进站口，也不用买票。`);
+}
+
+function useDisposablePlane() {
+  if (disposablePlanes <= 0) {
+    setStatus("一次性拆楼飞机已经用完了。好飞机不能拿来拆楼。");
+    return;
+  }
+  const target = nearestOwnedBlock();
+  if (!target) {
+    setStatus("附近没有你自己盖的方块楼。不能拆别人的房楼。");
+    return;
+  }
+  disposablePlanes -= 1;
+  demoPlaneTarget = target;
+  demoPlaneTimer = 90;
+  setStatus(`一次性拆楼飞机出发，只拆你自己盖的${blocks.find((block) => block.key === target.key).name}。好飞机还在飞机库里。`);
+  setTimeout(() => {
+    if (grid[target.row]?.[target.col] === target.key) grid[target.row][target.col] = null;
+    demoPlaneTarget = null;
+  }, 700);
+}
+
+function nearestOwnedBlock() {
+  let best = null;
+  let bestDistance = Infinity;
+  for (let row = 0; row < rows; row += 1) {
+    for (let col = 0; col < cols; col += 1) {
+      const key = grid[row][col];
+      if (!key) continue;
+      const distance = Math.hypot(col - player.col, row - player.row);
+      if (distance < bestDistance) {
+        bestDistance = distance;
+        best = { row, col, key };
+      }
+    }
+  }
+  return bestDistance <= 5 ? best : null;
 }
 
 function useElevator() {
@@ -136,7 +204,9 @@ function draw() {
   drawGrid();
   drawScene();
   drawVehicle();
+  drawDemoPlane();
   drawPlayer();
+  drawPlaneInventory();
   requestAnimationFrame(draw);
 }
 
@@ -190,11 +260,30 @@ function shade(color) {
 }
 
 function drawScene() {
+  if (scene === "home") drawVillaAirport();
   if (scene === "village") drawVillage();
   if (scene === "city") drawCity();
   if (scene === "subway") drawSubwayStation();
   if (scene === "airport") drawAirport();
   if (scene === "rail") drawRailStation();
+}
+
+function drawVillaAirport() {
+  ctx.fillStyle = "#245b8f";
+  roundRect(628, 384, 236, 92, 12);
+  ctx.fill();
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "bold 18px system-ui";
+  ctx.fillText("我的别墅飞机库", 672, 420);
+  ctx.font = "bold 13px system-ui";
+  ctx.fillText("好飞机不会毁掉", 690, 448);
+  for (let i = 0; i < 10; i += 1) {
+    drawTinyPlane(650 + i * 20, 474, "#ffffff");
+  }
+  ctx.fillStyle = "#172632";
+  ctx.font = "bold 14px system-ui";
+  ctx.fillText(`好飞机 x${goodPlanes}`, 676, 504);
+  ctx.fillText(`一次性拆楼飞机 x${disposablePlanes}`, 676, 526);
 }
 
 function drawVillage() {
@@ -329,6 +418,63 @@ function drawVehicle() {
   vehicleTimer -= 1;
 }
 
+function drawDemoPlane() {
+  if (demoPlaneTimer <= 0 || !demoPlaneTarget) return;
+  const targetX = originX + demoPlaneTarget.col * tile + tile / 2;
+  const targetY = originY + demoPlaneTarget.row * tile + tile / 2;
+  const startX = 880;
+  const startY = 122;
+  const t = 1 - demoPlaneTimer / 90;
+  const x = startX + (targetX - startX) * t;
+  const y = startY + (targetY - startY) * t;
+  drawTinyPlane(x, y, "#d93a32", 2.2);
+  if (demoPlaneTimer < 24) {
+    ctx.fillStyle = "rgba(255, 209, 95, 0.72)";
+    ctx.beginPath();
+    ctx.arc(targetX, targetY, 36 - demoPlaneTimer, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#172632";
+    ctx.font = "bold 14px system-ui";
+    ctx.textAlign = "center";
+    ctx.fillText("只拆自己的", targetX, targetY + 6);
+    ctx.textAlign = "left";
+  }
+  demoPlaneTimer -= 1;
+}
+
+function drawPlaneInventory() {
+  ctx.fillStyle = "rgba(255,255,255,0.92)";
+  roundRect(702, 28, 210, 54, 8);
+  ctx.fill();
+  ctx.fillStyle = "#172632";
+  ctx.font = "bold 14px system-ui";
+  ctx.fillText(`好飞机 ${goodPlanes} 架`, 718, 52);
+  ctx.fillText(`一次性 ${disposablePlanes} 架`, 718, 72);
+}
+
+function drawTinyPlane(x, y, color, scale = 1) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.scale(scale, scale);
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.ellipse(0, 0, 10, 4, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(-2, 0);
+  ctx.lineTo(-11, 8);
+  ctx.lineTo(5, 3);
+  ctx.closePath();
+  ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(8, -1);
+  ctx.lineTo(14, -8);
+  ctx.lineTo(12, 1);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+}
+
 function drawPlayer() {
   const x = originX + player.col * tile + tile / 2;
   const y = originY + player.row * tile + tile / 2;
@@ -392,6 +538,9 @@ document.querySelector("#downBtn").addEventListener("click", () => movePlayer(0,
 document.querySelector("#leftBtn").addEventListener("click", () => movePlayer(-1, 0, "left"));
 document.querySelector("#rightBtn").addEventListener("click", () => movePlayer(1, 0, "right"));
 document.querySelector("#houseBtn").addEventListener("click", buildHouse);
+document.querySelector("#villaBtn").addEventListener("click", buildVilla);
+document.querySelector("#hangarBtn").addEventListener("click", showHangar);
+document.querySelector("#demoPlaneBtn").addEventListener("click", useDisposablePlane);
 document.querySelector("#clearBtn").addEventListener("click", clearLand);
 document.querySelector("#villageBtn").addEventListener("click", () => changeScene("village"));
 document.querySelector("#cityBtn").addEventListener("click", () => changeScene("city"));
@@ -423,6 +572,7 @@ window.addEventListener("keydown", (event) => {
   if (key === "a" || event.key === "ArrowLeft") movePlayer(-1, 0, "left");
   if (key === "d" || event.key === "ArrowRight") movePlayer(1, 0, "right");
   if (key === "h") buildHouse();
+  if (key === "b") buildVilla();
   if (key === "v") changeScene("village");
   if (key === "c") changeScene("city");
   if (key === "m") changeScene("subway");
