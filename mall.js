@@ -248,6 +248,12 @@ function rideMetro(destination) {
   }
   trainDestination = destination;
   trainTimer = 120;
+  const moved = window.TransitChannel?.moveOne("mall", destination === "park" ? "park" : "home");
+  if (!moved) {
+    trainTimer = 0;
+    setStatus("商场频道现在没有人。可以先从家里坐地铁到商场。");
+    return;
+  }
   setStatus(destination === "park" ? "地铁开往超级游乐园，门关，请站稳。" : "地铁开回家，门关，请站稳。");
   setTimeout(() => {
     window.location.href = destination === "park" ? "amusement.html" : "home-play.html";
@@ -278,6 +284,27 @@ function drawMall() {
   shops().forEach(drawShop);
   if (currentFloor === 2) drawMetroStation();
   if (currentFloor === 6) drawSnow();
+  drawPeopleCount();
+}
+
+function drawPeopleCount() {
+  const count = window.TransitChannel?.count("mall") ?? 0;
+  ctx.fillStyle = "#172632";
+  roundRect(680, 34, 206, 44, 10);
+  ctx.fill();
+  ctx.fillStyle = "#fff";
+  ctx.font = "bold 20px system-ui";
+  ctx.fillText(`商场频道：${count} 人`, 700, 63);
+  for (let index = 0; index < count; index += 1) {
+    const x = 690 + index * 34;
+    const y = 520;
+    ctx.fillStyle = ["#d94a78", "#7b4dc5", "#39a657", "#245b8f"][index % 4];
+    ctx.beginPath();
+    ctx.arc(x, y - 30, 10, 0, Math.PI * 2);
+    ctx.fill();
+    roundRect(x - 10, y - 18, 20, 28, 8);
+    ctx.fill();
+  }
 }
 
 function drawAtrium() {

@@ -82,6 +82,12 @@ function rideTrain(destination) {
   trainDestination = destination;
   trainTimer = 110;
   rideText.textContent = "地铁出发";
+  const moved = window.TransitChannel?.moveOne("park", destination === "mall" ? "mall" : "home");
+  if (!moved) {
+    trainTimer = 0;
+    setStatus("超级游乐园频道现在没有人。可以先从家或商场坐地铁过来。");
+    return;
+  }
   setStatus(destination === "mall" ? "地铁从超级游乐园开往六层大商场。" : "地铁从超级游乐园开回家门口。");
   setTimeout(() => {
     window.location.href = destination === "mall" ? "mall.html" : "home-play.html";
@@ -97,7 +103,28 @@ function drawPark() {
   if (mode === "haunt") drawHauntedHouse();
   if (mode === "food") drawFood();
   if (mode === "station") drawStation();
+  drawPeopleCount();
   drawVisitor();
+}
+
+function drawPeopleCount() {
+  const count = window.TransitChannel?.count("park") ?? 0;
+  ctx.fillStyle = "#172632";
+  roundRect(702, 28, 228, 44, 10);
+  ctx.fill();
+  ctx.fillStyle = "#fff";
+  ctx.font = "bold 20px system-ui";
+  ctx.fillText(`游乐园频道：${count} 人`, 720, 58);
+  for (let index = 0; index < count; index += 1) {
+    const x = 730 + index * 36;
+    const y = 590;
+    ctx.fillStyle = ["#d94a78", "#7b4dc5", "#39a657", "#245b8f"][index % 4];
+    ctx.beginPath();
+    ctx.arc(x, y - 30, 10, 0, Math.PI * 2);
+    ctx.fill();
+    roundRect(x - 10, y - 18, 20, 28, 8);
+    ctx.fill();
+  }
 }
 
 function drawPaths() {

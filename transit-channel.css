@@ -1,0 +1,70 @@
+.channel-switcher {
+  position: fixed;
+  top: 18px;
+  right: 18px;
+  z-index: 20;
+  display: grid;
+  gap: 8px;
+  width: min(430px, calc(100vw - 36px));
+  padding: 10px;
+  border: 1px solid rgba(23, 38, 50, 0.16);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 12px 28px rgba(23, 38, 50, 0.16);
+}
+
+.channel-switcher strong {
+  color: #172632;
+  font-size: 0.82rem;
+  font-weight: 950;
+}
+
+.channel-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.channel-link {
+  display: grid;
+  gap: 3px;
+  min-height: 54px;
+  padding: 8px 10px;
+  border: 2px solid #172632;
+  border-radius: 8px;
+  color: #172632;
+  background: #fff;
+  text-decoration: none;
+  font-weight: 950;
+}
+
+.channel-link.active {
+  color: #fff;
+  background: #245b8f;
+}
+
+.channel-link span {
+  font-size: 0.78rem;
+  opacity: 0.82;
+}
+
+.channel-link em {
+  font-style: normal;
+}
+
+.channel-reset {
+  min-height: 34px;
+  border: 0;
+  border-radius: 8px;
+  color: #172632;
+  background: #ffd15f;
+  font: 950 0.85rem/1 ui-sans-serif, system-ui, sans-serif;
+  cursor: pointer;
+}
+
+@media (max-width: 760px) {
+  .channel-switcher {
+    position: static;
+    margin: 74px auto -60px;
+  }
+}

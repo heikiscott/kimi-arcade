@@ -80,15 +80,32 @@ function renderDollButtons() {
 function renderInventory() {
   inventoryList.innerHTML = "";
   dolls.forEach((doll) => {
+    const location = getDollPlace(doll);
     const row = document.createElement("div");
     row.className = "inventory-row";
-    row.innerHTML = `<span>${doll.name}</span><span>${doll.item}</span>`;
+    row.innerHTML = `<span>${doll.name} · ${location}</span><span>${doll.item}</span>`;
     inventoryList.appendChild(row);
   });
 }
 
+function getDollPlace(doll) {
+  const location = window.TransitChannel?.personLocation(doll.id) || "home";
+  return { home: "在家", mall: "在商场", park: "在游乐园" }[location];
+}
+
+function dollIsHome(doll) {
+  return (window.TransitChannel?.personLocation(doll.id) || "home") === "home";
+}
+
+function ensureDollHome(doll) {
+  if (dollIsHome(doll)) return true;
+  setMessage("这个娃娃不在家", `${doll.name}现在${getDollPlace(doll)}，请切换到那个频道看她或他。`);
+  return false;
+}
+
 function moveDoll(dx, dy, dir) {
   const doll = activeDoll();
+  if (!ensureDollHome(doll)) return;
   doll.dir = dir;
   doll.pose += 1;
   doll.x = Math.max(74, Math.min(canvas.width - 74, doll.x + dx));
@@ -104,6 +121,7 @@ function dirName(dir) {
 
 function pick(direction) {
   const doll = activeDoll();
+  if (!ensureDollHome(doll)) return;
   const target = nearestItemInDirection(doll, direction);
   if (!target) {
     setMessage("没有拿到", `${doll.name}的${pickName(direction)}没有东西。`);
@@ -143,6 +161,7 @@ function nearestItemInDirection(doll, direction) {
 
 function watchTv() {
   const doll = activeDoll();
+  if (!ensureDollHome(doll)) return;
   if (Math.hypot(doll.x - 496, doll.y - 346) > 230 && doll.item !== "电视遥控器") {
     setMessage("离电视有点远", `${doll.name}要靠近沙发，或者先拿电视遥控器。`);
     return;
@@ -154,6 +173,7 @@ function watchTv() {
 
 function playGame() {
   const doll = activeDoll();
+  if (!ensureDollHome(doll)) return;
   if (Math.hypot(doll.x - 728, doll.y - 338) > 230 && doll.item !== "游戏手柄") {
     setMessage("游戏机太远", `${doll.name}要靠近游戏机，或者先拿游戏手柄。`);
     return;
@@ -165,6 +185,7 @@ function playGame() {
 
 function takeRemote() {
   const doll = activeDoll();
+  if (!ensureDollHome(doll)) return;
   const remote = items.find((item) => item.name === "电视遥控器");
   remote.takenBy = doll.id;
   doll.item = "电视遥控器";
@@ -175,6 +196,7 @@ function takeRemote() {
 
 function goBall() {
   const doll = activeDoll();
+  if (!ensureDollHome(doll)) return;
   doll.x = 804;
   doll.y = 506;
   doll.dir = "right";
@@ -190,6 +212,7 @@ function goBall() {
 
 function goStation() {
   const doll = activeDoll();
+  if (!ensureDollHome(doll)) return;
   doll.x = 812;
   doll.y = 372;
   doll.dir = "right";
@@ -200,9 +223,12 @@ function goStation() {
 
 function rideTrain(destination) {
   const doll = activeDoll();
+  if (!ensureDollHome(doll)) return;
   goStation();
   trainDestination = destination;
   trainTimer = 95;
+  window.TransitChannel?.movePerson(doll.id, destination === "mall" ? "mall" : "park", "home");
+  renderInventory();
   doll.action = destination === "mall" ? "坐地铁去商场" : "坐地铁去游乐园";
   setMessage("地铁出发", destination === "mall" ? "地铁从家门口开往六层大商场。" : "地铁从家门口开往超级游乐园。");
   setTimeout(() => {
@@ -331,6 +357,7 @@ function drawItems() {
 }
 
 function drawDoll(doll, index) {
+  if (!dollIsHome(doll)) return;
   const bob = Math.sin((doll.pose + performance.now() / 120) * 0.8) * 2;
   const active = dolls[selected] === doll;
   ctx.save();
@@ -417,6 +444,8 @@ controls.ball.addEventListener("click", goBall);
 controls.station.addEventListener("click", goStation);
 controls.mallTrain.addEventListener("click", () => rideTrain("mall"));
 controls.parkTrain.addEventListener("click", () => rideTrain("park"));
+
+window.addEventListener("transitchange", renderInventory);
 
 window.addEventListener("keydown", (event) => {
   const key = event.key.toLowerCase();
