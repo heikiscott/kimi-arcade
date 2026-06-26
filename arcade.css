@@ -214,6 +214,18 @@ body {
   background: linear-gradient(135deg, #245b8f, #d94a78 52%, #ffd15f);
 }
 
+.english {
+  background: linear-gradient(135deg, #245b8f, #39a657 52%, #ffffff);
+}
+
+.typing {
+  background: linear-gradient(135deg, #172632, #d7a249 52%, #245b8f);
+}
+
+.math {
+  background: linear-gradient(135deg, #39a657, #ffd15f 52%, #d94a78);
+}
+
 .home-play {
   background: linear-gradient(135deg, #39a657, #f2c45f 52%, #d94a78);
 }

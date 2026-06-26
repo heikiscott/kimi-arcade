@@ -1,0 +1,221 @@
+:root {
+  --ink: #172632;
+  --muted: #5e6d78;
+  --blue: #245b8f;
+  --green: #39a657;
+  --yellow: #ffd15f;
+  --pink: #d94a78;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  color: var(--ink);
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background:
+    linear-gradient(90deg, rgba(255,255,255,0.34) 1px, transparent 1px),
+    linear-gradient(rgba(255,255,255,0.34) 1px, transparent 1px),
+    linear-gradient(135deg, #e4f2ff 0%, #f4f1dc 46%, #e6f5ec 100%);
+  background-size: 42px 42px, 42px 42px, auto;
+}
+
+.home-link {
+  position: fixed;
+  top: 18px;
+  left: 18px;
+  z-index: 2;
+  padding: 12px 18px;
+  border: 1px solid rgba(23, 38, 50, 0.14);
+  border-radius: 8px;
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.88);
+  text-decoration: none;
+  font-weight: 900;
+  box-shadow: 0 12px 26px rgba(23, 38, 50, 0.12);
+}
+
+.study-shell {
+  width: min(1120px, calc(100vw - 28px));
+  min-height: 100vh;
+  margin: 0 auto;
+  padding: 86px 0 34px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: 18px;
+  align-items: start;
+}
+
+.study-stage,
+.study-panel {
+  border: 1px solid rgba(23, 38, 50, 0.14);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.82);
+  box-shadow: 0 18px 42px rgba(23, 38, 50, 0.12);
+}
+
+.study-stage {
+  min-height: 650px;
+  padding: 24px;
+  display: grid;
+  align-content: start;
+  gap: 18px;
+}
+
+.study-panel {
+  padding: 22px;
+  display: grid;
+  gap: 14px;
+}
+
+.label {
+  margin: 0 0 8px;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+h1,
+h2,
+p {
+  margin: 0;
+}
+
+.study-panel h2 {
+  font-size: 2.25rem;
+  line-height: 1;
+}
+
+.study-panel p,
+#hintText,
+#statusText {
+  color: #4d5f6a;
+  font-weight: 800;
+  line-height: 1.45;
+}
+
+.score-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-weight: 900;
+}
+
+.score-row span {
+  padding: 10px 12px;
+  border: 3px solid var(--ink);
+  border-radius: 8px;
+  background: #fff;
+}
+
+.big-card {
+  min-height: 230px;
+  padding: 34px;
+  border: 4px solid var(--ink);
+  border-radius: 8px;
+  display: grid;
+  align-content: center;
+  gap: 14px;
+  background: #fff;
+}
+
+.big-card h1 {
+  font-size: clamp(2.6rem, 8vw, 6.5rem);
+  line-height: 0.95;
+  letter-spacing: 0;
+}
+
+.answer-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+button,
+.answer-grid button,
+.typing-input {
+  min-height: 58px;
+  border: 3px solid var(--ink);
+  border-radius: 8px;
+  color: var(--ink);
+  background: #fff;
+  font: inherit;
+  font-size: 1.05rem;
+  font-weight: 900;
+}
+
+button,
+.answer-grid button {
+  cursor: pointer;
+  box-shadow: 0 6px 0 rgba(23, 38, 50, 0.18);
+}
+
+button:hover,
+.answer-grid button:hover {
+  transform: translateY(-2px);
+}
+
+.answer-grid button.correct {
+  color: #fff;
+  background: var(--green);
+}
+
+.answer-grid button.wrong {
+  color: #fff;
+  background: #d93a32;
+}
+
+.typing-input {
+  width: 100%;
+  padding: 0 18px;
+  outline: none;
+}
+
+.typing-input:focus {
+  box-shadow: 0 0 0 5px rgba(36, 91, 143, 0.18);
+}
+
+.typing-preview {
+  min-height: 96px;
+  padding: 18px;
+  border: 3px solid rgba(23, 38, 50, 0.18);
+  border-radius: 8px;
+  background: #fff;
+  color: #4d5f6a;
+  font-size: 1.25rem;
+  font-weight: 900;
+  line-height: 1.6;
+}
+
+.word-stage .big-card {
+  background: linear-gradient(135deg, #ffffff 0%, #e8f5ff 100%);
+}
+
+.typing-stage .big-card {
+  background: linear-gradient(135deg, #ffffff 0%, #fff4d6 100%);
+}
+
+.math-stage .big-card {
+  background: linear-gradient(135deg, #ffffff 0%, #eaf8ef 100%);
+}
+
+@media (max-width: 860px) {
+  .study-shell {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 560px) {
+  .study-shell {
+    width: min(100vw - 18px, 1120px);
+  }
+
+  .answer-grid {
+    grid-template-columns: 1fr;
+  }
+}

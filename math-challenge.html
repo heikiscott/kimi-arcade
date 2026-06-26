@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>数学高斯挑战</title>
+    <link rel="stylesheet" href="study-games.css" />
+  </head>
+  <body data-game="math">
+    <a class="home-link" href="arcade.html">游戏大厅</a>
+    <main class="study-shell">
+      <section class="study-stage math-stage">
+        <div class="score-row">
+          <span>分数 <strong id="scoreText">0</strong></span>
+          <span>第 <strong id="roundText">1</strong> 题</span>
+        </div>
+        <div class="big-card">
+          <p class="label">Math Challenge</p>
+          <h1 id="questionText">1 + 2 + ... + 10 = ?</h1>
+          <p id="hintText">有算数题、奥数题和高斯学校题。</p>
+        </div>
+        <div class="answer-grid" id="answerGrid"></div>
+      </section>
+
+      <section class="study-panel">
+        <p class="label">练习数学</p>
+        <h2>数学高斯挑战</h2>
+        <p id="statusText">点正确答案。题目会有加减乘除、找规律和高斯求和。</p>
+        <button id="nextBtn" type="button">下一题</button>
+        <button id="restartBtn" type="button">重新开始</button>
+      </section>
+    </main>
+    <script src="study-games.js"></script>
+  </body>
+</html>

@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>打字练习</title>
+    <link rel="stylesheet" href="study-games.css" />
+  </head>
+  <body data-game="typing">
+    <a class="home-link" href="arcade.html">游戏大厅</a>
+    <main class="study-shell">
+      <section class="study-stage typing-stage">
+        <div class="score-row">
+          <span>完成 <strong id="scoreText">0</strong> 句</span>
+          <span>正确率 <strong id="roundText">100%</strong></span>
+        </div>
+        <div class="big-card">
+          <p class="label">Typing Practice</p>
+          <h1 id="questionText">I can build a house.</h1>
+          <p id="hintText">照着英文句子打出来。</p>
+        </div>
+        <input id="typingInput" class="typing-input" type="text" autocomplete="off" spellcheck="false" />
+        <div class="typing-preview" id="answerGrid"></div>
+      </section>
+
+      <section class="study-panel">
+        <p class="label">练习打字</p>
+        <h2>打字小游戏</h2>
+        <p id="statusText">输入框里打字。完全一样就自动进入下一句。</p>
+        <button id="nextBtn" type="button">换一句</button>
+        <button id="restartBtn" type="button">重新开始</button>
+      </section>
+    </main>
+    <script src="study-games.js"></script>
+  </body>
+</html>
