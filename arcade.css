@@ -170,6 +170,10 @@ body {
   background: linear-gradient(135deg, #315b74, #8b6b3f);
 }
 
+.video-911 {
+  background: linear-gradient(135deg, #3d4e59, #607786 52%, #d7a249);
+}
+
 .titanic {
   background: linear-gradient(135deg, #164a63, #d7a249);
 }
@@ -198,6 +202,10 @@ body {
   background: linear-gradient(135deg, #d94a78, #ffd15f);
 }
 
+.whack {
+  background: linear-gradient(135deg, #6b8f3a, #9b6a3c 52%, #ffd15f);
+}
+
 .racing {
   background: linear-gradient(135deg, #d93a32, #172632 54%, #ffd15f);
 }
@@ -220,6 +228,10 @@ body {
 
 .elevator-tower {
   background: linear-gradient(135deg, #172632, #607786 58%, #ffd15f);
+}
+
+.elevator-old {
+  background: linear-gradient(135deg, #334655, #8f5fd9 54%, #ffd15f);
 }
 
 .quick-section {
