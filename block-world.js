@@ -33,6 +33,7 @@ let grid = makeGrid();
 let vehicleTimer = 0;
 let vehicleType = "";
 let elevatorLevel = 1;
+const player = { col: 8, row: 8, pose: 0, dir: "down" };
 
 function makeGrid() {
   return Array.from({ length: rows }, () => Array.from({ length: cols }, () => null));
@@ -62,6 +63,9 @@ function changeScene(next) {
   scene = next;
   placeText.textContent = scenes[scene];
   vehicleTimer = 0;
+  player.col = scene === "city" ? 6 : scene === "airport" ? 4 : scene === "rail" ? 5 : scene === "subway" ? 9 : 8;
+  player.row = scene === "subway" ? 7 : 8;
+  player.pose += 1;
   setStatus(`到了${scenes[scene]}。这里盖东西、坐车、坐飞机、坐高铁都免费。`);
 }
 
@@ -100,8 +104,19 @@ function ride(type) {
 function useElevator() {
   scene = "subway";
   elevatorLevel = elevatorLevel === 1 ? 2 : 1;
+  player.col = 13;
+  player.row = 6;
+  player.pose += 1;
   placeText.textContent = scenes.subway;
   setStatus(`地铁站电梯叮，到了 ${elevatorLevel} 层。这里没有进站口，直接上车。`);
+}
+
+function movePlayer(dc, dr, dir) {
+  player.col = Math.max(0, Math.min(cols - 1, player.col + dc));
+  player.row = Math.max(0, Math.min(rows - 1, player.row + dr));
+  player.dir = dir;
+  player.pose += 1;
+  setStatus(`方块小人往${{ up: "上", down: "下", left: "左", right: "右" }[dir]}走。`);
 }
 
 function placeBlock(clientX, clientY) {
@@ -121,6 +136,7 @@ function draw() {
   drawGrid();
   drawScene();
   drawVehicle();
+  drawPlayer();
   requestAnimationFrame(draw);
 }
 
@@ -313,6 +329,38 @@ function drawVehicle() {
   vehicleTimer -= 1;
 }
 
+function drawPlayer() {
+  const x = originX + player.col * tile + tile / 2;
+  const y = originY + player.row * tile + tile / 2;
+  const bob = Math.sin((player.pose + performance.now() / 130) * 0.9) * 3;
+  ctx.save();
+  ctx.translate(x, y + bob);
+  ctx.fillStyle = "rgba(0,0,0,0.22)";
+  ctx.beginPath();
+  ctx.ellipse(0, 24, 24, 8, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = "#f0bb87";
+  ctx.fillRect(-13, -42, 26, 24);
+  ctx.fillStyle = "#245b8f";
+  ctx.fillRect(-15, -50, 30, 12);
+  ctx.fillStyle = "#d94a78";
+  ctx.fillRect(-16, -18, 32, 34);
+  ctx.fillStyle = "#172632";
+  ctx.fillRect(-8, 16, 7, 25);
+  ctx.fillRect(2, 16, 7, 25);
+  ctx.fillRect(-28, -12, 12, 8);
+  ctx.fillRect(16, -12, 12, 8);
+  ctx.fillStyle = "#172632";
+  ctx.font = "bold 13px system-ui";
+  ctx.textAlign = "center";
+  ctx.fillText("我", 0, -25);
+  ctx.fillStyle = "#fff";
+  ctx.fillRect(-7, -34, 5, 5);
+  ctx.fillRect(4, -34, 5, 5);
+  ctx.restore();
+  ctx.textAlign = "left";
+}
+
 function drawPlane(x, y) {
   ctx.fillStyle = "#ffffff";
   ctx.beginPath();
@@ -339,6 +387,10 @@ function roundRect(x, y, width, height, radius) {
 }
 
 canvas.addEventListener("pointerdown", (event) => placeBlock(event.clientX, event.clientY));
+document.querySelector("#upBtn").addEventListener("click", () => movePlayer(0, -1, "up"));
+document.querySelector("#downBtn").addEventListener("click", () => movePlayer(0, 1, "down"));
+document.querySelector("#leftBtn").addEventListener("click", () => movePlayer(-1, 0, "left"));
+document.querySelector("#rightBtn").addEventListener("click", () => movePlayer(1, 0, "right"));
 document.querySelector("#houseBtn").addEventListener("click", buildHouse);
 document.querySelector("#clearBtn").addEventListener("click", clearLand);
 document.querySelector("#villageBtn").addEventListener("click", () => changeScene("village"));
@@ -366,6 +418,10 @@ window.addEventListener("keydown", (event) => {
     selected = Number(key) - 1;
     renderBlockButtons();
   }
+  if (key === "w" || event.key === "ArrowUp") movePlayer(0, -1, "up");
+  if (key === "s" || event.key === "ArrowDown") movePlayer(0, 1, "down");
+  if (key === "a" || event.key === "ArrowLeft") movePlayer(-1, 0, "left");
+  if (key === "d" || event.key === "ArrowRight") movePlayer(1, 0, "right");
   if (key === "h") buildHouse();
   if (key === "v") changeScene("village");
   if (key === "c") changeScene("city");
