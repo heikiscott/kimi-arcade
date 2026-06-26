@@ -218,6 +218,10 @@ body {
   background: linear-gradient(135deg, #245b8f, #39a657 52%, #ffffff);
 }
 
+.grammar {
+  background: linear-gradient(135deg, #6e4aa5, #245b8f 52%, #ffd15f);
+}
+
 .typing {
   background: linear-gradient(135deg, #172632, #d7a249 52%, #245b8f);
 }

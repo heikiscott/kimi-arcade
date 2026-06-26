@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>英文语法练习</title>
+    <link rel="stylesheet" href="study-games.css" />
+  </head>
+  <body data-game="grammar">
+    <a class="home-link" href="arcade.html">游戏大厅</a>
+    <main class="study-shell">
+      <section class="study-stage grammar-stage">
+        <div class="score-row">
+          <span>分数 <strong id="scoreText">0</strong></span>
+          <span>第 <strong id="roundText">1</strong> 题</span>
+        </div>
+        <div class="big-card">
+          <p class="label">English Grammar</p>
+          <h1 id="questionText">I ___ a student.</h1>
+          <p id="hintText">选择正确单词，练英文语法。</p>
+        </div>
+        <div class="answer-grid" id="answerGrid"></div>
+      </section>
+
+      <section class="study-panel">
+        <p class="label">练习英文</p>
+        <h2>英文语法题</h2>
+        <p id="statusText">练 am/is/are、时态、冠词、介词、代词和比较级。</p>
+        <button id="nextBtn" type="button">下一题</button>
+        <button id="restartBtn" type="button">重新开始</button>
+      </section>
+    </main>
+    <script src="study-games.js"></script>
+  </body>
+</html>

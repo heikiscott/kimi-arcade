@@ -89,6 +89,27 @@ const chineseQuestions = [
   { q: "下列哪一组适合写观察日记？", answer: "日期、天气、变化", hint: "观察日记要记录变化。", options: ["日期、天气、变化", "姓名、电话、地址", "价格、重量、颜色", "速度、距离、车票"] }
 ];
 
+const grammarQuestions = [
+  { q: "I ___ a student.", answer: "am", hint: "主语是 I，用 am。", options: ["am", "is", "are", "be"] },
+  { q: "She ___ my friend.", answer: "is", hint: "主语是 she，用 is。", options: ["is", "am", "are", "be"] },
+  { q: "They ___ playing football.", answer: "are", hint: "主语是 they，用 are。", options: ["are", "is", "am", "be"] },
+  { q: "There ___ an apple on the table.", answer: "is", hint: "an apple 是单数，用 is。", options: ["is", "are", "am", "be"] },
+  { q: "There ___ many books in the bag.", answer: "are", hint: "many books 是复数，用 are。", options: ["are", "is", "am", "was"] },
+  { q: "I saw ___ elephant at the zoo.", answer: "an", hint: "elephant 开头是元音音素，用 an。", options: ["an", "a", "the", "no"] },
+  { q: "He goes to school ___ bus.", answer: "by", hint: "by bus 表示坐公交。", options: ["by", "on", "in", "at"] },
+  { q: "We have English ___ Monday.", answer: "on", hint: "星期几前面用 on。", options: ["on", "in", "at", "by"] },
+  { q: "My birthday is ___ June.", answer: "in", hint: "月份前面用 in。", options: ["in", "on", "at", "to"] },
+  { q: "This book is ___.", answer: "mine", hint: "表示“我的书”，句末用名词性物主代词 mine。", options: ["mine", "my", "me", "I"] },
+  { q: "Yesterday, I ___ to the park.", answer: "went", hint: "yesterday 是过去时间，go 的过去式是 went。", options: ["went", "go", "goes", "going"] },
+  { q: "She ___ breakfast every morning.", answer: "has", hint: "she 是第三人称单数，用 has。", options: ["has", "have", "having", "had"] },
+  { q: "Look! The plane ___ flying.", answer: "is", hint: "现在进行时：is flying。", options: ["is", "are", "was", "be"] },
+  { q: "Tom is taller ___ Mike.", answer: "than", hint: "比较级常用 than。", options: ["than", "then", "that", "this"] },
+  { q: "This is the ___ book in the shop.", answer: "best", hint: "the 后面可以接最高级 best。", options: ["best", "better", "good", "well"] },
+  { q: "I don't ___ milk.", answer: "like", hint: "don't 后面用动词原形。", options: ["like", "likes", "liked", "liking"] },
+  { q: "Can you ___ a bike?", answer: "ride", hint: "can 后面用动词原形。", options: ["ride", "rides", "rode", "riding"] },
+  { q: "How ___ water do you need?", answer: "much", hint: "water 不可数，用 how much。", options: ["much", "many", "old", "long"] }
+];
+
 function shuffle(items) {
   return [...items].sort(() => Math.random() - 0.5);
 }
@@ -224,6 +245,22 @@ function startChinese() {
   updateScore();
 }
 
+function startGrammar() {
+  locked = false;
+  current = pick(grammarQuestions);
+  questionText.textContent = current.q;
+  hintText.textContent = current.hint;
+  answerGrid.innerHTML = "";
+  shuffle(current.options).forEach((option) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.textContent = option;
+    button.addEventListener("click", () => answerChoice(button, option));
+    answerGrid.appendChild(button);
+  });
+  updateScore();
+}
+
 function restart() {
   score = 0;
   round = 1;
@@ -235,11 +272,14 @@ function restart() {
       ? "点正确答案。题目有工程问题、奥数题、高斯题、分数题、几何题。"
       : game === "chinese"
         ? "这是原创四年级语文练习：成语、修辞、标点、阅读和作文方法。"
-        : "看中文，点正确的英文。答对会加分，答错也能继续练。";
+        : game === "grammar"
+          ? "选择正确单词，练 am/is/are、时态、冠词、介词、代词和比较级。"
+          : "看中文，点正确的英文。答对会加分，答错也能继续练。";
   if (game === "words") startWords();
   if (game === "typing") startTyping();
   if (game === "math") startMath();
   if (game === "chinese") startChinese();
+  if (game === "grammar") startGrammar();
 }
 
 nextBtn.addEventListener("click", () => {
@@ -247,6 +287,7 @@ nextBtn.addEventListener("click", () => {
   if (game === "typing") startTyping();
   if (game === "math") startMath();
   if (game === "chinese") startChinese();
+  if (game === "grammar") startGrammar();
 });
 
 restartBtn.addEventListener("click", restart);
