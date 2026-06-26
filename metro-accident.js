@@ -23,7 +23,6 @@ let trainX = 120;
 let trainAngle = 0;
 let departAt = 0;
 let travelProgress = 0;
-let arrivalTimer = null;
 let shake = 0;
 let sparks = [];
 let flyingToys = [];
@@ -101,16 +100,15 @@ function depart() {
   if (mode === "flipped") reset();
   if (doorsOpen) closeDoors();
   if (!boarded) boarded = true;
-  clearTimeout(arrivalTimer);
   mode = "departing";
   powered = true;
   departAt = performance.now();
   travelProgress = 0;
-  speed = 16;
+  speed = 320;
   trainX = 120;
   trainAngle = 0;
   endingCard.classList.remove("show");
-  statusText.textContent = "三节地铁开往克拉码头，会一直开到前面的下一组站台门。";
+  statusText.textContent = "三节地铁开往克拉码头，像闪电一般一直飞驰，站台门一组一组从前面冲过去。";
   playTone(330, 0, 0.12, 0.04, "sine");
   playTone(420, 0.14, 0.12, 0.04, "sine");
 }
@@ -132,7 +130,6 @@ function powerOffFlip() {
 }
 
 function reset() {
-  clearTimeout(arrivalTimer);
   mode = "station";
   doorsOpen = false;
   boarded = false;
@@ -146,7 +143,7 @@ function reset() {
   sparks = [];
   flyingToys = [];
   endingCard.classList.remove("show");
-  statusText.textContent = "这次没有墙。先开站台门和车门，让假玩偶机器人站在门前再上车，然后一路开到下一个站台。";
+  statusText.textContent = "这次没有墙。先开站台门和车门，让假玩偶机器人站在门前再上车，然后一直飞驰。";
 }
 
 function makeFlyingToys() {
@@ -173,15 +170,17 @@ function makeSparks() {
 function update() {
   if (mode === "departing") {
     const elapsed = performance.now() - departAt;
-    travelProgress = Math.min(1, elapsed / 6500);
-    speed = Math.round(48 + Math.sin(travelProgress * Math.PI) * 112);
-    trainX = 120 + Math.sin(travelProgress * Math.PI) * 150;
-    if (travelProgress >= 1) {
-      mode = "arrived";
-      speed = 0;
-      trainX = 120;
-      statusText.textContent = "已经开到下一个站台，前面三扇站台门也到了。马上断电。";
-      arrivalTimer = setTimeout(() => powerOffFlip(), 850);
+    travelProgress = (elapsed % 2200) / 2200;
+    speed = Math.round(300 + Math.sin(elapsed / 220) * 24);
+    trainX = 120 + Math.sin(elapsed / 130) * 8;
+    if (Math.random() < 0.6) {
+      sparks.push({
+        x: 110 + Math.random() * 640,
+        y: 430 + Math.random() * 24,
+        vx: -14 - Math.random() * 16,
+        vy: -2 - Math.random() * 5,
+        life: 12 + Math.random() * 18
+      });
     }
   }
 
@@ -274,13 +273,14 @@ function drawStation() {
 
 function drawPlatformDoors() {
   const progress = getTravelProgress();
-  drawPlatformDoorSet(-progress * 760, "本站三扇门");
-  drawPlatformDoorSet(760 - progress * 760, "前方三扇门");
+  drawPlatformDoorSet(-progress * 760, "正在经过的三扇门");
+  drawPlatformDoorSet(760 - progress * 760, "下一组三扇门");
+  drawPlatformDoorSet(1520 - progress * 760, "再下一组三扇门");
 }
 
 function getTravelProgress() {
   if (mode === "departing") return travelProgress;
-  if (mode === "arrived" || mode === "flipped") return 1;
+  if (mode === "flipped") return travelProgress;
   return 0;
 }
 
