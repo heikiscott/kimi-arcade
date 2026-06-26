@@ -21,7 +21,12 @@
         <div>
           <p class="label">Shopping Mall</p>
           <h1>商场买东西</h1>
-          <p id="statusText">走到店门口，点“买东西”就会买最近的商品。</p>
+          <p id="statusText">现在是一楼美食层。可以换楼层，二楼有地铁站。</p>
+        </div>
+
+        <div class="floor-panel">
+          <strong id="floorText">1F 美食餐厅</strong>
+          <div class="floor-grid" id="floorGrid" aria-label="商场楼层"></div>
         </div>
 
         <div class="remote">
@@ -33,6 +38,12 @@
           <button id="eatBtn" type="button">去餐厅</button>
           <button id="toyBtn" type="button">去玩具店</button>
           <button id="payBtn" type="button">结账</button>
+          <button id="metroBtn" type="button">去地铁站</button>
+        </div>
+
+        <div class="metro-actions" aria-label="地铁目的地">
+          <button id="toParkBtn" type="button">坐地铁到超级游乐园</button>
+          <button id="toHomeBtn" type="button">坐地铁回家</button>
         </div>
 
         <div class="bag">
@@ -40,7 +51,7 @@
           <div id="bagList">还没有买东西。</div>
         </div>
 
-        <p class="hint">键盘：W/A/S/D 或方向键走路，空格买东西，E 去餐厅，T 去玩具店。</p>
+        <p class="hint">键盘：1-6 换楼层，W/A/S/D 或方向键走路，空格买东西，E 去餐厅，T 去玩具店，M 去地铁站。</p>
       </section>
     </main>
     <script src="mall.js"></script>
