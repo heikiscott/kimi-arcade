@@ -35,8 +35,14 @@ const robots = [
   { x: 650, y: 398, color: "#8f5fd9", label: "R4" }
 ];
 
-const routeStations = ["港南", "Ocean Park", "东南远", "牛车水 Chinatown", "台南 Town", "克拉码头"];
-const routeDurations = [1200, 1200, 1200, 1500, 10000];
+const routeStations = [
+  { cn: "港湾", en: "HarbourFront", ms: "Pelabuhan", ta: "ஹார்பர்ஃப்ரண்ட்" },
+  { cn: "欧南园", en: "Outram Park", ms: "Taman Outram", ta: "ஊட்ரம் பார்க்" },
+  { cn: "牛车水", en: "Chinatown", ms: "Pecinan", ta: "சைனாடவுன்" },
+  { cn: "克拉码头", en: "Clarke Quay", ms: "Clarke Quay", ta: "கிளார்க் கீ" }
+];
+const scenicSpots = ["滨海湾花园", "滨海湾金沙酒店", "滨海湾", "装义基石", "鱼尾狮公园", "鱼尾狮"];
+const routeDurations = [1200, 1200, 10000];
 const totalRouteDuration = routeDurations.reduce((sum, duration) => sum + duration, 0);
 const finalLegDistanceKm = 300;
 const finalLegSpeedKmh = 108000;
@@ -88,7 +94,7 @@ function openDoors() {
 function closeDoors() {
   if (mode === "flipped") return;
   doorsOpen = false;
-  statusText.textContent = "站台门关闭，地铁车门也关闭。可以从港南出发。";
+  statusText.textContent = "站台门关闭，地铁车门也关闭。可以从港湾 HarbourFront 出发。";
   doorSound(false);
 }
 
@@ -114,7 +120,7 @@ function depart() {
   trainX = 120;
   trainAngle = 0;
   endingCard.classList.remove("show");
-  statusText.textContent = "从港南出发：前面几站很近，台南 Town 到克拉码头有 300 公里，要超高速跑 10 秒。";
+  statusText.textContent = "从港湾 HarbourFront 出发：欧南园和牛车水很近，牛车水到克拉码头有 300 公里，中间经过滨海湾景点。";
   playTone(330, 0, 0.12, 0.04, "sine");
   playTone(420, 0.14, 0.12, 0.04, "sine");
 }
@@ -149,7 +155,7 @@ function reset() {
   sparks = [];
   flyingToys = [];
   endingCard.classList.remove("show");
-  statusText.textContent = "路线：港南、Ocean Park、东南远、牛车水 Chinatown、台南 Town、克拉码头。最后 300 公里要跑 10 秒。";
+  statusText.textContent = "港线：港湾 HarbourFront、欧南园 Outram Park、牛车水 Chinatown、克拉码头 Clarke Quay。每站都有四种语言。";
 }
 
 function makeFlyingToys() {
@@ -181,8 +187,8 @@ function update() {
     speed = Math.round(route.isFinalLongLeg ? finalLegSpeedKmh : 3400 + Math.sin(elapsed / 180) * 320);
     trainX = 120 + Math.sin(elapsed / 130) * 8;
     statusText.textContent = route.isArrived
-      ? "已经到达克拉码头。要翻倒的话，点断电翻倒。"
-      : `从 ${route.from} 开往 ${route.to}${route.isFinalLongLeg ? `，距离 ${finalLegDistanceKm} 公里，超高速 10 秒到` : "，这一站很近"}`;
+      ? "已经到达克拉码头 Clarke Quay。要翻倒的话，点断电翻倒。"
+      : `从 ${stationTitle(route.from)} 开往 ${stationTitle(route.to)}${route.isFinalLongLeg ? `，距离 ${finalLegDistanceKm} 公里，经过滨海湾景点，超高速 10 秒到` : "，这一站很近"}`;
     if (route.isArrived) {
       mode = "arrived";
       speed = 0;
@@ -295,9 +301,10 @@ function drawStation() {
   ctx.fillRect(0, 236, canvas.width, 112);
   ctx.fillStyle = "#172632";
   ctx.font = "bold 25px system-ui";
-  ctx.fillText(route.isArrived ? "克拉码头 Platform" : `${route.from} Platform`, 34, 304);
+  drawStationName(route.isArrived ? routeStations[routeStations.length - 1] : route.from, 34, 282);
   ctx.fillStyle = "#ffd15f";
-  ctx.fillText(route.isArrived ? "已到 克拉码头 Clarke Quay" : `下一站 ${route.to}`, 590, 60);
+  ctx.fillText(route.isArrived ? "已到 Clarke Quay" : `下一站 ${stationTitle(route.to)}`, 590, 60);
+  drawRouteRibbon(route);
 
   ctx.fillStyle = "#596a75";
   ctx.fillRect(0, 448, canvas.width, 46);
@@ -328,16 +335,20 @@ function drawStation() {
       ctx.stroke();
     }
   }
+
+  if (route.isFinalLongLeg) {
+    drawScenicSpots(route.segmentProgress);
+  }
 }
 
 function drawPlatformDoors() {
   const route = getCurrentRouteState();
   const progress = route.segmentProgress;
-  drawPlatformDoorSet(-progress * 760, `${route.from} 三扇门`);
-  drawPlatformDoorSet(760 - progress * 760, `${route.to} 三扇门`);
+  drawPlatformDoorSet(-progress * 760, `${route.from.cn} 三扇门`);
+  drawPlatformDoorSet(760 - progress * 760, `${route.to.cn} 三扇门`);
   const nextStation = routeStations[Math.min(route.segmentIndex + 2, routeStations.length - 1)];
   if (nextStation !== route.to) {
-    drawPlatformDoorSet(1520 - progress * 760, `${nextStation} 三扇门`);
+    drawPlatformDoorSet(1520 - progress * 760, `${nextStation.cn} 三扇门`);
   }
 }
 
@@ -378,6 +389,53 @@ function drawPlatformDoorSet(offsetX, label) {
     }
   });
   ctx.restore();
+}
+
+function stationTitle(station) {
+  return `${station.cn} ${station.en}`;
+}
+
+function drawStationName(station, x, y) {
+  ctx.fillStyle = "#172632";
+  ctx.font = "bold 22px system-ui";
+  ctx.fillText(`${station.cn} / ${station.en}`, x, y);
+  ctx.font = "bold 16px system-ui";
+  ctx.fillText(`${station.ms} / ${station.ta}`, x, y + 26);
+}
+
+function drawRouteRibbon(route) {
+  ctx.fillStyle = "rgba(255,250,240,0.88)";
+  ctx.fillRect(24, 118, 474, 78);
+  ctx.fillStyle = "#172632";
+  ctx.font = "bold 15px system-ui";
+  ctx.fillText("港线 Harbour Line", 42, 144);
+  ctx.fillText("港湾 HarbourFront / Pelabuhan / ஹார்பர்ஃப்ரண்ட்", 42, 168);
+  ctx.fillText("欧南园 Outram Park / Taman Outram / ஊட்ரம் பார்க்", 42, 190);
+  if (route.isFinalLongLeg) {
+    ctx.fillStyle = "#8b1e2d";
+    ctx.fillText("牛车水到克拉码头：300 km long run", 42, 212);
+  }
+}
+
+function drawScenicSpots(progress) {
+  const baseX = 850 - progress * 620;
+  const spots = scenicSpots.map((name, index) => ({
+    name,
+    x: baseX + index * 126,
+    y: 158 + (index % 2) * 54
+  }));
+  spots.forEach((spot, index) => {
+    if (spot.x < -120 || spot.x > canvas.width + 120) return;
+    ctx.fillStyle = index % 2 === 0 ? "#39a657" : "#d7a249";
+    ctx.beginPath();
+    ctx.roundRect(spot.x - 44, spot.y - 24, 88, 48, 8);
+    ctx.fill();
+    ctx.fillStyle = "#172632";
+    ctx.font = "bold 13px system-ui";
+    ctx.textAlign = "center";
+    ctx.fillText(spot.name, spot.x, spot.y + 5);
+    ctx.textAlign = "left";
+  });
 }
 
 function drawTrain() {
