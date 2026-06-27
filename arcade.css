@@ -190,6 +190,10 @@ body {
   background: linear-gradient(135deg, #6aa6d8, #4d8c42);
 }
 
+.oz-movie {
+  background: linear-gradient(135deg, #39a657, #ffd15f 48%, #245b8f);
+}
+
 .mario {
   background: linear-gradient(135deg, #d93a32, #245bb8);
 }

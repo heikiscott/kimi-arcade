@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>绿野仙踪原创短片</title>
+    <link rel="stylesheet" href="oz-movie.css" />
+  </head>
+  <body>
+    <a class="home-link" href="arcade.html">游戏大厅</a>
+    <main class="oz-shell">
+      <section class="movie-stage">
+        <canvas id="ozCanvas" width="1080" height="620" aria-label="绿野仙踪原创动画短片"></canvas>
+        <div class="caption-card">
+          <span id="sceneCount">第 1 幕</span>
+          <strong id="sceneTitle">堪萨斯的风</strong>
+          <p id="sceneText">多罗西和托托在农场旁边，看见远处的天空开始旋转。</p>
+        </div>
+      </section>
+
+      <section class="movie-panel">
+        <p class="label">Original Oz Movie</p>
+        <h1>绿野仙踪原创短片</h1>
+        <p id="statusText">这是根据经典童话做的原创动画短片，不复制原版电影画面和歌曲。</p>
+        <div class="button-grid">
+          <button id="playBtn" type="button">播放电影</button>
+          <button id="pauseBtn" type="button">暂停</button>
+          <button id="nextBtn" type="button">下一幕</button>
+          <button id="restartBtn" type="button">重来</button>
+        </div>
+        <ol class="scene-list" id="sceneList"></ol>
+      </section>
+    </main>
+    <script src="oz-movie.js"></script>
+  </body>
+</html>
