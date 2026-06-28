@@ -71,14 +71,15 @@ canvas {
 
 .caption-card {
   position: absolute;
-  left: 34px;
-  right: 34px;
-  bottom: 34px;
-  padding: 16px 18px;
-  border: 1px solid rgba(23, 38, 50, 0.14);
+  left: 28px;
+  right: 28px;
+  bottom: 22px;
+  padding: 9px 13px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.9);
-  box-shadow: 0 16px 34px rgba(23, 38, 50, 0.16);
+  background: rgba(12, 24, 32, 0.58);
+  box-shadow: 0 10px 24px rgba(23, 38, 50, 0.18);
+  backdrop-filter: blur(3px);
 }
 
 .caption-card span,
@@ -96,13 +97,26 @@ canvas {
   text-transform: uppercase;
 }
 
+.caption-card span {
+  color: rgba(255, 255, 255, 0.68);
+  font-size: 0.68rem;
+}
+
 .caption-card strong {
-  margin-top: 4px;
-  font-size: 1.8rem;
+  margin-top: 2px;
+  color: #ffffff;
+  font-size: 1.16rem;
   line-height: 1;
 }
 
-.caption-card p,
+.caption-card p {
+  margin: 4px 0 0;
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 0.9rem;
+  font-weight: 800;
+  line-height: 1.28;
+}
+
 .movie-panel p {
   margin: 8px 0 0;
   color: #4e5e69;
@@ -189,7 +203,8 @@ button:hover {
   }
 
   .caption-card {
-    position: static;
-    margin-top: 12px;
+    left: 22px;
+    right: 22px;
+    bottom: 18px;
   }
 }
