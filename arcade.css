@@ -162,6 +162,10 @@ body {
   background: linear-gradient(135deg, #6e4aa5, #2b7c70);
 }
 
+.poker {
+  background: linear-gradient(135deg, #11634f, #172632 52%, #ffd15f);
+}
+
 .rail {
   background: linear-gradient(135deg, #bd6a1d, #334655);
 }

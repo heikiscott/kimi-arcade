@@ -203,8 +203,8 @@ button:hover {
   }
 
   .caption-card {
-    left: 22px;
-    right: 22px;
-    bottom: 18px;
+    position: static;
+    margin-top: 10px;
+    padding: 8px 10px;
   }
 }

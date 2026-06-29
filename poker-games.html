@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>扑克游戏馆</title>
+    <link rel="stylesheet" href="poker-games.css" />
+  </head>
+  <body>
+    <a class="home-link" href="arcade.html">游戏大厅</a>
+    <main class="poker-shell">
+      <section class="poker-table">
+        <div class="table-top">
+          <div>
+            <p class="label">Poker Room</p>
+            <h1 id="gameTitle">斗地主</h1>
+          </div>
+          <div class="mode-tabs" aria-label="选择扑克游戏">
+            <button class="active" data-mode="landlord" type="button">斗地主</button>
+            <button data-mode="fishing" type="button">小猫钓鱼</button>
+            <button data-mode="duel" type="button">五张接大牌</button>
+          </div>
+        </div>
+
+        <div class="status-board">
+          <strong id="statusText">选择手牌，点“出牌”。这是简化斗地主，可以随便出选中的牌。</strong>
+          <span id="deckText">牌堆：0</span>
+        </div>
+
+        <section id="landlordView" class="game-view active" aria-label="斗地主">
+          <div class="opponents">
+            <div class="player-box">
+              <span>电脑一</span>
+              <strong id="llBotA">17 张</strong>
+            </div>
+            <div class="pile-box">
+              <span>桌面牌</span>
+              <div class="cards table-cards" id="llTable"></div>
+            </div>
+            <div class="player-box">
+              <span>电脑二</span>
+              <strong id="llBotB">17 张</strong>
+            </div>
+          </div>
+          <div class="hand-title">
+            <span>我的牌：我是地主</span>
+            <strong id="llMineCount">20 张</strong>
+          </div>
+          <div class="cards hand" id="llMine"></div>
+          <div class="action-row">
+            <button id="llPlayBtn" type="button">出牌</button>
+            <button id="llPassBtn" type="button">不要</button>
+            <button id="llNewBtn" type="button">重新发牌</button>
+          </div>
+        </section>
+
+        <section id="fishingView" class="game-view" aria-label="小猫钓鱼">
+          <div class="fishing-grid">
+            <div class="player-box">
+              <span>我的牌堆</span>
+              <strong id="fishMineCount">26 张</strong>
+            </div>
+            <div class="pile-box fishing-pile">
+              <span>鱼塘桌面</span>
+              <div class="cards table-cards" id="fishTable"></div>
+            </div>
+            <div class="player-box">
+              <span>电脑牌堆</span>
+              <strong id="fishBotCount">26 张</strong>
+            </div>
+          </div>
+          <div class="action-row">
+            <button id="fishPlayBtn" type="button">我翻一张</button>
+            <button id="fishAutoBtn" type="button">自动玩一轮</button>
+            <button id="fishNewBtn" type="button">重新开始</button>
+          </div>
+        </section>
+
+        <section id="duelView" class="game-view" aria-label="五张接大牌">
+          <div class="custom-row">
+            <label>最大点数 <input id="duelMaxRank" type="number" min="8" max="30" value="13" /></label>
+            <label>起手牌 <input id="duelHandSize" type="number" min="3" max="8" value="5" /></label>
+            <button id="duelNewBtn" type="button">按这个重新发牌</button>
+          </div>
+          <div class="duel-grid">
+            <div class="player-box">
+              <span>电脑手牌</span>
+              <strong id="duelBotCount">5 张</strong>
+            </div>
+            <div class="pile-box">
+              <span>上一张牌</span>
+              <div class="cards table-cards" id="duelTable"></div>
+            </div>
+            <div class="player-box">
+              <span>摸牌堆</span>
+              <strong id="duelDeckCount">0 张</strong>
+            </div>
+          </div>
+          <div class="hand-title">
+            <span>我的五张牌：你可以任意选一张出</span>
+            <strong id="duelMineCount">5 张</strong>
+          </div>
+          <div class="cards hand" id="duelMine"></div>
+          <div class="action-row">
+            <button id="duelPlayBtn" type="button">出这张</button>
+            <button id="duelDrawBtn" type="button">摸一张</button>
+          </div>
+        </section>
+      </section>
+
+      <aside class="help-panel">
+        <p class="label">怎么玩</p>
+        <h2>三个玩法</h2>
+        <p><strong>斗地主：</strong>你当地主，点牌可以选中，想出几张都可以。电脑会跟牌或不要。</p>
+        <p><strong>小猫钓鱼：</strong>轮流翻牌，桌面已有同点数时就把中间一串牌钓走。</p>
+        <p><strong>五张接大牌：</strong>你和电脑各有几张牌。你出 4，电脑要出比 4 大的；没有就摸牌。点数和起手牌可以自定义。</p>
+      </aside>
+    </main>
+    <script src="poker-games.js"></script>
+  </body>
+</html>
