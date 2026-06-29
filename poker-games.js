@@ -202,7 +202,7 @@ function newFishing() {
   fish.table = [];
   fish.turn = "mine";
   fish.over = false;
-  setStatus("小猫钓鱼开始：你翻一张，电脑也翻一张，相同点数就钓走中间的牌。");
+  setStatus("小猫钓鱼开始：你按一次，自己翻一张，电脑也会接着翻一张。");
   renderAll();
 }
 
@@ -229,21 +229,21 @@ function fishPlayOne(player) {
   renderAll();
 }
 
-function fishPlayerTurn() {
+function fishPlayerRound() {
   if (fish.turn !== "mine") {
-    setStatus("现在轮到电脑，点“自动玩一轮”。");
+    setStatus("现在轮到电脑，点“只让电脑翻一张”。");
     return;
   }
   fishPlayOne("mine");
+  if (!fish.over) window.setTimeout(() => fishPlayOne("bot"), 650);
 }
 
-function fishAutoRound() {
-  if (fish.turn === "mine") {
-    fishPlayOne("mine");
-    window.setTimeout(() => fishPlayOne("bot"), 600);
-  } else {
-    fishPlayOne("bot");
+function fishBotTurn() {
+  if (fish.turn !== "bot") {
+    setStatus("现在轮到你，点“我翻一张，电脑也翻”。");
+    return;
   }
+  fishPlayOne("bot");
 }
 
 function renderFishing() {
@@ -359,8 +359,8 @@ modeButtons.forEach((button) => button.addEventListener("click", () => setMode(b
 document.querySelector("#llPlayBtn").addEventListener("click", playLandlordCards);
 document.querySelector("#llPassBtn").addEventListener("click", passLandlord);
 document.querySelector("#llNewBtn").addEventListener("click", newLandlord);
-document.querySelector("#fishPlayBtn").addEventListener("click", fishPlayerTurn);
-document.querySelector("#fishAutoBtn").addEventListener("click", fishAutoRound);
+document.querySelector("#fishPlayBtn").addEventListener("click", fishPlayerRound);
+document.querySelector("#fishAutoBtn").addEventListener("click", fishBotTurn);
 document.querySelector("#fishNewBtn").addEventListener("click", newFishing);
 document.querySelector("#duelPlayBtn").addEventListener("click", playDuelCard);
 document.querySelector("#duelDrawBtn").addEventListener("click", duelDraw);
