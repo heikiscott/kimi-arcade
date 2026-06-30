@@ -198,6 +198,10 @@ body {
   background: linear-gradient(135deg, #39a657, #ffd15f 48%, #245b8f);
 }
 
+.return-oz {
+  background: linear-gradient(135deg, #172632, #23a36a 48%, #f3c84f);
+}
+
 .mario {
   background: linear-gradient(135deg, #d93a32, #245bb8);
 }

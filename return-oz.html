@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>重返奥兹国原创短片</title>
+    <link rel="stylesheet" href="return-oz.css" />
+  </head>
+  <body>
+    <a class="home-link" href="arcade.html">游戏大厅</a>
+    <main class="return-shell">
+      <section class="movie-stage">
+        <canvas id="returnOzCanvas" width="1080" height="620" aria-label="重返奥兹国原创动画短片"></canvas>
+        <div class="dialogue-bar">
+          <span id="sceneCount">第 1 幕</span>
+          <strong id="speakerName">多罗西</strong>
+          <p id="lineText">托托，你听见了吗？翡翠城好像在叫我回去。</p>
+        </div>
+      </section>
+
+      <section class="movie-panel">
+        <p class="label">Return To Oz Style</p>
+        <h1>重返奥兹国短片</h1>
+        <p id="statusText">原创奇幻短片：人物会自己说话，有对白、气泡、系统朗读和原创音乐。</p>
+        <div class="button-grid">
+          <button id="playBtn" type="button">播放短片</button>
+          <button id="pauseBtn" type="button">暂停</button>
+          <button id="nextBtn" type="button">下一幕</button>
+          <button id="restartBtn" type="button">重来</button>
+        </div>
+        <ol class="scene-list" id="sceneList"></ol>
+      </section>
+    </main>
+    <script src="return-oz.js"></script>
+  </body>
+</html>
