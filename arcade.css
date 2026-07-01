@@ -206,6 +206,10 @@ body {
   background: linear-gradient(135deg, #121b24, #2f6fd8 48%, #f1c94b);
 }
 
+.rescue-hero {
+  background: linear-gradient(135deg, #2b78c4, #39a657 48%, #ffd15f);
+}
+
 .mario {
   background: linear-gradient(135deg, #d93a32, #245bb8);
 }

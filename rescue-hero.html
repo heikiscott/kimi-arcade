@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>英雄救援原创短片</title>
+    <link rel="stylesheet" href="rescue-hero.css" />
+  </head>
+  <body>
+    <a class="home-link" href="arcade.html">游戏大厅</a>
+    <main class="rescue-shell">
+      <section class="movie-stage">
+        <canvas id="rescueCanvas" width="1080" height="620" aria-label="英雄救援原创动画短片"></canvas>
+        <div class="dialogue-card">
+          <span id="sceneCount">第 1 幕</span>
+          <strong id="speakerName">小男孩</strong>
+          <p id="lineText">英雄叔叔！你听得见吗？大家快来救人！</p>
+        </div>
+      </section>
+
+      <section class="movie-panel">
+        <p class="label">Rescue Movie</p>
+        <h1>英雄救援短片</h1>
+        <p id="statusText">原创安全动画：英雄穿短裤/泳裤倒下，小男孩呼救，救援人员赶来，最后英雄醒来。</p>
+        <div class="button-grid">
+          <button id="playBtn" type="button">播放视频</button>
+          <button id="pauseBtn" type="button">暂停</button>
+          <button id="nextBtn" type="button">下一幕</button>
+          <button id="restartBtn" type="button">重来</button>
+        </div>
+        <ol class="scene-list" id="sceneList"></ol>
+      </section>
+    </main>
+    <script src="rescue-hero.js"></script>
+  </body>
+</html>
