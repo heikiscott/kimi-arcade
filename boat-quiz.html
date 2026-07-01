@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>滑船问答闯关</title>
+    <link rel="stylesheet" href="boat-quiz.css" />
+  </head>
+  <body>
+    <a class="home-link" href="arcade.html">游戏大厅</a>
+    <main class="boat-shell">
+      <section class="river-stage">
+        <canvas id="boatCanvas" width="1080" height="620" aria-label="滑船问答闯关游戏"></canvas>
+        <div class="top-board">
+          <div>
+            <span>距离</span>
+            <strong id="progressText">0%</strong>
+          </div>
+          <div>
+            <span>关卡</span>
+            <strong id="gateText">0 / 4</strong>
+          </div>
+          <div>
+            <span>速度</span>
+            <strong id="speedText">普通</strong>
+          </div>
+        </div>
+      </section>
+
+      <section class="control-panel">
+        <p class="label">Boat Quiz</p>
+        <h1>滑船问答闯关</h1>
+        <p id="statusText">小船会自动往前滑。到问答门就停下来，答对继续，答错重玩。</p>
+        <div class="button-grid">
+          <button id="startBtn" type="button">开始滑船</button>
+          <button id="paddleBtn" type="button">划快一点</button>
+          <button id="restartBtn" type="button">重来</button>
+        </div>
+
+        <div class="quiz-card" id="quizCard" hidden>
+          <span id="quizCategory">问答门</span>
+          <strong id="quizQuestion">问题</strong>
+          <div class="answer-grid" id="answerGrid"></div>
+        </div>
+
+        <aside class="rules">
+          <strong>玩法</strong>
+          <p>小船滑到一半会遇到题目。第一关有一个“答案等于 G”的题，后面是动画片知识题。</p>
+          <p>答错会回到起点；答对全部问答门就到终点。</p>
+        </aside>
+      </section>
+    </main>
+    <script src="boat-quiz.js"></script>
+  </body>
+</html>

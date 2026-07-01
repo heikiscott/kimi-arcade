@@ -226,6 +226,10 @@ body {
   background: linear-gradient(135deg, #d93a32, #172632 54%, #ffd15f);
 }
 
+.boat-quiz {
+  background: linear-gradient(135deg, #2e91bd, #39a657 52%, #ffd15f);
+}
+
 .drawing {
   background: linear-gradient(135deg, #245b8f, #d94a78 52%, #ffd15f);
 }
