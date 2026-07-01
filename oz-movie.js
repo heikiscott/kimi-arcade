@@ -38,6 +38,7 @@ let audioContext = null;
 let lastSpokenScene = -1;
 
 function getAudio() {
+  if (!window.AudioContext && !window.webkitAudioContext) return null;
   if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
   if (audioContext.state === "suspended") audioContext.resume();
   return audioContext;
@@ -45,6 +46,7 @@ function getAudio() {
 
 function playTone(freq, start, duration, gainValue = 0.025, type = "sine") {
   const audio = getAudio();
+  if (!audio) return;
   const osc = audio.createOscillator();
   const gain = audio.createGain();
   osc.type = type;
@@ -75,6 +77,7 @@ function speakScene() {
 
 function playNoise(start, duration, gainValue = 0.03) {
   const audio = getAudio();
+  if (!audio) return;
   const bufferSize = Math.max(1, Math.floor(audio.sampleRate * duration));
   const buffer = audio.createBuffer(1, bufferSize, audio.sampleRate);
   const data = buffer.getChannelData(0);
@@ -155,6 +158,7 @@ function setScene(index) {
   sceneIndex = (index + scenes.length) % scenes.length;
   sceneStartedAt = performance.now();
   pausedAt = playing ? 0 : sceneStartedAt;
+  lastSpokenScene = -1;
   updateText();
   renderSceneList();
 }
@@ -167,6 +171,7 @@ function updateText() {
 }
 
 function playMovie() {
+  if ("speechSynthesis" in window) window.speechSynthesis.cancel();
   if (!playing) {
     playing = true;
     if (pausedAt) {
@@ -185,7 +190,8 @@ function pauseMovie() {
   if (!playing) return;
   playing = false;
   pausedAt = performance.now();
-  if ("speechSynthesis" in window) window.speechSynthesis.pause();
+  if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+  lastSpokenScene = -1;
   statusText.textContent = "电影暂停了。";
 }
 
@@ -208,7 +214,14 @@ function loop(now) {
   const scene = scenes[sceneIndex];
   const elapsed = playing ? now - sceneStartedAt : (pausedAt || now) - sceneStartedAt;
   const t = Math.max(0, Math.min(1, elapsed / scene.duration));
-  scene.draw(t, now / 1000);
+  try {
+    scene.draw(t, now / 1000);
+  } catch (error) {
+    playing = false;
+    pausedAt = now;
+    statusText.textContent = "画面刚刚卡住了，点“重来”可以恢复。";
+    console.error(error);
+  }
   if (playing && elapsed >= scene.duration) {
     if (sceneIndex === scenes.length - 1) {
       playing = false;
@@ -2300,6 +2313,24 @@ playBtn.addEventListener("click", playMovie);
 pauseBtn.addEventListener("click", pauseMovie);
 nextBtn.addEventListener("click", nextScene);
 restartBtn.addEventListener("click", restartMovie);
+
+if (!CanvasRenderingContext2D.prototype.roundRect) {
+  CanvasRenderingContext2D.prototype.roundRect = function roundRect(x, y, w, h, r) {
+    const radius = Math.min(r, w / 2, h / 2);
+    this.beginPath();
+    this.moveTo(x + radius, y);
+    this.lineTo(x + w - radius, y);
+    this.quadraticCurveTo(x + w, y, x + w, y + radius);
+    this.lineTo(x + w, y + h - radius);
+    this.quadraticCurveTo(x + w, y + h, x + w - radius, y + h);
+    this.lineTo(x + radius, y + h);
+    this.quadraticCurveTo(x, y + h, x, y + h - radius);
+    this.lineTo(x, y + radius);
+    this.quadraticCurveTo(x, y, x + radius, y);
+    this.closePath();
+    return this;
+  };
+}
 
 renderSceneList();
 updateText();
