@@ -162,6 +162,10 @@ body {
   background: linear-gradient(135deg, #6e4aa5, #2b7c70);
 }
 
+.go-gomoku {
+  background: linear-gradient(135deg, #172632, #d9a85b 52%, #ffffff);
+}
+
 .poker {
   background: linear-gradient(135deg, #11634f, #172632 52%, #ffd15f);
 }

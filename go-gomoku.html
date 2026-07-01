@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>围棋和五子棋练习馆</title>
+    <link rel="stylesheet" href="go-gomoku.css" />
+  </head>
+  <body>
+    <a class="home-link" href="arcade.html">游戏大厅</a>
+    <main class="board-shell">
+      <section class="play-area">
+        <div class="top-row">
+          <div>
+            <p class="label">Board Practice</p>
+            <h1 id="gameTitle">围棋练习</h1>
+          </div>
+          <div class="mode-tabs" aria-label="选择棋类">
+            <button class="active" data-mode="go" type="button">围棋</button>
+            <button data-mode="gomoku" type="button">五子棋</button>
+          </div>
+        </div>
+
+        <div class="status-board">
+          <strong id="statusText">黑棋先下。围住对方一整块棋没有气，就能吃掉。</strong>
+          <span id="scoreText">黑提 0 · 白提 0</span>
+        </div>
+
+        <div class="board-wrap">
+          <canvas id="boardCanvas" width="760" height="760" aria-label="围棋和五子棋棋盘"></canvas>
+        </div>
+
+        <div class="action-row">
+          <button id="passBtn" type="button">围棋停一手</button>
+          <button id="undoBtn" type="button">撤销一步</button>
+          <button id="resetBtn" type="button">重新开始</button>
+        </div>
+      </section>
+
+      <aside class="help-panel">
+        <p class="label">怎么玩</p>
+        <h2>两个练习</h2>
+        <p><strong>围棋：</strong>9 路棋盘，黑白轮流点格子。把对方棋子的气全部堵住，就会自动提掉。</p>
+        <p><strong>五子棋：</strong>15 路棋盘，你下黑棋，电脑下白棋。横、竖、斜任意连成 5 个就赢。</p>
+        <p>棋盘可以用手机点，也可以用 iPad 点。点错了可以撤销一步。</p>
+      </aside>
+    </main>
+    <script src="go-gomoku.js"></script>
+  </body>
+</html>
