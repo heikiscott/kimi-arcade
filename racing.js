@@ -14,6 +14,7 @@ const againBtn = document.querySelector("#againBtn");
 const finishCard = document.querySelector("#finishCard");
 const finishTitle = document.querySelector("#finishTitle");
 const finishText = document.querySelector("#finishText");
+const touchControls = [...document.querySelectorAll("[data-drive]")];
 
 const tracks = [
   { id: "sky", name: "天上", road: "#b8d8ff", bg: ["#77c8f0", "#eaf8ff"], obstacle: "云墙" },
@@ -837,6 +838,47 @@ window.addEventListener("keyup", (event) => {
   const key = event.key.length === 1 ? event.key.toLowerCase() : event.key;
   keys.delete(key);
 });
+
+const driveKeyMap = {
+  left: "a",
+  right: "d",
+  fast: "w",
+  slow: "s",
+  fly: "f"
+};
+
+function pressDriveControl(action, button) {
+  button.classList.add("is-pressed");
+  if (action === "jump") {
+    jumpPlayer();
+    return;
+  }
+  const key = driveKeyMap[action];
+  if (key) keys.add(key);
+}
+
+function releaseDriveControl(action, button) {
+  button.classList.remove("is-pressed");
+  const key = driveKeyMap[action];
+  if (key) keys.delete(key);
+}
+
+touchControls.forEach((button) => {
+  const action = button.dataset.drive;
+  button.addEventListener("pointerdown", (event) => {
+    event.preventDefault();
+    button.setPointerCapture(event.pointerId);
+    pressDriveControl(action, button);
+  });
+  button.addEventListener("pointerup", (event) => {
+    event.preventDefault();
+    releaseDriveControl(action, button);
+  });
+  button.addEventListener("pointercancel", () => releaseDriveControl(action, button));
+  button.addEventListener("lostpointercapture", () => releaseDriveControl(action, button));
+  button.addEventListener("contextmenu", (event) => event.preventDefault());
+});
+
 startBtn.addEventListener("click", startRace);
 resetBtn.addEventListener("click", resetRace);
 againBtn.addEventListener("click", startRace);

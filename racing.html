@@ -11,6 +11,14 @@
     <main class="race-shell">
       <section class="race-stage">
         <canvas id="raceCanvas" width="900" height="620" aria-label="赛车小游戏"></canvas>
+        <div class="touch-controls" aria-label="赛车屏幕控制">
+          <button class="control-btn turn-left" data-drive="left" type="button">左</button>
+          <button class="control-btn speed-up" data-drive="fast" type="button">加速</button>
+          <button class="control-btn jump" data-drive="jump" type="button">跳</button>
+          <button class="control-btn fly" data-drive="fly" type="button">飞</button>
+          <button class="control-btn brake" data-drive="slow" type="button">刹车</button>
+          <button class="control-btn turn-right" data-drive="right" type="button">右</button>
+        </div>
         <div class="finish-card" id="finishCard">
           <p>Finish</p>
           <h1 id="finishTitle">冲线成功!</h1>
@@ -61,7 +69,7 @@
           <button id="startBtn" type="button">开始赛车</button>
           <button id="resetBtn" type="button">重新选择</button>
         </div>
-        <p class="hint">键盘：A/D 或左右键转弯，W 加速，S 刹车，空格跳，F 飞起来。只有你的车会飞，别的车不会。</p>
+        <p class="hint">手机：按画面下面的按钮控制。键盘：A/D 或左右键转弯，W 加速，S 刹车，空格跳，F 飞起来。只有你的车会飞，别的车不会。</p>
       </section>
     </main>
     <script src="racing.js"></script>
