@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>小侦探变小原创短片</title>
+    <link rel="stylesheet" href="detective-shrink.css" />
+  </head>
+  <body>
+    <a class="home-link" href="arcade.html">游戏大厅</a>
+    <main class="detective-shell">
+      <section class="movie-stage">
+        <canvas id="detectiveCanvas" width="1080" height="620" aria-label="小侦探变小原创动画短片"></canvas>
+        <div class="dialogue-card">
+          <span id="sceneCount">第 1 幕</span>
+          <strong id="speakerName">少年侦探</strong>
+          <p id="lineText">夜里的游乐场不对劲，钟楼下面有人在偷偷交换东西。</p>
+        </div>
+      </section>
+
+      <section class="movie-panel">
+        <p class="label">Tiny Detective Movie</p>
+        <h1>小侦探变小短片</h1>
+        <p id="statusText">原创侦探动画：人物会说话，有紧张音乐、变小特效和结尾继续破案。</p>
+        <div class="button-grid">
+          <button id="playBtn" type="button">播放短片</button>
+          <button id="pauseBtn" type="button">暂停</button>
+          <button id="nextBtn" type="button">下一幕</button>
+          <button id="restartBtn" type="button">重来</button>
+        </div>
+        <ol class="scene-list" id="sceneList"></ol>
+      </section>
+    </main>
+    <script src="detective-shrink.js"></script>
+  </body>
+</html>
