@@ -75,6 +75,7 @@ let jumpCooldown = 0;
 let flyBoost = 0;
 let lastGapHit = -9999;
 let audioContext = null;
+const totalLaps = 3;
 
 const player = {
   x: 450,
@@ -188,7 +189,7 @@ function startRace() {
   player.tilt = 0;
   finishCard.classList.remove("show");
   finishTitle.textContent = "冲线成功!";
-  statusEl.textContent = `${selectedDriver.name}开着${selectedCar.name}出发! 注意别的车和悬崖。`;
+  statusEl.textContent = `${selectedDriver.name}开着${selectedCar.name}出发! 一共 ${totalLaps} 圈，机场赛道可以穿过大飞机。`;
   buildItems();
   playStart();
 }
@@ -237,7 +238,15 @@ function buildItems() {
 }
 
 function raceGoalDistance() {
-  return 12000 + selectedStars * 3500;
+  return lapDistance() * totalLaps;
+}
+
+function lapDistance() {
+  return 5200 + selectedStars * 1200;
+}
+
+function currentLap() {
+  return Math.min(totalLaps, Math.floor(distance / lapDistance()) + 1);
 }
 
 function update() {
@@ -292,7 +301,7 @@ function update() {
       rival.y = -600 - Math.random() * 900;
       rival.x = roadCenterAtY(140) - 185 + Math.floor(Math.random() * 370);
     }
-    if (!flyingNow && Math.abs(player.x - rival.x) < 52 && Math.abs(player.y - rival.y) < 78) {
+    if (selectedTrack.id !== "airport" && !flyingNow && Math.abs(player.x - rival.x) < 52 && Math.abs(player.y - rival.y) < 78) {
       endRace(`撞到写着 ${rival.label} 的车，嘎了。`);
     }
   });
@@ -372,9 +381,10 @@ function drawBackground() {
   if (selectedTrack.id === "sky") {
     drawCloud(120, 90);
     drawCloud(730, 150);
+    drawSkyLoop();
   }
   if (selectedTrack.id === "airport") {
-    drawHugeAirportPlane();
+    drawAirportScene();
     ctx.fillStyle = "rgba(255,255,255,0.5)";
     ctx.fillRect(34, 450, 180, 26);
     ctx.fillRect(690, 430, 160, 24);
@@ -397,6 +407,70 @@ function drawBackground() {
   if (selectedTrack.id === "ghost") {
     drawHauntedHouse();
   }
+}
+
+function drawAirportScene() {
+  drawHugeAirportPlane();
+  drawCheeringCrowd(48, 284, "快点赢啊!");
+  drawCheeringCrowd(702, 300, "冲线!");
+  drawCheeringCrowd(42, 526, "第 3 圈!");
+  drawCheeringCrowd(698, 526, "加油!");
+  ctx.fillStyle = "rgba(23,38,50,0.55)";
+  ctx.fillRect(0, 388, canvas.width, 18);
+  ctx.fillStyle = "#fff";
+  ctx.font = "bold 18px system-ui";
+  ctx.textAlign = "center";
+  ctx.fillText("机场跑道 · 可以飞起来穿过大飞机", canvas.width / 2, 382);
+  ctx.textAlign = "left";
+}
+
+function drawCheeringCrowd(x, y, text) {
+  for (let i = 0; i < 7; i += 1) {
+    const px = x + i * 24;
+    ctx.fillStyle = ["#d93a32", "#245b8f", "#39a657", "#ffd15f"][i % 4];
+    ctx.beginPath();
+    ctx.arc(px, y, 8, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillRect(px - 6, y + 10, 12, 24);
+    ctx.strokeStyle = "#172632";
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(px - 7, y + 16);
+    ctx.lineTo(px - 16, y + 4 + Math.sin(distance / 60 + i) * 4);
+    ctx.moveTo(px + 7, y + 16);
+    ctx.lineTo(px + 16, y + 4 - Math.sin(distance / 60 + i) * 4);
+    ctx.stroke();
+  }
+  ctx.fillStyle = "rgba(255,255,255,0.9)";
+  ctx.beginPath();
+  ctx.roundRect(x - 8, y - 58, 182, 34, 8);
+  ctx.fill();
+  ctx.strokeStyle = "#172632";
+  ctx.lineWidth = 3;
+  ctx.stroke();
+  ctx.fillStyle = "#172632";
+  ctx.font = "bold 18px system-ui";
+  ctx.textAlign = "center";
+  ctx.fillText(text, x + 83, y - 35);
+  ctx.textAlign = "left";
+}
+
+function drawSkyLoop() {
+  const cx = 682 + Math.sin(distance / 900) * 70;
+  const cy = 260;
+  ctx.strokeStyle = "rgba(255,255,255,0.82)";
+  ctx.lineWidth = 18;
+  ctx.beginPath();
+  ctx.arc(cx, cy, 84, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.strokeStyle = "rgba(36,91,143,0.58)";
+  ctx.lineWidth = 6;
+  ctx.stroke();
+  ctx.fillStyle = "#245b8f";
+  ctx.font = "bold 18px system-ui";
+  ctx.textAlign = "center";
+  ctx.fillText("云朵过山车圈", cx, cy + 6);
+  ctx.textAlign = "left";
 }
 
 function drawHauntedHouse() {
@@ -577,49 +651,59 @@ function drawCloud(x, y) {
 
 function drawHugeAirportPlane() {
   ctx.save();
-  ctx.translate(450, 150);
+  ctx.translate(450, 178);
   ctx.fillStyle = "rgba(244,247,250,0.96)";
   ctx.beginPath();
-  ctx.roundRect(-430, -48, 860, 96, 48);
+  ctx.roundRect(-460, -56, 920, 112, 54);
   ctx.fill();
   ctx.fillStyle = "#cbd7df";
   ctx.beginPath();
-  ctx.moveTo(-60, -34);
-  ctx.lineTo(170, -150);
-  ctx.lineTo(240, -120);
-  ctx.lineTo(80, -24);
+  ctx.moveTo(-70, -42);
+  ctx.lineTo(210, -166);
+  ctx.lineTo(292, -132);
+  ctx.lineTo(92, -28);
   ctx.fill();
   ctx.beginPath();
-  ctx.moveTo(-60, 34);
-  ctx.lineTo(170, 150);
-  ctx.lineTo(240, 120);
-  ctx.lineTo(80, 24);
+  ctx.moveTo(-70, 42);
+  ctx.lineTo(210, 166);
+  ctx.lineTo(292, 132);
+  ctx.lineTo(92, 28);
   ctx.fill();
   ctx.fillStyle = "#d93a32";
   ctx.beginPath();
-  ctx.roundRect(-436, -34, 72, 68, 26);
+  ctx.roundRect(-466, -38, 82, 76, 28);
   ctx.fill();
   ctx.fillStyle = "#172632";
   ctx.beginPath();
-  ctx.roundRect(-150, -34, 74, 68, 8);
-  ctx.roundRect(76, -34, 74, 68, 8);
+  ctx.roundRect(-170, -40, 90, 80, 8);
+  ctx.roundRect(78, -40, 90, 80, 8);
   ctx.fill();
+  ctx.fillStyle = "rgba(255,255,255,0.86)";
+  ctx.fillRect(-78, -14, 156, 28);
   ctx.fillStyle = "#fff";
   ctx.font = "bold 18px system-ui";
   ctx.textAlign = "center";
-  ctx.fillText("入口门", -113, 8);
-  ctx.fillText("出口门", 113, 8);
+  ctx.fillText("入口门", -125, 7);
+  ctx.fillText("出口门", 123, 7);
   ctx.textAlign = "left";
   ctx.fillStyle = "#245b8f";
-  for (let x = -320; x <= 320; x += 54) {
+  for (let x = -340; x <= 340; x += 54) {
     ctx.fillRect(x, -10, 24, 20);
   }
+  ctx.fillStyle = "#d93a32";
+  ctx.font = "bold 24px system-ui";
+  ctx.textAlign = "center";
+  ctx.fillText("穿过这架大飞机!", 0, 88);
+  ctx.textAlign = "left";
   ctx.restore();
 }
 
 function roadCenterAtY(y) {
   const depth = (canvas.height - y) / canvas.height;
-  return 450 + Math.sin(distance / 260 + depth * 2.5) * 82 * (0.2 + depth);
+  const lapWave = Math.sin(distance / 820);
+  const tightCurve = Math.sin(distance / 360 + depth * 4.8);
+  const straight = Math.abs(Math.sin(distance / 1350)) < 0.34 ? 0.22 : 1;
+  return 450 + (lapWave * 58 + tightCurve * 72 * straight) * (0.24 + depth);
 }
 
 function roadHalfWidthAtY(y) {
@@ -806,20 +890,21 @@ function drawDriver(x, y) {
 
 function drawHud() {
   ctx.fillStyle = "rgba(255,250,240,0.88)";
-  ctx.fillRect(18, 18, 220, 82);
+  ctx.fillRect(18, 18, 238, 106);
   ctx.fillStyle = "#172632";
   ctx.font = "bold 18px system-ui";
   ctx.fillText(`${selectedTrack.name} · ${"★".repeat(selectedStars)}`, 34, 48);
-  ctx.fillText(`距离 ${Math.min(100, Math.floor((distance / raceGoalDistance()) * 100))}%`, 34, 78);
+  ctx.fillText(`第 ${currentLap()} / ${totalLaps} 圈`, 34, 78);
+  ctx.fillText(`总进度 ${Math.min(100, Math.floor((distance / raceGoalDistance()) * 100))}%`, 34, 108);
   if (airborne > 0) {
     ctx.fillStyle = "#d93a32";
-    ctx.fillText("飞行中", 150, 78);
+    ctx.fillText("飞行中", 160, 78);
   } else if (jumpFrames > 0) {
     ctx.fillStyle = "#d93a32";
-    ctx.fillText("跳跃中", 150, 78);
+    ctx.fillText("跳跃中", 160, 78);
   } else if (flyBoost > 0) {
     ctx.fillStyle = "#d93a32";
-    ctx.fillText("自己飞", 150, 78);
+    ctx.fillText("自己飞", 160, 78);
   }
 }
 
