@@ -194,6 +194,10 @@ body {
   background: linear-gradient(135deg, #172632, #245b8f 48%, #ffd15f);
 }
 
+.coaster-accident {
+  background: linear-gradient(135deg, #d94a44, #245b8f 48%, #ffd15f);
+}
+
 .dorothy {
   background: linear-gradient(135deg, #6aa6d8, #4d8c42);
 }

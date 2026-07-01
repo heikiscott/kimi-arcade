@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>过山车事故安全短片</title>
+    <link rel="stylesheet" href="coaster-accident.css" />
+  </head>
+  <body>
+    <a class="home-link" href="arcade.html">游戏大厅</a>
+    <main class="coaster-shell">
+      <section class="movie-stage">
+        <canvas id="coasterCanvas" width="1080" height="620" aria-label="过山车事故安全动画"></canvas>
+        <div class="caption-card">
+          <span id="sceneCount">第 1 幕</span>
+          <strong id="sceneTitle">正常出发</strong>
+          <p id="sceneText">过山车慢慢离站，玩偶乘客坐好，安全压杆已经放下。</p>
+        </div>
+      </section>
+      <section class="movie-panel">
+        <p class="label">Safety Movie</p>
+        <h1>过山车事故短片</h1>
+        <p id="statusText">安全示意动画：不展示伤亡，只表现故障、报警、救援和停稳。</p>
+        <div class="button-grid">
+          <button id="playBtn" type="button">播放视频</button>
+          <button id="pauseBtn" type="button">暂停</button>
+          <button id="nextBtn" type="button">下一幕</button>
+          <button id="restartBtn" type="button">重来</button>
+        </div>
+        <ol class="scene-list" id="sceneList"></ol>
+      </section>
+    </main>
+    <script src="coaster-accident.js"></script>
+  </body>
+</html>
