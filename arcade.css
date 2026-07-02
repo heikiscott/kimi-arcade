@@ -198,6 +198,10 @@ body {
   background: linear-gradient(135deg, #d94a44, #245b8f 48%, #ffd15f);
 }
 
+.haunted-scream {
+  background: linear-gradient(135deg, #2d2740, #d94a78 48%, #ffd15f);
+}
+
 .dorothy {
   background: linear-gradient(135deg, #6aa6d8, #4d8c42);
 }
@@ -292,6 +296,10 @@ body {
 
 .elevator-tower {
   background: linear-gradient(135deg, #172632, #607786 58%, #ffd15f);
+}
+
+.two-elevators {
+  background: linear-gradient(135deg, #172632, #607786 52%, #ffd15f);
 }
 
 .elevator-old {

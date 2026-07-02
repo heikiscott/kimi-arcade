@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>双电梯控制游戏</title>
+    <link rel="stylesheet" href="two-elevators.css" />
+  </head>
+  <body>
+    <a class="home-link" href="arcade.html">游戏大厅</a>
+    <main class="elevator-shell">
+      <section class="building-panel">
+        <div class="tower-title">
+          <p>Two Elevators</p>
+          <h1>双电梯控制</h1>
+        </div>
+        <div class="building" id="building">
+          <div class="floor-labels" id="floorLabels"></div>
+          <div class="shaft shaft-one">
+            <div class="shaft-name">1 号电梯</div>
+            <div class="elevator-car" id="carOne">
+              <div class="door left"></div>
+              <div class="door right"></div>
+              <div class="people" id="peopleOne"></div>
+            </div>
+          </div>
+          <div class="shaft shaft-two">
+            <div class="shaft-name">2 号电梯</div>
+            <div class="elevator-car" id="carTwo">
+              <div class="door left"></div>
+              <div class="door right"></div>
+              <div class="people" id="peopleTwo"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="control-panel">
+        <p class="label">Control Game</p>
+        <h2>分别控制两台电梯</h2>
+        <p id="statusText">规则：门开不能运行，超载不能运行，运行中不能开门。</p>
+        <div class="panel-grid">
+          <article class="elevator-card" data-id="0">
+            <div>
+              <span>1 号电梯</span>
+              <strong id="infoOne">1 楼 · 0/4 人</strong>
+            </div>
+            <div class="button-row">
+              <button data-action="open" data-id="0">开门</button>
+              <button data-action="close" data-id="0">关门</button>
+              <button data-action="add" data-id="0">上人</button>
+              <button data-action="remove" data-id="0">下人</button>
+              <button data-action="up" data-id="0">上一层</button>
+              <button data-action="down" data-id="0">下一层</button>
+            </div>
+            <div class="floor-buttons" id="floorsOne"></div>
+          </article>
+
+          <article class="elevator-card" data-id="1">
+            <div>
+              <span>2 号电梯</span>
+              <strong id="infoTwo">1 楼 · 0/6 人</strong>
+            </div>
+            <div class="button-row">
+              <button data-action="open" data-id="1">开门</button>
+              <button data-action="close" data-id="1">关门</button>
+              <button data-action="add" data-id="1">上人</button>
+              <button data-action="remove" data-id="1">下人</button>
+              <button data-action="up" data-id="1">上一层</button>
+              <button data-action="down" data-id="1">下一层</button>
+            </div>
+            <div class="floor-buttons" id="floorsTwo"></div>
+          </article>
+        </div>
+        <div class="wide-actions">
+          <button id="stopBtn" type="button">紧急停止</button>
+          <button id="resumeBtn" type="button">恢复运行</button>
+          <button id="resetBtn" type="button">重来</button>
+        </div>
+      </section>
+    </main>
+    <script src="two-elevators.js"></script>
+  </body>
+</html>

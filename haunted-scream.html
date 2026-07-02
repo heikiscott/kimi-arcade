@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>鬼屋尖叫短片</title>
+    <link rel="stylesheet" href="haunted-scream.css" />
+  </head>
+  <body>
+    <a class="home-link" href="arcade.html">游戏大厅</a>
+    <main class="haunted-shell">
+      <section class="movie-stage">
+        <canvas id="hauntedCanvas" width="1080" height="620" aria-label="鬼屋尖叫动画"></canvas>
+        <div class="caption-card">
+          <span id="sceneCount">第 1 幕</span>
+          <strong id="sceneTitle">排队进鬼屋</strong>
+          <p id="sceneText">几个玩偶游客站在鬼屋门口，灯牌一闪一闪，大家准备进去。</p>
+        </div>
+      </section>
+
+      <section class="movie-panel">
+        <p class="label">Haunted Movie</p>
+        <h1>鬼屋尖叫短片</h1>
+        <p id="statusText">这是好玩的鬼屋短片：会有尖叫音效，但不会吓得太过分。</p>
+        <div class="button-grid">
+          <button id="playBtn" type="button">播放视频</button>
+          <button id="pauseBtn" type="button">暂停</button>
+          <button id="nextBtn" type="button">下一幕</button>
+          <button id="restartBtn" type="button">重来</button>
+        </div>
+        <ol class="scene-list" id="sceneList"></ol>
+      </section>
+    </main>
+    <script src="haunted-scream.js"></script>
+  </body>
+</html>

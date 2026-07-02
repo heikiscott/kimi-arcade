@@ -1,0 +1,193 @@
+:root {
+  --ink: #151923;
+  --paper: rgba(255, 255, 255, 0.86);
+  --pink: #e54c82;
+  --gold: #ffd15f;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  color: var(--ink);
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.06) 1px, transparent 1px),
+    linear-gradient(rgba(255, 255, 255, 0.06) 1px, transparent 1px),
+    linear-gradient(135deg, #111520 0%, #332244 52%, #7a284b 100%);
+  background-size: 42px 42px, 42px 42px, auto;
+}
+
+.home-link {
+  position: fixed;
+  top: 18px;
+  left: 18px;
+  z-index: 5;
+  padding: 10px 14px;
+  border-radius: 999px;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  text-decoration: none;
+  font-weight: 900;
+  backdrop-filter: blur(10px);
+}
+
+.haunted-shell {
+  width: min(1180px, calc(100vw - 28px));
+  margin: 0 auto;
+  padding: 78px 0 46px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 18px;
+  align-items: start;
+}
+
+.movie-stage {
+  position: relative;
+  min-width: 0;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #07090f;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 24px 62px rgba(0, 0, 0, 0.36);
+}
+
+canvas {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1080 / 620;
+}
+
+.caption-card {
+  position: absolute;
+  left: 18px;
+  right: 18px;
+  bottom: 16px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  background: rgba(8, 11, 18, 0.68);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  backdrop-filter: blur(8px);
+}
+
+.caption-card span {
+  color: var(--gold);
+  font-size: 0.82rem;
+  font-weight: 950;
+}
+
+.caption-card strong {
+  display: block;
+  margin-top: 2px;
+  font-size: clamp(1.35rem, 2.5vw, 2.1rem);
+  line-height: 1;
+}
+
+.caption-card p {
+  margin: 6px 0 0;
+  color: rgba(255, 255, 255, 0.82);
+  font-weight: 800;
+  line-height: 1.38;
+}
+
+.movie-panel {
+  padding: 20px;
+  border-radius: 8px;
+  background: var(--paper);
+  box-shadow: 0 24px 62px rgba(0, 0, 0, 0.26);
+}
+
+.label {
+  margin: 0 0 8px;
+  color: #7f4b63;
+  font-size: 0.78rem;
+  font-weight: 950;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+h1 {
+  margin: 0;
+  font-size: clamp(2.1rem, 5vw, 3.4rem);
+  line-height: 0.95;
+}
+
+.movie-panel > p:not(.label) {
+  margin: 12px 0 0;
+  color: #4f5964;
+  font-weight: 800;
+  line-height: 1.45;
+}
+
+.button-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 16px;
+}
+
+button {
+  min-height: 46px;
+  border: 0;
+  border-radius: 8px;
+  color: #fff;
+  background: #172632;
+  font: inherit;
+  font-weight: 950;
+  cursor: pointer;
+}
+
+button:hover {
+  filter: brightness(1.08);
+}
+
+.scene-list {
+  display: grid;
+  gap: 8px;
+  margin: 16px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.scene-list li {
+  padding: 10px 12px;
+  border-radius: 8px;
+  color: #49545f;
+  background: #fff;
+  border: 1px solid rgba(21, 25, 35, 0.1);
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.scene-list li.active {
+  color: #fff;
+  background: linear-gradient(135deg, #2d2740, #d94a78);
+}
+
+@media (max-width: 900px) {
+  .haunted-shell {
+    grid-template-columns: 1fr;
+    padding-top: 72px;
+  }
+
+  .home-link {
+    position: absolute;
+  }
+}
+
+@media (max-width: 560px) {
+  .caption-card {
+    left: 10px;
+    right: 10px;
+    bottom: 10px;
+  }
+
+  .button-grid {
+    grid-template-columns: 1fr;
+  }
+}

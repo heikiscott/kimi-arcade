@@ -1,0 +1,372 @@
+:root {
+  --ink: #172632;
+  --muted: #62707a;
+  --gold: #ffd15f;
+  --blue: #2f79c8;
+  --green: #39a657;
+  --red: #d94a44;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  color: var(--ink);
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.32) 1px, transparent 1px),
+    linear-gradient(rgba(255, 255, 255, 0.28) 1px, transparent 1px),
+    linear-gradient(135deg, #dcecf1 0%, #f8ead0 52%, #e0ecdf 100%);
+  background-size: 42px 42px, 42px 42px, auto;
+}
+
+.home-link {
+  position: fixed;
+  top: 18px;
+  left: 18px;
+  z-index: 10;
+  padding: 10px 14px;
+  border-radius: 999px;
+  color: #fff;
+  background: #172632;
+  text-decoration: none;
+  font-weight: 950;
+}
+
+.elevator-shell {
+  width: min(1200px, calc(100vw - 28px));
+  margin: 0 auto;
+  padding: 78px 0 46px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 420px);
+  gap: 18px;
+  align-items: start;
+}
+
+.building-panel,
+.control-panel {
+  border-radius: 8px;
+  border: 1px solid rgba(23, 38, 50, 0.14);
+  background: rgba(255, 255, 255, 0.82);
+  box-shadow: 0 24px 56px rgba(23, 38, 50, 0.14);
+}
+
+.building-panel {
+  padding: 18px;
+}
+
+.tower-title {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: end;
+  margin-bottom: 12px;
+}
+
+.tower-title p,
+.label {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 950;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+h1,
+h2 {
+  margin: 0;
+  line-height: 0.98;
+}
+
+h1 {
+  font-size: clamp(2.4rem, 6vw, 4.8rem);
+}
+
+h2 {
+  margin-top: 8px;
+  font-size: clamp(1.9rem, 4vw, 2.9rem);
+}
+
+.building {
+  position: relative;
+  height: min(74vh, 720px);
+  min-height: 560px;
+  overflow: hidden;
+  border-radius: 8px;
+  background:
+    repeating-linear-gradient(to top, rgba(255, 255, 255, 0.16) 0 2px, transparent 2px 60px),
+    linear-gradient(180deg, #243646, #10202c);
+  border: 8px solid #172632;
+}
+
+.floor-labels {
+  position: absolute;
+  inset: 18px auto 18px 18px;
+  width: 98px;
+  display: grid;
+  grid-template-rows: repeat(10, 1fr);
+  z-index: 2;
+}
+
+.floor-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #fff;
+  font-weight: 950;
+}
+
+.floor-label::before {
+  content: "";
+  width: 34px;
+  height: 3px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.shaft {
+  position: absolute;
+  top: 18px;
+  bottom: 18px;
+  width: 160px;
+  border: 4px solid rgba(255, 255, 255, 0.22);
+  border-radius: 8px;
+  background: rgba(8, 13, 18, 0.34);
+}
+
+.shaft-one {
+  left: calc(50% - 190px);
+}
+
+.shaft-two {
+  left: calc(50% + 30px);
+}
+
+.shaft-name {
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 3;
+  width: max-content;
+  padding: 6px 9px;
+  border-radius: 999px;
+  color: #172632;
+  background: var(--gold);
+  font-weight: 950;
+  font-size: 0.78rem;
+}
+
+.elevator-car {
+  position: absolute;
+  left: 18px;
+  bottom: 0;
+  width: 116px;
+  height: 78px;
+  border: 5px solid #f0f6fb;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #8fc6df;
+  transition: bottom 260ms linear;
+}
+
+.door {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 50%;
+  background: linear-gradient(180deg, #dce8ee, #93aab5);
+  transition: transform 260ms ease;
+}
+
+.door.left {
+  left: 0;
+  border-right: 2px solid #5d6a72;
+}
+
+.door.right {
+  right: 0;
+  border-left: 2px solid #5d6a72;
+}
+
+.elevator-car.open .door.left {
+  transform: translateX(-82%);
+}
+
+.elevator-car.open .door.right {
+  transform: translateX(82%);
+}
+
+.elevator-car.overload {
+  border-color: var(--red);
+  box-shadow: 0 0 0 5px rgba(217, 74, 68, 0.3);
+}
+
+.people {
+  position: absolute;
+  left: 7px;
+  right: 7px;
+  bottom: 8px;
+  display: flex;
+  flex-wrap: wrap-reverse;
+  gap: 3px;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.doll {
+  width: 16px;
+  height: 24px;
+  border-radius: 8px 8px 4px 4px;
+  background: var(--blue);
+  border: 2px solid #172632;
+}
+
+.doll:nth-child(2n) {
+  background: var(--green);
+}
+
+.doll:nth-child(3n) {
+  background: var(--gold);
+}
+
+.control-panel {
+  padding: 20px;
+}
+
+.control-panel > p:not(.label) {
+  margin: 12px 0 0;
+  color: #53616b;
+  font-weight: 850;
+  line-height: 1.45;
+}
+
+.panel-grid {
+  display: grid;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.elevator-card {
+  padding: 14px;
+  border-radius: 8px;
+  background: #fff;
+  border: 1px solid rgba(23, 38, 50, 0.12);
+}
+
+.elevator-card span {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 950;
+}
+
+.elevator-card strong {
+  display: block;
+  margin-top: 4px;
+  font-size: 1.35rem;
+}
+
+.button-row,
+.floor-buttons,
+.wide-actions {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.button-row {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.floor-buttons {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.wide-actions {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+button {
+  min-height: 42px;
+  border: 0;
+  border-radius: 8px;
+  color: #fff;
+  background: #172632;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 950;
+  cursor: pointer;
+}
+
+button:hover {
+  filter: brightness(1.08);
+}
+
+.floor-buttons button {
+  background: #2f79c8;
+}
+
+#stopBtn {
+  background: var(--red);
+}
+
+#resumeBtn {
+  background: var(--green);
+}
+
+@media (max-width: 920px) {
+  .elevator-shell {
+    grid-template-columns: 1fr;
+    padding-top: 72px;
+  }
+
+  .home-link {
+    position: absolute;
+  }
+}
+
+@media (max-width: 620px) {
+  .building {
+    min-height: 520px;
+  }
+
+  .floor-labels {
+    width: 68px;
+    left: 10px;
+  }
+
+  .floor-label {
+    font-size: 0.78rem;
+  }
+
+  .shaft {
+    width: 118px;
+  }
+
+  .shaft-one {
+    left: calc(50% - 132px);
+  }
+
+  .shaft-two {
+    left: calc(50% + 16px);
+  }
+
+  .elevator-car {
+    left: 11px;
+    width: 88px;
+    height: 70px;
+  }
+
+  .button-row,
+  .wide-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .floor-buttons {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
