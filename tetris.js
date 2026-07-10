@@ -6,6 +6,7 @@ const scoreText = document.querySelector("#scoreText");
 const linesText = document.querySelector("#linesText");
 const levelText = document.querySelector("#levelText");
 const statusBanner = document.querySelector("#statusBanner");
+const musicText = document.querySelector("#musicText");
 const startBtn = document.querySelector("#startBtn");
 const pauseBtn = document.querySelector("#pauseBtn");
 const restartBtn = document.querySelector("#restartBtn");
@@ -43,9 +44,100 @@ let paused = false;
 let gameOver = false;
 let lastTime = 0;
 let dropCounter = 0;
+let audioContext = null;
+
+const FUNNY_JINGLES = [
+  {
+    name: "你爱我我爱你风格",
+    type: "triangle",
+    notes: [392, 440, 494, 392, 523, 494, 440, 392],
+    step: 0.14
+  },
+  {
+    name: "小火车叮叮",
+    type: "square",
+    notes: [330, 330, 392, 330, 392, 494, 392],
+    step: 0.11
+  },
+  {
+    name: "胜利蹦蹦",
+    type: "sine",
+    notes: [523, 659, 784, 1046, 784, 1046],
+    step: 0.13
+  },
+  {
+    name: "外星人咕噜",
+    type: "sawtooth",
+    notes: [220, 330, 247, 370, 277, 415, 311],
+    step: 0.1
+  },
+  {
+    name: "电梯叮咚",
+    type: "triangle",
+    notes: [659, 523, 784, 659],
+    step: 0.18
+  },
+  {
+    name: "方块大笑",
+    type: "square",
+    notes: [440, 660, 440, 660, 880, 660, 440],
+    step: 0.09
+  },
+  {
+    name: "金币哗啦",
+    type: "sine",
+    notes: [988, 1175, 1319, 1568, 1319],
+    step: 0.08
+  },
+  {
+    name: "超级四行王",
+    type: "triangle",
+    notes: [523, 659, 784, 1046, 1175, 1319, 1568, 1760],
+    step: 0.09
+  }
+];
 
 function makeBoard() {
   return Array.from({ length: ROWS }, () => Array(COLS).fill(""));
+}
+
+function getAudio() {
+  if (!window.AudioContext && !window.webkitAudioContext) return null;
+  if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioContext.state === "suspended") audioContext.resume();
+  return audioContext;
+}
+
+function playTone(freq, start, duration, gainValue = 0.04, type = "sine") {
+  const audio = getAudio();
+  if (!audio) return;
+  const osc = audio.createOscillator();
+  const gain = audio.createGain();
+  osc.type = type;
+  osc.frequency.setValueAtTime(freq, audio.currentTime + start);
+  gain.gain.setValueAtTime(0.0001, audio.currentTime + start);
+  gain.gain.linearRampToValueAtTime(gainValue, audio.currentTime + start + 0.015);
+  gain.gain.exponentialRampToValueAtTime(0.0001, audio.currentTime + start + duration);
+  osc.connect(gain);
+  gain.connect(audio.destination);
+  osc.start(audio.currentTime + start);
+  osc.stop(audio.currentTime + start + duration + 0.04);
+}
+
+function playPop(start, count) {
+  for (let i = 0; i < count; i += 1) {
+    playTone(130 + i * 45, start + i * 0.045, 0.06, 0.025, "square");
+  }
+}
+
+function playClearJingle(cleared) {
+  const jingle = cleared >= 4 ? FUNNY_JINGLES[FUNNY_JINGLES.length - 1] : FUNNY_JINGLES[Math.floor(Math.random() * (FUNNY_JINGLES.length - 1))];
+  musicText.textContent = `刚刚响了：${jingle.name}`;
+  playPop(0, cleared * 3);
+  jingle.notes.forEach((note, index) => {
+    const extra = cleared >= 3 && index % 2 === 0 ? 12 : 0;
+    playTone(note + extra, 0.16 + index * jingle.step, jingle.step * 0.86, 0.035 + cleared * 0.006, jingle.type);
+  });
 }
 
 function randomPiece() {
@@ -96,7 +188,8 @@ function clearLines() {
     lines += cleared;
     score += [0, 100, 300, 500, 800][cleared] * level;
     level = Math.floor(lines / 5) + 1;
-    statusBanner.textContent = `太棒了，消掉 ${cleared} 行！`;
+    playClearJingle(cleared);
+    statusBanner.textContent = `太棒了，消掉 ${cleared} 行！搞笑音乐响起来。`;
   }
 }
 
@@ -206,6 +299,7 @@ function updateScore() {
 }
 
 function resetGame() {
+  getAudio();
   board = makeBoard();
   piece = randomPiece();
   nextPiece = randomPiece();
@@ -216,6 +310,7 @@ function resetGame() {
   gameOver = false;
   paused = false;
   playing = true;
+  musicText.textContent = "等你消一行就随机响";
   statusBanner.textContent = "游戏开始，方块正在掉。";
 }
 
@@ -243,6 +338,7 @@ function frame(time = 0) {
 }
 
 document.addEventListener("keydown", (event) => {
+  getAudio();
   if (event.key === "ArrowLeft" || event.key.toLowerCase() === "a") move(-1);
   if (event.key === "ArrowRight" || event.key.toLowerCase() === "d") move(1);
   if (event.key === "ArrowUp" || event.key.toLowerCase() === "w") rotatePiece();
@@ -256,6 +352,7 @@ document.addEventListener("keydown", (event) => {
 document.addEventListener("click", (event) => {
   const button = event.target.closest("[data-action]");
   if (!button) return;
+  getAudio();
   const action = button.dataset.action;
   if (action === "left") move(-1);
   if (action === "right") move(1);

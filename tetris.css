@@ -106,7 +106,8 @@ h1 {
 }
 
 .score-grid div,
-.next-box {
+.next-box,
+.music-box {
   padding: 12px;
   border-radius: 8px;
   background: #fff;
@@ -114,7 +115,8 @@ h1 {
 }
 
 .score-grid span,
-.next-box span {
+.next-box span,
+.music-box span {
   display: block;
   color: #677480;
   font-size: 0.75rem;
@@ -132,6 +134,18 @@ h1 {
   margin-top: 12px;
   display: grid;
   gap: 8px;
+}
+
+.music-box {
+  margin-top: 12px;
+}
+
+.music-box strong {
+  display: block;
+  margin-top: 5px;
+  color: #172632;
+  font-size: 1.05rem;
+  line-height: 1.25;
 }
 
 #nextBoard {
