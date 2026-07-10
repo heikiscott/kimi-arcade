@@ -197,6 +197,10 @@ body {
   background: linear-gradient(135deg, #172632, #32c7d9 52%, #ffd15f);
 }
 
+.secret-room {
+  background: linear-gradient(135deg, #172632, #25777b 52%, #9a6b2e);
+}
+
 .poker {
   background: linear-gradient(135deg, #11634f, #172632 52%, #ffd15f);
 }
