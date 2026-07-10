@@ -11,7 +11,8 @@ const hero = {
   y: 465,
   targetX: 480,
   targetY: 465,
-  movingForward: false
+  movingForward: false,
+  scarfSwing: 0
 };
 
 const rooms = [
@@ -80,6 +81,9 @@ const rooms = [
 let roomIndex = 0;
 let exited = false;
 let pulse = 0;
+let audioContext = null;
+let ambienceOn = false;
+let ambienceTimer = null;
 
 function room() {
   return rooms[roomIndex];
@@ -97,7 +101,59 @@ function distance(a, b, x, y) {
   return Math.hypot(a - x, b - y);
 }
 
+function getAudio() {
+  if (!window.AudioContext && !window.webkitAudioContext) return null;
+  if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioContext.state === "suspended") audioContext.resume();
+  return audioContext;
+}
+
+function playTone(freq, start, duration, gainValue = 0.025, type = "sine") {
+  const audio = getAudio();
+  if (!audio) return;
+  const osc = audio.createOscillator();
+  const gain = audio.createGain();
+  osc.type = type;
+  osc.frequency.setValueAtTime(freq, audio.currentTime + start);
+  gain.gain.setValueAtTime(0.0001, audio.currentTime + start);
+  gain.gain.linearRampToValueAtTime(gainValue, audio.currentTime + start + 0.03);
+  gain.gain.exponentialRampToValueAtTime(0.0001, audio.currentTime + start + duration);
+  osc.connect(gain);
+  gain.connect(audio.destination);
+  osc.start(audio.currentTime + start);
+  osc.stop(audio.currentTime + start + duration + 0.05);
+}
+
+function castleChime() {
+  playTone(196, 0, 0.7, 0.028, "triangle");
+  playTone(247, 0.28, 0.7, 0.022, "triangle");
+  playTone(147, 0.62, 1.1, 0.018, "sine");
+}
+
+function magicClick() {
+  [659, 784, 988].forEach((note, index) => playTone(note, index * 0.08, 0.12, 0.022, "triangle"));
+}
+
+function doorGroan() {
+  [130, 116, 98, 82].forEach((note, index) => playTone(note, index * 0.18, 0.32, 0.03, "sawtooth"));
+}
+
+function toggleCastleSound() {
+  getAudio();
+  ambienceOn = !ambienceOn;
+  if (ambienceOn) {
+    castleChime();
+    ambienceTimer = window.setInterval(castleChime, 3600);
+    say("古堡声音打开了：远处钟声、低低的风声和魔法回音。");
+  } else {
+    window.clearInterval(ambienceTimer);
+    ambienceTimer = null;
+    say("古堡声音关掉了。");
+  }
+}
+
 function move(dx, dy) {
+  getAudio();
   if (exited || hero.movingForward) return;
   hero.x = clamp(hero.x + dx, ROOM.x + 42, ROOM.x + ROOM.w - 42);
   hero.y = clamp(hero.y + dy, ROOM.y + 42, ROOM.y + ROOM.h - 42);
@@ -111,6 +167,7 @@ function move(dx, dy) {
 }
 
 function tidyRoom() {
+  getAudio();
   if (exited || hero.movingForward) return;
   const current = room();
   if (current.sorted) {
@@ -118,10 +175,12 @@ function tidyRoom() {
     return;
   }
   current.sorted = true;
+  magicClick();
   say(`你把${current.name}整理整齐了。提示：${current.hint}`);
 }
 
 function investigate() {
+  getAudio();
   if (exited || hero.movingForward) return;
   const current = room();
   if (!current.sorted) {
@@ -137,10 +196,12 @@ function investigate() {
     return;
   }
   current.found = true;
+  magicClick();
   say(`找到了：${current.clue}。前面的门锁自己弹开了。`);
 }
 
 function advanceRoom() {
+  getAudio();
   if (exited || hero.movingForward) return;
   if (!room().found) {
     say("门还没开。先整理房间，再找到真正的线索。");
@@ -149,6 +210,7 @@ function advanceRoom() {
   hero.movingForward = true;
   hero.targetX = DOOR.x + DOOR.w / 2;
   hero.targetY = ROOM.y + 12;
+  doorGroan();
   say(roomIndex === rooms.length - 1 ? "最后的门打开了，你正走出魔法学院密室。" : "门开了，小人往前面的房间走。");
 }
 
@@ -181,6 +243,7 @@ function action(name) {
   if (name === "search") investigate();
   if (name === "advance") advanceRoom();
   if (name === "story") storyHint();
+  if (name === "sound") toggleCastleSound();
   if (name === "reset") resetGame();
 }
 
@@ -223,6 +286,8 @@ function drawRoomShell() {
   for (let x = ROOM.x + 46; x < ROOM.x + ROOM.w; x += 74) ctx.fillRect(x, ROOM.y + 20, 3, ROOM.h - 40);
   for (let y = ROOM.y + 48; y < ROOM.y + ROOM.h; y += 64) ctx.fillRect(ROOM.x + 20, y, ROOM.w - 40, 3);
 
+  drawCastleDetails();
+
   ctx.fillStyle = current.found ? "#2ecf8f" : "#2c3339";
   ctx.beginPath();
   roundedRect(DOOR.x, DOOR.y, DOOR.w, DOOR.h, 10);
@@ -239,6 +304,85 @@ function drawRoomShell() {
   ctx.font = "900 28px system-ui";
   ctx.fillText(current.name, W / 2, 42);
   ctx.textAlign = "left";
+}
+
+function drawCastleDetails() {
+  const t = pulse;
+  ctx.fillStyle = "#111923";
+  ctx.beginPath();
+  roundedRect(ROOM.x + 22, ROOM.y + 20, ROOM.w - 44, 48, 10);
+  ctx.fill();
+  ctx.strokeStyle = "rgba(217,193,132,0.55)";
+  ctx.lineWidth = 3;
+  ctx.stroke();
+
+  drawBanner(150, 90, "#7a1722", "#d9a83f");
+  drawBanner(760, 90, "#7a1722", "#d9a83f");
+  drawPortrait(205, 188, "校");
+  drawPortrait(742, 188, "巫");
+  drawTorch(125, 286, t);
+  drawTorch(835, 286, t + 1.2);
+
+  const carpet = ctx.createLinearGradient(390, 120, 570, 525);
+  carpet.addColorStop(0, "#7a1722");
+  carpet.addColorStop(1, "#3b1020");
+  ctx.fillStyle = carpet;
+  ctx.beginPath();
+  roundedRect(405, 145, 150, 332, 18);
+  ctx.fill();
+  ctx.strokeStyle = "#d9a83f";
+  ctx.lineWidth = 5;
+  ctx.stroke();
+  ctx.fillStyle = "rgba(217,168,63,0.4)";
+  for (let y = 180; y < 450; y += 54) ctx.fillRect(420, y, 120, 4);
+}
+
+function drawBanner(x, y, main, trim) {
+  ctx.fillStyle = main;
+  ctx.beginPath();
+  ctx.moveTo(x - 28, y);
+  ctx.lineTo(x + 28, y);
+  ctx.lineTo(x + 28, y + 86);
+  ctx.lineTo(x, y + 68);
+  ctx.lineTo(x - 28, y + 86);
+  ctx.closePath();
+  ctx.fill();
+  ctx.fillStyle = trim;
+  ctx.fillRect(x - 4, y + 8, 8, 60);
+  ctx.fillRect(x - 22, y + 16, 44, 7);
+}
+
+function drawPortrait(x, y, mark) {
+  ctx.fillStyle = "#6a4d31";
+  ctx.beginPath();
+  roundedRect(x - 35, y - 44, 70, 88, 8);
+  ctx.fill();
+  ctx.fillStyle = "#d9c184";
+  ctx.fillRect(x - 25, y - 34, 50, 68);
+  ctx.fillStyle = "#263849";
+  ctx.beginPath();
+  ctx.arc(x, y - 8, 16, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = "#172632";
+  ctx.font = "900 18px system-ui";
+  ctx.textAlign = "center";
+  ctx.fillText(mark, x, y + 24);
+  ctx.textAlign = "left";
+}
+
+function drawTorch(x, y, t) {
+  ctx.fillStyle = "#6a4d31";
+  ctx.fillRect(x - 7, y, 14, 54);
+  ctx.fillStyle = "#d9a83f";
+  ctx.beginPath();
+  ctx.arc(x, y, 16, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = Math.sin(t * 8) > 0 ? "#ffef8a" : "#f28b2f";
+  ctx.beginPath();
+  ctx.moveTo(x, y - 28);
+  ctx.quadraticCurveTo(x + 18, y - 5, x, y + 20);
+  ctx.quadraticCurveTo(x - 18, y - 5, x, y - 28);
+  ctx.fill();
 }
 
 function objectPositions() {
@@ -276,13 +420,6 @@ function drawMagicObject(item, time) {
   if (item.type === "potion") drawPotion(item);
   if (item.type === "feather") drawFeather(item);
   if (item.type === "mirror") drawMirror(item);
-  if (item.clue && current.sorted && !current.found) {
-    ctx.strokeStyle = "rgba(255,209,95,0.55)";
-    ctx.lineWidth = 3;
-    ctx.beginPath();
-    ctx.arc(0, 0, 32, 0, Math.PI * 2);
-    ctx.stroke();
-  }
   ctx.restore();
 }
 
@@ -390,19 +527,65 @@ function drawProgress() {
 
 function drawHero(time) {
   const bob = Math.sin(time * 7) * (hero.movingForward ? 6 : 2);
+  hero.scarfSwing = Math.sin(time * 6) * 5;
   ctx.save();
   ctx.translate(hero.x, hero.y + bob);
+
+  ctx.fillStyle = "#111111";
+  ctx.beginPath();
+  ctx.arc(0, -13, 25, Math.PI, 0);
+  ctx.arc(-13, -21, 13, 0, Math.PI * 2);
+  ctx.arc(6, -24, 15, 0, Math.PI * 2);
+  ctx.arc(18, -17, 11, 0, Math.PI * 2);
+  ctx.fill();
+
   ctx.fillStyle = "#f2c49c";
   ctx.beginPath();
   ctx.arc(0, -8, 20, 0, Math.PI * 2);
   ctx.fill();
-  ctx.fillStyle = "#1d684f";
+
+  ctx.fillStyle = "#111111";
   ctx.beginPath();
-  roundedRect(-23, 8, 46, 48, 13);
+  roundedRect(-27, 8, 54, 55, 14);
   ctx.fill();
-  ctx.strokeStyle = "#d9c184";
+  ctx.strokeStyle = "#7a1722";
   ctx.lineWidth = 5;
   ctx.stroke();
+
+  ctx.fillStyle = "#7a1722";
+  ctx.beginPath();
+  roundedRect(-24, 3, 48, 12, 4);
+  ctx.fill();
+  ctx.fillStyle = "#d9a83f";
+  ctx.fillRect(-20, 4, 8, 10);
+  ctx.fillRect(-2, 4, 8, 10);
+  ctx.fillRect(16, 4, 8, 10);
+  ctx.fillStyle = "#7a1722";
+  ctx.beginPath();
+  roundedRect(16, 13, 15, 38 + hero.scarfSwing, 5);
+  ctx.fill();
+  ctx.fillStyle = "#d9a83f";
+  ctx.fillRect(17, 22, 13, 5);
+  ctx.fillRect(17, 38, 13, 5);
+
+  ctx.strokeStyle = "#172632";
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.arc(-8, -11, 7, 0, Math.PI * 2);
+  ctx.arc(8, -11, 7, 0, Math.PI * 2);
+  ctx.moveTo(-1, -11);
+  ctx.lineTo(1, -11);
+  ctx.stroke();
+
+  ctx.strokeStyle = "#7a1722";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(0, -25);
+  ctx.lineTo(-5, -17);
+  ctx.lineTo(2, -18);
+  ctx.lineTo(-3, -10);
+  ctx.stroke();
+
   ctx.fillStyle = "#172632";
   ctx.beginPath();
   ctx.arc(-7, -13, 3, 0, Math.PI * 2);
