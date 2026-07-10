@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>俄罗斯方块</title>
+    <link rel="stylesheet" href="tetris.css" />
+  </head>
+  <body>
+    <a class="home-link" href="arcade.html">游戏大厅</a>
+    <main class="tetris-shell">
+      <section class="game-stage">
+        <canvas id="board" width="300" height="600" aria-label="俄罗斯方块棋盘"></canvas>
+        <div class="status-banner" id="statusBanner">按开始，方块就会掉下来。</div>
+      </section>
+
+      <section class="side-panel">
+        <p class="label">Block Game</p>
+        <h1>俄罗斯方块</h1>
+        <div class="score-grid">
+          <div>
+            <span>分数</span>
+            <strong id="scoreText">0</strong>
+          </div>
+          <div>
+            <span>消行</span>
+            <strong id="linesText">0</strong>
+          </div>
+          <div>
+            <span>等级</span>
+            <strong id="levelText">1</strong>
+          </div>
+        </div>
+        <div class="next-box">
+          <span>下一个</span>
+          <canvas id="nextBoard" width="120" height="120" aria-label="下一个方块"></canvas>
+        </div>
+        <div class="button-grid">
+          <button id="startBtn" type="button">开始</button>
+          <button id="pauseBtn" type="button">暂停</button>
+          <button id="restartBtn" type="button">重来</button>
+        </div>
+        <div class="mobile-controls" aria-label="手机控制">
+          <button data-action="left" type="button">左</button>
+          <button data-action="rotate" type="button">旋转</button>
+          <button data-action="right" type="button">右</button>
+          <button data-action="down" type="button">加速</button>
+          <button data-action="drop" type="button">落下</button>
+        </div>
+        <p class="hint">键盘：A/← 左移，D/→ 右移，W/↑ 旋转，S/↓ 加速，空格直接落下。</p>
+      </section>
+    </main>
+    <script src="tetris.js"></script>
+  </body>
+</html>

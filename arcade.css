@@ -166,6 +166,14 @@ body {
   background: linear-gradient(135deg, #172632, #d9a85b 52%, #ffffff);
 }
 
+.app-chess {
+  background: linear-gradient(135deg, #2f79c8, #f28b2f 52%, #ffd15f);
+}
+
+.tetris {
+  background: linear-gradient(135deg, #172632, #32c7d9 52%, #ffd15f);
+}
+
 .poker {
   background: linear-gradient(135deg, #11634f, #172632 52%, #ffd15f);
 }

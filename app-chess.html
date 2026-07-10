@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>应用棋</title>
+    <link rel="stylesheet" href="app-chess.css" />
+  </head>
+  <body>
+    <a class="home-link" href="arcade.html">游戏大厅</a>
+    <main class="app-chess-shell">
+      <section class="board-panel">
+        <div class="phone-frame">
+          <div class="phone-top">应用棋盘</div>
+          <div id="board" class="board" aria-label="应用棋棋盘"></div>
+        </div>
+      </section>
+
+      <section class="side-panel">
+        <p class="label">App Chess</p>
+        <h1>应用棋</h1>
+        <p id="statusText">蓝队先走。点自己的应用，再点附近一格移动；碰到对方应用就吃掉。</p>
+        <div class="score-row">
+          <div><span>蓝队</span><strong id="blueScore">0</strong></div>
+          <div><span>橙队</span><strong id="orangeScore">0</strong></div>
+          <div><span>回合</span><strong id="turnText">蓝队</strong></div>
+        </div>
+        <div class="actions">
+          <button id="hintBtn" type="button">玩法提示</button>
+          <button id="restartBtn" type="button">重来</button>
+        </div>
+        <ul class="rules">
+          <li>每次只能走到旁边一格，横、竖、斜都可以。</li>
+          <li>吃掉一个对方应用得 1 分。</li>
+          <li>先得 5 分，或者吃到对方“主页”，就赢。</li>
+        </ul>
+      </section>
+    </main>
+    <script src="app-chess.js"></script>
+  </body>
+</html>
