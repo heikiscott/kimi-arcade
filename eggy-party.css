@@ -67,6 +67,7 @@ canvas {
   border: 7px solid #172632;
   border-radius: 8px;
   background: #9edcff;
+  touch-action: none;
 }
 
 .status-bar {

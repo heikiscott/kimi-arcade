@@ -117,6 +117,12 @@ let joystickX = 0;
 let joystickY = 0;
 let joystickPointerId = null;
 let joystickTouching = false;
+let flightLookOffsetX = 0;
+let flightLookOffsetY = 0;
+let flightLookDragging = false;
+let flightLookPointerId = null;
+let flightLookLastX = 0;
+let flightLookLastY = 0;
 
 const lobbyEggies = [
   { x: 420, y: 486, color: "#f06aa3", speed: 0.65, phase: 0 },
@@ -364,6 +370,10 @@ function resetVehicle() {
   vehicle.landedPlaneVisible = false;
   joystickX = 0;
   joystickY = 0;
+  flightLookOffsetX = 0;
+  flightLookOffsetY = 0;
+  flightLookDragging = false;
+  flightLookPointerId = null;
   breakableBuildings.forEach((building) => {
     building.broken = false;
     building.brokenAt = 0;
@@ -498,12 +508,14 @@ function jumpFromPlane() {
   vehicle.mode = "plane-falling";
   vehicle.fallStart = performance.now();
   vehicle.planeCrashExploded = false;
-  vehicle.pilotX = Math.max(210, Math.min(flightWorld.w - 210, vehicle.x - 95));
-  vehicle.pilotY = getNearestPlane().plane.y + 88;
+  vehicle.pilotX = Math.max(210, Math.min(flightWorld.w - 210, vehicle.x - 110));
+  vehicle.pilotY = landingGroundY(vehicle.x) + 118;
   vehicle.pilotVy = 0;
   vehicle.pilotBall = false;
+  flightLookOffsetX = 0;
+  flightLookOffsetY = -360;
   crashSong();
-  statusText.textContent = "小蛋仔跳出来了！现在是飞机先在空中飞一会儿，然后一分钟内掉下来。";
+  statusText.textContent = "小蛋仔已经在地面下面了！飞机还在上方，拖屏幕可以往上看、往下看、往左看、往右看。";
   return true;
 }
 
@@ -521,7 +533,9 @@ function finishPlaneFalling() {
   vehicle.y = landingGroundY(vehicle.x);
   vehicle.pilotX = vehicle.x - 110;
   vehicle.pilotY = vehicle.y + 118;
-  statusText.textContent = "飞机落到地上停住了，不爆炸，不重来；小蛋仔安全在旁边。";
+  flightLookOffsetX = 0;
+  flightLookOffsetY = -180;
+  statusText.textContent = "飞机落到地上停住了，不爆炸，不重来；小蛋仔安全在地面，可以拖屏幕四处看。";
 }
 
 function checkBuildingCrash() {
@@ -791,7 +805,11 @@ function updateActivity() {
       }
       vehicle.y += vehicle.vy;
       const remaining = Math.max(0, Math.ceil((vehicle.fallDuration - fallElapsed) / 1000));
-      if (!vehicle.planeCrashExploded) statusText.textContent = fallElapsed < vehicle.floatDuration ? `小蛋仔安全出来了，飞机还在空中飘，还剩 ${remaining} 秒掉下来。` : `飞机开始往下掉，还剩 ${remaining} 秒落下。`;
+      if (!vehicle.planeCrashExploded) {
+        statusText.textContent = fallElapsed < vehicle.floatDuration
+          ? `小蛋仔在下面地面，飞机还在空中飘，还剩 ${remaining} 秒掉下来。拖屏幕可以四处看。`
+          : `小蛋仔在下面看着，飞机开始往下掉，还剩 ${remaining} 秒落地。拖屏幕可以四处看。`;
+      }
       if (fallElapsed >= vehicle.fallDuration && !vehicle.planeCrashExploded) finishPlaneFalling();
     } else if (vehicle.mode === "landed") {
       vehicle.vx = 0;
@@ -1337,10 +1355,22 @@ function drawActivityTitle() {
   ctx.fillText(selectedLocation.detail, 48, 84);
 }
 
+function flightFocusPoint() {
+  if (vehicle.mode === "walking") return { x: vehicle.pilotX, y: vehicle.pilotY };
+  if (vehicle.mode === "plane-falling" || vehicle.mode === "landed") {
+    return {
+      x: vehicle.pilotX + flightLookOffsetX,
+      y: vehicle.pilotY + flightLookOffsetY
+    };
+  }
+  return { x: vehicle.x, y: vehicle.y };
+}
+
 function drawFlightScene() {
   const zoom = 0.46;
-  const focusX = vehicle.mode === "walking" ? vehicle.pilotX : vehicle.x;
-  const focusY = vehicle.mode === "walking" ? vehicle.pilotY : vehicle.y;
+  const focus = flightFocusPoint();
+  const focusX = focus.x;
+  const focusY = focus.y;
   const viewW = W / zoom;
   const viewH = H / zoom;
   const offsetX = viewW / 2 - focusX;
@@ -1373,8 +1403,16 @@ function drawFlightScene() {
   ctx.font = "900 18px system-ui";
   ctx.fillText("近景机场视野 3365 公顷", W - 288, 56);
   ctx.font = "800 14px system-ui";
-  ctx.fillText(vehicle.mode === "walking" ? "候机楼里面，蓝灯去登机口" : `飞行坐标 ${Math.round(vehicle.x)} / ${Math.round(vehicle.y)}`, W - 288, 82);
-  ctx.fillText("操纵杆：下拉上升，上推下降", W - 288, 104);
+  const line1 = vehicle.mode === "walking"
+    ? "候机楼里面，蓝灯去登机口"
+    : vehicle.mode === "plane-falling" || vehicle.mode === "landed"
+      ? "小蛋仔在地面，飞机在上方"
+      : `飞行坐标 ${Math.round(vehicle.x)} / ${Math.round(vehicle.y)}`;
+  const line2 = vehicle.mode === "plane-falling" || vehicle.mode === "landed"
+    ? "拖屏幕：上看、下看、左看、右看"
+    : "操纵杆：下拉上升，上推下降";
+  ctx.fillText(line1, W - 288, 82);
+  ctx.fillText(line2, W - 288, 104);
 }
 
 function drawAirportTerminal(x, y, w = 310, h = 220, label = "机场") {
@@ -2670,6 +2708,48 @@ document.addEventListener("touchcancel", (event) => {
   event.preventDefault();
   resetJoystick();
 }, { passive: false });
+
+function canDragFlightLook() {
+  return screen === "activity"
+    && selectedLocation.category === "flight"
+    && (vehicle.mode === "plane-falling" || vehicle.mode === "landed");
+}
+
+function updateFlightLook(clientX, clientY) {
+  const zoom = 0.46;
+  flightLookOffsetX -= (clientX - flightLookLastX) / zoom;
+  flightLookOffsetY -= (clientY - flightLookLastY) / zoom;
+  flightLookLastX = clientX;
+  flightLookLastY = clientY;
+  flightLookOffsetX = Math.max(-2600, Math.min(2600, flightLookOffsetX));
+  flightLookOffsetY = Math.max(-2400, Math.min(1800, flightLookOffsetY));
+}
+
+canvas.addEventListener("pointerdown", (event) => {
+  if (!canDragFlightLook()) return;
+  event.preventDefault();
+  flightLookDragging = true;
+  flightLookPointerId = event.pointerId;
+  flightLookLastX = event.clientX;
+  flightLookLastY = event.clientY;
+  if (canvas.setPointerCapture) canvas.setPointerCapture(event.pointerId);
+});
+
+canvas.addEventListener("pointermove", (event) => {
+  if (!flightLookDragging || event.pointerId !== flightLookPointerId) return;
+  event.preventDefault();
+  updateFlightLook(event.clientX, event.clientY);
+});
+
+function stopFlightLookDrag(event) {
+  if (!flightLookDragging || event.pointerId !== flightLookPointerId) return;
+  event.preventDefault();
+  flightLookDragging = false;
+  flightLookPointerId = null;
+}
+
+canvas.addEventListener("pointerup", stopFlightLookDrag);
+canvas.addEventListener("pointercancel", stopFlightLookDrag);
 
 startBtn.addEventListener("click", () => {
   if (screen === "lobby" && lobbyInteract()) return;
