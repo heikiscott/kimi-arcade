@@ -30,7 +30,7 @@ const keys = new Set();
 const controls = new Set();
 
 const categories = [
-  { key: "flight", title: "开飞机地点", count: 50, prefix: "云端机场", detail: "登机口、机舱视角、大飞机跑道" },
+  { key: "flight", title: "开飞机地点", count: 50, prefix: "云端机场", detail: "分开的飞机、登机口、大跑道" },
   { key: "water", title: "水上乐园地点", count: 20, prefix: "水花乐园", detail: "大喇叭、漩涡、蛇形滑道" },
   { key: "metro", title: "开地铁地点", count: 10, prefix: "环线地铁", detail: "站台门、驾驶台、下一站" },
   { key: "fish", title: "摸鱼地点", count: 30, prefix: "河边摸鱼", detail: "河岸、树、椅子、捞随机东西" },
@@ -130,28 +130,28 @@ let lastZombieCatch = 0;
 const fishLoots = ["鱼", "锅", "僵尸蛋", "宝箱", "奇怪玩具", "水草", "金色贝壳", "破旧钥匙"];
 
 const flightWorld = {
-  w: 4500,
+  w: 8500,
   h: 3900,
-  finishX: 4200,
+  finishX: 8050,
   finishY: 1820
 };
 
 const airportPlanes = [
-  { x: 420, y: 1120, label: "日本航空", color: "#d8343f", scale: 1.12 },
-  { x: 690, y: 1120, label: "中国航空", color: "#2f79c8", scale: 1.12 },
-  { x: 960, y: 1120, label: "美国航空", color: "#42536b", scale: 1.12 },
-  { x: 1230, y: 1120, label: "东方航空", color: "#d83258", scale: 1.14 },
-  { x: 1500, y: 1120, label: "南方航空", color: "#1f8c65", scale: 1.12 },
-  { x: 1770, y: 1120, label: "亚洲航空", color: "#d51f2a", scale: 1.12 },
-  { x: 2040, y: 1120, label: "泰国航空", color: "#7b4ab8", scale: 1.12 },
-  { x: 2310, y: 1120, label: "大韩航空", color: "#4aa3df", scale: 1.12 },
-  { x: 2580, y: 1120, label: "印度航空", color: "#c22d2d", scale: 1.12 },
-  { x: 2850, y: 1120, label: "山东航空", color: "#f28b2f", scale: 1.1 },
-  { x: 3120, y: 1120, label: "澳门航空", color: "#2270b8", scale: 1.1 },
-  { x: 3390, y: 1120, label: "三亚航空", color: "#32a852", scale: 1.1 },
-  { x: 3660, y: 1120, label: "私人飞机", color: "#8f5fd9", scale: 1.04 },
-  { x: 3930, y: 1120, label: "军事飞机", color: "#4f6b48", scale: 1.16 },
-  { x: 4200, y: 1120, label: "普通飞机", color: "#64717b", scale: 1.1 }
+  { x: 560, y: 1120, label: "日本航空", color: "#d8343f", scale: 1.12 },
+  { x: 1080, y: 1120, label: "中国航空", color: "#2f79c8", scale: 1.12 },
+  { x: 1600, y: 1120, label: "美国航空", color: "#42536b", scale: 1.12 },
+  { x: 2120, y: 1120, label: "东方航空", color: "#d83258", scale: 1.14 },
+  { x: 2640, y: 1120, label: "南方航空", color: "#1f8c65", scale: 1.12 },
+  { x: 3160, y: 1120, label: "亚洲航空", color: "#d51f2a", scale: 1.12 },
+  { x: 3680, y: 1120, label: "泰国航空", color: "#7b4ab8", scale: 1.12 },
+  { x: 4200, y: 1120, label: "大韩航空", color: "#4aa3df", scale: 1.12 },
+  { x: 4720, y: 1120, label: "印度航空", color: "#c22d2d", scale: 1.12 },
+  { x: 5240, y: 1120, label: "山东航空", color: "#f28b2f", scale: 1.1 },
+  { x: 5760, y: 1120, label: "澳门航空", color: "#2270b8", scale: 1.1 },
+  { x: 6280, y: 1120, label: "三亚航空", color: "#32a852", scale: 1.1 },
+  { x: 6800, y: 1120, label: "私人飞机", color: "#8f5fd9", scale: 1.04 },
+  { x: 7320, y: 1120, label: "军事飞机", color: "#4f6b48", scale: 1.16 },
+  { x: 7840, y: 1120, label: "普通飞机", color: "#64717b", scale: 1.1 }
 ];
 
 const flightClouds = [
@@ -392,7 +392,7 @@ function boardNearestPlane() {
   vehicle.vx = 0;
   vehicle.vy = 0;
   vehicle.mode = "boarded";
-  statusText.textContent = `从登机口进了${nearest.plane.label}的机舱！现在能从驾驶舱玻璃看到外面。`;
+  statusText.textContent = `从登机口上了${nearest.plane.label}！现在还是直接看外面的机场。`;
   portalSound();
   return true;
 }
@@ -483,7 +483,7 @@ function jumpFromPlane() {
 }
 
 function isOnAirportLand(x, y) {
-  return Math.hypot(x - 2250, y - 1950) <= 2050;
+  return Math.hypot(x - 4250, y - 1950) <= 3920;
 }
 
 function finishPlaneFalling() {
@@ -595,7 +595,7 @@ function updateContextControls() {
 }
 
 function getActivityHelp(category) {
-  if (category === "flight") return `${selectedLocation.name}：先走到登机口，点“上飞机”进入机舱；在机舱里能看外面，也能起飞、降落和平稳飞行。`;
+  if (category === "flight") return `${selectedLocation.name}：先走到登机口，点“上飞机”；画面直接看外面的机场、飞机和跑道。`;
   if (category === "water") return `${selectedLocation.name}：这里有大喇叭、漩涡和蛇形滑道，点互动开始滑水。`;
   if (category === "metro") return `${selectedLocation.name}：站台门在前面，点互动进驾驶台，再控制地铁往下一站开。`;
   if (category === "fish") return `${selectedLocation.name}：站在河边捞东西，可能捞到鱼、锅、僵尸蛋、宝箱或者奇怪玩具。`;
@@ -1327,7 +1327,6 @@ function drawFlightScene() {
   if (vehicle.mode === "plane-falling") drawPlaneFallingOverlay();
   ctx.restore();
   drawFlightClouds();
-  if (vehicle.mode === "boarded" || vehicle.mode === "flying") drawCockpitOverlay();
 
   ctx.fillStyle = "rgba(255,255,255,0.86)";
   ctx.beginPath();
@@ -1364,19 +1363,19 @@ function drawHugeAirport() {
   ctx.fillRect(0, 0, flightWorld.w, flightWorld.h);
   ctx.fillStyle = "#7abf63";
   ctx.beginPath();
-  ctx.arc(2250, 1950, 2050, 0, Math.PI * 2);
+  ctx.arc(4250, 1950, 3920, 0, Math.PI * 2);
   ctx.fill();
   ctx.fillStyle = "#424b57";
   airportPlanes.forEach((plane) => drawPlaneRunway(plane));
-  drawRunway(260, 1540, 3920, 190, "跑道 18L");
-  drawRunway(520, 2180, 3450, 170, "跑道 27R");
-  drawRunway(2020, 300, 175, 3000, "跑道 09");
+  drawRunway(260, 1540, 7920, 190, "跑道 18L");
+  drawRunway(520, 2180, 7450, 170, "跑道 27R");
+  drawRunway(4020, 300, 175, 3000, "跑道 09");
   ctx.strokeStyle = "#2d3742";
   ctx.lineWidth = 58;
   ctx.beginPath();
   ctx.moveTo(360, 1360);
-  ctx.lineTo(4260, 1360);
-  ctx.lineTo(4260, 2680);
+  ctx.lineTo(8200, 1360);
+  ctx.lineTo(8200, 2680);
   ctx.lineTo(760, 2680);
   ctx.stroke();
 
@@ -1698,46 +1697,6 @@ function drawFlightClouds() {
 
 function drawAirplane(x, y, angle) {
   drawPlaneShape(x, y, angle, "#32a7e2", true, "我的飞机");
-}
-
-function drawCockpitOverlay() {
-  ctx.save();
-  ctx.fillStyle = "rgba(23,38,50,0.24)";
-  ctx.fillRect(0, 0, W, H);
-  ctx.fillStyle = "rgba(247,251,255,0.2)";
-  ctx.beginPath();
-  roundedRect(120, 58, 800, 300, 18);
-  ctx.fill();
-  ctx.strokeStyle = "#172632";
-  ctx.lineWidth = 14;
-  ctx.stroke();
-  ctx.beginPath();
-  ctx.moveTo(520, 58);
-  ctx.lineTo(520, 358);
-  ctx.stroke();
-  ctx.fillStyle = "#172632";
-  ctx.beginPath();
-  roundedRect(0, 430, W, 190, 8);
-  ctx.fill();
-  ctx.fillStyle = "#32a7e2";
-  ctx.beginPath();
-  ctx.arc(520, 514, 58, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.strokeStyle = "#fff";
-  ctx.lineWidth = 8;
-  ctx.stroke();
-  ctx.fillStyle = "#ffd15f";
-  for (let i = 0; i < 8; i += 1) {
-    ctx.beginPath();
-    ctx.arc(238 + i * 82, 500 + (i % 2) * 42, 15, 0, Math.PI * 2);
-    ctx.fill();
-  }
-  ctx.fillStyle = "#fff";
-  ctx.font = "900 25px system-ui";
-  ctx.fillText("机舱里面：看外面，拉操纵杆控制飞机", 250, 454);
-  ctx.font = "800 18px system-ui";
-  ctx.fillText("起飞 / 降落 / 平稳飞行按钮只在机场出现", 314, 586);
-  ctx.restore();
 }
 
 function drawPlaneShape(x, y, angle, color, showPilot, label = "") {
