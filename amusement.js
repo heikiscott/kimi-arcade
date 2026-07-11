@@ -67,7 +67,7 @@ function goFood() {
   mode = "food";
   rideTime = 0;
   rideText.textContent = "餐厅区";
-  setStatus("到了餐厅区，吃汉堡、薯条、冰淇淋，然后继续玩。");
+  setStatus("到了餐厅区，吃汉堡、薯条、冰淇淋、果汁和芋头包，然后继续玩。");
 }
 
 function goStation() {
@@ -319,14 +319,28 @@ function drawFood() {
   ctx.font = "bold 30px system-ui";
   ctx.textAlign = "center";
   ctx.fillText("餐厅休息中", 490, 230);
-  ["汉堡", "薯条", "冰淇淋", "果汁"].forEach((food, index) => {
-    ctx.fillStyle = ["#9b6a3c", "#ffd15f", "#f49ac2", "#39a657"][index];
+  [
+    { name: "汉堡", color: "#9b6a3c" },
+    { name: "薯条", color: "#ffd15f" },
+    { name: "冰淇淋", color: "#f49ac2" },
+    { name: "果汁", color: "#39a657" },
+    { name: "芋头包", color: "#a46bd6" }
+  ].forEach((food, index) => {
+    const x = 318 + index * 86;
+    ctx.fillStyle = food.color;
     ctx.beginPath();
-    ctx.arc(338 + index * 100, 320, 28, 0, Math.PI * 2);
+    ctx.arc(x, 320, 28, 0, Math.PI * 2);
     ctx.fill();
+    if (food.name === "芋头包") {
+      ctx.fillStyle = "rgba(255,255,255,0.45)";
+      ctx.beginPath();
+      ctx.arc(x - 9, 312, 7, 0, Math.PI * 2);
+      ctx.arc(x + 8, 316, 5, 0, Math.PI * 2);
+      ctx.fill();
+    }
     ctx.fillStyle = "#172632";
     ctx.font = "bold 16px system-ui";
-    ctx.fillText(food, 338 + index * 100, 370);
+    ctx.fillText(food.name, x, 370);
   });
   ctx.textAlign = "left";
 }
