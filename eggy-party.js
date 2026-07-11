@@ -16,6 +16,7 @@ const exitFlightBtn = document.querySelector("#exitFlightBtn");
 const jumpFlightBtn = document.querySelector("#jumpFlightBtn");
 const ballModeBtn = document.querySelector("#ballModeBtn");
 const crashSongBtn = document.querySelector("#crashSongBtn");
+const flightControls = document.querySelector("#flightControls");
 const flightStick = document.querySelector("#flightStick");
 const flightKnob = document.querySelector("#flightKnob");
 const locationPicker = document.querySelector("#locationPicker");
@@ -29,21 +30,32 @@ const keys = new Set();
 const controls = new Set();
 
 const categories = [
-  { key: "flight", title: "开飞机地点", count: 50, prefix: "云端机场", detail: "大飞机、云朵跑道、空中门" },
-  { key: "water", title: "水上乐园地点", count: 20, prefix: "水花乐园", detail: "滑水道、浪花桥、喷泉门" },
-  { key: "metro", title: "开地铁地点", count: 10, prefix: "环线地铁", detail: "站台门、列车弯道、下一站" },
-  { key: "fish", title: "摸鱼地点", count: 30, prefix: "摸鱼码头", detail: "鱼池、木桥、小船和桶" },
-  { key: "challenge", title: "闯关游戏地点", count: 40, prefix: "五条路线", detail: "每关五条路，传送门往下一条" }
+  { key: "flight", title: "开飞机地点", count: 50, prefix: "云端机场", detail: "登机口、机舱视角、大飞机跑道" },
+  { key: "water", title: "水上乐园地点", count: 20, prefix: "水花乐园", detail: "大喇叭、漩涡、蛇形滑道" },
+  { key: "metro", title: "开地铁地点", count: 10, prefix: "环线地铁", detail: "站台门、驾驶台、下一站" },
+  { key: "fish", title: "摸鱼地点", count: 30, prefix: "河边摸鱼", detail: "河岸、树、椅子、捞随机东西" },
+  { key: "challenge", title: "闯关游戏地点", count: 40, prefix: "五条路线", detail: "每条路线机关都不一样" }
 ];
 
-const locations = Object.fromEntries(categories.map((category) => [
-  category.key,
-  Array.from({ length: category.count }, (_, index) => ({
-    name: `${category.prefix} ${String(index + 1).padStart(2, "0")}`,
+const namedPlaces = {
+  flight: ["云端机场", "樟宜机场", "昆明长水机场", "浦东机场", "虹桥机场", "关西机场", "羽田机场", "成田机场", "长野机场", "夏森机场", "马奇机场", "首都机场", "大兴机场", "洛杉矶机场", "西雅图机场"],
+  water: ["大喇叭水城", "漩涡水城", "蛇形滑道湾", "彩虹水寨", "冲浪河谷"],
+  metro: ["港湾控制站", "欧南园驾驶站", "牛车水换乘站", "克拉码头终点站", "滨海湾地下站"],
+  fish: ["河边摸鱼树下", "公园长椅河岸", "荷叶浅滩", "小桥摸鱼点", "柳树水湾"],
+  challenge: ["传送门五路", "弹簧塔五路", "机场风道五路", "地铁轨道五路", "夜晚躲避五路"]
+};
+
+function buildLocations(category) {
+  const names = namedPlaces[category.key] || [];
+  return Array.from({ length: category.count }, (_, index) => ({
+    name: names[index] || `${category.prefix} ${String(index + 1).padStart(2, "0")}`,
     category: category.key,
-    detail: category.detail
-  }))
-]));
+    detail: category.detail,
+    variant: index % 5
+  }));
+}
+
+const locations = Object.fromEntries(categories.map((category) => [category.key, buildLocations(category)]));
 
 const egg = {
   x: 100,
@@ -115,6 +127,7 @@ const zombies = [
   { x: 780, y: 432, speed: 0.44, phase: 3.2 }
 ];
 let lastZombieCatch = 0;
+const fishLoots = ["鱼", "锅", "僵尸蛋", "宝箱", "奇怪玩具", "水草", "金色贝壳", "破旧钥匙"];
 
 const flightWorld = {
   w: 4500,
@@ -379,7 +392,7 @@ function boardNearestPlane() {
   vehicle.vx = 0;
   vehicle.vy = 0;
   vehicle.mode = "boarded";
-  statusText.textContent = `上了${nearest.plane.label}！点“平稳飞行”，再拉圆形操纵杆。`;
+  statusText.textContent = `从登机口进了${nearest.plane.label}的机舱！现在能从驾驶舱玻璃看到外面。`;
   portalSound();
   return true;
 }
@@ -515,6 +528,7 @@ function updateJoystickVisual() {
 function startCourse(locationName = selectedLocation.name) {
   getAudio();
   selectedLocation = { ...selectedLocation, name: locationName, category: "challenge" };
+  updateContextControls();
   screen = "course";
   laneIndex = 0;
   playing = true;
@@ -533,6 +547,7 @@ function startCourse(locationName = selectedLocation.name) {
 
 function goLobby(message = "回到蛋仔派对大厅。点“乐园”选择新地点。") {
   screen = "lobby";
+  updateContextControls();
   playing = false;
   won = false;
   elapsed = 0;
@@ -561,11 +576,13 @@ function nextLane() {
 function selectLocation(place) {
   selectedLocation = place;
   levelText.textContent = place.name;
+  updateContextControls();
   if (place.category === "challenge") {
     startCourse(place.name);
     return;
   }
   screen = "activity";
+  updateContextControls();
   playing = false;
   locationPicker.hidden = true;
   elapsed = 0;
@@ -573,11 +590,15 @@ function selectLocation(place) {
   statusText.textContent = getActivityHelp(place.category);
 }
 
+function updateContextControls() {
+  if (flightControls) flightControls.hidden = selectedLocation.category !== "flight" || screen === "lobby";
+}
+
 function getActivityHelp(category) {
-  if (category === "flight") return `${selectedLocation.name}：你先站在飞机旁边走路，走到飞机门边点“上飞机”，再用圆形操纵杆平稳飞。`;
-  if (category === "water") return `${selectedLocation.name}：先到售票处，再走到滑梯楼梯，跳/互动可以上去滑下来。`;
-  if (category === "metro") return `${selectedLocation.name}：地铁一直开着，靠近车门按互动就能进车厢。`;
-  if (category === "fish") return `${selectedLocation.name}：摸鱼码头有小船、鱼池和鱼，左右一直划，不会突然卡住。`;
+  if (category === "flight") return `${selectedLocation.name}：先走到登机口，点“上飞机”进入机舱；在机舱里能看外面，也能起飞、降落和平稳飞行。`;
+  if (category === "water") return `${selectedLocation.name}：这里有大喇叭、漩涡和蛇形滑道，点互动开始滑水。`;
+  if (category === "metro") return `${selectedLocation.name}：站台门在前面，点互动进驾驶台，再控制地铁往下一站开。`;
+  if (category === "fish") return `${selectedLocation.name}：站在河边捞东西，可能捞到鱼、锅、僵尸蛋、宝箱或者奇怪玩具。`;
   return `${selectedLocation.name}：选择好了。`;
 }
 
@@ -770,9 +791,9 @@ function updateActivity() {
   } else if (selectedLocation.category === "water") {
     if (vehicle.mode === "slide") {
       vehicle.progress += 0.015;
-      vehicle.x = 235 + vehicle.progress * 440;
-      vehicle.y = 142 + Math.sin(vehicle.progress * Math.PI) * 92 + vehicle.progress * 230;
-      vehicle.angle = 0.1;
+      vehicle.x = 190 + vehicle.progress * 690;
+      vehicle.y = 155 + Math.sin(vehicle.progress * Math.PI * (selectedLocation.variant + 1)) * 72 + vehicle.progress * 300;
+      vehicle.angle = Math.sin(vehicle.progress * Math.PI * 2) * 0.22;
       if (vehicle.progress >= 1) {
         vehicle.mode = "free";
         vehicle.y = 420;
@@ -832,10 +853,10 @@ function activityInteract() {
       tone(784, 0, 0.12, 0.025, "triangle");
       return true;
     }
-    if (vehicle.x > 300 && vehicle.x < 500) {
+    if (vehicle.x > 280 && vehicle.x < 720) {
       vehicle.mode = "slide";
       vehicle.progress = 0;
-      statusText.textContent = "爬上滑梯了，准备滑水！";
+      statusText.textContent = "爬上滑道了！这次会经过大喇叭、漩涡或者蛇形滑道。";
       return true;
     }
     statusText.textContent = "游到左边售票处买票，或者到中间楼梯上滑梯。";
@@ -848,7 +869,8 @@ function activityInteract() {
     return true;
   }
   if (selectedLocation.category === "fish") {
-    statusText.textContent = "摸到一条鱼！小船还能继续往前划。";
+    const item = fishLoots[Math.floor(Math.random() * fishLoots.length)];
+    statusText.textContent = `一网捞上来：${item}！旁边还有树和椅子，可以继续在河边摸鱼。`;
     tone(988, 0, 0.14, 0.024, "sine");
     return true;
   }
@@ -1297,6 +1319,7 @@ function drawFlightScene() {
   drawHugeAirport();
   airportPlanes.forEach((plane, index) => {
     if ((vehicle.mode === "boarded" || vehicle.mode === "flying" || vehicle.mode === "plane-falling") && index === vehicle.selectedPlaneIndex) return;
+    drawBoardingGate(plane);
     drawParkedPlane(plane);
   });
   if (vehicle.mode === "walking" || vehicle.mode === "plane-falling") drawWalkingPilot(vehicle.pilotX, vehicle.pilotY);
@@ -1304,6 +1327,7 @@ function drawFlightScene() {
   if (vehicle.mode === "plane-falling") drawPlaneFallingOverlay();
   ctx.restore();
   drawFlightClouds();
+  if (vehicle.mode === "boarded" || vehicle.mode === "flying") drawCockpitOverlay();
 
   ctx.fillStyle = "rgba(255,255,255,0.86)";
   ctx.beginPath();
@@ -1382,6 +1406,22 @@ function drawPlaneRunway(plane) {
   ctx.fillRect(plane.x - 175, plane.y + 170, 350, 92);
   ctx.fillStyle = "#fff";
   for (let x = plane.x - 140; x < plane.x + 140; x += 70) ctx.fillRect(x, plane.y + 210, 40, 9);
+}
+
+function drawBoardingGate(plane) {
+  ctx.fillStyle = "#f7fbff";
+  ctx.beginPath();
+  roundedRect(plane.x - 96, plane.y + 245, 192, 72, 8);
+  ctx.fill();
+  ctx.strokeStyle = "#172632";
+  ctx.lineWidth = 5;
+  ctx.stroke();
+  ctx.fillStyle = "#32a7e2";
+  ctx.fillRect(plane.x - 78, plane.y + 265, 46, 32);
+  ctx.fillRect(plane.x + 32, plane.y + 265, 46, 32);
+  ctx.fillStyle = "#172632";
+  ctx.font = "900 22px system-ui";
+  ctx.fillText("登机口", plane.x - 42, plane.y + 238);
 }
 
 function drawRunway(x, y, w, h, label) {
@@ -1660,6 +1700,46 @@ function drawAirplane(x, y, angle) {
   drawPlaneShape(x, y, angle, "#32a7e2", true, "我的飞机");
 }
 
+function drawCockpitOverlay() {
+  ctx.save();
+  ctx.fillStyle = "rgba(23,38,50,0.24)";
+  ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = "rgba(247,251,255,0.2)";
+  ctx.beginPath();
+  roundedRect(120, 58, 800, 300, 18);
+  ctx.fill();
+  ctx.strokeStyle = "#172632";
+  ctx.lineWidth = 14;
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(520, 58);
+  ctx.lineTo(520, 358);
+  ctx.stroke();
+  ctx.fillStyle = "#172632";
+  ctx.beginPath();
+  roundedRect(0, 430, W, 190, 8);
+  ctx.fill();
+  ctx.fillStyle = "#32a7e2";
+  ctx.beginPath();
+  ctx.arc(520, 514, 58, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = "#fff";
+  ctx.lineWidth = 8;
+  ctx.stroke();
+  ctx.fillStyle = "#ffd15f";
+  for (let i = 0; i < 8; i += 1) {
+    ctx.beginPath();
+    ctx.arc(238 + i * 82, 500 + (i % 2) * 42, 15, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.fillStyle = "#fff";
+  ctx.font = "900 25px system-ui";
+  ctx.fillText("机舱里面：看外面，拉操纵杆控制飞机", 250, 454);
+  ctx.font = "800 18px system-ui";
+  ctx.fillText("起飞 / 降落 / 平稳飞行按钮只在机场出现", 314, 586);
+  ctx.restore();
+}
+
 function drawPlaneShape(x, y, angle, color, showPilot, label = "") {
   ctx.save();
   ctx.translate(x, y);
@@ -1730,10 +1810,34 @@ function drawWaterScene() {
     ctx.stroke();
   }
   drawTicketBooth(70, 205);
-  drawWaterSlide(145, 115);
+  drawWaterFeature(selectedLocation.variant || 0);
   drawSlideStairs(315, 225);
   drawPoolFloat(vehicle.x, vehicle.y + 35);
   drawEggyCharacter(vehicle.x, vehicle.y - 5, 0.85, vehicle.angle);
+}
+
+function drawWaterFeature(variant) {
+  if (variant === 0) {
+    drawWaterSlide(145, 115);
+    drawMegaphoneSlide(560, 170);
+    return;
+  }
+  if (variant === 1) {
+    drawWhirlpool(590, 275, 1.2);
+    drawWaterSlide(180, 95);
+    return;
+  }
+  if (variant === 2) {
+    drawSnakeSlide(150, 120);
+    return;
+  }
+  if (variant === 3) {
+    drawMegaphoneSlide(250, 120);
+    drawWhirlpool(730, 310, 0.9);
+    return;
+  }
+  drawSnakeSlide(110, 94);
+  drawMegaphoneSlide(670, 190);
 }
 
 function drawTicketBooth(x, y) {
@@ -1789,6 +1893,73 @@ function drawWaterSlide(x, y) {
   ctx.fillText("水上滑梯", x + 58, y - 20);
 }
 
+function drawMegaphoneSlide(x, y) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.strokeStyle = "#8f5fd9";
+  ctx.lineWidth = 28;
+  ctx.beginPath();
+  ctx.moveTo(-170, -70);
+  ctx.bezierCurveTo(-80, -30, -60, 80, 0, 122);
+  ctx.stroke();
+  ctx.fillStyle = "#f06aa3";
+  ctx.beginPath();
+  ctx.ellipse(80, 120, 108, 66, -0.18, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = "#172632";
+  ctx.lineWidth = 6;
+  ctx.stroke();
+  ctx.fillStyle = "#fff";
+  ctx.beginPath();
+  ctx.ellipse(80, 120, 58, 34, -0.18, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = "#172632";
+  ctx.font = "900 24px system-ui";
+  ctx.fillText("大喇叭", 22, 218);
+  ctx.restore();
+}
+
+function drawWhirlpool(x, y, s = 1) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.scale(s, s);
+  ctx.strokeStyle = "#fff";
+  ctx.lineWidth = 9;
+  for (let r = 82; r > 15; r -= 18) {
+    ctx.beginPath();
+    ctx.arc(0, 0, r, performance.now() * 0.002 + r * 0.03, Math.PI * 1.45 + performance.now() * 0.002 + r * 0.03);
+    ctx.stroke();
+  }
+  ctx.fillStyle = "#172632";
+  ctx.font = "900 24px system-ui";
+  ctx.fillText("漩涡池", -42, 126);
+  ctx.restore();
+}
+
+function drawSnakeSlide(x, y) {
+  ctx.strokeStyle = "#36a852";
+  ctx.lineWidth = 30;
+  ctx.beginPath();
+  ctx.moveTo(x, y);
+  ctx.bezierCurveTo(x + 150, y - 80, x + 250, y + 80, x + 390, y + 12);
+  ctx.bezierCurveTo(x + 520, y - 50, x + 620, y + 135, x + 760, y + 230);
+  ctx.stroke();
+  ctx.strokeStyle = "#ffd15f";
+  ctx.lineWidth = 8;
+  ctx.stroke();
+  ctx.fillStyle = "#36a852";
+  ctx.beginPath();
+  ctx.arc(x + 780, y + 238, 34, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = "#fff";
+  ctx.beginPath();
+  ctx.arc(x + 792, y + 228, 6, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = "#172632";
+  ctx.font = "900 24px system-ui";
+  ctx.fillText("蛇形滑道", x + 330, y - 32);
+}
+
 function drawPoolFloat(x, y) {
   ctx.strokeStyle = "#ffd15f";
   ctx.lineWidth = 18;
@@ -1803,6 +1974,13 @@ function drawMetroScene() {
   g.addColorStop(1, "#9aa9b3");
   ctx.fillStyle = g;
   ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = "#f7fbff";
+  ctx.fillRect(0, 58, W, 104);
+  ctx.fillStyle = "#172632";
+  ctx.font = "900 28px system-ui";
+  ctx.fillText(selectedLocation.name, 50, 100);
+  ctx.font = "800 18px system-ui";
+  ctx.fillText("站台门在前面，进车厢后就是驾驶台，可以控制地铁。", 50, 132);
   ctx.fillStyle = "#172632";
   ctx.fillRect(0, 442, W, 18);
   ctx.fillRect(0, 495, W, 18);
@@ -1810,11 +1988,15 @@ function drawMetroScene() {
   ctx.fillRect(0, 350, W, 92);
   for (let x = 80; x < W; x += 145) {
     ctx.fillStyle = "#32a7e2";
-    ctx.fillRect(x, 372, 70, 50);
+    ctx.fillRect(x, 360, 70, 68);
     ctx.fillStyle = "#172632";
-    ctx.fillRect(x + 34, 372, 4, 50);
+    ctx.fillRect(x + 34, 360, 4, 68);
+    ctx.fillStyle = "#fff";
+    ctx.font = "900 12px system-ui";
+    ctx.fillText("PSD", x + 22, 398);
   }
   drawMetroTrain(vehicle.x, 452);
+  if (vehicle.mode === "in-metro") drawMetroCab();
   if (vehicle.mode !== "in-metro") drawEggyCharacter(170, 315, 0.75, 0);
 }
 
@@ -1840,6 +2022,26 @@ function drawMetroTrain(x, y) {
   ctx.fillText("车门", x - 10, y + 24);
 }
 
+function drawMetroCab() {
+  ctx.fillStyle = "rgba(23,38,50,0.92)";
+  ctx.beginPath();
+  roundedRect(260, 70, 520, 150, 12);
+  ctx.fill();
+  ctx.fillStyle = "#dce5eb";
+  ctx.beginPath();
+  roundedRect(300, 92, 440, 62, 8);
+  ctx.fill();
+  ctx.fillStyle = "#172632";
+  ctx.font = "900 20px system-ui";
+  ctx.fillText("驾驶台视角：前方站台门 / 下一站 / 速度", 326, 130);
+  ctx.fillStyle = "#ffd15f";
+  for (let i = 0; i < 5; i += 1) {
+    ctx.beginPath();
+    ctx.arc(340 + i * 78, 184, 17, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
 function drawFishScene() {
   const g = ctx.createLinearGradient(0, 0, 0, H);
   g.addColorStop(0, "#b9f1ff");
@@ -1847,7 +2049,14 @@ function drawFishScene() {
   ctx.fillStyle = g;
   ctx.fillRect(0, 0, W, H);
   ctx.fillStyle = "#25a9df";
-  ctx.fillRect(0, 330, W, 290);
+  ctx.beginPath();
+  ctx.moveTo(0, 350);
+  ctx.bezierCurveTo(220, 300, 420, 390, 640, 330);
+  ctx.bezierCurveTo(820, 280, 940, 350, W, 320);
+  ctx.lineTo(W, H);
+  ctx.lineTo(0, H);
+  ctx.closePath();
+  ctx.fill();
   ctx.strokeStyle = "rgba(255,255,255,0.65)";
   ctx.lineWidth = 5;
   for (let y = 370; y < 600; y += 42) {
@@ -1856,27 +2065,66 @@ function drawFishScene() {
     ctx.stroke();
   }
   ctx.fillStyle = "#36a852";
-  ctx.fillRect(0, 285, W, 45);
-  ctx.fillStyle = "#9a6429";
-  ctx.fillRect(0, 450, W, 26);
-  for (let x = 40; x < W; x += 110) ctx.fillRect(x, 430, 16, 75);
-  drawBoat(vehicle.x, 405);
-  for (let i = 0; i < 8; i += 1) drawFish(110 + i * 115, 535 + Math.sin(performance.now() * 0.004 + i) * 16, i);
+  ctx.fillRect(0, 270, W, 82);
+  drawRiverTree(92, 234);
+  drawBench(790, 300);
+  drawFishingNet(vehicle.x, 350);
+  drawEggyCharacter(vehicle.x - 24, 306, 0.9, 0);
+  for (let i = 0; i < 9; i += 1) drawFish(110 + i * 105, 500 + Math.sin(performance.now() * 0.004 + i) * 28, i);
+  ["锅", "僵尸蛋", "宝箱"].forEach((label, i) => drawLootBubble(450 + i * 110, 420 + Math.sin(performance.now() * 0.004 + i) * 18, label));
 }
 
-function drawBoat(x, y) {
-  ctx.fillStyle = "#9a6429";
+function drawFishingNet(x, y) {
+  ctx.strokeStyle = "#172632";
+  ctx.lineWidth = 6;
   ctx.beginPath();
-  ctx.moveTo(x - 92, y);
-  ctx.lineTo(x + 92, y);
-  ctx.lineTo(x + 55, y + 44);
-  ctx.lineTo(x - 55, y + 44);
-  ctx.closePath();
+  ctx.moveTo(x + 20, y - 48);
+  ctx.lineTo(x + 122, y + 58);
+  ctx.stroke();
+  ctx.strokeStyle = "#fff";
+  ctx.lineWidth = 5;
+  ctx.beginPath();
+  ctx.ellipse(x + 145, y + 78, 54, 30, 0.35, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.fillStyle = "rgba(255,255,255,0.28)";
+  ctx.fill();
+}
+
+function drawRiverTree(x, y) {
+  ctx.fillStyle = "#9a6429";
+  ctx.fillRect(x - 14, y, 28, 92);
+  ctx.fillStyle = "#36a852";
+  ctx.beginPath();
+  ctx.arc(x, y - 12, 58, 0, Math.PI * 2);
+  ctx.arc(x - 36, y + 18, 45, 0, Math.PI * 2);
+  ctx.arc(x + 42, y + 18, 45, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+function drawBench(x, y) {
+  ctx.fillStyle = "#9a6429";
+  ctx.fillRect(x, y, 150, 18);
+  ctx.fillRect(x + 10, y + 34, 132, 16);
+  ctx.fillRect(x + 18, y + 50, 10, 46);
+  ctx.fillRect(x + 118, y + 50, 10, 46);
+  ctx.fillStyle = "#172632";
+  ctx.font = "900 20px system-ui";
+  ctx.fillText("河边椅子", x + 28, y - 12);
+}
+
+function drawLootBubble(x, y, label) {
+  ctx.fillStyle = "rgba(255,255,255,0.86)";
+  ctx.beginPath();
+  ctx.arc(x, y, 34, 0, Math.PI * 2);
   ctx.fill();
   ctx.strokeStyle = "#172632";
-  ctx.lineWidth = 5;
+  ctx.lineWidth = 4;
   ctx.stroke();
-  drawEggyCharacter(x, y - 35, 0.78, 0);
+  ctx.fillStyle = "#172632";
+  ctx.font = "900 18px system-ui";
+  ctx.textAlign = "center";
+  ctx.fillText(label, x, y + 6);
+  ctx.textAlign = "left";
 }
 
 function drawFish(x, y, index) {
@@ -1961,6 +2209,14 @@ function drawCourseBackdrop() {
     ctx.arc(910, 84, 30, 0, Math.PI * 2);
     ctx.fill();
   }
+  const laneNames = ["彩虹跳台", "水上浪桥", "机场风道", "地铁轨道", "夜晚躲避"];
+  ctx.fillStyle = "rgba(255,255,255,0.82)";
+  ctx.beginPath();
+  roundedRect(760, 118, 230, 54, 8);
+  ctx.fill();
+  ctx.fillStyle = "#172632";
+  ctx.font = "900 25px system-ui";
+  ctx.fillText(laneNames[laneIndex], 790, 153);
 }
 
 function drawPad(pad) {
