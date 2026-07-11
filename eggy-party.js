@@ -184,8 +184,17 @@ function landingGroundY(x) {
 function getLandingTarget() {
   const plane = airportPlanes[vehicle.selectedPlaneIndex] || airportPlanes[0];
   return {
+    x: Math.min(flightWorld.finishX - 260, Math.max(520, vehicle.x)),
+    y: 1635,
+    plane
+  };
+}
+
+function getGateTarget() {
+  const plane = airportPlanes[vehicle.selectedPlaneIndex] || airportPlanes[0];
+  return {
     x: plane.x,
-    y: plane.y - 595,
+    y: plane.y,
     plane
   };
 }
@@ -469,7 +478,15 @@ function takeoffPlane() {
 function landPlane() {
   if (selectedLocation.category !== "flight") return false;
   if (vehicle.mode === "auto-landing") {
-    statusText.textContent = "飞机已经在自动飞往跑道，正在减速降落。";
+    statusText.textContent = "飞机已经在自动飞往长跑道，正在减速降落。";
+    return true;
+  }
+  if (vehicle.mode === "taxi-to-gate") {
+    statusText.textContent = "飞机已经降落，正在自动滑回登机口。";
+    return true;
+  }
+  if (vehicle.mode === "parked") {
+    statusText.textContent = "飞机已经锁住停在登机口了，没有再往前跑。";
     return true;
   }
   if (vehicle.mode !== "flying" && vehicle.mode !== "boarded") {
@@ -480,7 +497,7 @@ function landPlane() {
   vehicle.mode = "auto-landing";
   vehicle.heading = Math.atan2(target.y - vehicle.y, target.x - vehicle.x);
   vehicle.angle += (vehicle.heading - vehicle.angle) * 0.35;
-  statusText.textContent = `自动降落开始：飞机会自己飞向${target.plane.label}旁边的跑道，然后直接减速停稳。`;
+  statusText.textContent = "自动降落开始：飞机会飞到中间那条长跑道，停在白线之前，然后滑回登机口。";
   return true;
 }
 
@@ -833,13 +850,46 @@ function updateActivity() {
       vehicle.y = landingGroundY(vehicle.x);
       vehicle.pilotX = vehicle.x - 110;
       vehicle.pilotY = vehicle.y + 118;
+    } else if (vehicle.mode === "parked") {
+      vehicle.vx = 0;
+      vehicle.vy = 0;
+      vehicle.angle = -Math.PI / 2;
+      const gate = getGateTarget();
+      vehicle.x = gate.x;
+      vehicle.y = gate.y;
+      vehicle.heading = -Math.PI / 2;
+    } else if (vehicle.mode === "taxi-to-gate") {
+      const gate = getGateTarget();
+      const dx = gate.x - vehicle.x;
+      const dy = gate.y - vehicle.y;
+      const distance = Math.max(1, Math.hypot(dx, dy));
+      const desiredHeading = Math.atan2(dy, dx);
+      const taxiSpeed = Math.max(0.55, Math.min(5.2, distance / 72));
+      vehicle.heading += shortestAngle(vehicle.heading, desiredHeading) * 0.09;
+      vehicle.angle += shortestAngle(vehicle.angle, vehicle.heading) * 0.12;
+      vehicle.vx += (Math.cos(desiredHeading) * taxiSpeed - vehicle.vx) * 0.09;
+      vehicle.vy += (Math.sin(desiredHeading) * taxiSpeed - vehicle.vy) * 0.09;
+      vehicle.y += vehicle.vy;
+      statusText.textContent = distance > 55
+        ? `已经降落，正在滑回${gate.plane.label}登机口，距离 ${Math.round(distance)} 米。`
+        : "滑回登机口，马上停稳锁住。";
+      if (distance < 38) {
+        vehicle.x = gate.x;
+        vehicle.y = gate.y;
+        vehicle.vx = 0;
+        vehicle.vy = 0;
+        vehicle.heading = -Math.PI / 2;
+        vehicle.angle = -Math.PI / 2;
+        vehicle.mode = "parked";
+        statusText.textContent = "飞机回到登机口并锁住停好了，真的不会继续跑了。";
+      }
     } else if (vehicle.mode === "auto-landing") {
       const target = getLandingTarget();
       const dx = target.x - vehicle.x;
       const dy = target.y - vehicle.y;
       const distance = Math.max(1, Math.hypot(dx, dy));
       const desiredHeading = Math.atan2(dy, dx);
-      const desiredSpeed = distance > 760 ? 8.8 : Math.max(0.7, distance / 82);
+      const desiredSpeed = distance > 900 ? 9.2 : Math.max(0.55, distance / 76);
       const desiredVx = Math.cos(desiredHeading) * desiredSpeed;
       const desiredVy = Math.sin(desiredHeading) * desiredSpeed;
       vehicle.heading += shortestAngle(vehicle.heading, desiredHeading) * 0.075;
@@ -848,17 +898,17 @@ function updateActivity() {
       vehicle.vy += (desiredVy - vehicle.vy) * 0.07;
       vehicle.y += vehicle.vy;
       statusText.textContent = distance > 150
-        ? `自动降落中：正在飞往${target.plane.label}跑道，距离 ${Math.round(distance)} 米。`
-        : "自动降落中：已经接近跑道，正在直接减速。";
-      if (distance < 28 && Math.hypot(vehicle.vx, vehicle.vy) < 1.2) {
+        ? `自动降落中：正在飞往中间长跑道，距离 ${Math.round(distance)} 米。`
+        : "自动降落中：接近长跑道白线前，正在直接减速。";
+      if (distance < 44 || (distance < 90 && Math.hypot(vehicle.vx, vehicle.vy) < 1.6)) {
         vehicle.x = target.x;
         vehicle.y = target.y;
         vehicle.vx = 0;
         vehicle.vy = 0;
         vehicle.heading = 0;
         vehicle.angle = 0;
-        vehicle.mode = "boarded";
-        statusText.textContent = "降落完成！飞机已经自动停在跑道上。";
+        vehicle.mode = "taxi-to-gate";
+        statusText.textContent = "降落完成，停在白线之前了。现在自动滑回登机口。";
       }
     } else {
       if (left) joystickX = Math.max(-1, joystickX - 0.04);
@@ -924,6 +974,11 @@ function activityInteract() {
   if (selectedLocation.category === "flight") {
     if (vehicle.mode === "walking") return boardNearestPlane();
     if (vehicle.mode === "boarded") return startSmoothFlight();
+    if (vehicle.mode === "parked") return startSmoothFlight();
+    if (vehicle.mode === "taxi-to-gate") {
+      statusText.textContent = "飞机正在自动滑回登机口，等它锁住停稳。";
+      return true;
+    }
     if (vehicle.mode === "auto-landing") {
       statusText.textContent = "正在自动降落，等飞机停到跑道上。";
       return true;
@@ -1428,7 +1483,7 @@ function drawFlightScene() {
   drawWorldCloudField(focusX, focusY);
   drawHugeAirport();
   airportPlanes.forEach((plane, index) => {
-    if ((vehicle.mode === "boarded" || vehicle.mode === "flying" || vehicle.mode === "auto-landing" || vehicle.mode === "plane-falling" || vehicle.mode === "landed") && index === vehicle.selectedPlaneIndex) return;
+    if ((vehicle.mode === "boarded" || vehicle.mode === "flying" || vehicle.mode === "auto-landing" || vehicle.mode === "taxi-to-gate" || vehicle.mode === "parked" || vehicle.mode === "plane-falling" || vehicle.mode === "landed") && index === vehicle.selectedPlaneIndex) return;
     drawParkedPlane(plane);
   });
   if (vehicle.mode === "walking") {
@@ -1436,7 +1491,7 @@ function drawFlightScene() {
     airportPlanes.forEach((plane) => drawBoardingGate(plane));
   }
   if (vehicle.mode === "walking" || vehicle.mode === "plane-falling" || vehicle.mode === "landed") drawWalkingPilot(vehicle.pilotX, vehicle.pilotY);
-  if (vehicle.mode === "boarded" || vehicle.mode === "flying" || vehicle.mode === "auto-landing" || vehicle.mode === "plane-falling" || vehicle.mode === "landed") drawAirplane(vehicle.x, vehicle.y, vehicle.angle);
+  if (vehicle.mode === "boarded" || vehicle.mode === "flying" || vehicle.mode === "auto-landing" || vehicle.mode === "taxi-to-gate" || vehicle.mode === "parked" || vehicle.mode === "plane-falling" || vehicle.mode === "landed") drawAirplane(vehicle.x, vehicle.y, vehicle.angle);
   if (vehicle.mode === "plane-falling") drawPlaneFallingOverlay();
   ctx.restore();
   drawFlightClouds();
@@ -1455,11 +1510,19 @@ function drawFlightScene() {
       ? "小蛋仔在地面，飞机在上方"
       : vehicle.mode === "auto-landing"
         ? "自动降落，正在找跑道"
+        : vehicle.mode === "taxi-to-gate"
+          ? "降落后滑回登机口"
+        : vehicle.mode === "parked"
+          ? "飞机已经锁住停好"
       : `飞行坐标 ${Math.round(vehicle.x)} / ${Math.round(vehicle.y)}`;
   const line2 = vehicle.mode === "plane-falling" || vehicle.mode === "landed"
     ? "拖屏幕：上看、下看、左看、右看"
     : vehicle.mode === "auto-landing"
-      ? "自动飞向跑道，然后减速"
+      ? "自动飞向长跑道，白线前减速"
+      : vehicle.mode === "taxi-to-gate"
+        ? "自动回到登机口"
+      : vehicle.mode === "parked"
+        ? "锁住了，点开始可再次飞行"
     : "操纵杆：下拉上升，上推下降";
   ctx.fillText(line1, W - 288, 82);
   ctx.fillText(line2, W - 288, 104);
@@ -1491,8 +1554,7 @@ function drawHugeAirport() {
   ctx.arc(4250, 1950, 3920, 0, Math.PI * 2);
   ctx.fill();
   ctx.fillStyle = "#424b57";
-  airportPlanes.forEach((plane) => drawPlaneRunway(plane));
-  drawRunway(260, 1540, 7920, 190, "跑道 18L");
+  drawRunway(260, 1540, 7920, 190, "起飞/降落长跑道");
   drawRunway(520, 2180, 7450, 170, "跑道 27R");
   drawRunway(4020, 300, 175, 3000, "跑道 09");
   ctx.strokeStyle = "#2d3742";
@@ -1526,15 +1588,7 @@ function drawHugeAirport() {
 }
 
 function drawPlaneRunway(plane) {
-  ctx.fillStyle = "#4d5966";
-  ctx.fillRect(plane.x - 66, plane.y - 900, 132, 620);
-  ctx.fillStyle = "#fff";
-  for (let y = plane.y - 850; y < plane.y - 330; y += 96) ctx.fillRect(plane.x - 8, y, 16, 54);
-  ctx.fillStyle = "#ffd15f";
-  ctx.font = "900 22px system-ui";
-  ctx.textAlign = "center";
-  ctx.fillText("专属跑道", plane.x, plane.y - 925);
-  ctx.textAlign = "start";
+  return plane;
 }
 
 function drawBoardingGate(plane) {
