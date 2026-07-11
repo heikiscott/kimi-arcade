@@ -2215,18 +2215,17 @@ function drawHistoryMemorialScene() {
   ctx.font = "800 18px system-ui";
   ctx.fillText("2001年9月11日，美国发生恐怖袭击。这里是安静回顾和纪念，不是闯关游戏。", 72, 142);
 
-  ctx.strokeStyle = "rgba(47,121,200,0.55)";
+  ctx.strokeStyle = "rgba(47,121,200,0.72)";
   ctx.lineWidth = 5;
   ctx.setLineDash([14, 12]);
   ctx.beginPath();
-  ctx.moveTo(88, 242);
-  ctx.lineTo(210, 288);
+  ctx.moveTo(58, 250);
+  ctx.lineTo(238, 294);
   ctx.moveTo(96, 332);
   ctx.lineTo(322, 318);
   ctx.stroke();
   ctx.setLineDash([]);
-  drawMemorialPlane(112, 244, 0.35, "飞机示意");
-  drawMemorialPlane(138, 332, -0.08, "飞机示意");
+  drawAnimatedMemorialPlane();
 
   drawMemorialTower(210, 205, 88, 230, "北塔");
   drawMemorialTower(324, 230, 88, 205, "南塔");
@@ -2254,10 +2253,44 @@ function drawHistoryMemorialScene() {
   drawEggyCharacter(492 + Math.sin(performance.now() * 0.004) * 6, 500, 0.78, 0);
 }
 
-function drawMemorialPlane(x, y, angle, label) {
+function drawAnimatedMemorialPlane() {
+  const cycle = (performance.now() / 1000) % 13;
+  const progress = Math.min(1, cycle / 10);
+  const x = 58 + progress * 184;
+  const y = 250 + progress * 44;
+  drawMemorialPlane(x, y, 0.24, 1.55, "10秒飞机示意");
+  ctx.fillStyle = "#172632";
+  ctx.font = "900 19px system-ui";
+  ctx.fillText(`飞机 ${Math.min(10, Math.floor(cycle) + 1)} / 10秒`, 74, 188);
+  if (progress >= 1) drawImpactMarker(250, 294);
+}
+
+function drawImpactMarker(x, y) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.fillStyle = "rgba(255,209,95,0.9)";
+  ctx.strokeStyle = "#172632";
+  ctx.lineWidth = 4;
+  ctx.beginPath();
+  for (let i = 0; i < 14; i += 1) {
+    const angle = (Math.PI * 2 * i) / 14;
+    const r = i % 2 ? 18 : 40;
+    ctx.lineTo(Math.cos(angle) * r, Math.sin(angle) * r);
+  }
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+  ctx.fillStyle = "#172632";
+  ctx.font = "900 16px system-ui";
+  ctx.fillText("撞击示意", -34, 66);
+  ctx.restore();
+}
+
+function drawMemorialPlane(x, y, angle, scale = 1, label = "飞机示意") {
   ctx.save();
   ctx.translate(x, y);
   ctx.rotate(angle);
+  ctx.scale(scale, scale);
   ctx.fillStyle = "#f7fbff";
   ctx.strokeStyle = "#172632";
   ctx.lineWidth = 4;
@@ -2287,8 +2320,8 @@ function drawMemorialPlane(x, y, angle, label) {
   ctx.restore();
 
   ctx.fillStyle = "#172632";
-  ctx.font = "900 15px system-ui";
-  ctx.fillText(label, x - 40, y + 58);
+  ctx.font = "900 17px system-ui";
+  ctx.fillText(label, x - 60, y + 76 * scale);
 }
 
 function drawMemorialTower(x, y, w, h, label) {
