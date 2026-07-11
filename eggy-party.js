@@ -64,6 +64,7 @@ const avatar = {
   treeLevel: 0
 };
 
+const DAY_LENGTH = 60000;
 let screen = "lobby";
 let activeCategory = "challenge";
 let selectedLocation = { name: "派对大厅", category: "lobby", detail: "摩天轮、樱花树、喷泉广场" };
@@ -82,6 +83,13 @@ const lobbyEggies = [
   { x: 760, y: 492, color: "#8f5fd9", speed: 0.45, phase: 3.1 },
   { x: 900, y: 484, color: "#60c878", speed: -0.5, phase: 4.4 }
 ];
+
+const zombies = [
+  { x: 70, y: 490, speed: 0.55, phase: 0 },
+  { x: 970, y: 492, speed: 0.48, phase: 1.8 },
+  { x: 780, y: 432, speed: 0.44, phase: 3.2 }
+];
+let lastZombieCatch = 0;
 
 const flightWorld = {
   w: 3365,
@@ -320,11 +328,44 @@ function nearAvatar(x, distance = 78) {
   return Math.abs(avatar.x - x) < distance;
 }
 
+function getDayPhase() {
+  return (performance.now() % DAY_LENGTH) / DAY_LENGTH;
+}
+
+function isNightTime() {
+  const phase = getDayPhase();
+  return phase >= 0.55 || phase <= 0.08;
+}
+
+function updateZombies() {
+  if (!isNightTime()) return;
+  zombies.forEach((zombie) => {
+    const targetX = avatar.mode === "walk" ? avatar.x : zombie.x + Math.sin(performance.now() * 0.001 + zombie.phase) * 40;
+    const targetY = avatar.mode === "walk" ? avatar.y : zombie.y;
+    const dx = targetX - zombie.x;
+    const dy = targetY - zombie.y;
+    const distance = Math.max(1, Math.hypot(dx, dy));
+    zombie.x += (dx / distance) * zombie.speed;
+    zombie.y += (dy / distance) * zombie.speed;
+    zombie.x = Math.max(28, Math.min(W - 28, zombie.x));
+    zombie.y = Math.max(420, Math.min(535, zombie.y));
+    if (avatar.mode === "walk" && distance < 42 && performance.now() - lastZombieCatch > 1600) {
+      lastZombieCatch = performance.now();
+      resetAvatar();
+      statusText.textContent = "被僵尸抓到了！蛋仔被送回大厅中间，快躲到摩天轮或樱花树旁边。";
+      tone(160, 0, 0.18, 0.035, "sawtooth");
+      tone(120, 0.16, 0.22, 0.03, "sawtooth");
+    }
+  });
+}
+
 function updateLobby() {
   const left = isDown("left") || keys.has("arrowleft") || keys.has("a");
   const right = isDown("right") || keys.has("arrowright") || keys.has("d");
   const up = isDown("jump") || keys.has("arrowup") || keys.has("w") || keys.has(" ");
   const boost = isDown("roll") || keys.has("arrowdown") || keys.has("s");
+
+  updateZombies();
 
   if (avatar.mode === "ferris") {
     const angle = performance.now() * 0.00045 + avatar.ferrisCabin;
@@ -392,8 +433,7 @@ function lobbyInteract() {
     statusText.textContent = "开始爬三十多层楼高的樱花树。";
     return true;
   }
-  statusText.textContent = "走近摩天轮或樱花树，再点开始/互动。";
-  return true;
+  return false;
 }
 
 function updateActivity() {
@@ -608,6 +648,7 @@ function drawCloud(x, y, s) {
 function drawLobby() {
   updateLobby();
   drawSky();
+  if (isNightTime()) drawNightSky();
   ctx.fillStyle = "#6cc07a";
   ctx.fillRect(0, 410, W, 210);
   ctx.fillStyle = "#caa57a";
@@ -620,14 +661,89 @@ function drawLobby() {
   drawSakuraTree(850, 420);
   drawFountain(520, 398);
   drawOtherEggies();
+  if (isNightTime()) drawZombies();
   drawLobbyEgg(avatar.x, avatar.y);
   drawLocationPreview();
+  if (isNightTime()) drawNightOverlay();
 
   ctx.fillStyle = "#172632";
   ctx.font = "900 34px system-ui";
   ctx.fillText("蛋仔派对大厅", 36, 64);
   ctx.font = "800 19px system-ui";
-  ctx.fillText("左右走，跳/开始互动：坐摩天轮、爬樱花树、看喷泉。", 38, 96);
+  ctx.fillText(isNightTime() ? "夜晚来了：僵尸会追你，快躲开！" : "左右走，跳/开始互动：坐摩天轮、爬樱花树、看喷泉。", 38, 96);
+  drawDayClock();
+}
+
+function drawNightSky() {
+  ctx.fillStyle = "rgba(9, 22, 38, 0.58)";
+  ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = "#fff2b8";
+  ctx.beginPath();
+  ctx.arc(930, 78, 32, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = "rgba(255,255,255,0.86)";
+  for (let i = 0; i < 22; i += 1) {
+    const x = (i * 83 + 37) % W;
+    const y = 32 + ((i * 47) % 190);
+    ctx.fillRect(x, y, 3, 3);
+  }
+}
+
+function drawNightOverlay() {
+  ctx.fillStyle = "rgba(6, 14, 28, 0.24)";
+  ctx.fillRect(0, 0, W, H);
+}
+
+function drawDayClock() {
+  const phase = getDayPhase();
+  const hour = Math.floor(phase * 24);
+  const minute = Math.floor((phase * 24 - hour) * 60);
+  const label = `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
+  ctx.fillStyle = "rgba(255,255,255,0.88)";
+  ctx.beginPath();
+  roundedRect(W - 190, 28, 154, 58, 8);
+  ctx.fill();
+  ctx.fillStyle = "#172632";
+  ctx.font = "900 18px system-ui";
+  ctx.fillText(isNightTime() ? "夜晚" : "白天", W - 170, 53);
+  ctx.font = "800 16px system-ui";
+  ctx.fillText(`时间 ${label}`, W - 170, 75);
+}
+
+function drawZombies() {
+  zombies.forEach((zombie) => {
+    ctx.save();
+    ctx.translate(zombie.x, zombie.y);
+    ctx.strokeStyle = "#172632";
+    ctx.lineWidth = 4;
+    ctx.fillStyle = "#6bb36b";
+    ctx.beginPath();
+    ctx.ellipse(0, 0, 26, 31, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = "#172632";
+    ctx.beginPath();
+    ctx.arc(-8, -8, 3, 0, Math.PI * 2);
+    ctx.arc(8, -8, 3, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = "#172632";
+    ctx.beginPath();
+    ctx.moveTo(-10, 8);
+    ctx.lineTo(10, 8);
+    ctx.stroke();
+    ctx.strokeStyle = "#6bb36b";
+    ctx.lineWidth = 8;
+    ctx.beginPath();
+    ctx.moveTo(-20, 5);
+    ctx.lineTo(-42, 18);
+    ctx.moveTo(20, 5);
+    ctx.lineTo(42, 18);
+    ctx.stroke();
+    ctx.fillStyle = "#172632";
+    ctx.font = "800 13px system-ui";
+    ctx.fillText("僵尸", -16, 48);
+    ctx.restore();
+  });
 }
 
 function drawFerrisWheel(x, y, r) {
