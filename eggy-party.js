@@ -2227,12 +2227,12 @@ function drawHistoryMemorialScene() {
   ctx.lineTo(322, 318);
   ctx.stroke();
   ctx.setLineDash([]);
-  drawAnimatedMemorialPlane();
 
-  drawMemorialTower(210, 205, 88, 230, "北塔");
-  drawMemorialTower(324, 230, 88, 205, "南塔");
+  drawMemorialTower(210, 205, 88, 230, "北塔", 0.45);
+  drawMemorialTower(324, 230, 88, 205, "南塔", 0.2);
   drawMemorialBeam(252, 188, 0.75);
   drawMemorialBeam(366, 205, 0.68);
+  drawAnimatedMemorialPlane();
 
   ctx.fillStyle = "#22364f";
   ctx.fillRect(142, 438, 350, 18);
@@ -2259,12 +2259,12 @@ function drawAnimatedMemorialPlane() {
   const seconds = (performance.now() - historyStartTime) / 1000;
   const cycle = Math.min(10, seconds);
   const progress = Math.min(1, cycle / 10);
-  const x = 58 + progress * 184;
-  const y = 250 + progress * 44;
-  drawMemorialPlane(x, y, 0.24, 1.55, "飞机来袭示意");
+  const x = 30 + progress * 225;
+  const y = 238 + progress * 52;
+  drawMemorialPlane(x, y, 0.23, 2.55, "大飞机示意");
   ctx.fillStyle = "#172632";
-  ctx.font = "900 19px system-ui";
-  ctx.fillText(`飞机 ${Math.min(10, Math.floor(cycle) + 1)} / 10秒`, 74, 188);
+  ctx.font = "900 24px system-ui";
+  ctx.fillText(`大飞机 ${Math.min(10, Math.floor(cycle) + 1)} / 10秒`, 64, 184);
   if (progress >= 1) drawImpactMarker(250, 294);
 }
 
@@ -2327,19 +2327,35 @@ function drawMemorialPlane(x, y, angle, scale = 1, label = "飞机示意") {
   ctx.fillText(label, x - 60, y + 76 * scale);
 }
 
-function drawMemorialTower(x, y, w, h, label) {
+function drawMemorialTower(x, y, w, h, label, delay = 0) {
+  const seconds = (performance.now() - historyStartTime) / 1000;
+  const collapse = Math.max(0, Math.min(1, (seconds - 10 - delay) / 4));
+  const crush = h * collapse;
   ctx.fillStyle = "#dce5eb";
   ctx.beginPath();
-  roundedRect(x, y, w, h, 4);
+  roundedRect(x, y + crush, w, Math.max(18, h - crush), 4);
   ctx.fill();
   ctx.strokeStyle = "#172632";
   ctx.lineWidth = 4;
   ctx.stroke();
   ctx.fillStyle = "rgba(50,167,226,0.45)";
-  for (let row = 0; row < Math.floor(h / 26); row += 1) {
+  for (let row = 0; row < Math.floor((h - crush) / 26); row += 1) {
     for (let col = 0; col < 3; col += 1) {
-      ctx.fillRect(x + 14 + col * 24, y + 14 + row * 24, 12, 12);
+      ctx.fillRect(x + 14 + col * 24, y + crush + 14 + row * 24, 12, 12);
     }
+  }
+  if (collapse > 0) {
+    ctx.fillStyle = "rgba(220,229,235,0.86)";
+    for (let i = 0; i < 8; i += 1) {
+      const px = x - 20 + (i * 27) % (w + 40);
+      const py = y + crush + 8 + Math.sin(i + seconds) * 18;
+      ctx.beginPath();
+      ctx.arc(px, py, 22 + i * 4, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.fillStyle = "#172632";
+    ctx.font = "900 16px system-ui";
+    ctx.fillText("倒塌示意", x - 2, y + Math.min(h + 44, crush + 36));
   }
   ctx.fillStyle = "#172632";
   ctx.font = "900 17px system-ui";
