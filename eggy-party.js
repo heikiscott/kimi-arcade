@@ -99,6 +99,7 @@ let audioContext = null;
 let joystickX = 0;
 let joystickY = 0;
 let joystickPointerId = null;
+let joystickTouching = false;
 
 const lobbyEggies = [
   { x: 420, y: 486, color: "#f06aa3", speed: 0.65, phase: 0 },
@@ -1997,28 +1998,77 @@ function setJoystickFromEvent(event) {
   updateJoystickVisual();
 }
 
-flightStick.addEventListener("pointerdown", (event) => {
-  getAudio();
-  joystickPointerId = event.pointerId;
-  flightStick.setPointerCapture(event.pointerId);
-  setJoystickFromEvent(event);
-});
+function setJoystickFromPoint(clientX, clientY) {
+  const rect = flightStick.getBoundingClientRect();
+  const cx = rect.left + rect.width / 2;
+  const cy = rect.top + rect.height / 2;
+  const radius = rect.width / 2 - 18;
+  const dx = clientX - cx;
+  const dy = clientY - cy;
+  const distance = Math.max(1, Math.hypot(dx, dy));
+  const limited = Math.min(radius, distance);
+  joystickX = (dx / distance) * (limited / radius);
+  joystickY = (dy / distance) * (limited / radius);
+  updateJoystickVisual();
+}
 
-flightStick.addEventListener("pointermove", (event) => {
-  if (event.pointerId !== joystickPointerId) return;
-  setJoystickFromEvent(event);
-});
-
-function releaseJoystick(event) {
-  if (event.pointerId !== joystickPointerId) return;
+function resetJoystick() {
   joystickPointerId = null;
+  joystickTouching = false;
   joystickX = 0;
   joystickY = 0;
   updateJoystickVisual();
 }
 
+flightStick.addEventListener("pointerdown", (event) => {
+  event.preventDefault();
+  getAudio();
+  joystickPointerId = event.pointerId;
+  if (flightStick.setPointerCapture) flightStick.setPointerCapture(event.pointerId);
+  setJoystickFromEvent(event);
+});
+
+flightStick.addEventListener("pointermove", (event) => {
+  if (event.pointerId !== joystickPointerId) return;
+  event.preventDefault();
+  setJoystickFromEvent(event);
+});
+
+function releaseJoystick(event) {
+  if (event.pointerId !== joystickPointerId) return;
+  event.preventDefault();
+  resetJoystick();
+}
+
 flightStick.addEventListener("pointerup", releaseJoystick);
 flightStick.addEventListener("pointercancel", releaseJoystick);
+
+flightStick.addEventListener("touchstart", (event) => {
+  event.preventDefault();
+  getAudio();
+  joystickTouching = true;
+  const touch = event.changedTouches[0] || event.touches[0];
+  if (touch) setJoystickFromPoint(touch.clientX, touch.clientY);
+}, { passive: false });
+
+document.addEventListener("touchmove", (event) => {
+  if (!joystickTouching) return;
+  event.preventDefault();
+  const touch = event.changedTouches[0] || event.touches[0];
+  if (touch) setJoystickFromPoint(touch.clientX, touch.clientY);
+}, { passive: false });
+
+document.addEventListener("touchend", (event) => {
+  if (!joystickTouching) return;
+  event.preventDefault();
+  resetJoystick();
+}, { passive: false });
+
+document.addEventListener("touchcancel", (event) => {
+  if (!joystickTouching) return;
+  event.preventDefault();
+  resetJoystick();
+}, { passive: false });
 
 startBtn.addEventListener("click", () => {
   if (screen === "lobby" && lobbyInteract()) return;
