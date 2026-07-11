@@ -8,6 +8,10 @@ const startBtn = document.querySelector("#startBtn");
 const restartBtn = document.querySelector("#restartBtn");
 const parkBtn = document.querySelector("#parkBtn");
 const lobbyBtn = document.querySelector("#lobbyBtn");
+const boardFlightBtn = document.querySelector("#boardFlightBtn");
+const smoothFlightBtn = document.querySelector("#smoothFlightBtn");
+const flightStick = document.querySelector("#flightStick");
+const flightKnob = document.querySelector("#flightKnob");
 const locationPicker = document.querySelector("#locationPicker");
 const categoryRow = document.querySelector("#categoryRow");
 const locationList = document.querySelector("#locationList");
@@ -53,7 +57,11 @@ const vehicle = {
   angle: 0,
   heading: 0,
   mode: "free",
-  progress: 0
+  progress: 0,
+  pilotX: 360,
+  pilotY: 750,
+  pilotVx: 0,
+  selectedPlaneIndex: 0
 };
 
 const avatar = {
@@ -77,6 +85,9 @@ let elapsed = 0;
 let starCount = 0;
 let laneStars = [];
 let audioContext = null;
+let joystickX = 0;
+let joystickY = 0;
+let joystickPointerId = null;
 
 const lobbyEggies = [
   { x: 420, y: 486, color: "#f06aa3", speed: 0.65, phase: 0 },
@@ -100,21 +111,21 @@ const flightWorld = {
 };
 
 const airportPlanes = [
-  { x: 420, y: 850, label: "日本航空", color: "#d8343f", scale: 0.64 },
-  { x: 710, y: 850, label: "中国航空", color: "#2f79c8", scale: 0.66 },
-  { x: 1000, y: 850, label: "美国航空", color: "#42536b", scale: 0.64 },
-  { x: 1290, y: 850, label: "东方航空", color: "#d83258", scale: 0.68 },
-  { x: 1580, y: 850, label: "南方航空", color: "#1f8c65", scale: 0.66 },
-  { x: 1870, y: 850, label: "亚洲航空", color: "#d51f2a", scale: 0.64 },
-  { x: 2160, y: 850, label: "泰国航空", color: "#7b4ab8", scale: 0.66 },
-  { x: 2450, y: 850, label: "大韩航空", color: "#4aa3df", scale: 0.66 },
-  { x: 2740, y: 850, label: "印度航空", color: "#c22d2d", scale: 0.65 },
-  { x: 520, y: 1280, label: "山东航空", color: "#f28b2f", scale: 0.62 },
-  { x: 810, y: 1280, label: "澳门航空", color: "#2270b8", scale: 0.62 },
-  { x: 1100, y: 1280, label: "三亚航空", color: "#32a852", scale: 0.62 },
-  { x: 1650, y: 1280, label: "私人飞机", color: "#8f5fd9", scale: 0.55 },
-  { x: 2070, y: 1280, label: "军事飞机", color: "#4f6b48", scale: 0.72 },
-  { x: 2490, y: 1280, label: "普通飞机", color: "#64717b", scale: 0.62 }
+  { x: 390, y: 1040, label: "日本航空", color: "#d8343f", scale: 0.52 },
+  { x: 560, y: 1040, label: "中国航空", color: "#2f79c8", scale: 0.52 },
+  { x: 730, y: 1040, label: "美国航空", color: "#42536b", scale: 0.52 },
+  { x: 900, y: 1040, label: "东方航空", color: "#d83258", scale: 0.54 },
+  { x: 1070, y: 1040, label: "南方航空", color: "#1f8c65", scale: 0.52 },
+  { x: 1240, y: 1040, label: "亚洲航空", color: "#d51f2a", scale: 0.52 },
+  { x: 1410, y: 1040, label: "泰国航空", color: "#7b4ab8", scale: 0.52 },
+  { x: 1580, y: 1040, label: "大韩航空", color: "#4aa3df", scale: 0.52 },
+  { x: 1750, y: 1040, label: "印度航空", color: "#c22d2d", scale: 0.52 },
+  { x: 1920, y: 1040, label: "山东航空", color: "#f28b2f", scale: 0.5 },
+  { x: 2090, y: 1040, label: "澳门航空", color: "#2270b8", scale: 0.5 },
+  { x: 2260, y: 1040, label: "三亚航空", color: "#32a852", scale: 0.5 },
+  { x: 2430, y: 1040, label: "私人飞机", color: "#8f5fd9", scale: 0.46 },
+  { x: 2600, y: 1040, label: "军事飞机", color: "#4f6b48", scale: 0.54 },
+  { x: 2770, y: 1040, label: "普通飞机", color: "#64717b", scale: 0.5 }
 ];
 
 const flightClouds = [
@@ -197,6 +208,42 @@ function makeLaneStars() {
 function getLanePlatforms() {
   const colors = ["#60c878", "#ffd15f", "#f06aa3", "#32a7e2", "#8f5fd9"];
   const lift = laneIndex * 9;
+  if (laneIndex === 1) {
+    return [
+      { x: 0, y: 520, w: 180, h: 36, color: "#32a7e2" },
+      { x: 240, y: 458, w: 118, h: 30, color: "#ffd15f" },
+      { x: 420, y: 500, w: 128, h: 30, color: "#32a7e2" },
+      { x: 610, y: 430, w: 134, h: 30, color: "#ffd15f" },
+      { x: 850, y: 540, w: 190, h: 42, color: "#32a7e2" }
+    ];
+  }
+  if (laneIndex === 2) {
+    return [
+      { x: 0, y: 540, w: 190, h: 42, color: "#424b57" },
+      { x: 255, y: 505, w: 210, h: 26, color: "#424b57" },
+      { x: 545, y: 468, w: 110, h: 24, color: "#f06aa3" },
+      { x: 720, y: 505, w: 120, h: 24, color: "#424b57" },
+      { x: 890, y: 540, w: 150, h: 42, color: "#424b57" }
+    ];
+  }
+  if (laneIndex === 3) {
+    return [
+      { x: 0, y: 540, w: 230, h: 42, color: "#ffd15f" },
+      { x: 285, y: 470, w: 90, h: 90, color: "#f06aa3" },
+      { x: 460, y: 392, w: 90, h: 32, color: "#ffd15f" },
+      { x: 630, y: 470, w: 90, h: 90, color: "#f06aa3" },
+      { x: 840, y: 540, w: 200, h: 42, color: "#ffd15f" }
+    ];
+  }
+  if (laneIndex === 4) {
+    return [
+      { x: 0, y: 540, w: 160, h: 42, color: "#8f5fd9" },
+      { x: 210, y: 480, w: 140, h: 32, color: "#172632" },
+      { x: 405, y: 410, w: 135, h: 32, color: "#8f5fd9" },
+      { x: 600, y: 482, w: 135, h: 32, color: "#172632" },
+      { x: 850, y: 540, w: 190, h: 42, color: "#8f5fd9" }
+    ];
+  }
   return [
     { x: 0, y: 540, w: 210, h: 42, color: colors[laneIndex % colors.length] },
     { x: 245, y: 478 - lift, w: 160, h: 34, color: colors[(laneIndex + 1) % colors.length] },
@@ -230,14 +277,21 @@ function resetEgg() {
 }
 
 function resetVehicle() {
-  vehicle.x = selectedLocation.category === "flight" ? 1650 : 520;
-  vehicle.y = selectedLocation.category === "flight" ? 1150 : 420;
+  vehicle.selectedPlaneIndex = 0;
+  vehicle.x = selectedLocation.category === "flight" ? airportPlanes[0].x : 520;
+  vehicle.y = selectedLocation.category === "flight" ? airportPlanes[0].y : 420;
   vehicle.vx = 0;
   vehicle.vy = 0;
   vehicle.angle = 0;
   vehicle.heading = 0;
-  vehicle.mode = "free";
+  vehicle.mode = selectedLocation.category === "flight" ? "walking" : "free";
   vehicle.progress = 0;
+  vehicle.pilotX = selectedLocation.category === "flight" ? airportPlanes[0].x - 76 : 360;
+  vehicle.pilotY = selectedLocation.category === "flight" ? airportPlanes[0].y + 88 : 750;
+  vehicle.pilotVx = 0;
+  joystickX = 0;
+  joystickY = 0;
+  updateJoystickVisual();
 }
 
 function resetAvatar() {
@@ -247,6 +301,60 @@ function resetAvatar() {
   avatar.mode = "walk";
   avatar.ferrisCabin = 0;
   avatar.treeLevel = 0;
+}
+
+function getNearestPlane() {
+  let nearest = airportPlanes[0];
+  let nearestIndex = 0;
+  let nearestDistance = Infinity;
+  airportPlanes.forEach((plane, index) => {
+    const distance = Math.hypot(vehicle.pilotX - plane.x, vehicle.pilotY - (plane.y + 76));
+    if (distance < nearestDistance) {
+      nearest = plane;
+      nearestIndex = index;
+      nearestDistance = distance;
+    }
+  });
+  return { plane: nearest, index: nearestIndex, distance: nearestDistance };
+}
+
+function boardNearestPlane() {
+  if (selectedLocation.category !== "flight") return false;
+  if (vehicle.mode !== "walking") {
+    statusText.textContent = "你已经在飞机里了，点“平稳飞行”开始飞。";
+    return true;
+  }
+  const nearest = getNearestPlane();
+  if (nearest.distance > 120) {
+    statusText.textContent = "先走到任意一架飞机门口，再点“上飞机”。";
+    return true;
+  }
+  vehicle.selectedPlaneIndex = nearest.index;
+  vehicle.x = nearest.plane.x;
+  vehicle.y = nearest.plane.y;
+  vehicle.heading = -Math.PI / 2;
+  vehicle.angle = vehicle.heading;
+  vehicle.vx = 0;
+  vehicle.vy = 0;
+  vehicle.mode = "boarded";
+  statusText.textContent = `上了${nearest.plane.label}！点“平稳飞行”，再拉圆形操纵杆。`;
+  portalSound();
+  return true;
+}
+
+function startSmoothFlight() {
+  if (selectedLocation.category !== "flight") return false;
+  if (vehicle.mode === "walking") return boardNearestPlane();
+  vehicle.mode = "flying";
+  statusText.textContent = "飞机进入平稳飞行。操纵杆往下拉上升，往上推下降，左右拉转方向。";
+  tone(440, 0, 0.12, 0.02, "triangle");
+  tone(660, 0.11, 0.14, 0.02, "triangle");
+  return true;
+}
+
+function updateJoystickVisual() {
+  if (!flightKnob) return;
+  flightKnob.style.transform = `translate(calc(-50% + ${joystickX * 38}px), calc(-50% + ${joystickY * 38}px))`;
 }
 
 function startCourse(locationName = selectedLocation.name) {
@@ -311,7 +419,7 @@ function selectLocation(place) {
 }
 
 function getActivityHelp(category) {
-  if (category === "flight") return `${selectedLocation.name}：3365 公顷超大机场！左右开飞机，跳是上升，冲刺加速，飞到白色通关线点互动。`;
+  if (category === "flight") return `${selectedLocation.name}：你先站在飞机旁边走路，走到飞机门边点“上飞机”，再用圆形操纵杆平稳飞。`;
   if (category === "water") return `${selectedLocation.name}：先到售票处，再走到滑梯楼梯，跳/互动可以上去滑下来。`;
   if (category === "metro") return `${selectedLocation.name}：地铁一直开着，靠近车门按互动就能进车厢。`;
   if (category === "fish") return `${selectedLocation.name}：摸鱼码头有小船、鱼池和鱼，左右一直划，不会突然卡住。`;
@@ -466,13 +574,29 @@ function updateActivity() {
   const speed = boost ? 0.42 : 0.24;
 
   if (selectedLocation.category === "flight") {
-    if (left) vehicle.heading -= 0.035;
-    if (right) vehicle.heading += 0.035;
-    const thrust = boost ? 1.35 : up ? 0.78 : 0.24;
-    vehicle.vx += Math.cos(vehicle.heading) * thrust;
-    vehicle.vy += Math.sin(vehicle.heading) * thrust;
-    vehicle.angle = vehicle.heading;
-    vehicle.y = Math.max(170, Math.min(flightWorld.h - 170, vehicle.y + vehicle.vy));
+    if (vehicle.mode === "walking") {
+      if (left) vehicle.pilotVx -= boost ? 1.1 : 0.68;
+      if (right) vehicle.pilotVx += boost ? 1.1 : 0.68;
+      vehicle.pilotVx *= 0.82;
+      vehicle.pilotX = Math.max(210, Math.min(flightWorld.w - 210, vehicle.pilotX + vehicle.pilotVx));
+      const nearest = getNearestPlane();
+      vehicle.pilotY = nearest.plane.y + 88 + Math.sin(performance.now() * 0.012) * 4;
+      if (nearest.distance < 120) statusText.textContent = `你走到${nearest.plane.label}旁边了，点“上飞机”。`;
+    } else {
+      if (left) joystickX = Math.max(-1, joystickX - 0.04);
+      if (right) joystickX = Math.min(1, joystickX + 0.04);
+      if (up) joystickY = Math.max(-1, joystickY - 0.04);
+      if (boost) joystickY = Math.min(1, joystickY + 0.04);
+      joystickX *= 0.985;
+      joystickY *= 0.985;
+      updateJoystickVisual();
+      vehicle.heading += joystickX * 0.024;
+      const thrust = vehicle.mode === "flying" ? 0.62 : 0.16;
+      vehicle.vx += Math.cos(vehicle.heading) * thrust;
+      vehicle.vy += Math.sin(vehicle.heading) * thrust - joystickY * 0.74;
+      vehicle.angle += (vehicle.heading + joystickX * 0.14 - vehicle.angle) * 0.12;
+      vehicle.y = Math.max(170, Math.min(flightWorld.h - 170, vehicle.y + vehicle.vy));
+    }
   } else if (selectedLocation.category === "water") {
     if (vehicle.mode === "slide") {
       vehicle.progress += 0.015;
@@ -502,9 +626,9 @@ function updateActivity() {
     vehicle.angle = Math.sin(performance.now() * 0.004) * 0.025;
     vehicle.y += (420 - vehicle.y) * 0.06;
   }
-  vehicle.vx *= 0.92;
-  vehicle.vy *= 0.9;
-  vehicle.x += vehicle.vx;
+  vehicle.vx *= selectedLocation.category === "flight" ? 0.965 : 0.92;
+  vehicle.vy *= selectedLocation.category === "flight" ? 0.965 : 0.9;
+  if (selectedLocation.category !== "flight" || vehicle.mode !== "walking") vehicle.x += vehicle.vx;
   if (selectedLocation.category === "flight") {
     vehicle.x = Math.max(160, Math.min(flightWorld.w - 160, vehicle.x));
     if (Math.abs(vehicle.x - flightWorld.finishX) < 120 && Math.abs(vehicle.y - flightWorld.finishY) < 180) {
@@ -520,6 +644,8 @@ function activityInteract() {
   getAudio();
   if (screen !== "activity") return false;
   if (selectedLocation.category === "flight") {
+    if (vehicle.mode === "walking") return boardNearestPlane();
+    if (vehicle.mode === "boarded") return startSmoothFlight();
     if (Math.abs(vehicle.x - flightWorld.finishX) < 150 && Math.abs(vehicle.y - flightWorld.finishY) < 210) {
       statusText.textContent = "机场闯关成功！穿过白色线，进入下一个机场地点。";
       winSound();
@@ -986,16 +1112,20 @@ function drawActivityTitle() {
 }
 
 function drawFlightScene() {
-  const zoom = 0.38;
-  const cameraX = Math.max(0, Math.min(flightWorld.w - W / zoom, vehicle.x - W / zoom / 2));
-  const cameraY = Math.max(0, Math.min(flightWorld.h - H / zoom, vehicle.y - H / zoom / 2));
+  const zoom = 0.176;
+  const offsetX = (W / zoom - flightWorld.w) / 2;
+  const offsetY = 76;
   drawSky();
   ctx.save();
   ctx.scale(zoom, zoom);
-  ctx.translate(-cameraX, -cameraY);
+  ctx.translate(offsetX, offsetY);
   drawHugeAirport();
-  airportPlanes.forEach((plane) => drawParkedPlane(plane));
-  drawAirplane(vehicle.x, vehicle.y, vehicle.angle);
+  airportPlanes.forEach((plane, index) => {
+    if ((vehicle.mode === "boarded" || vehicle.mode === "flying") && index === vehicle.selectedPlaneIndex) return;
+    drawParkedPlane(plane);
+  });
+  if (vehicle.mode === "walking") drawWalkingPilot(vehicle.pilotX, vehicle.pilotY);
+  if (vehicle.mode === "boarded" || vehicle.mode === "flying") drawAirplane(vehicle.x, vehicle.y, vehicle.angle);
   ctx.restore();
   drawFlightClouds();
 
@@ -1005,10 +1135,10 @@ function drawFlightScene() {
   ctx.fill();
   ctx.fillStyle = "#172632";
   ctx.font = "900 18px system-ui";
-  ctx.fillText("超大机场地图 3365 公顷", W - 288, 56);
+  ctx.fillText("全机场视野 3365 公顷", W - 288, 56);
   ctx.font = "800 14px system-ui";
-  ctx.fillText(`坐标 ${Math.round(vehicle.x)} / ${Math.round(vehicle.y)}  视野 x${zoom}`, W - 288, 82);
-  ctx.fillText("转方向飞，找白色通关线", W - 288, 104);
+  ctx.fillText(vehicle.mode === "walking" ? "人在地上走，先上飞机" : `飞行坐标 ${Math.round(vehicle.x)} / ${Math.round(vehicle.y)}`, W - 288, 82);
+  ctx.fillText("操纵杆：下拉上升，上推下降", W - 288, 104);
 }
 
 function drawAirportTerminal(x, y) {
@@ -1176,6 +1306,26 @@ function drawParkedPlane(plane) {
   ctx.fillStyle = "#172632";
   ctx.font = "900 26px system-ui";
   ctx.fillText(plane.label, plane.x - 58, plane.y + 86 * plane.scale + 34);
+}
+
+function drawWalkingPilot(x, y) {
+  const step = Math.sin(performance.now() * 0.016) * 14;
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.lineCap = "round";
+  ctx.strokeStyle = "#172632";
+  ctx.lineWidth = 8;
+  ctx.beginPath();
+  ctx.moveTo(-10, 26);
+  ctx.lineTo(-18 - step * 0.25, 58);
+  ctx.moveTo(10, 26);
+  ctx.lineTo(18 + step * 0.25, 58);
+  ctx.stroke();
+  drawEggyCharacter(0, -8, 0.62, vehicle.pilotVx * 0.02);
+  ctx.fillStyle = "#172632";
+  ctx.font = "900 22px system-ui";
+  ctx.fillText("我", -12, 80);
+  ctx.restore();
 }
 
 function drawFlightClouds() {
@@ -1589,6 +1739,43 @@ document.addEventListener("pointerup", (event) => {
 
 document.addEventListener("pointercancel", () => controls.clear());
 
+function setJoystickFromEvent(event) {
+  const rect = flightStick.getBoundingClientRect();
+  const cx = rect.left + rect.width / 2;
+  const cy = rect.top + rect.height / 2;
+  const radius = rect.width / 2 - 18;
+  const dx = event.clientX - cx;
+  const dy = event.clientY - cy;
+  const distance = Math.max(1, Math.hypot(dx, dy));
+  const limited = Math.min(radius, distance);
+  joystickX = (dx / distance) * (limited / radius);
+  joystickY = (dy / distance) * (limited / radius);
+  updateJoystickVisual();
+}
+
+flightStick.addEventListener("pointerdown", (event) => {
+  getAudio();
+  joystickPointerId = event.pointerId;
+  flightStick.setPointerCapture(event.pointerId);
+  setJoystickFromEvent(event);
+});
+
+flightStick.addEventListener("pointermove", (event) => {
+  if (event.pointerId !== joystickPointerId) return;
+  setJoystickFromEvent(event);
+});
+
+function releaseJoystick(event) {
+  if (event.pointerId !== joystickPointerId) return;
+  joystickPointerId = null;
+  joystickX = 0;
+  joystickY = 0;
+  updateJoystickVisual();
+}
+
+flightStick.addEventListener("pointerup", releaseJoystick);
+flightStick.addEventListener("pointercancel", releaseJoystick);
+
 startBtn.addEventListener("click", () => {
   if (screen === "lobby" && lobbyInteract()) return;
   if (screen === "activity" && activityInteract()) return;
@@ -1605,6 +1792,20 @@ restartBtn.addEventListener("click", () => {
     return;
   }
   startCourse(selectedLocation.category === "challenge" ? selectedLocation.name : "五条路线 01");
+});
+boardFlightBtn.addEventListener("click", () => {
+  if (selectedLocation.category !== "flight" || screen !== "activity") {
+    statusText.textContent = "先点乐园，选择开飞机地点。";
+    return;
+  }
+  boardNearestPlane();
+});
+smoothFlightBtn.addEventListener("click", () => {
+  if (selectedLocation.category !== "flight" || screen !== "activity") {
+    statusText.textContent = "先进入开飞机地点，再点平稳飞行。";
+    return;
+  }
+  startSmoothFlight();
 });
 parkBtn.addEventListener("click", () => {
   locationPicker.hidden = !locationPicker.hidden;
