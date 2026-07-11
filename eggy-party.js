@@ -34,6 +34,7 @@ const categories = [
   { key: "water", title: "水上乐园地点", count: 20, prefix: "水花乐园", detail: "大喇叭、漩涡、蛇形滑道" },
   { key: "metro", title: "开地铁地点", count: 10, prefix: "环线地铁", detail: "站台门、驾驶台、下一站" },
   { key: "fish", title: "摸鱼地点", count: 30, prefix: "河边摸鱼", detail: "河岸、树、椅子、捞随机东西" },
+  { key: "history", title: "历史纪念馆", count: 1, prefix: "历史纪念馆", detail: "9/11事件回顾、双塔纪念光柱" },
   { key: "challenge", title: "闯关游戏地点", count: 40, prefix: "五条路线", detail: "每条路线机关都不一样" }
 ];
 
@@ -42,6 +43,7 @@ const namedPlaces = {
   water: ["大喇叭水城", "漩涡水城", "蛇形滑道湾", "彩虹水寨", "冲浪河谷"],
   metro: ["港湾控制站", "欧南园驾驶站", "牛车水换乘站", "克拉码头终点站", "滨海湾地下站"],
   fish: ["河边摸鱼树下", "公园长椅河岸", "荷叶浅滩", "小桥摸鱼点", "柳树水湾"],
+  history: ["9/11历史纪念馆"],
   challenge: ["传送门五路", "弹簧塔五路", "机场风道五路", "地铁轨道五路", "夜晚躲避五路"]
 };
 
@@ -614,6 +616,7 @@ function getActivityHelp(category) {
   if (category === "water") return `${selectedLocation.name}：这里有大喇叭、漩涡和蛇形滑道，点互动开始滑水。`;
   if (category === "metro") return `${selectedLocation.name}：站台门在前面，点互动进驾驶台，再控制地铁往下一站开。`;
   if (category === "fish") return `${selectedLocation.name}：站在河边捞东西，可能捞到鱼、锅、僵尸蛋、宝箱或者奇怪玩具。`;
+  if (category === "history") return `${selectedLocation.name}：这是安静的历史纪念馆，可以看2001年9月11日事件时间线和纪念光柱。`;
   return `${selectedLocation.name}：选择好了。`;
 }
 
@@ -893,6 +896,12 @@ function activityInteract() {
     const item = fishLoots[Math.floor(Math.random() * fishLoots.length)];
     statusText.textContent = `一网捞上来：${item}！旁边还有树和椅子，可以继续在河边摸鱼。`;
     tone(988, 0, 0.14, 0.024, "sine");
+    return true;
+  }
+  if (selectedLocation.category === "history") {
+    statusText.textContent = "9/11历史纪念馆：记住历史，纪念遇难者，也学习珍惜和平。";
+    tone(392, 0, 0.2, 0.018, "sine");
+    tone(523, 0.22, 0.22, 0.016, "sine");
     return true;
   }
   return false;
@@ -1310,6 +1319,7 @@ function drawActivity() {
   if (selectedLocation.category === "water") drawWaterScene();
   if (selectedLocation.category === "metro") drawMetroScene();
   if (selectedLocation.category === "fish") drawFishScene();
+  if (selectedLocation.category === "history") drawHistoryMemorialScene();
   drawActivityTitle();
 }
 
@@ -2181,6 +2191,102 @@ function drawLootBubble(x, y, label) {
   ctx.textAlign = "center";
   ctx.fillText(label, x, y + 6);
   ctx.textAlign = "left";
+}
+
+function drawHistoryMemorialScene() {
+  const g = ctx.createLinearGradient(0, 0, 0, H);
+  g.addColorStop(0, "#6fa7c8");
+  g.addColorStop(0.55, "#dce5eb");
+  g.addColorStop(1, "#f7fbff");
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, W, H);
+
+  ctx.fillStyle = "rgba(255,255,255,0.75)";
+  ctx.beginPath();
+  roundedRect(34, 58, 972, 508, 8);
+  ctx.fill();
+  ctx.strokeStyle = "rgba(23,38,50,0.2)";
+  ctx.lineWidth = 4;
+  ctx.stroke();
+
+  ctx.fillStyle = "#172632";
+  ctx.font = "900 34px system-ui";
+  ctx.fillText("9/11历史纪念馆", 70, 108);
+  ctx.font = "800 18px system-ui";
+  ctx.fillText("2001年9月11日，美国发生恐怖袭击。这里是安静回顾和纪念，不是闯关游戏。", 72, 142);
+
+  drawMemorialTower(210, 205, 88, 230, "北塔");
+  drawMemorialTower(324, 230, 88, 205, "南塔");
+  drawMemorialBeam(252, 188, 0.75);
+  drawMemorialBeam(366, 205, 0.68);
+
+  ctx.fillStyle = "#22364f";
+  ctx.fillRect(142, 438, 350, 18);
+  ctx.fillStyle = "#172632";
+  ctx.font = "900 18px system-ui";
+  ctx.fillText("纪念光柱", 270, 486);
+
+  const cards = [
+    ["上午 8:46", "北塔受到撞击"],
+    ["上午 9:03", "南塔受到撞击"],
+    ["上午 9:59", "南塔倒塌"],
+    ["上午 10:28", "北塔倒塌"]
+  ];
+  cards.forEach((card, index) => drawTimelineCard(570, 190 + index * 78, card[0], card[1]));
+
+  ctx.fillStyle = "#172632";
+  ctx.font = "800 20px system-ui";
+  ctx.fillText("按“开始/互动”可以听一声安静的纪念提示。", 570, 532);
+  drawEggyCharacter(492 + Math.sin(performance.now() * 0.004) * 6, 500, 0.78, 0);
+}
+
+function drawMemorialTower(x, y, w, h, label) {
+  ctx.fillStyle = "#dce5eb";
+  ctx.beginPath();
+  roundedRect(x, y, w, h, 4);
+  ctx.fill();
+  ctx.strokeStyle = "#172632";
+  ctx.lineWidth = 4;
+  ctx.stroke();
+  ctx.fillStyle = "rgba(50,167,226,0.45)";
+  for (let row = 0; row < Math.floor(h / 26); row += 1) {
+    for (let col = 0; col < 3; col += 1) {
+      ctx.fillRect(x + 14 + col * 24, y + 14 + row * 24, 12, 12);
+    }
+  }
+  ctx.fillStyle = "#172632";
+  ctx.font = "900 17px system-ui";
+  ctx.fillText(label, x + 22, y + h + 28);
+}
+
+function drawMemorialBeam(x, y, alpha) {
+  const beam = ctx.createLinearGradient(x, y - 190, x, y + 250);
+  beam.addColorStop(0, `rgba(255,255,255,${alpha})`);
+  beam.addColorStop(1, "rgba(255,255,255,0)");
+  ctx.fillStyle = beam;
+  ctx.beginPath();
+  ctx.moveTo(x - 28, y + 250);
+  ctx.lineTo(x - 8, y - 180);
+  ctx.lineTo(x + 22, y - 180);
+  ctx.lineTo(x + 42, y + 250);
+  ctx.closePath();
+  ctx.fill();
+}
+
+function drawTimelineCard(x, y, time, text) {
+  ctx.fillStyle = "#fff";
+  ctx.beginPath();
+  roundedRect(x, y, 360, 56, 8);
+  ctx.fill();
+  ctx.strokeStyle = "rgba(23,38,50,0.16)";
+  ctx.lineWidth = 3;
+  ctx.stroke();
+  ctx.fillStyle = "#2f79c8";
+  ctx.font = "900 20px system-ui";
+  ctx.fillText(time, x + 18, y + 35);
+  ctx.fillStyle = "#172632";
+  ctx.font = "800 18px system-ui";
+  ctx.fillText(text, x + 134, y + 35);
 }
 
 function drawFish(x, y, index) {
