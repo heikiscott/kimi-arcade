@@ -2215,6 +2215,19 @@ function drawHistoryMemorialScene() {
   ctx.font = "800 18px system-ui";
   ctx.fillText("2001年9月11日，美国发生恐怖袭击。这里是安静回顾和纪念，不是闯关游戏。", 72, 142);
 
+  ctx.strokeStyle = "rgba(47,121,200,0.55)";
+  ctx.lineWidth = 5;
+  ctx.setLineDash([14, 12]);
+  ctx.beginPath();
+  ctx.moveTo(88, 242);
+  ctx.lineTo(210, 288);
+  ctx.moveTo(96, 332);
+  ctx.lineTo(322, 318);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  drawMemorialPlane(112, 244, 0.35, "飞机示意");
+  drawMemorialPlane(138, 332, -0.08, "飞机示意");
+
   drawMemorialTower(210, 205, 88, 230, "北塔");
   drawMemorialTower(324, 230, 88, 205, "南塔");
   drawMemorialBeam(252, 188, 0.75);
@@ -2229,15 +2242,53 @@ function drawHistoryMemorialScene() {
   const cards = [
     ["上午 8:46", "北塔受到撞击"],
     ["上午 9:03", "南塔受到撞击"],
+    ["上午 9:20", "应急处置持续进行"],
     ["上午 9:59", "南塔倒塌"],
     ["上午 10:28", "北塔倒塌"]
   ];
-  cards.forEach((card, index) => drawTimelineCard(570, 190 + index * 78, card[0], card[1]));
+  cards.forEach((card, index) => drawTimelineCard(552, 174 + index * 68, card[0], card[1]));
 
   ctx.fillStyle = "#172632";
-  ctx.font = "800 20px system-ui";
-  ctx.fillText("按“开始/互动”可以听一声安静的纪念提示。", 570, 532);
+  ctx.font = "800 19px system-ui";
+  ctx.fillText("按“开始/互动”可以听一声安静的纪念提示。", 552, 542);
   drawEggyCharacter(492 + Math.sin(performance.now() * 0.004) * 6, 500, 0.78, 0);
+}
+
+function drawMemorialPlane(x, y, angle, label) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(angle);
+  ctx.fillStyle = "#f7fbff";
+  ctx.strokeStyle = "#172632";
+  ctx.lineWidth = 4;
+  ctx.beginPath();
+  ctx.ellipse(0, 0, 54, 13, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+  ctx.fillStyle = "#2f79c8";
+  ctx.beginPath();
+  ctx.moveTo(-4, 0);
+  ctx.lineTo(-44, 36);
+  ctx.lineTo(24, 10);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(-8, -2);
+  ctx.lineTo(-38, -32);
+  ctx.lineTo(22, -8);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+  ctx.fillStyle = "#172632";
+  ctx.beginPath();
+  ctx.arc(44, -2, 5, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+
+  ctx.fillStyle = "#172632";
+  ctx.font = "900 15px system-ui";
+  ctx.fillText(label, x - 40, y + 58);
 }
 
 function drawMemorialTower(x, y, w, h, label) {
@@ -2276,17 +2327,17 @@ function drawMemorialBeam(x, y, alpha) {
 function drawTimelineCard(x, y, time, text) {
   ctx.fillStyle = "#fff";
   ctx.beginPath();
-  roundedRect(x, y, 360, 56, 8);
+  roundedRect(x, y, 402, 58, 8);
   ctx.fill();
   ctx.strokeStyle = "rgba(23,38,50,0.16)";
   ctx.lineWidth = 3;
   ctx.stroke();
   ctx.fillStyle = "#2f79c8";
-  ctx.font = "900 20px system-ui";
-  ctx.fillText(time, x + 18, y + 35);
+  ctx.font = "900 23px system-ui";
+  ctx.fillText(time, x + 18, y + 37);
   ctx.fillStyle = "#172632";
-  ctx.font = "800 18px system-ui";
-  ctx.fillText(text, x + 134, y + 35);
+  ctx.font = "800 20px system-ui";
+  ctx.fillText(text, x + 154, y + 37);
 }
 
 function drawFish(x, y, index) {
