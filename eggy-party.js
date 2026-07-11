@@ -487,23 +487,14 @@ function isOnAirportLand(x, y) {
 }
 
 function finishPlaneFalling() {
-  if (isOnAirportLand(vehicle.x, vehicle.y)) {
-    vehicle.vx = 0;
-    vehicle.vy = 0;
-    vehicle.angle = 0;
-    vehicle.planeCrashExploded = false;
-    vehicle.mode = "walking";
-    vehicle.pilotX = Math.max(210, Math.min(flightWorld.w - 210, vehicle.x - 80));
-    vehicle.pilotY = getNearestPlane().plane.y + 88;
-    statusText.textContent = "飞机掉在机场地盘里了，没有爆炸；小蛋仔安全在旁边继续玩。";
-    return;
-  }
-  vehicle.planeCrashExploded = true;
-  statusText.textContent = "飞机掉到机场外面了，爆炸，飞机凉了；小蛋仔没事。3 秒后重来。";
-  crashSong();
-  setTimeout(() => {
-    if (selectedLocation.category === "flight" && vehicle.mode === "plane-falling" && vehicle.planeCrashExploded) resetVehicle();
-  }, 3000);
+  vehicle.vx = 0;
+  vehicle.vy = 0;
+  vehicle.angle = 0;
+  vehicle.planeCrashExploded = false;
+  vehicle.mode = "walking";
+  vehicle.pilotX = vehicle.x - 110;
+  vehicle.pilotY = vehicle.y + 118;
+  statusText.textContent = "飞机落到地上停住了，不爆炸，不重来；小蛋仔安全在旁边。";
 }
 
 function checkBuildingCrash() {
@@ -769,7 +760,7 @@ function updateActivity() {
         vehicle.vy += 0.16;
         vehicle.angle += 0.018;
       }
-      vehicle.y = Math.max(-520, Math.min(flightWorld.h + 620, vehicle.y + vehicle.vy));
+      vehicle.y += vehicle.vy;
       const remaining = Math.max(0, Math.ceil((vehicle.fallDuration - fallElapsed) / 1000));
       if (!vehicle.planeCrashExploded) statusText.textContent = fallElapsed < vehicle.floatDuration ? `小蛋仔安全出来了，飞机还在空中飘，还剩 ${remaining} 秒掉下来。` : `飞机开始往下掉，还剩 ${remaining} 秒落下。`;
       if (fallElapsed >= vehicle.fallDuration && !vehicle.planeCrashExploded) finishPlaneFalling();
@@ -786,7 +777,7 @@ function updateActivity() {
       vehicle.vx += Math.cos(vehicle.heading) * thrust;
       vehicle.vy += Math.sin(vehicle.heading) * thrust - joystickY * 0.74;
       vehicle.angle += (vehicle.heading + joystickX * 0.14 - vehicle.angle) * 0.12;
-      vehicle.y = Math.max(-520, Math.min(flightWorld.h + 520, vehicle.y + vehicle.vy));
+      vehicle.y += vehicle.vy;
     }
   } else if (selectedLocation.category === "water") {
     if (vehicle.mode === "slide") {
@@ -821,7 +812,6 @@ function updateActivity() {
   vehicle.vy *= selectedLocation.category === "flight" ? 0.965 : 0.9;
   if (selectedLocation.category !== "flight" || vehicle.mode !== "walking") vehicle.x += vehicle.vx;
   if (selectedLocation.category === "flight") {
-    vehicle.x = Math.max(-520, Math.min(flightWorld.w + 520, vehicle.x));
     checkBuildingCrash();
     if (Math.abs(vehicle.x - flightWorld.finishX) < 120 && Math.abs(vehicle.y - flightWorld.finishY) < 180) {
       statusText.textContent = "到白色通关线旁边了，点“开始/互动”就能闯关成功。";
@@ -1310,12 +1300,13 @@ function drawFlightScene() {
   const focusY = vehicle.mode === "walking" ? vehicle.pilotY : vehicle.y;
   const viewW = W / zoom;
   const viewH = H / zoom;
-  const offsetX = Math.max(viewW - flightWorld.w, Math.min(0, viewW / 2 - focusX));
-  const offsetY = Math.max(viewH - flightWorld.h, Math.min(0, viewH / 2 - focusY));
+  const offsetX = viewW / 2 - focusX;
+  const offsetY = viewH / 2 - focusY;
   drawSky();
   ctx.save();
   ctx.scale(zoom, zoom);
   ctx.translate(offsetX, offsetY);
+  drawWorldCloudField(focusX, focusY);
   drawHugeAirport();
   airportPlanes.forEach((plane, index) => {
     if ((vehicle.mode === "boarded" || vehicle.mode === "flying" || vehicle.mode === "plane-falling") && index === vehicle.selectedPlaneIndex) return;
@@ -1653,9 +1644,8 @@ function drawPlaneFallingOverlay() {
   ctx.fill();
   ctx.fillStyle = "#172632";
   ctx.font = "900 30px system-ui";
-  ctx.fillText(vehicle.planeCrashExploded ? "飞机凉了" : `飞机 ${remaining}s`, -72, -8);
+  ctx.fillText(`飞机 ${remaining}s`, -72, -8);
   ctx.restore();
-  if (vehicle.planeCrashExploded) drawExplosion(vehicle.x, vehicle.y, 2.4);
 }
 
 function drawExplosion(x, y, s) {
@@ -1693,6 +1683,23 @@ function drawFlightClouds() {
     }
     drawCloud(cloud.x, cloud.y, cloud.s);
   });
+}
+
+function drawWorldCloudField(focusX, focusY) {
+  ctx.save();
+  ctx.globalAlpha = 0.62;
+  const startX = Math.floor((focusX - 2600) / 820) * 820;
+  const endX = focusX + 2600;
+  const startY = Math.floor((focusY - 1800) / 520) * 520;
+  const endY = focusY + 1800;
+  for (let y = startY; y <= endY; y += 520) {
+    for (let x = startX; x <= endX; x += 820) {
+      const wiggle = Math.sin((x + y) * 0.003 + performance.now() * 0.0008) * 46;
+      drawCloud(x + wiggle, y + Math.cos(x * 0.002) * 70, 1.1 + ((Math.abs(x + y) % 5) * 0.12));
+    }
+  }
+  ctx.globalAlpha = 1;
+  ctx.restore();
 }
 
 function drawAirplane(x, y, angle) {
