@@ -147,7 +147,7 @@ h1 {
 .flight-controls {
   grid-column: 1 / -1;
   display: grid;
-  grid-template-columns: repeat(7, minmax(92px, 1fr)) minmax(260px, 1.6fr);
+  grid-template-columns: repeat(8, minmax(86px, 1fr)) minmax(260px, 1.6fr);
   gap: 12px;
   align-items: center;
   margin-top: 12px;

@@ -15,6 +15,7 @@ const smoothFlightBtn = document.querySelector("#smoothFlightBtn");
 const exitFlightBtn = document.querySelector("#exitFlightBtn");
 const jumpFlightBtn = document.querySelector("#jumpFlightBtn");
 const ballModeBtn = document.querySelector("#ballModeBtn");
+const crashSongBtn = document.querySelector("#crashSongBtn");
 const flightStick = document.querySelector("#flightStick");
 const flightKnob = document.querySelector("#flightKnob");
 const locationPicker = document.querySelector("#locationPicker");
@@ -71,7 +72,7 @@ const vehicle = {
   fallStart: 0,
   fallDuration: 38000,
   floatDuration: 9000,
-  fallExploded: false,
+  planeCrashExploded: false,
   selectedPlaneIndex: 0
 };
 
@@ -201,6 +202,15 @@ function winSound() {
   [523, 659, 784, 1046, 1319].forEach((note, i) => tone(note, i * 0.13, 0.16, 0.026, "triangle"));
 }
 
+function crashSong() {
+  getAudio();
+  const notes = [392, 370, 330, 294, 262, 220, 196, 175, 147, 131];
+  notes.forEach((note, i) => {
+    tone(note, i * 0.18, 0.2, 0.026, i % 2 ? "triangle" : "sine");
+  });
+  [110, 82, 55].forEach((note, i) => tone(note, 1.8 + i * 0.18, 0.28, 0.032, "sawtooth"));
+}
+
 function roundedRect(x, y, w, h, r) {
   if (ctx.roundRect) {
     ctx.roundRect(x, y, w, h, r);
@@ -316,7 +326,7 @@ function resetVehicle() {
   vehicle.pilotVy = 0;
   vehicle.pilotBall = false;
   vehicle.fallStart = 0;
-  vehicle.fallExploded = false;
+  vehicle.planeCrashExploded = false;
   joystickX = 0;
   joystickY = 0;
   breakableBuildings.forEach((building) => {
@@ -446,13 +456,15 @@ function jumpFromPlane() {
     statusText.textContent = "要先在飞机里，才能跳下飞机。";
     return true;
   }
-  vehicle.mode = "falling";
+  vehicle.mode = "plane-falling";
   vehicle.fallStart = performance.now();
-  vehicle.fallExploded = false;
-  vehicle.pilotX = vehicle.x;
-  vehicle.pilotY = vehicle.y;
+  vehicle.planeCrashExploded = false;
+  vehicle.pilotX = Math.max(210, Math.min(flightWorld.w - 210, vehicle.x - 95));
+  vehicle.pilotY = getNearestPlane().plane.y + 88;
   vehicle.pilotVy = 0;
-  statusText.textContent = "跳下飞机了！先在空中飘一会儿，然后一分钟内会落下来。";
+  vehicle.pilotBall = false;
+  crashSong();
+  statusText.textContent = "小蛋仔跳出来了！现在是飞机先在空中飞一会儿，然后一分钟内掉下来。";
   return true;
 }
 
@@ -460,20 +472,23 @@ function isOnAirportLand(x, y) {
   return Math.hypot(x - 1682, y - 1682) <= 1610;
 }
 
-function finishFalling() {
-  if (isOnAirportLand(vehicle.pilotX, vehicle.pilotY)) {
+function finishPlaneFalling() {
+  if (isOnAirportLand(vehicle.x, vehicle.y)) {
+    vehicle.vx = 0;
+    vehicle.vy = 0;
+    vehicle.angle = 0;
+    vehicle.planeCrashExploded = false;
     vehicle.mode = "walking";
-    vehicle.pilotBall = true;
-    vehicle.pilotVy = 0;
-    statusText.textContent = "落在机场地盘里了，没有爆炸，变成球滚继续玩。";
+    vehicle.pilotX = Math.max(210, Math.min(flightWorld.w - 210, vehicle.x - 80));
+    vehicle.pilotY = getNearestPlane().plane.y + 88;
+    statusText.textContent = "飞机掉在机场地盘里了，没有爆炸；小蛋仔安全在旁边继续玩。";
     return;
   }
-  vehicle.fallExploded = true;
-  statusText.textContent = "落到机场外面了，爆炸，凉了。3 秒后回到第一架飞机旁边。";
-  tone(90, 0, 0.25, 0.04, "sawtooth");
-  tone(55, 0.22, 0.35, 0.035, "sawtooth");
+  vehicle.planeCrashExploded = true;
+  statusText.textContent = "飞机掉到机场外面了，爆炸，飞机凉了；小蛋仔没事。3 秒后重来。";
+  crashSong();
   setTimeout(() => {
-    if (selectedLocation.category === "flight" && vehicle.mode === "falling" && vehicle.fallExploded) resetVehicle();
+    if (selectedLocation.category === "flight" && vehicle.mode === "plane-falling" && vehicle.planeCrashExploded) resetVehicle();
   }, 3000);
 }
 
@@ -721,18 +736,20 @@ function updateActivity() {
       const nearest = getNearestPlane();
       vehicle.pilotY = nearest.plane.y + 88 + Math.sin(performance.now() * 0.012) * 4;
       if (nearest.distance < 120) statusText.textContent = `你走到${nearest.plane.label}旁边了，点“上飞机”。`;
-    } else if (vehicle.mode === "falling") {
+    } else if (vehicle.mode === "plane-falling") {
       const fallElapsed = performance.now() - vehicle.fallStart;
       if (fallElapsed < vehicle.floatDuration) {
-        vehicle.pilotVy += 0.015;
-        vehicle.pilotX += Math.sin(fallElapsed * 0.002) * 0.7;
+        vehicle.vx += Math.cos(vehicle.heading) * 0.12;
+        vehicle.vy += Math.sin(vehicle.heading) * 0.12;
+        vehicle.angle += Math.sin(fallElapsed * 0.004) * 0.004;
       } else {
-        vehicle.pilotVy += 0.12;
+        vehicle.vy += 0.16;
+        vehicle.angle += 0.018;
       }
-      vehicle.pilotY += vehicle.pilotVy;
+      vehicle.y = Math.max(-520, Math.min(flightWorld.h + 620, vehicle.y + vehicle.vy));
       const remaining = Math.max(0, Math.ceil((vehicle.fallDuration - fallElapsed) / 1000));
-      if (!vehicle.fallExploded) statusText.textContent = fallElapsed < vehicle.floatDuration ? `刚跳出来，还在空中飘，还剩 ${remaining} 秒落地。` : `开始往下掉了，还剩 ${remaining} 秒落地。`;
-      if (fallElapsed >= vehicle.fallDuration && !vehicle.fallExploded) finishFalling();
+      if (!vehicle.planeCrashExploded) statusText.textContent = fallElapsed < vehicle.floatDuration ? `小蛋仔安全出来了，飞机还在空中飘，还剩 ${remaining} 秒掉下来。` : `飞机开始往下掉，还剩 ${remaining} 秒落下。`;
+      if (fallElapsed >= vehicle.fallDuration && !vehicle.planeCrashExploded) finishPlaneFalling();
     } else {
       if (left) joystickX = Math.max(-1, joystickX - 0.04);
       if (right) joystickX = Math.min(1, joystickX + 0.04);
@@ -1276,9 +1293,9 @@ function drawFlightScene() {
     if ((vehicle.mode === "boarded" || vehicle.mode === "flying") && index === vehicle.selectedPlaneIndex) return;
     drawParkedPlane(plane);
   });
-  if (vehicle.mode === "walking" || vehicle.mode === "falling") drawWalkingPilot(vehicle.pilotX, vehicle.pilotY);
-  if (vehicle.mode === "boarded" || vehicle.mode === "flying") drawAirplane(vehicle.x, vehicle.y, vehicle.angle);
-  if (vehicle.mode === "falling") drawFallingOverlay();
+  if (vehicle.mode === "walking" || vehicle.mode === "plane-falling") drawWalkingPilot(vehicle.pilotX, vehicle.pilotY);
+  if (vehicle.mode === "boarded" || vehicle.mode === "flying" || vehicle.mode === "plane-falling") drawAirplane(vehicle.x, vehicle.y, vehicle.angle);
+  if (vehicle.mode === "plane-falling") drawPlaneFallingOverlay();
   ctx.restore();
   drawFlightClouds();
 
@@ -1515,21 +1532,6 @@ function drawWalkingPilot(x, y) {
     ctx.restore();
     return;
   }
-  if (vehicle.mode === "falling") {
-    const fallElapsed = performance.now() - vehicle.fallStart;
-    const scale = Math.max(0.5, 1.15 - fallElapsed / vehicle.fallDuration * 0.55);
-    if (vehicle.fallExploded) {
-      drawExplosion(0, 0, 1.2);
-      ctx.restore();
-      return;
-    }
-    drawEggyCharacter(0, -18, scale, Math.sin(fallElapsed * 0.006) * 0.5);
-    ctx.fillStyle = "#172632";
-    ctx.font = "900 36px system-ui";
-    ctx.fillText(`${Math.max(0, Math.ceil((vehicle.fallDuration - fallElapsed) / 1000))}`, -10, -96);
-    ctx.restore();
-    return;
-  }
   ctx.lineCap = "round";
   ctx.strokeStyle = "#172632";
   ctx.lineWidth = 11;
@@ -1546,9 +1548,20 @@ function drawWalkingPilot(x, y) {
   ctx.restore();
 }
 
-function drawFallingOverlay() {
-  if (!vehicle.fallExploded) return;
-  drawExplosion(vehicle.pilotX, vehicle.pilotY, 2.4);
+function drawPlaneFallingOverlay() {
+  const fallElapsed = performance.now() - vehicle.fallStart;
+  const remaining = Math.max(0, Math.ceil((vehicle.fallDuration - fallElapsed) / 1000));
+  ctx.save();
+  ctx.translate(vehicle.x, vehicle.y - 150);
+  ctx.fillStyle = "rgba(255,255,255,0.88)";
+  ctx.beginPath();
+  roundedRect(-92, -44, 184, 58, 8);
+  ctx.fill();
+  ctx.fillStyle = "#172632";
+  ctx.font = "900 30px system-ui";
+  ctx.fillText(vehicle.planeCrashExploded ? "飞机凉了" : `飞机 ${remaining}s`, -72, -8);
+  ctx.restore();
+  if (vehicle.planeCrashExploded) drawExplosion(vehicle.x, vehicle.y, 2.4);
 }
 
 function drawExplosion(x, y, s) {
@@ -2135,6 +2148,11 @@ ballModeBtn.addEventListener("click", () => {
     return;
   }
   toggleBallMode();
+});
+crashSongBtn.addEventListener("click", () => {
+  getAudio();
+  crashSong();
+  statusText.textContent = "空难之歌：这是游戏里的原创警报旋律。";
 });
 parkBtn.addEventListener("click", () => {
   locationPicker.hidden = !locationPicker.hidden;
