@@ -185,7 +185,7 @@ function getLandingTarget() {
   const plane = airportPlanes[vehicle.selectedPlaneIndex] || airportPlanes[0];
   return {
     x: plane.x,
-    y: plane.y + 216,
+    y: plane.y - 595,
     plane
   };
 }
@@ -1527,9 +1527,14 @@ function drawHugeAirport() {
 
 function drawPlaneRunway(plane) {
   ctx.fillStyle = "#4d5966";
-  ctx.fillRect(plane.x - 175, plane.y + 170, 350, 92);
+  ctx.fillRect(plane.x - 66, plane.y - 900, 132, 620);
   ctx.fillStyle = "#fff";
-  for (let x = plane.x - 140; x < plane.x + 140; x += 70) ctx.fillRect(x, plane.y + 210, 40, 9);
+  for (let y = plane.y - 850; y < plane.y - 330; y += 96) ctx.fillRect(plane.x - 8, y, 16, 54);
+  ctx.fillStyle = "#ffd15f";
+  ctx.font = "900 22px system-ui";
+  ctx.textAlign = "center";
+  ctx.fillText("专属跑道", plane.x, plane.y - 925);
+  ctx.textAlign = "start";
 }
 
 function drawBoardingGate(plane) {
@@ -1777,7 +1782,7 @@ function drawParkedPlane(plane) {
   ctx.save();
   ctx.translate(plane.x, plane.y);
   ctx.scale(plane.scale, plane.scale);
-  drawPlaneShape(0, 0, 0, plane.color, false, plane.label);
+  drawPlaneShape(0, 0, -Math.PI / 2, plane.color, false, plane.label);
   ctx.restore();
 }
 
