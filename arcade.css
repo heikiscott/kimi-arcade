@@ -197,6 +197,10 @@ body {
   background: linear-gradient(135deg, #172632, #32c7d9 52%, #ffd15f);
 }
 
+.eggy-party {
+  background: linear-gradient(135deg, #32a7e2, #f06aa3 52%, #ffd15f);
+}
+
 .secret-room {
   background: linear-gradient(135deg, #172632, #25777b 52%, #9a6b2e);
 }
