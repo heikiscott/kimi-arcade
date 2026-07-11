@@ -11,6 +11,12 @@
     <main class="eggy-shell">
       <section class="game-stage">
         <canvas id="gameCanvas" width="1040" height="620" aria-label="蛋仔派对闯关小游戏"></canvas>
+        <div class="screen-stick" aria-label="屏幕左下角飞机操纵杆">
+          <div class="joystick" id="flightStick" role="application" aria-label="圆形飞机操纵杆">
+            <span id="flightKnob"></span>
+          </div>
+          <small>飞机操纵杆</small>
+        </div>
         <div class="status-bar" id="statusText">这是蛋仔派对大厅。上面是大屏幕，下面是按钮；选机场后镜头会跟着飞机在超大机场地图里移动。</div>
       </section>
 
@@ -38,14 +44,13 @@
         </div>
         <div class="flight-controls" aria-label="飞机控制台">
           <button id="boardFlightBtn" type="button">上飞机</button>
+          <button id="takeoffBtn" type="button">起飞</button>
+          <button id="landingBtn" type="button">降落</button>
           <button id="smoothFlightBtn" type="button">平稳飞行</button>
           <button id="exitFlightBtn" type="button">下飞机</button>
           <button id="jumpFlightBtn" type="button">跳下飞机</button>
           <button id="ballModeBtn" type="button">变球滚</button>
-          <div class="joystick" id="flightStick" role="application" aria-label="圆形飞机操纵杆">
-            <span id="flightKnob"></span>
-          </div>
-          <p>键盘也能控制。操纵杆：往下拉上升，往上推下降。跳下飞机会下落 10 秒；落到机场外就会爆炸凉了。</p>
+          <p>键盘也能控制。操纵杆在屏幕左下角：往下拉上升，往上推下降。跳下飞机会先飘一会儿，再在一分钟内落下。</p>
         </div>
         <p class="hint">机场里先走到飞机旁边，再点“上飞机”和“平稳飞行”。可以下飞机、跳下飞机、变成球滚。大厅一分钟过一天，晚上会有僵尸。</p>
       </section>

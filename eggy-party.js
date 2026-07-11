@@ -9,6 +9,8 @@ const restartBtn = document.querySelector("#restartBtn");
 const parkBtn = document.querySelector("#parkBtn");
 const lobbyBtn = document.querySelector("#lobbyBtn");
 const boardFlightBtn = document.querySelector("#boardFlightBtn");
+const takeoffBtn = document.querySelector("#takeoffBtn");
+const landingBtn = document.querySelector("#landingBtn");
 const smoothFlightBtn = document.querySelector("#smoothFlightBtn");
 const exitFlightBtn = document.querySelector("#exitFlightBtn");
 const jumpFlightBtn = document.querySelector("#jumpFlightBtn");
@@ -67,7 +69,8 @@ const vehicle = {
   pilotVy: 0,
   pilotBall: false,
   fallStart: 0,
-  fallDuration: 10000,
+  fallDuration: 38000,
+  floatDuration: 9000,
   fallExploded: false,
   selectedPlaneIndex: 0
 };
@@ -379,6 +382,33 @@ function startSmoothFlight() {
   return true;
 }
 
+function takeoffPlane() {
+  if (selectedLocation.category !== "flight") return false;
+  if (vehicle.mode === "walking") return boardNearestPlane();
+  vehicle.mode = "flying";
+  vehicle.vx += Math.cos(vehicle.heading) * 3.2;
+  vehicle.vy -= 4.5;
+  statusText.textContent = "起飞！飞机离开跑道，开始往天空上升。";
+  portalSound();
+  return true;
+}
+
+function landPlane() {
+  if (selectedLocation.category !== "flight") return false;
+  if (vehicle.mode !== "flying" && vehicle.mode !== "boarded") {
+    statusText.textContent = "现在不在飞机里，不能降落。";
+    return true;
+  }
+  vehicle.mode = "boarded";
+  vehicle.vx *= 0.25;
+  vehicle.vy = Math.abs(vehicle.vy) * 0.15;
+  const nearest = airportPlanes[vehicle.selectedPlaneIndex] || airportPlanes[0];
+  vehicle.x += (nearest.x - vehicle.x) * 0.25;
+  vehicle.y += (nearest.y - vehicle.y) * 0.25;
+  statusText.textContent = "正在降落，飞机慢慢回到跑道附近。";
+  return true;
+}
+
 function exitPlane() {
   if (selectedLocation.category !== "flight") return false;
   if (vehicle.mode === "walking") {
@@ -421,7 +451,7 @@ function jumpFromPlane() {
   vehicle.pilotX = vehicle.x;
   vehicle.pilotY = vehicle.y;
   vehicle.pilotVy = 0;
-  statusText.textContent = "跳下飞机了！下落 10 秒，落到机场外就会爆炸凉了。";
+  statusText.textContent = "跳下飞机了！先在空中飘一会儿，然后一分钟内会落下来。";
   return true;
 }
 
@@ -692,10 +722,15 @@ function updateActivity() {
       if (nearest.distance < 120) statusText.textContent = `你走到${nearest.plane.label}旁边了，点“上飞机”。`;
     } else if (vehicle.mode === "falling") {
       const fallElapsed = performance.now() - vehicle.fallStart;
-      vehicle.pilotVy += 0.18;
+      if (fallElapsed < vehicle.floatDuration) {
+        vehicle.pilotVy += 0.015;
+        vehicle.pilotX += Math.sin(fallElapsed * 0.002) * 0.7;
+      } else {
+        vehicle.pilotVy += 0.12;
+      }
       vehicle.pilotY += vehicle.pilotVy;
       const remaining = Math.max(0, Math.ceil((vehicle.fallDuration - fallElapsed) / 1000));
-      if (!vehicle.fallExploded) statusText.textContent = `正在从飞机上往下掉，还剩 ${remaining} 秒落地。`;
+      if (!vehicle.fallExploded) statusText.textContent = fallElapsed < vehicle.floatDuration ? `刚跳出来，还在空中飘，还剩 ${remaining} 秒落地。` : `开始往下掉了，还剩 ${remaining} 秒落地。`;
       if (fallElapsed >= vehicle.fallDuration && !vehicle.fallExploded) finishFalling();
     } else {
       if (left) joystickX = Math.max(-1, joystickX - 0.04);
@@ -1228,9 +1263,9 @@ function drawActivityTitle() {
 }
 
 function drawFlightScene() {
-  const zoom = 0.176;
+  const zoom = 0.245;
   const offsetX = (W / zoom - flightWorld.w) / 2;
-  const offsetY = 76;
+  const offsetY = 245;
   drawSky();
   ctx.save();
   ctx.scale(zoom, zoom);
@@ -1256,44 +1291,6 @@ function drawFlightScene() {
   ctx.font = "800 14px system-ui";
   ctx.fillText(vehicle.mode === "walking" ? "人在地上走，先上飞机" : `飞行坐标 ${Math.round(vehicle.x)} / ${Math.round(vehicle.y)}`, W - 288, 82);
   ctx.fillText("操纵杆：下拉上升，上推下降", W - 288, 104);
-  drawFlightCloseUp();
-}
-
-function drawFlightCloseUp() {
-  ctx.fillStyle = "rgba(255,255,255,0.9)";
-  ctx.beginPath();
-  roundedRect(26, H - 178, 270, 144, 8);
-  ctx.fill();
-  ctx.strokeStyle = "#172632";
-  ctx.lineWidth = 4;
-  ctx.stroke();
-  ctx.fillStyle = "#172632";
-  ctx.font = "900 18px system-ui";
-  ctx.fillText("放大镜", 46, H - 145);
-  if (vehicle.mode === "walking" && vehicle.pilotBall) {
-    ctx.save();
-    ctx.translate(160, H - 86);
-    ctx.fillStyle = "#f5c336";
-    ctx.beginPath();
-    ctx.arc(0, 0, 38, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.stroke();
-    ctx.fillStyle = "#172632";
-    ctx.fillText("球滚", -24, 58);
-    ctx.restore();
-    return;
-  }
-  if (vehicle.mode === "walking" || vehicle.mode === "falling") {
-    drawEggyCharacter(160, H - 78, vehicle.mode === "falling" ? 1.0 : 1.15, 0);
-    ctx.fillStyle = "#172632";
-    ctx.font = "900 17px system-ui";
-    ctx.fillText(vehicle.mode === "falling" ? "正在下落" : "我在地上", 116, H - 38);
-    return;
-  }
-  drawPlaneShape(158, H - 84, -0.08, "#32a7e2", true);
-  ctx.fillStyle = "#172632";
-  ctx.font = "900 17px system-ui";
-  ctx.fillText(vehicle.mode === "boarded" ? "已上飞机" : "平稳飞行", 112, H - 38);
 }
 
 function drawAirportTerminal(x, y) {
@@ -2046,6 +2043,20 @@ boardFlightBtn.addEventListener("click", () => {
     return;
   }
   boardNearestPlane();
+});
+takeoffBtn.addEventListener("click", () => {
+  if (selectedLocation.category !== "flight" || screen !== "activity") {
+    statusText.textContent = "先进入开飞机地点，再点起飞。";
+    return;
+  }
+  takeoffPlane();
+});
+landingBtn.addEventListener("click", () => {
+  if (selectedLocation.category !== "flight" || screen !== "activity") {
+    statusText.textContent = "先进入开飞机地点，再点降落。";
+    return;
+  }
+  landPlane();
 });
 smoothFlightBtn.addEventListener("click", () => {
   if (selectedLocation.category !== "flight" || screen !== "activity") {
