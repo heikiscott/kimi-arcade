@@ -108,6 +108,7 @@ let laneIndex = 0;
 let playing = false;
 let won = false;
 let startTime = 0;
+let historyStartTime = 0;
 let elapsed = 0;
 let starCount = 0;
 let laneStars = [];
@@ -603,6 +604,7 @@ function selectLocation(place) {
   playing = false;
   locationPicker.hidden = true;
   elapsed = 0;
+  if (place.category === "history") historyStartTime = performance.now();
   resetVehicle();
   statusText.textContent = getActivityHelp(place.category);
 }
@@ -2254,11 +2256,12 @@ function drawHistoryMemorialScene() {
 }
 
 function drawAnimatedMemorialPlane() {
-  const cycle = (performance.now() / 1000) % 13;
+  const seconds = (performance.now() - historyStartTime) / 1000;
+  const cycle = Math.min(10, seconds);
   const progress = Math.min(1, cycle / 10);
   const x = 58 + progress * 184;
   const y = 250 + progress * 44;
-  drawMemorialPlane(x, y, 0.24, 1.55, "10秒飞机示意");
+  drawMemorialPlane(x, y, 0.24, 1.55, "飞机来袭示意");
   ctx.fillStyle = "#172632";
   ctx.font = "900 19px system-ui";
   ctx.fillText(`飞机 ${Math.min(10, Math.floor(cycle) + 1)} / 10秒`, 74, 188);
