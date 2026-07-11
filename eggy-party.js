@@ -50,12 +50,23 @@ const vehicle = {
   y: 420,
   vx: 0,
   vy: 0,
-  angle: 0
+  angle: 0,
+  mode: "free",
+  progress: 0
+};
+
+const avatar = {
+  x: 520,
+  y: 470,
+  vx: 0,
+  mode: "walk",
+  ferrisCabin: 0,
+  treeLevel: 0
 };
 
 let screen = "lobby";
 let activeCategory = "challenge";
-let selectedLocation = { name: "派对大厅", category: "lobby", detail: "摩天轮、大树、喷泉广场" };
+let selectedLocation = { name: "派对大厅", category: "lobby", detail: "摩天轮、樱花树、喷泉广场" };
 let laneIndex = 0;
 let playing = false;
 let won = false;
@@ -64,6 +75,13 @@ let elapsed = 0;
 let starCount = 0;
 let laneStars = [];
 let audioContext = null;
+
+const lobbyEggies = [
+  { x: 420, y: 486, color: "#f06aa3", speed: 0.65, phase: 0 },
+  { x: 620, y: 488, color: "#32a7e2", speed: -0.55, phase: 1.8 },
+  { x: 760, y: 492, color: "#8f5fd9", speed: 0.45, phase: 3.1 },
+  { x: 900, y: 484, color: "#60c878", speed: -0.5, phase: 4.4 }
+];
 
 function getAudio() {
   if (!window.AudioContext && !window.webkitAudioContext) return null;
@@ -169,6 +187,17 @@ function resetVehicle() {
   vehicle.vx = 0;
   vehicle.vy = 0;
   vehicle.angle = 0;
+  vehicle.mode = "free";
+  vehicle.progress = 0;
+}
+
+function resetAvatar() {
+  avatar.x = 520;
+  avatar.y = 470;
+  avatar.vx = 0;
+  avatar.mode = "walk";
+  avatar.ferrisCabin = 0;
+  avatar.treeLevel = 0;
 }
 
 function startCourse(locationName = selectedLocation.name) {
@@ -196,6 +225,7 @@ function goLobby(message = "回到蛋仔派对大厅。点“乐园”选择新�
   won = false;
   elapsed = 0;
   resetEgg();
+  resetAvatar();
   levelText.textContent = selectedLocation.name || "派对大厅";
   timeText.textContent = "0.0";
   statusText.textContent = message;
@@ -233,9 +263,9 @@ function selectLocation(place) {
 
 function getActivityHelp(category) {
   if (category === "flight") return `${selectedLocation.name}：飞机来了！左/右控制前后，跳是上升，冲刺是加速。`;
-  if (category === "water") return `${selectedLocation.name}：这里有水池、滑水道、浪花和漂浮圈。左右可以游来游去。`;
-  if (category === "metro") return `${selectedLocation.name}：地铁站台和列车出来了，左右控制列车慢慢进站。`;
-  if (category === "fish") return `${selectedLocation.name}：摸鱼码头有小船、鱼池和鱼，左右划船摸鱼。`;
+  if (category === "water") return `${selectedLocation.name}：先到售票处，再走到滑梯楼梯，跳/互动可以上去滑下来。`;
+  if (category === "metro") return `${selectedLocation.name}：地铁一直开着，靠近车门按互动就能进车厢。`;
+  if (category === "fish") return `${selectedLocation.name}：摸鱼码头有小船、鱼池和鱼，左右一直划，不会突然卡住。`;
   return `${selectedLocation.name}：选择好了。`;
 }
 
@@ -267,6 +297,86 @@ function renderLocations() {
   });
 }
 
+function nearAvatar(x, distance = 78) {
+  return Math.abs(avatar.x - x) < distance;
+}
+
+function updateLobby() {
+  const left = isDown("left") || keys.has("arrowleft") || keys.has("a");
+  const right = isDown("right") || keys.has("arrowright") || keys.has("d");
+  const up = isDown("jump") || keys.has("arrowup") || keys.has("w") || keys.has(" ");
+  const boost = isDown("roll") || keys.has("arrowdown") || keys.has("s");
+
+  if (avatar.mode === "ferris") {
+    const angle = performance.now() * 0.00045 + avatar.ferrisCabin;
+    avatar.x = 230 + Math.cos(angle) * 165;
+    avatar.y = 300 + Math.sin(angle) * 165;
+    if (boost || (up && avatar.y > 430)) {
+      avatar.mode = "walk";
+      avatar.x = 230;
+      avatar.y = 470;
+      statusText.textContent = "下摩天轮啦，可以继续去樱花树、喷泉或乐园。";
+    }
+    return;
+  }
+
+  if (avatar.mode === "tree") {
+    if (up) avatar.treeLevel = Math.min(30, avatar.treeLevel + 0.18);
+    if (boost) avatar.treeLevel = Math.max(0, avatar.treeLevel - 0.22);
+    avatar.x = 850;
+    avatar.y = 470 - avatar.treeLevel * 10.5;
+    statusText.textContent = `正在爬三十多层楼高的樱花树：第 ${Math.round(avatar.treeLevel)} 层。按冲刺可以下来。`;
+    if (avatar.treeLevel <= 0.1 && boost) {
+      avatar.mode = "walk";
+      avatar.y = 470;
+      statusText.textContent = "从樱花树下来啦。";
+    }
+    return;
+  }
+
+  if (left) avatar.vx -= boost ? 0.72 : 0.45;
+  if (right) avatar.vx += boost ? 0.72 : 0.45;
+  avatar.vx *= 0.84;
+  avatar.x += avatar.vx;
+  if (avatar.x < 35) avatar.x = W - 35;
+  if (avatar.x > W - 35) avatar.x = 35;
+  avatar.y = 470 + Math.sin(performance.now() * 0.009) * 3;
+
+  if (up && nearAvatar(230, 95)) {
+    avatar.mode = "ferris";
+    avatar.ferrisCabin = Math.PI / 2;
+    statusText.textContent = "坐上大摩天轮了！按冲刺，或者转到底部按跳，可以下来。";
+  } else if (up && nearAvatar(850, 82)) {
+    avatar.mode = "tree";
+    avatar.treeLevel = Math.max(1, avatar.treeLevel);
+    statusText.textContent = "开始爬超高樱花树，按跳继续往上，按冲刺往下。";
+  }
+}
+
+function lobbyInteract() {
+  getAudio();
+  if (screen !== "lobby") return false;
+  if (avatar.mode !== "walk") {
+    controls.add("roll");
+    setTimeout(() => controls.delete("roll"), 120);
+    return true;
+  }
+  if (nearAvatar(230, 110)) {
+    avatar.mode = "ferris";
+    avatar.ferrisCabin = Math.PI / 2;
+    statusText.textContent = "坐上大摩天轮了！";
+    return true;
+  }
+  if (nearAvatar(850, 95)) {
+    avatar.mode = "tree";
+    avatar.treeLevel = Math.max(1, avatar.treeLevel);
+    statusText.textContent = "开始爬三十多层楼高的樱花树。";
+    return true;
+  }
+  statusText.textContent = "走近摩天轮或樱花树，再点开始/互动。";
+  return true;
+}
+
 function updateActivity() {
   const left = isDown("left") || keys.has("arrowleft") || keys.has("a");
   const right = isDown("right") || keys.has("arrowright") || keys.has("d");
@@ -274,20 +384,80 @@ function updateActivity() {
   const boost = isDown("roll") || keys.has("arrowdown") || keys.has("s");
   const speed = boost ? 0.42 : 0.24;
 
-  if (left) vehicle.vx -= speed;
-  if (right) vehicle.vx += speed;
   if (selectedLocation.category === "flight") {
+    if (left) vehicle.vx -= speed;
+    if (right) vehicle.vx += speed;
     if (up) vehicle.vy -= 0.26;
     vehicle.vy += 0.05;
     vehicle.angle = Math.max(-0.18, Math.min(0.18, vehicle.vx * 0.035 - vehicle.vy * 0.025));
     vehicle.y = Math.max(165, Math.min(430, vehicle.y + vehicle.vy));
+  } else if (selectedLocation.category === "water") {
+    if (vehicle.mode === "slide") {
+      vehicle.progress += 0.015;
+      vehicle.x = 235 + vehicle.progress * 440;
+      vehicle.y = 142 + Math.sin(vehicle.progress * Math.PI) * 92 + vehicle.progress * 230;
+      vehicle.angle = 0.1;
+      if (vehicle.progress >= 1) {
+        vehicle.mode = "free";
+        vehicle.y = 420;
+        statusText.textContent = "滑下来了，扑通进水！还可以再去售票处和滑梯。";
+      }
+    } else {
+      if (left) vehicle.vx -= speed;
+      if (right) vehicle.vx += speed;
+      vehicle.angle = Math.sin(performance.now() * 0.004) * 0.05;
+      vehicle.y += (420 - vehicle.y) * 0.08;
+    }
+  } else if (selectedLocation.category === "metro") {
+    if (left) vehicle.vx -= 0.2;
+    if (right) vehicle.vx += 0.28;
+    vehicle.vx += vehicle.mode === "in-metro" ? 0.08 : 0.035;
+    vehicle.angle = 0;
+    vehicle.y += (452 - vehicle.y) * 0.06;
   } else {
+    if (left) vehicle.vx -= speed;
+    if (right) vehicle.vx += speed;
     vehicle.angle = Math.sin(performance.now() * 0.004) * 0.025;
     vehicle.y += (420 - vehicle.y) * 0.06;
   }
   vehicle.vx *= 0.92;
   vehicle.vy *= 0.9;
-  vehicle.x = Math.max(130, Math.min(W - 130, vehicle.x + vehicle.vx));
+  vehicle.x += vehicle.vx;
+  if (vehicle.x < -160) vehicle.x = W + 160;
+  if (vehicle.x > W + 160) vehicle.x = -160;
+}
+
+function activityInteract() {
+  getAudio();
+  if (screen !== "activity") return false;
+  if (selectedLocation.category === "water") {
+    if (vehicle.mode === "slide") return true;
+    if (vehicle.x < 260) {
+      statusText.textContent = "买到水上乐园门票啦，去右边楼梯上滑梯。";
+      tone(784, 0, 0.12, 0.025, "triangle");
+      return true;
+    }
+    if (vehicle.x > 300 && vehicle.x < 500) {
+      vehicle.mode = "slide";
+      vehicle.progress = 0;
+      statusText.textContent = "爬上滑梯了，准备滑水！";
+      return true;
+    }
+    statusText.textContent = "游到左边售票处买票，或者到中间楼梯上滑梯。";
+    return true;
+  }
+  if (selectedLocation.category === "metro") {
+    vehicle.mode = "in-metro";
+    statusText.textContent = "进地铁车厢了！列车会一直开，左右可以控制快慢。";
+    portalSound();
+    return true;
+  }
+  if (selectedLocation.category === "fish") {
+    statusText.textContent = "摸到一条鱼！小船还能继续往前划。";
+    tone(988, 0, 0.14, 0.024, "sine");
+    return true;
+  }
+  return false;
 }
 
 function updateCourse() {
@@ -400,6 +570,7 @@ function drawCloud(x, y, s) {
 }
 
 function drawLobby() {
+  updateLobby();
   drawSky();
   ctx.fillStyle = "#6cc07a";
   ctx.fillRect(0, 410, W, 210);
@@ -408,19 +579,19 @@ function drawLobby() {
   ctx.ellipse(520, 520, 430, 80, 0, 0, Math.PI * 2);
   ctx.fill();
 
-  drawFerrisWheel(170, 310, 105);
+  drawFerrisWheel(230, 300, 165);
   drawMall(740, 240);
-  drawTree(360, 348, 1.05);
-  drawTree(930, 360, 1.2);
+  drawSakuraTree(850, 420);
   drawFountain(520, 398);
-  drawLobbyEgg(520, 470);
+  drawOtherEggies();
+  drawLobbyEgg(avatar.x, avatar.y);
   drawLocationPreview();
 
   ctx.fillStyle = "#172632";
   ctx.font = "900 34px system-ui";
   ctx.fillText("蛋仔派对大厅", 36, 64);
   ctx.font = "800 19px system-ui";
-  ctx.fillText("点右边“乐园”选择地点：飞机、水上乐园、地铁、摸鱼、闯关。", 38, 96);
+  ctx.fillText("左右走，跳/开始互动：坐摩天轮、爬樱花树、看喷泉。", 38, 96);
 }
 
 function drawFerrisWheel(x, y, r) {
@@ -444,7 +615,10 @@ function drawFerrisWheel(x, y, r) {
   }
   ctx.fillStyle = "#172632";
   ctx.fillRect(x - 8, y, 16, 125);
-  ctx.fillRect(x - 70, y + 123, 140, 14);
+  ctx.fillRect(x - 85, y + r + 16, 170, 14);
+  ctx.fillStyle = "#172632";
+  ctx.font = "900 20px system-ui";
+  ctx.fillText("大摩天轮", x - 46, y + r + 52);
 }
 
 function drawMall(x, y) {
@@ -474,7 +648,41 @@ function drawTree(x, y, s) {
   ctx.fill();
 }
 
+function drawSakuraTree(x, baseY) {
+  ctx.fillStyle = "#7c4a26";
+  ctx.beginPath();
+  roundedRect(x - 24, 118, 48, baseY - 96, 18);
+  ctx.fill();
+  ctx.fillStyle = "rgba(255,255,255,0.78)";
+  for (let floor = 0; floor <= 30; floor += 5) {
+    const y = baseY - floor * 10.5;
+    ctx.fillRect(x - 44, y, 88, 4);
+  }
+  ctx.strokeStyle = "#7c4a26";
+  ctx.lineWidth = 11;
+  ctx.beginPath();
+  ctx.moveTo(x, 270);
+  ctx.quadraticCurveTo(x - 110, 218, x - 145, 155);
+  ctx.moveTo(x, 260);
+  ctx.quadraticCurveTo(x + 115, 205, x + 150, 130);
+  ctx.stroke();
+  ctx.fillStyle = "#ffb7d2";
+  for (let i = 0; i < 24; i += 1) {
+    const angle = i * 1.73;
+    const radius = 35 + (i % 6) * 18;
+    const bx = x + Math.cos(angle) * radius;
+    const by = 150 + Math.sin(angle * 0.8) * 48 + (i % 4) * 19;
+    ctx.beginPath();
+    ctx.arc(bx, by, 42 + (i % 3) * 8, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.fillStyle = "#172632";
+  ctx.font = "900 20px system-ui";
+  ctx.fillText("30 层樱花树", x - 62, 110);
+}
+
 function drawFountain(x, y) {
+  const wave = Math.sin(performance.now() * 0.006) * 18;
   ctx.fillStyle = "#32a7e2";
   ctx.beginPath();
   ctx.ellipse(x, y + 58, 95, 30, 0, 0, Math.PI * 2);
@@ -484,7 +692,7 @@ function drawFountain(x, y) {
   for (let i = -2; i <= 2; i += 1) {
     ctx.beginPath();
     ctx.moveTo(x, y + 44);
-    ctx.quadraticCurveTo(x + i * 30, y - 40, x + i * 48, y + 36);
+    ctx.quadraticCurveTo(x + i * 30 + wave * 0.4, y - 48 - Math.abs(wave), x + i * 48, y + 36);
     ctx.stroke();
   }
   ctx.fillStyle = "rgba(255,255,255,0.62)";
@@ -493,7 +701,19 @@ function drawFountain(x, y) {
   ctx.fill();
 }
 
-function drawEggyCharacter(x, y, s = 1, tilt = 0) {
+function drawOtherEggies() {
+  lobbyEggies.forEach((buddy, index) => {
+    buddy.x += buddy.speed;
+    if (buddy.x < 350) buddy.speed = Math.abs(buddy.speed);
+    if (buddy.x > 980) buddy.speed = -Math.abs(buddy.speed);
+    drawEggyCharacter(buddy.x, buddy.y + Math.sin(performance.now() * 0.005 + buddy.phase) * 4, 0.62, buddy.speed * 0.04, buddy.color);
+    ctx.fillStyle = "#172632";
+    ctx.font = "800 12px system-ui";
+    ctx.fillText(`蛋仔${index + 2}`, buddy.x - 18, buddy.y + 45);
+  });
+}
+
+function drawEggyCharacter(x, y, s = 1, tilt = 0, bodyColor = "#f5c336") {
   ctx.save();
   ctx.translate(x, y);
   ctx.rotate(tilt);
@@ -501,7 +721,7 @@ function drawEggyCharacter(x, y, s = 1, tilt = 0) {
   ctx.strokeStyle = "#172632";
   ctx.lineWidth = 5 * s;
 
-  ctx.fillStyle = "#f5c336";
+  ctx.fillStyle = bodyColor;
   ctx.beginPath();
   ctx.ellipse(0, 0, 35 * s, 36 * s, 0, 0, Math.PI * 2);
   ctx.fill();
@@ -539,7 +759,7 @@ function drawEggyCharacter(x, y, s = 1, tilt = 0) {
   ctx.moveTo(0, -35 * s);
   ctx.lineTo(0, -52 * s);
   ctx.stroke();
-  ctx.fillStyle = "#f5c336";
+  ctx.fillStyle = bodyColor;
   ctx.beginPath();
   ctx.arc(0, -60 * s, 9 * s, 0, Math.PI * 2);
   ctx.fill();
@@ -673,9 +893,49 @@ function drawWaterScene() {
     for (let x = 0; x < W; x += 40) ctx.lineTo(x, y + Math.sin(x * 0.03 + performance.now() * 0.006) * 7);
     ctx.stroke();
   }
+  drawTicketBooth(70, 205);
   drawWaterSlide(145, 115);
-  drawPoolFloat(vehicle.x, 425);
-  drawEggyCharacter(vehicle.x, 385, 0.85, Math.sin(performance.now() * 0.006) * 0.08);
+  drawSlideStairs(315, 225);
+  drawPoolFloat(vehicle.x, vehicle.y + 35);
+  drawEggyCharacter(vehicle.x, vehicle.y - 5, 0.85, vehicle.angle);
+}
+
+function drawTicketBooth(x, y) {
+  ctx.fillStyle = "#fff";
+  ctx.beginPath();
+  roundedRect(x, y, 150, 100, 8);
+  ctx.fill();
+  ctx.strokeStyle = "#172632";
+  ctx.lineWidth = 4;
+  ctx.stroke();
+  ctx.fillStyle = "#ffd15f";
+  ctx.fillRect(x, y, 150, 26);
+  ctx.fillStyle = "#172632";
+  ctx.font = "900 17px system-ui";
+  ctx.fillText("售票处", x + 45, y + 20);
+  ctx.fillStyle = "#32a7e2";
+  ctx.fillRect(x + 22, y + 44, 42, 34);
+  ctx.fillRect(x + 86, y + 44, 42, 34);
+}
+
+function drawSlideStairs(x, y) {
+  ctx.strokeStyle = "#172632";
+  ctx.lineWidth = 5;
+  for (let i = 0; i < 7; i += 1) {
+    ctx.beginPath();
+    ctx.moveTo(x + i * 18, y + i * 19);
+    ctx.lineTo(x + 78 + i * 18, y + i * 19);
+    ctx.stroke();
+  }
+  ctx.strokeStyle = "#8f5fd9";
+  ctx.lineWidth = 8;
+  ctx.beginPath();
+  ctx.moveTo(x, y);
+  ctx.lineTo(x + 138, y + 132);
+  ctx.stroke();
+  ctx.fillStyle = "#172632";
+  ctx.font = "900 18px system-ui";
+  ctx.fillText("楼梯上滑梯", x - 10, y - 12);
 }
 
 function drawWaterSlide(x, y) {
@@ -719,7 +979,7 @@ function drawMetroScene() {
     ctx.fillRect(x + 34, 372, 4, 50);
   }
   drawMetroTrain(vehicle.x, 452);
-  drawEggyCharacter(170, 315, 0.75, 0);
+  if (vehicle.mode !== "in-metro") drawEggyCharacter(170, 315, 0.75, 0);
 }
 
 function drawMetroTrain(x, y) {
@@ -733,8 +993,15 @@ function drawMetroTrain(x, y) {
   ctx.fillStyle = "#32a7e2";
   for (let i = -160; i <= 110; i += 90) ctx.fillRect(x + i, y - 56, 60, 28);
   ctx.fillStyle = "#172632";
+  ctx.fillRect(x - 20, y - 58, 46, 58);
+  ctx.fillStyle = "#dce5eb";
+  ctx.fillRect(x - 14, y - 52, 34, 46);
+  if (vehicle.mode === "in-metro") drawEggyCharacter(x + 4, y - 35, 0.38, 0);
+  ctx.fillStyle = "#172632";
   ctx.font = "900 18px system-ui";
   ctx.fillText("蛋仔地铁", x - 45, y - 15);
+  ctx.font = "800 14px system-ui";
+  ctx.fillText("车门", x - 10, y + 24);
 }
 
 function drawFishScene() {
@@ -927,6 +1194,8 @@ document.addEventListener("pointerup", (event) => {
 document.addEventListener("pointercancel", () => controls.clear());
 
 startBtn.addEventListener("click", () => {
+  if (screen === "lobby" && lobbyInteract()) return;
+  if (screen === "activity" && activityInteract()) return;
   if (selectedLocation.category && selectedLocation.category !== "lobby" && selectedLocation.category !== "challenge") {
     selectLocation(selectedLocation);
     return;

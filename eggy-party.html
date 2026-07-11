@@ -11,7 +11,7 @@
     <main class="eggy-shell">
       <section class="game-stage">
         <canvas id="gameCanvas" width="1040" height="620" aria-label="蛋仔派对闯关小游戏"></canvas>
-        <div class="status-bar" id="statusText">这是蛋仔派对大厅。点“乐园”选择地点，闯关会一条路线接一条路线过传送门。</div>
+        <div class="status-bar" id="statusText">这是蛋仔派对大厅。左右走，靠近摩天轮或樱花树点“开始/互动”，也可以点“乐园”选择地点。</div>
       </section>
 
       <section class="control-panel">
@@ -23,7 +23,7 @@
           <div><span>时间</span><strong id="timeText">0.0</strong></div>
         </div>
         <div class="button-row">
-          <button id="startBtn" type="button">开始</button>
+          <button id="startBtn" type="button">开始/互动</button>
           <button id="restartBtn" type="button">重来</button>
           <button id="parkBtn" type="button">乐园</button>
           <button id="lobbyBtn" type="button">回大厅</button>
@@ -42,7 +42,7 @@
           <button data-control="right" type="button">右</button>
           <button data-control="roll" type="button">冲刺</button>
         </div>
-        <p class="hint">大厅里有摩天轮、大树和喷泉。选飞机地点能开飞机，选水上乐园会进泳池滑梯，选地铁和摸鱼也会换场景。闯关每次有五条路线，走到传送门就到下一条。</p>
+        <p class="hint">大厅可以走动，靠近摩天轮或樱花树点“开始/互动”或跳。水上乐园有售票处、楼梯和滑梯；地铁能进车厢。闯关每次有五条路线。</p>
       </section>
     </main>
     <script src="eggy-party.js"></script>
