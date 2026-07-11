@@ -155,6 +155,74 @@ button:hover {
   filter: brightness(1.08);
 }
 
+.location-picker {
+  margin-top: 14px;
+  padding: 12px;
+  border-radius: 8px;
+  border: 2px solid rgba(23, 38, 50, 0.12);
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.location-picker[hidden] {
+  display: none;
+}
+
+.picker-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-weight: 950;
+}
+
+.picker-head button {
+  min-height: 34px;
+  padding: 0 12px;
+  background: #64717b;
+}
+
+.category-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.category-row button,
+.location-list button {
+  min-height: 38px;
+  padding: 8px;
+  text-align: left;
+  font-size: 0.9rem;
+  line-height: 1.15;
+  background: #2f79c8;
+}
+
+.category-row button.active {
+  color: #172632;
+  background: #ffd15f;
+}
+
+.location-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  max-height: 220px;
+  margin-top: 10px;
+  padding-right: 4px;
+  overflow: auto;
+}
+
+.location-list button {
+  background: #fff;
+  color: #172632;
+  border: 1px solid rgba(23, 38, 50, 0.14);
+}
+
+.location-list button.challenge-place {
+  background: #fff0f7;
+}
+
 .mobile-pad button {
   background: #2f79c8;
 }
@@ -185,6 +253,11 @@ button:hover {
 @media (max-width: 560px) {
   .score-grid,
   .button-row {
+    grid-template-columns: 1fr;
+  }
+
+  .category-row,
+  .location-list {
     grid-template-columns: 1fr;
   }
 

@@ -11,20 +11,30 @@
     <main class="eggy-shell">
       <section class="game-stage">
         <canvas id="gameCanvas" width="1040" height="620" aria-label="蛋仔派对闯关小游戏"></canvas>
-        <div class="status-bar" id="statusText">点开始，控制蛋仔冲到皇冠终点。</div>
+        <div class="status-bar" id="statusText">这是蛋仔派对大厅。点“乐园”选择地点，闯关会一条路线接一条路线过传送门。</div>
       </section>
 
       <section class="control-panel">
         <p class="label">Eggy Party</p>
         <h1>蛋仔派对闯关</h1>
         <div class="score-grid">
-          <div><span>关卡</span><strong id="levelText">彩虹跑道</strong></div>
+          <div><span>地点</span><strong id="levelText">派对大厅</strong></div>
           <div><span>星星</span><strong id="starText">0</strong></div>
           <div><span>时间</span><strong id="timeText">0.0</strong></div>
         </div>
         <div class="button-row">
           <button id="startBtn" type="button">开始</button>
           <button id="restartBtn" type="button">重来</button>
+          <button id="parkBtn" type="button">乐园</button>
+          <button id="lobbyBtn" type="button">回大厅</button>
+        </div>
+        <div class="location-picker" id="locationPicker" hidden>
+          <div class="picker-head">
+            <strong>选择乐园地点</strong>
+            <button id="closePickerBtn" type="button">关闭</button>
+          </div>
+          <div class="category-row" id="categoryRow"></div>
+          <div class="location-list" id="locationList"></div>
         </div>
         <div class="mobile-pad" aria-label="手机控制">
           <button data-control="left" type="button">左</button>
@@ -32,7 +42,7 @@
           <button data-control="right" type="button">右</button>
           <button data-control="roll" type="button">冲刺</button>
         </div>
-        <p class="hint">键盘：A/← 左走，D/→ 右走，W/↑/空格跳，S/↓ 冲刺滚。别被旋转锤撞下去。</p>
+        <p class="hint">大厅里有摩天轮、大树和喷泉。点“乐园”可以选 50 个开飞机地点、20 个水上乐园、10 个地铁地点、30 个摸鱼地点、40 个闯关地点。闯关每次有五条路线，走到传送门就到下一条。</p>
       </section>
     </main>
     <script src="eggy-party.js"></script>
