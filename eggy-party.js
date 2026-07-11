@@ -11,6 +11,8 @@ const lobbyBtn = document.querySelector("#lobbyBtn");
 const boardFlightBtn = document.querySelector("#boardFlightBtn");
 const smoothFlightBtn = document.querySelector("#smoothFlightBtn");
 const exitFlightBtn = document.querySelector("#exitFlightBtn");
+const jumpFlightBtn = document.querySelector("#jumpFlightBtn");
+const ballModeBtn = document.querySelector("#ballModeBtn");
 const flightStick = document.querySelector("#flightStick");
 const flightKnob = document.querySelector("#flightKnob");
 const locationPicker = document.querySelector("#locationPicker");
@@ -62,6 +64,11 @@ const vehicle = {
   pilotX: 360,
   pilotY: 750,
   pilotVx: 0,
+  pilotVy: 0,
+  pilotBall: false,
+  fallStart: 0,
+  fallDuration: 10000,
+  fallExploded: false,
   selectedPlaneIndex: 0
 };
 
@@ -302,6 +309,10 @@ function resetVehicle() {
   vehicle.pilotX = selectedLocation.category === "flight" ? airportPlanes[0].x - 76 : 360;
   vehicle.pilotY = selectedLocation.category === "flight" ? airportPlanes[0].y + 88 : 750;
   vehicle.pilotVx = 0;
+  vehicle.pilotVy = 0;
+  vehicle.pilotBall = false;
+  vehicle.fallStart = 0;
+  vehicle.fallExploded = false;
   joystickX = 0;
   joystickY = 0;
   breakableBuildings.forEach((building) => {
@@ -385,6 +396,54 @@ function exitPlane() {
   updateJoystickVisual();
   statusText.textContent = "下飞机了！你又站在飞机旁边，可以走路，也可以再上飞机。";
   return true;
+}
+
+function toggleBallMode() {
+  if (selectedLocation.category !== "flight") return false;
+  if (vehicle.mode !== "walking") {
+    statusText.textContent = "要先下飞机，站在地上才能变成球滚。";
+    return true;
+  }
+  vehicle.pilotBall = !vehicle.pilotBall;
+  statusText.textContent = vehicle.pilotBall ? "变成球滚啦！滚起来会更快。" : "变回小人走路了。";
+  return true;
+}
+
+function jumpFromPlane() {
+  if (selectedLocation.category !== "flight") return false;
+  if (vehicle.mode !== "flying" && vehicle.mode !== "boarded") {
+    statusText.textContent = "要先在飞机里，才能跳下飞机。";
+    return true;
+  }
+  vehicle.mode = "falling";
+  vehicle.fallStart = performance.now();
+  vehicle.fallExploded = false;
+  vehicle.pilotX = vehicle.x;
+  vehicle.pilotY = vehicle.y;
+  vehicle.pilotVy = 0;
+  statusText.textContent = "跳下飞机了！下落 10 秒，落到机场外就会爆炸凉了。";
+  return true;
+}
+
+function isOnAirportLand(x, y) {
+  return Math.hypot(x - 1682, y - 1682) <= 1610;
+}
+
+function finishFalling() {
+  if (isOnAirportLand(vehicle.pilotX, vehicle.pilotY)) {
+    vehicle.mode = "walking";
+    vehicle.pilotBall = true;
+    vehicle.pilotVy = 0;
+    statusText.textContent = "落在机场地盘里了，没有爆炸，变成球滚继续玩。";
+    return;
+  }
+  vehicle.fallExploded = true;
+  statusText.textContent = "落到机场外面了，爆炸，凉了。3 秒后回到第一架飞机旁边。";
+  tone(90, 0, 0.25, 0.04, "sawtooth");
+  tone(55, 0.22, 0.35, 0.035, "sawtooth");
+  setTimeout(() => {
+    if (selectedLocation.category === "flight" && vehicle.mode === "falling" && vehicle.fallExploded) resetVehicle();
+  }, 3000);
 }
 
 function checkBuildingCrash() {
@@ -623,13 +682,21 @@ function updateActivity() {
 
   if (selectedLocation.category === "flight") {
     if (vehicle.mode === "walking") {
-      if (left) vehicle.pilotVx -= boost ? 1.1 : 0.68;
-      if (right) vehicle.pilotVx += boost ? 1.1 : 0.68;
-      vehicle.pilotVx *= 0.82;
+      const walkPower = vehicle.pilotBall ? 1.45 : 0.68;
+      if (left) vehicle.pilotVx -= boost ? walkPower * 1.6 : walkPower;
+      if (right) vehicle.pilotVx += boost ? walkPower * 1.6 : walkPower;
+      vehicle.pilotVx *= vehicle.pilotBall ? 0.9 : 0.82;
       vehicle.pilotX = Math.max(210, Math.min(flightWorld.w - 210, vehicle.pilotX + vehicle.pilotVx));
       const nearest = getNearestPlane();
       vehicle.pilotY = nearest.plane.y + 88 + Math.sin(performance.now() * 0.012) * 4;
       if (nearest.distance < 120) statusText.textContent = `你走到${nearest.plane.label}旁边了，点“上飞机”。`;
+    } else if (vehicle.mode === "falling") {
+      const fallElapsed = performance.now() - vehicle.fallStart;
+      vehicle.pilotVy += 0.18;
+      vehicle.pilotY += vehicle.pilotVy;
+      const remaining = Math.max(0, Math.ceil((vehicle.fallDuration - fallElapsed) / 1000));
+      if (!vehicle.fallExploded) statusText.textContent = `正在从飞机上往下掉，还剩 ${remaining} 秒落地。`;
+      if (fallElapsed >= vehicle.fallDuration && !vehicle.fallExploded) finishFalling();
     } else {
       if (left) joystickX = Math.max(-1, joystickX - 0.04);
       if (right) joystickX = Math.min(1, joystickX + 0.04);
@@ -1173,8 +1240,9 @@ function drawFlightScene() {
     if ((vehicle.mode === "boarded" || vehicle.mode === "flying") && index === vehicle.selectedPlaneIndex) return;
     drawParkedPlane(plane);
   });
-  if (vehicle.mode === "walking") drawWalkingPilot(vehicle.pilotX, vehicle.pilotY);
+  if (vehicle.mode === "walking" || vehicle.mode === "falling") drawWalkingPilot(vehicle.pilotX, vehicle.pilotY);
   if (vehicle.mode === "boarded" || vehicle.mode === "flying") drawAirplane(vehicle.x, vehicle.y, vehicle.angle);
+  if (vehicle.mode === "falling") drawFallingOverlay();
   ctx.restore();
   drawFlightClouds();
 
@@ -1188,6 +1256,44 @@ function drawFlightScene() {
   ctx.font = "800 14px system-ui";
   ctx.fillText(vehicle.mode === "walking" ? "人在地上走，先上飞机" : `飞行坐标 ${Math.round(vehicle.x)} / ${Math.round(vehicle.y)}`, W - 288, 82);
   ctx.fillText("操纵杆：下拉上升，上推下降", W - 288, 104);
+  drawFlightCloseUp();
+}
+
+function drawFlightCloseUp() {
+  ctx.fillStyle = "rgba(255,255,255,0.9)";
+  ctx.beginPath();
+  roundedRect(26, H - 178, 270, 144, 8);
+  ctx.fill();
+  ctx.strokeStyle = "#172632";
+  ctx.lineWidth = 4;
+  ctx.stroke();
+  ctx.fillStyle = "#172632";
+  ctx.font = "900 18px system-ui";
+  ctx.fillText("放大镜", 46, H - 145);
+  if (vehicle.mode === "walking" && vehicle.pilotBall) {
+    ctx.save();
+    ctx.translate(160, H - 86);
+    ctx.fillStyle = "#f5c336";
+    ctx.beginPath();
+    ctx.arc(0, 0, 38, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = "#172632";
+    ctx.fillText("球滚", -24, 58);
+    ctx.restore();
+    return;
+  }
+  if (vehicle.mode === "walking" || vehicle.mode === "falling") {
+    drawEggyCharacter(160, H - 78, vehicle.mode === "falling" ? 1.0 : 1.15, 0);
+    ctx.fillStyle = "#172632";
+    ctx.font = "900 17px system-ui";
+    ctx.fillText(vehicle.mode === "falling" ? "正在下落" : "我在地上", 116, H - 38);
+    return;
+  }
+  drawPlaneShape(158, H - 84, -0.08, "#32a7e2", true);
+  ctx.fillStyle = "#172632";
+  ctx.font = "900 17px system-ui";
+  ctx.fillText(vehicle.mode === "boarded" ? "已上飞机" : "平稳飞行", 112, H - 38);
 }
 
 function drawAirportTerminal(x, y) {
@@ -1390,6 +1496,42 @@ function drawWalkingPilot(x, y) {
   const step = Math.sin(performance.now() * 0.016) * 22;
   ctx.save();
   ctx.translate(x, y);
+  if (vehicle.pilotBall && vehicle.mode === "walking") {
+    ctx.rotate(performance.now() * 0.012);
+    ctx.fillStyle = "#f5c336";
+    ctx.beginPath();
+    ctx.arc(0, -5, 58, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = "#172632";
+    ctx.lineWidth = 10;
+    ctx.stroke();
+    ctx.fillStyle = "#ffd7b3";
+    ctx.beginPath();
+    ctx.ellipse(0, -8, 34, 28, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#172632";
+    ctx.beginPath();
+    ctx.arc(-13, -15, 5, 0, Math.PI * 2);
+    ctx.arc(13, -15, 5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+    return;
+  }
+  if (vehicle.mode === "falling") {
+    const fallElapsed = performance.now() - vehicle.fallStart;
+    const scale = Math.max(0.5, 1.15 - fallElapsed / vehicle.fallDuration * 0.55);
+    if (vehicle.fallExploded) {
+      drawExplosion(0, 0, 1.2);
+      ctx.restore();
+      return;
+    }
+    drawEggyCharacter(0, -18, scale, Math.sin(fallElapsed * 0.006) * 0.5);
+    ctx.fillStyle = "#172632";
+    ctx.font = "900 36px system-ui";
+    ctx.fillText(`${Math.max(0, Math.ceil((vehicle.fallDuration - fallElapsed) / 1000))}`, -10, -96);
+    ctx.restore();
+    return;
+  }
   ctx.lineCap = "round";
   ctx.strokeStyle = "#172632";
   ctx.lineWidth = 11;
@@ -1403,6 +1545,33 @@ function drawWalkingPilot(x, y) {
   ctx.fillStyle = "#172632";
   ctx.font = "900 34px system-ui";
   ctx.fillText("我", -18, 100);
+  ctx.restore();
+}
+
+function drawFallingOverlay() {
+  if (!vehicle.fallExploded) return;
+  drawExplosion(vehicle.pilotX, vehicle.pilotY, 2.4);
+}
+
+function drawExplosion(x, y, s) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.fillStyle = "#ff8b2f";
+  ctx.beginPath();
+  for (let i = 0; i < 18; i += 1) {
+    const angle = (Math.PI * 2 * i) / 18;
+    const radius = (i % 2 ? 46 : 88) * s;
+    ctx.lineTo(Math.cos(angle) * radius, Math.sin(angle) * radius);
+  }
+  ctx.closePath();
+  ctx.fill();
+  ctx.fillStyle = "#ffd15f";
+  ctx.beginPath();
+  ctx.arc(0, 0, 34 * s, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = "#172632";
+  ctx.font = `${Math.round(28 * s)}px system-ui`;
+  ctx.fillText("凉", -15 * s, 10 * s);
   ctx.restore();
 }
 
@@ -1891,6 +2060,20 @@ exitFlightBtn.addEventListener("click", () => {
     return;
   }
   exitPlane();
+});
+jumpFlightBtn.addEventListener("click", () => {
+  if (selectedLocation.category !== "flight" || screen !== "activity") {
+    statusText.textContent = "先进入开飞机地点，再点跳下飞机。";
+    return;
+  }
+  jumpFromPlane();
+});
+ballModeBtn.addEventListener("click", () => {
+  if (selectedLocation.category !== "flight" || screen !== "activity") {
+    statusText.textContent = "先进入开飞机地点，再点变球滚。";
+    return;
+  }
+  toggleBallMode();
 });
 parkBtn.addEventListener("click", () => {
   locationPicker.hidden = !locationPicker.hidden;

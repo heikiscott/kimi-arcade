@@ -132,8 +132,7 @@ h1 {
   line-height: 1;
 }
 
-.button-row,
-.mobile-pad {
+.button-row {
   display: grid;
   gap: 10px;
   margin-top: 14px;
@@ -144,15 +143,10 @@ h1 {
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
-.mobile-pad {
-  grid-column: 1 / -1;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-}
-
 .flight-controls {
   grid-column: 1 / -1;
   display: grid;
-  grid-template-columns: repeat(3, minmax(110px, 160px)) 138px minmax(240px, 1fr);
+  grid-template-columns: repeat(5, minmax(104px, 1fr)) 138px minmax(240px, 1.5fr);
   gap: 12px;
   align-items: center;
   margin-top: 12px;
@@ -301,15 +295,6 @@ button:hover {
   background: #fff0f7;
 }
 
-.mobile-pad button {
-  background: #2f79c8;
-}
-
-.mobile-pad button:nth-child(2),
-.mobile-pad button:nth-child(4) {
-  background: #f06aa3;
-}
-
 .hint {
   grid-column: 1 / -1;
   margin: 14px 0 0;
@@ -331,7 +316,6 @@ button:hover {
   h1,
   .score-grid,
   .button-row,
-  .mobile-pad,
   .flight-controls,
   .hint {
     grid-column: 1;
@@ -359,10 +343,6 @@ button:hover {
   .category-row,
   .location-list {
     grid-template-columns: 1fr;
-  }
-
-  .mobile-pad {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .flight-controls {

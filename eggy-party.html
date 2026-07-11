@@ -36,22 +36,18 @@
           <div class="category-row" id="categoryRow"></div>
           <div class="location-list" id="locationList"></div>
         </div>
-        <div class="mobile-pad" aria-label="手机控制">
-          <button data-control="left" type="button">左</button>
-          <button data-control="jump" type="button">跳</button>
-          <button data-control="right" type="button">右</button>
-          <button data-control="roll" type="button">冲刺</button>
-        </div>
         <div class="flight-controls" aria-label="飞机控制台">
           <button id="boardFlightBtn" type="button">上飞机</button>
           <button id="smoothFlightBtn" type="button">平稳飞行</button>
           <button id="exitFlightBtn" type="button">下飞机</button>
+          <button id="jumpFlightBtn" type="button">跳下飞机</button>
+          <button id="ballModeBtn" type="button">变球滚</button>
           <div class="joystick" id="flightStick" role="application" aria-label="圆形飞机操纵杆">
             <span id="flightKnob"></span>
           </div>
-          <p>飞机操纵杆：往下拉是上升，往上推是下降，左右拉是转方向。飞机可以飞到机场外，也可以撞断楼房，飞机不会坏。</p>
+          <p>键盘也能控制。操纵杆：往下拉上升，往上推下降。跳下飞机会下落 10 秒；落到机场外就会爆炸凉了。</p>
         </div>
-        <p class="hint">机场里先走到飞机旁边，再点“上飞机”和“平稳飞行”。也可以点“下飞机”出来继续走。大厅一分钟过一天，晚上会有僵尸。</p>
+        <p class="hint">机场里先走到飞机旁边，再点“上飞机”和“平稳飞行”。可以下飞机、跳下飞机、变成球滚。大厅一分钟过一天，晚上会有僵尸。</p>
       </section>
     </main>
     <script src="eggy-party.js"></script>
