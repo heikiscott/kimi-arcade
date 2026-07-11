@@ -30,7 +30,7 @@ const keys = new Set();
 const controls = new Set();
 
 const categories = [
-  { key: "flight", title: "开飞机地点", count: 50, prefix: "云端机场", detail: "分开的飞机、登机口、大跑道" },
+  { key: "flight", title: "开飞机地点", count: 50, prefix: "云端机场", detail: "候机楼里面、蓝灯登机口、大跑道" },
   { key: "water", title: "水上乐园地点", count: 20, prefix: "水花乐园", detail: "大喇叭、漩涡、蛇形滑道" },
   { key: "metro", title: "开地铁地点", count: 10, prefix: "环线地铁", detail: "站台门、驾驶台、下一站" },
   { key: "fish", title: "摸鱼地点", count: 30, prefix: "河边摸鱼", detail: "河岸、树、椅子、捞随机东西" },
@@ -153,6 +153,10 @@ const airportPlanes = [
   { x: 7320, y: 1120, label: "军事飞机", color: "#4f6b48", scale: 1.16 },
   { x: 7840, y: 1120, label: "普通飞机", color: "#64717b", scale: 1.1 }
 ];
+
+function gateY(plane) {
+  return plane.y + 320;
+}
 
 const flightClouds = [
   { x: 120, y: 90, s: 0.9, speed: 0.45 },
@@ -334,7 +338,7 @@ function resetVehicle() {
   vehicle.mode = selectedLocation.category === "flight" ? "walking" : "free";
   vehicle.progress = 0;
   vehicle.pilotX = selectedLocation.category === "flight" ? airportPlanes[0].x - 76 : 360;
-  vehicle.pilotY = selectedLocation.category === "flight" ? airportPlanes[0].y + 88 : 750;
+  vehicle.pilotY = selectedLocation.category === "flight" ? gateY(airportPlanes[0]) : 750;
   vehicle.pilotVx = 0;
   vehicle.pilotVy = 0;
   vehicle.pilotBall = false;
@@ -363,7 +367,7 @@ function getNearestPlane() {
   let nearestIndex = 0;
   let nearestDistance = Infinity;
   airportPlanes.forEach((plane, index) => {
-    const distance = Math.hypot(vehicle.pilotX - plane.x, vehicle.pilotY - (plane.y + 76));
+    const distance = Math.hypot(vehicle.pilotX - plane.x, vehicle.pilotY - gateY(plane));
     if (distance < nearestDistance) {
       nearest = plane;
       nearestIndex = index;
@@ -392,7 +396,7 @@ function boardNearestPlane() {
   vehicle.vx = 0;
   vehicle.vy = 0;
   vehicle.mode = "boarded";
-  statusText.textContent = `从登机口上了${nearest.plane.label}！现在还是直接看外面的机场。`;
+  statusText.textContent = `从候机楼里的登机口上了${nearest.plane.label}！现在直接看外面的机场。`;
   portalSound();
   return true;
 }
@@ -437,19 +441,19 @@ function landPlane() {
 function exitPlane() {
   if (selectedLocation.category !== "flight") return false;
   if (vehicle.mode === "walking") {
-    statusText.textContent = "你现在已经在飞机外面了。";
+    statusText.textContent = "你现在已经在候机楼里面了。";
     return true;
   }
   vehicle.mode = "walking";
   vehicle.pilotX = vehicle.x - 70;
-  vehicle.pilotY = vehicle.y + 92;
+  vehicle.pilotY = gateY(airportPlanes[vehicle.selectedPlaneIndex] || airportPlanes[0]);
   vehicle.pilotVx = 0;
   vehicle.vx = 0;
   vehicle.vy = 0;
   joystickX = 0;
   joystickY = 0;
   updateJoystickVisual();
-  statusText.textContent = "下飞机了！你又站在飞机旁边，可以走路，也可以再上飞机。";
+  statusText.textContent = "下飞机了！你回到候机楼里面，可以沿着蓝灯再去登机口。";
   return true;
 }
 
@@ -586,7 +590,7 @@ function updateContextControls() {
 }
 
 function getActivityHelp(category) {
-  if (category === "flight") return `${selectedLocation.name}：先走到登机口，点“上飞机”；画面直接看外面的机场、飞机和跑道。`;
+  if (category === "flight") return `${selectedLocation.name}：你在机场候机楼里面，沿着蓝灯走到登机口上飞机。`;
   if (category === "water") return `${selectedLocation.name}：这里有大喇叭、漩涡和蛇形滑道，点互动开始滑水。`;
   if (category === "metro") return `${selectedLocation.name}：站台门在前面，点互动进驾驶台，再控制地铁往下一站开。`;
   if (category === "fish") return `${selectedLocation.name}：站在河边捞东西，可能捞到鱼、锅、僵尸蛋、宝箱或者奇怪玩具。`;
@@ -748,8 +752,8 @@ function updateActivity() {
       vehicle.pilotVx *= vehicle.pilotBall ? 0.9 : 0.82;
       vehicle.pilotX = Math.max(210, Math.min(flightWorld.w - 210, vehicle.pilotX + vehicle.pilotVx));
       const nearest = getNearestPlane();
-      vehicle.pilotY = nearest.plane.y + 88 + Math.sin(performance.now() * 0.012) * 4;
-      if (nearest.distance < 120) statusText.textContent = `你走到${nearest.plane.label}旁边了，点“上飞机”。`;
+      vehicle.pilotY = gateY(nearest.plane) + Math.sin(performance.now() * 0.012) * 4;
+      if (nearest.distance < 155) statusText.textContent = `你在候机楼里走到${nearest.plane.label}登机口了，点“上飞机”。`;
     } else if (vehicle.mode === "plane-falling") {
       const fallElapsed = performance.now() - vehicle.fallStart;
       if (fallElapsed < vehicle.floatDuration) {
@@ -1310,9 +1314,12 @@ function drawFlightScene() {
   drawHugeAirport();
   airportPlanes.forEach((plane, index) => {
     if ((vehicle.mode === "boarded" || vehicle.mode === "flying" || vehicle.mode === "plane-falling") && index === vehicle.selectedPlaneIndex) return;
-    drawBoardingGate(plane);
     drawParkedPlane(plane);
   });
+  if (vehicle.mode === "walking") {
+    drawTerminalInteriorHall(focusX);
+    airportPlanes.forEach((plane) => drawBoardingGate(plane));
+  }
   if (vehicle.mode === "walking" || vehicle.mode === "plane-falling") drawWalkingPilot(vehicle.pilotX, vehicle.pilotY);
   if (vehicle.mode === "boarded" || vehicle.mode === "flying" || vehicle.mode === "plane-falling") drawAirplane(vehicle.x, vehicle.y, vehicle.angle);
   if (vehicle.mode === "plane-falling") drawPlaneFallingOverlay();
@@ -1327,7 +1334,7 @@ function drawFlightScene() {
   ctx.font = "900 18px system-ui";
   ctx.fillText("近景机场视野 3365 公顷", W - 288, 56);
   ctx.font = "800 14px system-ui";
-  ctx.fillText(vehicle.mode === "walking" ? "人在地上走，先上飞机" : `飞行坐标 ${Math.round(vehicle.x)} / ${Math.round(vehicle.y)}`, W - 288, 82);
+  ctx.fillText(vehicle.mode === "walking" ? "候机楼里面，蓝灯去登机口" : `飞行坐标 ${Math.round(vehicle.x)} / ${Math.round(vehicle.y)}`, W - 288, 82);
   ctx.fillText("操纵杆：下拉上升，上推下降", W - 288, 104);
 }
 
@@ -1401,17 +1408,72 @@ function drawPlaneRunway(plane) {
 function drawBoardingGate(plane) {
   ctx.fillStyle = "#f7fbff";
   ctx.beginPath();
-  roundedRect(plane.x - 96, plane.y + 245, 192, 72, 8);
+  roundedRect(plane.x - 108, gateY(plane) - 62, 216, 110, 8);
   ctx.fill();
   ctx.strokeStyle = "#172632";
   ctx.lineWidth = 5;
   ctx.stroke();
   ctx.fillStyle = "#32a7e2";
-  ctx.fillRect(plane.x - 78, plane.y + 265, 46, 32);
-  ctx.fillRect(plane.x + 32, plane.y + 265, 46, 32);
+  ctx.fillRect(plane.x - 86, gateY(plane) - 36, 58, 58);
+  ctx.fillRect(plane.x + 28, gateY(plane) - 36, 58, 58);
+  ctx.fillStyle = "#1678ff";
+  for (let i = -88; i <= 88; i += 44) {
+    ctx.beginPath();
+    ctx.arc(plane.x + i, gateY(plane) + 64, 10, 0, Math.PI * 2);
+    ctx.fill();
+  }
   ctx.fillStyle = "#172632";
   ctx.font = "900 22px system-ui";
-  ctx.fillText("登机口", plane.x - 42, plane.y + 238);
+  ctx.fillText("登机口", plane.x - 42, gateY(plane) - 80);
+}
+
+function drawTerminalInteriorHall(focusX) {
+  const hallY = gateY(airportPlanes[0]) - 155;
+  const startX = focusX - 1420;
+  const w = 2840;
+  ctx.save();
+  ctx.fillStyle = "rgba(247,251,255,0.86)";
+  ctx.beginPath();
+  roundedRect(startX, hallY - 95, w, 410, 8);
+  ctx.fill();
+  ctx.strokeStyle = "#172632";
+  ctx.lineWidth = 8;
+  ctx.stroke();
+
+  ctx.fillStyle = "rgba(50,167,226,0.2)";
+  for (let x = startX + 90; x < startX + w - 90; x += 240) {
+    ctx.beginPath();
+    roundedRect(x, hallY - 50, 160, 120, 8);
+    ctx.fill();
+    ctx.strokeStyle = "rgba(23,38,50,0.55)";
+    ctx.lineWidth = 5;
+    ctx.stroke();
+  }
+
+  ctx.fillStyle = "#dce5eb";
+  ctx.fillRect(startX, hallY + 190, w, 126);
+  ctx.strokeStyle = "rgba(23,38,50,0.25)";
+  ctx.lineWidth = 4;
+  for (let x = startX; x < startX + w; x += 110) {
+    ctx.beginPath();
+    ctx.moveTo(x, hallY + 190);
+    ctx.lineTo(x + 86, hallY + 316);
+    ctx.stroke();
+  }
+
+  ctx.fillStyle = "#1678ff";
+  for (let x = startX + 50; x < startX + w - 40; x += 95) {
+    ctx.beginPath();
+    ctx.arc(x, hallY + 250, 11, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  ctx.fillStyle = "#172632";
+  ctx.font = "900 30px system-ui";
+  ctx.fillText("机场候机楼里面", startX + 40, hallY - 48);
+  ctx.font = "800 22px system-ui";
+  ctx.fillText("沿着蓝灯走到登机口，从里面上飞机", startX + 40, hallY - 12);
+  ctx.restore();
 }
 
 function drawRunway(x, y, w, h, label) {
