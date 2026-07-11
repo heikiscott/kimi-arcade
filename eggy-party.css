@@ -36,13 +36,12 @@ body {
 }
 
 .eggy-shell {
-  width: min(1240px, calc(100vw - 28px));
+  width: min(1800px, calc(100vw - 16px));
   margin: 0 auto;
-  padding: 78px 0 42px;
+  padding: 64px 0 28px;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(310px, 380px);
-  gap: 18px;
-  align-items: start;
+  grid-template-columns: 1fr;
+  gap: 12px;
 }
 
 .game-stage,
@@ -62,7 +61,8 @@ body {
 canvas {
   display: block;
   width: 100%;
-  aspect-ratio: 1040 / 620;
+  aspect-ratio: 16 / 9;
+  max-height: 78vh;
   border: 7px solid #172632;
   border-radius: 8px;
   background: #9edcff;
@@ -80,9 +80,14 @@ canvas {
 
 .control-panel {
   padding: 20px;
+  display: grid;
+  grid-template-columns: minmax(210px, 0.7fr) minmax(300px, 1fr) minmax(360px, 1.4fr);
+  gap: 14px;
+  align-items: start;
 }
 
 .label {
+  grid-column: 1;
   margin: 0 0 8px;
   color: #64717b;
   font-size: 0.78rem;
@@ -92,12 +97,14 @@ canvas {
 }
 
 h1 {
+  grid-column: 1;
   margin: 0;
-  font-size: clamp(2.15rem, 5vw, 3.8rem);
+  font-size: clamp(1.9rem, 3.6vw, 3.1rem);
   line-height: 0.96;
 }
 
 .score-grid {
+  grid-column: 2;
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 10px;
@@ -133,10 +140,12 @@ h1 {
 }
 
 .button-row {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-column: 3;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
 .mobile-pad {
+  grid-column: 1 / -1;
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
@@ -161,6 +170,7 @@ button:hover {
   border-radius: 8px;
   border: 2px solid rgba(23, 38, 50, 0.12);
   background: rgba(255, 255, 255, 0.72);
+  grid-column: 1 / -1;
 }
 
 .location-picker[hidden] {
@@ -233,6 +243,7 @@ button:hover {
 }
 
 .hint {
+  grid-column: 1 / -1;
   margin: 14px 0 0;
   color: #4f5e68;
   font-weight: 800;
@@ -241,8 +252,20 @@ button:hover {
 
 @media (max-width: 900px) {
   .eggy-shell {
-    grid-template-columns: 1fr;
     padding-top: 72px;
+  }
+
+  .control-panel {
+    grid-template-columns: 1fr;
+  }
+
+  .label,
+  h1,
+  .score-grid,
+  .button-row,
+  .mobile-pad,
+  .hint {
+    grid-column: 1;
   }
 
   .home-link {

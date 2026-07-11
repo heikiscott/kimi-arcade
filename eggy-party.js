@@ -83,6 +83,25 @@ const lobbyEggies = [
   { x: 900, y: 484, color: "#60c878", speed: -0.5, phase: 4.4 }
 ];
 
+const flightWorld = {
+  w: 3365,
+  h: 3365,
+  finishX: 3050,
+  finishY: 1660
+};
+
+const airportPlanes = [
+  { x: 640, y: 760, label: "日本航空", color: "#d8343f", scale: 0.72 },
+  { x: 1010, y: 1120, label: "中国航空", color: "#2f79c8", scale: 0.78 },
+  { x: 1440, y: 840, label: "美国航空", color: "#42536b", scale: 0.74 },
+  { x: 1870, y: 1270, label: "东方航空", color: "#d83258", scale: 0.8 },
+  { x: 2260, y: 930, label: "南方航空", color: "#1f8c65", scale: 0.78 },
+  { x: 2620, y: 1340, label: "私人飞机", color: "#8f5fd9", scale: 0.55 },
+  { x: 730, y: 2150, label: "军事飞机", color: "#4f6b48", scale: 0.82 },
+  { x: 1620, y: 2320, label: "普通飞机", color: "#64717b", scale: 0.68 },
+  { x: 2420, y: 2300, label: "货运飞机", color: "#9a6429", scale: 0.74 }
+];
+
 function getAudio() {
   if (!window.AudioContext && !window.webkitAudioContext) return null;
   if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
@@ -182,8 +201,8 @@ function resetEgg() {
 }
 
 function resetVehicle() {
-  vehicle.x = 520;
-  vehicle.y = selectedLocation.category === "flight" ? 335 : 420;
+  vehicle.x = selectedLocation.category === "flight" ? 420 : 520;
+  vehicle.y = selectedLocation.category === "flight" ? 1680 : 420;
   vehicle.vx = 0;
   vehicle.vy = 0;
   vehicle.angle = 0;
@@ -262,7 +281,7 @@ function selectLocation(place) {
 }
 
 function getActivityHelp(category) {
-  if (category === "flight") return `${selectedLocation.name}：飞机来了！左/右控制前后，跳是上升，冲刺是加速。`;
+  if (category === "flight") return `${selectedLocation.name}：3365 公顷超大机场！左右开飞机，跳是上升，冲刺加速，飞到白色通关线点互动。`;
   if (category === "water") return `${selectedLocation.name}：先到售票处，再走到滑梯楼梯，跳/互动可以上去滑下来。`;
   if (category === "metro") return `${selectedLocation.name}：地铁一直开着，靠近车门按互动就能进车厢。`;
   if (category === "fish") return `${selectedLocation.name}：摸鱼码头有小船、鱼池和鱼，左右一直划，不会突然卡住。`;
@@ -385,12 +404,13 @@ function updateActivity() {
   const speed = boost ? 0.42 : 0.24;
 
   if (selectedLocation.category === "flight") {
-    if (left) vehicle.vx -= speed;
-    if (right) vehicle.vx += speed;
-    if (up) vehicle.vy -= 0.26;
-    vehicle.vy += 0.05;
+    const flightSpeed = boost ? 0.96 : 0.56;
+    if (left) vehicle.vx -= flightSpeed;
+    if (right) vehicle.vx += flightSpeed;
+    if (up) vehicle.vy -= 0.42;
+    if (boost) vehicle.vy += 0.06;
     vehicle.angle = Math.max(-0.18, Math.min(0.18, vehicle.vx * 0.035 - vehicle.vy * 0.025));
-    vehicle.y = Math.max(165, Math.min(430, vehicle.y + vehicle.vy));
+    vehicle.y = Math.max(170, Math.min(flightWorld.h - 170, vehicle.y + vehicle.vy));
   } else if (selectedLocation.category === "water") {
     if (vehicle.mode === "slide") {
       vehicle.progress += 0.015;
@@ -423,13 +443,29 @@ function updateActivity() {
   vehicle.vx *= 0.92;
   vehicle.vy *= 0.9;
   vehicle.x += vehicle.vx;
-  if (vehicle.x < -160) vehicle.x = W + 160;
-  if (vehicle.x > W + 160) vehicle.x = -160;
+  if (selectedLocation.category === "flight") {
+    vehicle.x = Math.max(160, Math.min(flightWorld.w - 160, vehicle.x));
+    if (Math.abs(vehicle.x - flightWorld.finishX) < 120 && Math.abs(vehicle.y - flightWorld.finishY) < 180) {
+      statusText.textContent = "到白色通关线旁边了，点“开始/互动”就能闯关成功。";
+    }
+  } else {
+    if (vehicle.x < -160) vehicle.x = W + 160;
+    if (vehicle.x > W + 160) vehicle.x = -160;
+  }
 }
 
 function activityInteract() {
   getAudio();
   if (screen !== "activity") return false;
+  if (selectedLocation.category === "flight") {
+    if (Math.abs(vehicle.x - flightWorld.finishX) < 150 && Math.abs(vehicle.y - flightWorld.finishY) < 210) {
+      statusText.textContent = "机场闯关成功！穿过白色线，进入下一个机场地点。";
+      winSound();
+      return true;
+    }
+    statusText.textContent = "继续往右边远处飞，找到白色通关线。";
+    return true;
+  }
   if (selectedLocation.category === "water") {
     if (vehicle.mode === "slide") return true;
     if (vehicle.x < 260) {
@@ -811,15 +847,26 @@ function drawActivityTitle() {
 }
 
 function drawFlightScene() {
+  const cameraX = Math.max(0, Math.min(flightWorld.w - W, vehicle.x - W / 2));
+  const cameraY = Math.max(0, Math.min(flightWorld.h - H, vehicle.y - H / 2));
   drawSky();
-  ctx.fillStyle = "#424b57";
-  ctx.fillRect(0, 500, W, 70);
-  ctx.fillStyle = "#fff";
-  for (let x = 20; x < W; x += 95) ctx.fillRect(x, 532, 50, 8);
-  ctx.fillStyle = "#89d06a";
-  ctx.fillRect(0, 570, W, 50);
-  drawAirportTerminal(720, 330);
+  ctx.save();
+  ctx.translate(-cameraX, -cameraY);
+  drawHugeAirport();
+  airportPlanes.forEach((plane) => drawParkedPlane(plane));
   drawAirplane(vehicle.x, vehicle.y, vehicle.angle);
+  ctx.restore();
+
+  ctx.fillStyle = "rgba(255,255,255,0.86)";
+  ctx.beginPath();
+  roundedRect(W - 310, 24, 280, 94, 8);
+  ctx.fill();
+  ctx.fillStyle = "#172632";
+  ctx.font = "900 18px system-ui";
+  ctx.fillText("超大机场地图 3365 公顷", W - 288, 56);
+  ctx.font = "800 14px system-ui";
+  ctx.fillText(`坐标 ${Math.round(vehicle.x)} / ${Math.round(vehicle.y)}`, W - 288, 82);
+  ctx.fillText("找到白色通关线", W - 288, 104);
 }
 
 function drawAirportTerminal(x, y) {
@@ -836,7 +883,132 @@ function drawAirportTerminal(x, y) {
   ctx.fillText("机场", x + 88, y + 108);
 }
 
+function drawHugeAirport() {
+  ctx.fillStyle = "#89d06a";
+  ctx.fillRect(0, 0, flightWorld.w, flightWorld.h);
+  ctx.fillStyle = "#424b57";
+  drawRunway(250, 1450, 2750, 150, "跑道 18L");
+  drawRunway(420, 1970, 2600, 135, "跑道 27R");
+  drawRunway(1260, 360, 135, 2450, "跑道 09");
+  ctx.strokeStyle = "#2d3742";
+  ctx.lineWidth = 44;
+  ctx.beginPath();
+  ctx.moveTo(420, 1180);
+  ctx.lineTo(2950, 1180);
+  ctx.lineTo(2950, 2500);
+  ctx.lineTo(760, 2500);
+  ctx.stroke();
+
+  drawAirportTerminal(360, 520);
+  drawAirportTerminal(820, 500);
+  drawAirportTerminal(2060, 480);
+  drawControlTower(1640, 650);
+  drawWeatherTower(1830, 410);
+  drawHangar(470, 2480, "军事机库");
+  drawHangar(1980, 2480, "私人飞机库");
+  drawFinishLine();
+
+  ctx.strokeStyle = "rgba(255,255,255,0.28)";
+  ctx.lineWidth = 3;
+  for (let x = 0; x <= flightWorld.w; x += 240) {
+    ctx.beginPath();
+    ctx.moveTo(x, 0);
+    ctx.lineTo(x, flightWorld.h);
+    ctx.stroke();
+  }
+  for (let y = 0; y <= flightWorld.h; y += 240) {
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(flightWorld.w, y);
+    ctx.stroke();
+  }
+}
+
+function drawRunway(x, y, w, h, label) {
+  ctx.fillStyle = "#424b57";
+  ctx.fillRect(x, y, w, h);
+  ctx.fillStyle = "#fff";
+  const horizontal = w > h;
+  if (horizontal) {
+    for (let sx = x + 60; sx < x + w - 60; sx += 170) ctx.fillRect(sx, y + h / 2 - 6, 90, 12);
+    ctx.fillText(label, x + 24, y + 38);
+  } else {
+    for (let sy = y + 60; sy < y + h - 60; sy += 170) ctx.fillRect(x + w / 2 - 6, sy, 12, 90);
+    ctx.fillText(label, x + 18, y + 38);
+  }
+}
+
+function drawControlTower(x, y) {
+  ctx.fillStyle = "#dce5eb";
+  ctx.beginPath();
+  roundedRect(x, y, 120, 260, 8);
+  ctx.fill();
+  ctx.fillStyle = "#172632";
+  ctx.fillRect(x - 28, y - 64, 176, 80);
+  ctx.fillStyle = "#32a7e2";
+  for (let i = 0; i < 4; i += 1) ctx.fillRect(x - 12 + i * 39, y - 44, 26, 28);
+  ctx.fillStyle = "#172632";
+  ctx.font = "900 22px system-ui";
+  ctx.fillText("控制塔台", x - 2, y + 298);
+}
+
+function drawWeatherTower(x, y) {
+  ctx.fillStyle = "#fff";
+  ctx.beginPath();
+  roundedRect(x, y, 250, 145, 8);
+  ctx.fill();
+  ctx.fillStyle = "#ffd15f";
+  ctx.beginPath();
+  ctx.arc(x + 54, y + 52, 28, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = "#172632";
+  ctx.font = "900 20px system-ui";
+  ctx.fillText("天气 / 跑道信息楼", x + 88, y + 46);
+  ctx.font = "800 16px system-ui";
+  ctx.fillText("晴  风小  跑道开放", x + 88, y + 78);
+  ctx.fillText("不是救援站，是机场信息楼", x + 28, y + 114);
+}
+
+function drawHangar(x, y, label) {
+  ctx.fillStyle = "#dce5eb";
+  ctx.beginPath();
+  roundedRect(x, y, 420, 250, 8);
+  ctx.fill();
+  ctx.fillStyle = "#64717b";
+  ctx.fillRect(x + 45, y + 88, 330, 160);
+  ctx.fillStyle = "#172632";
+  ctx.font = "900 24px system-ui";
+  ctx.fillText(label, x + 130, y + 54);
+}
+
+function drawFinishLine() {
+  ctx.strokeStyle = "#fff";
+  ctx.lineWidth = 18;
+  ctx.beginPath();
+  ctx.moveTo(flightWorld.finishX, flightWorld.finishY - 150);
+  ctx.lineTo(flightWorld.finishX, flightWorld.finishY + 150);
+  ctx.stroke();
+  ctx.fillStyle = "#172632";
+  ctx.font = "900 28px system-ui";
+  ctx.fillText("白色通关线", flightWorld.finishX - 78, flightWorld.finishY - 182);
+}
+
+function drawParkedPlane(plane) {
+  ctx.save();
+  ctx.translate(plane.x, plane.y);
+  ctx.scale(plane.scale, plane.scale);
+  drawPlaneShape(0, 0, 0, plane.color, false);
+  ctx.restore();
+  ctx.fillStyle = "#172632";
+  ctx.font = "900 26px system-ui";
+  ctx.fillText(plane.label, plane.x - 58, plane.y + 86 * plane.scale + 34);
+}
+
 function drawAirplane(x, y, angle) {
+  drawPlaneShape(x, y, angle, "#32a7e2", true);
+}
+
+function drawPlaneShape(x, y, angle, color, showPilot) {
   ctx.save();
   ctx.translate(x, y);
   ctx.rotate(angle);
@@ -847,7 +1019,7 @@ function drawAirplane(x, y, angle) {
   ctx.strokeStyle = "#172632";
   ctx.lineWidth = 5;
   ctx.stroke();
-  ctx.fillStyle = "#32a7e2";
+  ctx.fillStyle = color;
   ctx.beginPath();
   ctx.moveTo(-10, 0);
   ctx.lineTo(-95, 76);
@@ -874,7 +1046,7 @@ function drawAirplane(x, y, angle) {
   ctx.beginPath();
   ctx.arc(92, -4, 9, 0, Math.PI * 2);
   ctx.fill();
-  drawEggyCharacter(16, -42, 0.45, 0);
+  if (showPilot) drawEggyCharacter(16, -42, 0.45, 0);
   ctx.restore();
 }
 
