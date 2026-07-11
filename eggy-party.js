@@ -1283,7 +1283,7 @@ function drawActivityTitle() {
 }
 
 function drawFlightScene() {
-  const zoom = 0.32;
+  const zoom = 0.46;
   const focusX = vehicle.mode === "walking" ? vehicle.pilotX : vehicle.x;
   const focusY = vehicle.mode === "walking" ? vehicle.pilotY : vehicle.y;
   const viewW = W / zoom;
@@ -1311,7 +1311,7 @@ function drawFlightScene() {
   ctx.fill();
   ctx.fillStyle = "#172632";
   ctx.font = "900 18px system-ui";
-  ctx.fillText("放大机场视野 3365 公顷", W - 288, 56);
+  ctx.fillText("近景机场视野 3365 公顷", W - 288, 56);
   ctx.font = "800 14px system-ui";
   ctx.fillText(vehicle.mode === "walking" ? "人在地上走，先上飞机" : `飞行坐标 ${Math.round(vehicle.x)} / ${Math.round(vehicle.y)}`, W - 288, 82);
   ctx.fillText("操纵杆：下拉上升，上推下降", W - 288, 104);
@@ -1459,42 +1459,86 @@ function drawOfficeTower(x, y, label, w = 260, h = 620) {
 }
 
 function drawBreakableBuilding(building) {
+  if (building.broken) {
+    drawCollapsingBuilding(building);
+    return;
+  }
   if (building.type === "terminal") drawAirportTerminal(building.x, building.y, building.w, building.h, building.label);
   if (building.type === "office") drawOfficeTower(building.x, building.y, building.label, building.w, building.h);
   if (building.type === "hangar") drawHangar(building.x, building.y, building.label);
-  if (!building.broken) return;
+}
+
+function drawCollapsingBuilding(building) {
   const elapsed = performance.now() - building.brokenAt;
-  const collapse = Math.min(1, elapsed / 10000);
-  const crushY = building.h * collapse;
+  const collapse = Math.min(1, elapsed / 9000);
+  const wave = Math.sin(elapsed * 0.018) * 5;
+  const crushY = Math.min(building.h, building.h * (0.08 + collapse * 0.92));
+  const standingH = Math.max(0, building.h - crushY);
   ctx.save();
   ctx.translate(building.x, building.y);
-  ctx.fillStyle = "rgba(220,229,235,0.82)";
-  for (let i = 0; i < 9; i += 1) {
-    const px = (Math.sin(i * 2.1) * 0.5 + 0.5) * building.w;
-    const py = Math.min(building.h - 8, crushY + Math.sin(i) * 38);
+
+  if (standingH > 8) {
+    ctx.fillStyle = building.type === "office" ? "#f7fbff" : "#dce5eb";
     ctx.beginPath();
-    ctx.arc(px, py, 36 + i * 5, 0, Math.PI * 2);
+    roundedRect(0, crushY + wave, building.w, standingH, 8);
+    ctx.fill();
+    ctx.fillStyle = "#32a7e2";
+    const rows = Math.floor(standingH / 46);
+    for (let row = 0; row < rows; row += 1) {
+      for (let col = 0; col < 4; col += 1) {
+        ctx.fillRect(24 + col * ((building.w - 48) / 4), crushY + 24 + row * 44 + wave, 34, 24);
+      }
+    }
+    ctx.fillStyle = "#172632";
+    ctx.font = "900 28px system-ui";
+    ctx.fillText(building.label, 28, building.h - 24);
+  }
+
+  ctx.fillStyle = "rgba(220,229,235,0.9)";
+  for (let i = 0; i < 13; i += 1) {
+    const px = (Math.sin(i * 2.17) * 0.5 + 0.5) * building.w;
+    const py = Math.min(building.h - 10, crushY + Math.sin(i + elapsed * 0.003) * 46);
+    ctx.beginPath();
+    ctx.arc(px, py, 34 + (i % 5) * 12 + collapse * 34, 0, Math.PI * 2);
     ctx.fill();
   }
-  ctx.fillStyle = "rgba(23,38,50,0.72)";
-  ctx.fillRect(0, 0, building.w, Math.max(0, crushY));
-  ctx.fillStyle = "rgba(255,209,95,0.72)";
-  for (let floor = 0; floor < 10; floor += 1) {
-    const y = Math.min(building.h - 20, crushY + floor * 11);
-    ctx.fillRect(14 + (floor % 3) * 18, y, building.w - 42, 9);
+
+  ctx.fillStyle = "rgba(23,38,50,0.78)";
+  for (let floor = 0; floor < 16; floor += 1) {
+    const y = Math.min(building.h - 22, crushY + floor * 12 - collapse * floor * 5);
+    const x = 10 + (floor % 4) * 14;
+    ctx.fillRect(x, y, building.w - 28 - (floor % 3) * 16, 9);
   }
-  ctx.fillStyle = "rgba(23,38,50,0.82)";
+
+  ctx.fillStyle = "rgba(255,209,95,0.78)";
+  for (let spark = 0; spark < 10; spark += 1) {
+    const x = 20 + ((spark * 37) % Math.max(60, building.w - 40));
+    const y = Math.min(building.h - 22, crushY + ((spark * 19) % 82));
+    ctx.fillRect(x, y, 18, 6);
+  }
+
+  ctx.fillStyle = "rgba(23,38,50,0.86)";
   ctx.beginPath();
   ctx.moveTo(0, building.h);
-  ctx.lineTo(building.w * 0.18, building.h - 35 - collapse * 40);
-  ctx.lineTo(building.w * 0.5, building.h - 12 - collapse * 30);
-  ctx.lineTo(building.w * 0.78, building.h - 44 - collapse * 35);
+  ctx.lineTo(building.w * 0.18, building.h - 40 - collapse * 90);
+  ctx.lineTo(building.w * 0.5, building.h - 18 - collapse * 70);
+  ctx.lineTo(building.w * 0.78, building.h - 52 - collapse * 82);
   ctx.lineTo(building.w, building.h);
   ctx.closePath();
   ctx.fill();
+
+  ctx.strokeStyle = "rgba(23,38,50,0.75)";
+  ctx.lineWidth = 12;
+  ctx.beginPath();
+  ctx.moveTo(building.w * 0.2, crushY - 8);
+  ctx.lineTo(building.w * 0.46, Math.min(building.h - 20, crushY + 52));
+  ctx.lineTo(building.w * 0.38, Math.min(building.h - 20, crushY + 118));
+  ctx.lineTo(building.w * 0.7, building.h - 18);
+  ctx.stroke();
+
   ctx.fillStyle = "#172632";
   ctx.font = "900 30px system-ui";
-  ctx.fillText(collapse < 1 ? "从上往下塌" : "塌成碎块", building.w * 0.14, Math.max(48, crushY - 18));
+  ctx.fillText(collapse < 1 ? "一层层往下塌" : "塌成碎块", building.w * 0.1, Math.max(48, crushY - 18));
   ctx.restore();
 }
 
@@ -1552,10 +1596,10 @@ function drawWalkingPilot(x, y) {
   ctx.moveTo(10, 26);
   ctx.lineTo(18 + step * 0.25, 58);
   ctx.stroke();
-  drawEggyCharacter(0, -22, 1.42, vehicle.pilotVx * 0.02);
+  drawEggyCharacter(0, -30, 1.72, vehicle.pilotVx * 0.02);
   ctx.fillStyle = "#172632";
-  ctx.font = "900 42px system-ui";
-  ctx.fillText("我", -22, 132);
+  ctx.font = "900 48px system-ui";
+  ctx.fillText("我", -24, 154);
   ctx.restore();
 }
 
@@ -1620,7 +1664,7 @@ function drawPlaneShape(x, y, angle, color, showPilot, label = "") {
   ctx.save();
   ctx.translate(x, y);
   ctx.rotate(angle);
-  ctx.scale(1.2, 1.2);
+  ctx.scale(1.36, 1.36);
   ctx.fillStyle = "#fff";
   ctx.beginPath();
   ctx.ellipse(0, 0, 116, 28, 0, 0, Math.PI * 2);
