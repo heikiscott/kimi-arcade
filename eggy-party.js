@@ -117,28 +117,28 @@ const zombies = [
 let lastZombieCatch = 0;
 
 const flightWorld = {
-  w: 3365,
-  h: 3365,
-  finishX: 3050,
-  finishY: 1660
+  w: 4500,
+  h: 3900,
+  finishX: 4200,
+  finishY: 1820
 };
 
 const airportPlanes = [
-  { x: 390, y: 1040, label: "日本航空", color: "#d8343f", scale: 0.86 },
-  { x: 560, y: 1040, label: "中国航空", color: "#2f79c8", scale: 0.86 },
-  { x: 730, y: 1040, label: "美国航空", color: "#42536b", scale: 0.86 },
-  { x: 900, y: 1040, label: "东方航空", color: "#d83258", scale: 0.88 },
-  { x: 1070, y: 1040, label: "南方航空", color: "#1f8c65", scale: 0.86 },
-  { x: 1240, y: 1040, label: "亚洲航空", color: "#d51f2a", scale: 0.86 },
-  { x: 1410, y: 1040, label: "泰国航空", color: "#7b4ab8", scale: 0.86 },
-  { x: 1580, y: 1040, label: "大韩航空", color: "#4aa3df", scale: 0.86 },
-  { x: 1750, y: 1040, label: "印度航空", color: "#c22d2d", scale: 0.86 },
-  { x: 1920, y: 1040, label: "山东航空", color: "#f28b2f", scale: 0.84 },
-  { x: 2090, y: 1040, label: "澳门航空", color: "#2270b8", scale: 0.84 },
-  { x: 2260, y: 1040, label: "三亚航空", color: "#32a852", scale: 0.84 },
-  { x: 2430, y: 1040, label: "私人飞机", color: "#8f5fd9", scale: 0.78 },
-  { x: 2600, y: 1040, label: "军事飞机", color: "#4f6b48", scale: 0.9 },
-  { x: 2770, y: 1040, label: "普通飞机", color: "#64717b", scale: 0.84 }
+  { x: 420, y: 1120, label: "日本航空", color: "#d8343f", scale: 1.12 },
+  { x: 690, y: 1120, label: "中国航空", color: "#2f79c8", scale: 1.12 },
+  { x: 960, y: 1120, label: "美国航空", color: "#42536b", scale: 1.12 },
+  { x: 1230, y: 1120, label: "东方航空", color: "#d83258", scale: 1.14 },
+  { x: 1500, y: 1120, label: "南方航空", color: "#1f8c65", scale: 1.12 },
+  { x: 1770, y: 1120, label: "亚洲航空", color: "#d51f2a", scale: 1.12 },
+  { x: 2040, y: 1120, label: "泰国航空", color: "#7b4ab8", scale: 1.12 },
+  { x: 2310, y: 1120, label: "大韩航空", color: "#4aa3df", scale: 1.12 },
+  { x: 2580, y: 1120, label: "印度航空", color: "#c22d2d", scale: 1.12 },
+  { x: 2850, y: 1120, label: "山东航空", color: "#f28b2f", scale: 1.1 },
+  { x: 3120, y: 1120, label: "澳门航空", color: "#2270b8", scale: 1.1 },
+  { x: 3390, y: 1120, label: "三亚航空", color: "#32a852", scale: 1.1 },
+  { x: 3660, y: 1120, label: "私人飞机", color: "#8f5fd9", scale: 1.04 },
+  { x: 3930, y: 1120, label: "军事飞机", color: "#4f6b48", scale: 1.16 },
+  { x: 4200, y: 1120, label: "普通飞机", color: "#64717b", scale: 1.1 }
 ];
 
 const flightClouds = [
@@ -148,15 +148,15 @@ const flightClouds = [
 ];
 
 const breakableBuildings = [
-  { id: "terminal-a", type: "terminal", label: "一号航站楼", x: 360, y: 520, w: 230, h: 130, broken: false },
-  { id: "terminal-b", type: "terminal", label: "二号航站楼", x: 820, y: 500, w: 230, h: 130, broken: false },
-  { id: "terminal-c", type: "terminal", label: "三号航站楼", x: 2060, y: 480, w: 230, h: 130, broken: false },
-  { id: "terminal-d", type: "terminal", label: "四号航站楼", x: 2620, y: 470, w: 230, h: 130, broken: false },
-  { id: "office", type: "office", label: "航司办公楼", x: 300, y: 1740, w: 220, h: 310, broken: false },
-  { id: "hotel", type: "office", label: "酒店大楼", x: 2860, y: 1760, w: 220, h: 310, broken: false },
-  { id: "repair", type: "office", label: "维修大楼", x: 1430, y: 2920, w: 220, h: 310, broken: false },
-  { id: "military-hangar", type: "hangar", label: "军事机库", x: 470, y: 2480, w: 420, h: 250, broken: false },
-  { id: "private-hangar", type: "hangar", label: "私人飞机库", x: 1980, y: 2480, w: 420, h: 250, broken: false }
+  { id: "terminal-a", type: "terminal", label: "一号航站楼", x: 360, y: 430, w: 310, h: 220, broken: false, brokenAt: 0 },
+  { id: "terminal-b", type: "terminal", label: "二号航站楼", x: 1010, y: 410, w: 310, h: 240, broken: false, brokenAt: 0 },
+  { id: "terminal-c", type: "terminal", label: "三号航站楼", x: 2430, y: 390, w: 330, h: 260, broken: false, brokenAt: 0 },
+  { id: "terminal-d", type: "terminal", label: "四号航站楼", x: 3260, y: 380, w: 330, h: 270, broken: false, brokenAt: 0 },
+  { id: "office", type: "office", label: "航司高楼", x: 320, y: 1720, w: 260, h: 620, broken: false, brokenAt: 0 },
+  { id: "hotel", type: "office", label: "酒店高楼", x: 3800, y: 1690, w: 260, h: 650, broken: false, brokenAt: 0 },
+  { id: "repair", type: "office", label: "维修高楼", x: 1880, y: 2860, w: 260, h: 620, broken: false, brokenAt: 0 },
+  { id: "military-hangar", type: "hangar", label: "军事机库", x: 560, y: 2580, w: 560, h: 310, broken: false, brokenAt: 0 },
+  { id: "private-hangar", type: "hangar", label: "私人飞机库", x: 2640, y: 2580, w: 560, h: 310, broken: false, brokenAt: 0 }
 ];
 
 const laneThemes = [
@@ -331,6 +331,7 @@ function resetVehicle() {
   joystickY = 0;
   breakableBuildings.forEach((building) => {
     building.broken = false;
+    building.brokenAt = 0;
   });
   updateJoystickVisual();
 }
@@ -366,7 +367,7 @@ function boardNearestPlane() {
     return true;
   }
   const nearest = getNearestPlane();
-  if (nearest.distance > 120) {
+  if (nearest.distance > 195) {
     statusText.textContent = "先走到任意一架飞机门口，再点“上飞机”。";
     return true;
   }
@@ -469,7 +470,7 @@ function jumpFromPlane() {
 }
 
 function isOnAirportLand(x, y) {
-  return Math.hypot(x - 1682, y - 1682) <= 1610;
+  return Math.hypot(x - 2250, y - 1950) <= 2050;
 }
 
 function finishPlaneFalling() {
@@ -499,7 +500,8 @@ function checkBuildingCrash() {
     const hit = vehicle.x > building.x - 120 && vehicle.x < building.x + building.w + 120 && vehicle.y > building.y - 90 && vehicle.y < building.y + building.h + 90;
     if (!hit) return;
     building.broken = true;
-    statusText.textContent = `撞到${building.label}了！楼房断掉了，飞机没有坏，还能继续飞。`;
+    building.brokenAt = performance.now();
+    statusText.textContent = `撞到${building.label}了！它会像从上往下压一样塌掉，飞机没有坏，还能继续飞。`;
     tone(110, 0, 0.22, 0.035, "sawtooth");
     tone(74, 0.18, 0.28, 0.03, "sawtooth");
   });
@@ -1281,16 +1283,20 @@ function drawActivityTitle() {
 }
 
 function drawFlightScene() {
-  const zoom = 0.245;
-  const offsetX = (W / zoom - flightWorld.w) / 2;
-  const offsetY = 245;
+  const zoom = 0.32;
+  const focusX = vehicle.mode === "walking" ? vehicle.pilotX : vehicle.x;
+  const focusY = vehicle.mode === "walking" ? vehicle.pilotY : vehicle.y;
+  const viewW = W / zoom;
+  const viewH = H / zoom;
+  const offsetX = Math.max(viewW - flightWorld.w, Math.min(0, viewW / 2 - focusX));
+  const offsetY = Math.max(viewH - flightWorld.h, Math.min(0, viewH / 2 - focusY));
   drawSky();
   ctx.save();
   ctx.scale(zoom, zoom);
   ctx.translate(offsetX, offsetY);
   drawHugeAirport();
   airportPlanes.forEach((plane, index) => {
-    if ((vehicle.mode === "boarded" || vehicle.mode === "flying") && index === vehicle.selectedPlaneIndex) return;
+    if ((vehicle.mode === "boarded" || vehicle.mode === "flying" || vehicle.mode === "plane-falling") && index === vehicle.selectedPlaneIndex) return;
     drawParkedPlane(plane);
   });
   if (vehicle.mode === "walking" || vehicle.mode === "plane-falling") drawWalkingPilot(vehicle.pilotX, vehicle.pilotY);
@@ -1305,24 +1311,28 @@ function drawFlightScene() {
   ctx.fill();
   ctx.fillStyle = "#172632";
   ctx.font = "900 18px system-ui";
-  ctx.fillText("全机场视野 3365 公顷", W - 288, 56);
+  ctx.fillText("放大机场视野 3365 公顷", W - 288, 56);
   ctx.font = "800 14px system-ui";
   ctx.fillText(vehicle.mode === "walking" ? "人在地上走，先上飞机" : `飞行坐标 ${Math.round(vehicle.x)} / ${Math.round(vehicle.y)}`, W - 288, 82);
   ctx.fillText("操纵杆：下拉上升，上推下降", W - 288, 104);
 }
 
-function drawAirportTerminal(x, y) {
+function drawAirportTerminal(x, y, w = 310, h = 220, label = "机场") {
   ctx.fillStyle = "#fff";
   ctx.beginPath();
-  roundedRect(x, y, 230, 130, 8);
+  roundedRect(x, y, w, h, 8);
   ctx.fill();
   ctx.fillStyle = "#32a7e2";
-  ctx.fillRect(x + 18, y + 32, 50, 38);
-  ctx.fillRect(x + 85, y + 32, 50, 38);
-  ctx.fillRect(x + 152, y + 32, 50, 38);
+  const cols = 4;
+  const rows = Math.max(2, Math.floor(h / 74));
+  for (let row = 0; row < rows; row += 1) {
+    for (let col = 0; col < cols; col += 1) {
+      ctx.fillRect(x + 26 + col * ((w - 52) / cols), y + 34 + row * 54, 42, 34);
+    }
+  }
   ctx.fillStyle = "#172632";
-  ctx.font = "900 20px system-ui";
-  ctx.fillText("机场", x + 88, y + 108);
+  ctx.font = "900 26px system-ui";
+  ctx.fillText(label, x + 34, y + h - 24);
 }
 
 function drawHugeAirport() {
@@ -1330,20 +1340,20 @@ function drawHugeAirport() {
   ctx.fillRect(0, 0, flightWorld.w, flightWorld.h);
   ctx.fillStyle = "#7abf63";
   ctx.beginPath();
-  ctx.arc(1682, 1682, 1610, 0, Math.PI * 2);
+  ctx.arc(2250, 1950, 2050, 0, Math.PI * 2);
   ctx.fill();
   ctx.fillStyle = "#424b57";
   airportPlanes.forEach((plane) => drawPlaneRunway(plane));
-  drawRunway(250, 1450, 2750, 150, "跑道 18L");
-  drawRunway(420, 1970, 2600, 135, "跑道 27R");
-  drawRunway(1260, 360, 135, 2450, "跑道 09");
+  drawRunway(260, 1540, 3920, 190, "跑道 18L");
+  drawRunway(520, 2180, 3450, 170, "跑道 27R");
+  drawRunway(2020, 300, 175, 3000, "跑道 09");
   ctx.strokeStyle = "#2d3742";
-  ctx.lineWidth = 44;
+  ctx.lineWidth = 58;
   ctx.beginPath();
-  ctx.moveTo(420, 1180);
-  ctx.lineTo(2950, 1180);
-  ctx.lineTo(2950, 2500);
-  ctx.lineTo(760, 2500);
+  ctx.moveTo(360, 1360);
+  ctx.lineTo(4260, 1360);
+  ctx.lineTo(4260, 2680);
+  ctx.lineTo(760, 2680);
   ctx.stroke();
 
   breakableBuildings.forEach((building) => drawBreakableBuilding(building));
@@ -1369,9 +1379,9 @@ function drawHugeAirport() {
 
 function drawPlaneRunway(plane) {
   ctx.fillStyle = "#4d5966";
-  ctx.fillRect(plane.x - 135, plane.y + 138, 270, 72);
+  ctx.fillRect(plane.x - 175, plane.y + 170, 350, 92);
   ctx.fillStyle = "#fff";
-  for (let x = plane.x - 108; x < plane.x + 108; x += 54) ctx.fillRect(x, plane.y + 170, 30, 7);
+  for (let x = plane.x - 140; x < plane.x + 140; x += 70) ctx.fillRect(x, plane.y + 210, 40, 9);
 }
 
 function drawRunway(x, y, w, h, label) {
@@ -1422,65 +1432,69 @@ function drawWeatherTower(x, y) {
 function drawHangar(x, y, label) {
   ctx.fillStyle = "#dce5eb";
   ctx.beginPath();
-  roundedRect(x, y, 420, 250, 8);
+  roundedRect(x, y, 560, 310, 8);
   ctx.fill();
   ctx.fillStyle = "#64717b";
-  ctx.fillRect(x + 45, y + 88, 330, 160);
+  ctx.fillRect(x + 65, y + 108, 430, 200);
   ctx.fillStyle = "#172632";
-  ctx.font = "900 24px system-ui";
-  ctx.fillText(label, x + 130, y + 54);
+  ctx.font = "900 30px system-ui";
+  ctx.fillText(label, x + 170, y + 66);
 }
 
-function drawOfficeTower(x, y, label) {
+function drawOfficeTower(x, y, label, w = 260, h = 620) {
   ctx.fillStyle = "#fff";
   ctx.beginPath();
-  roundedRect(x, y, 220, 310, 8);
+  roundedRect(x, y, w, h, 8);
   ctx.fill();
   ctx.fillStyle = "#32a7e2";
-  for (let row = 0; row < 5; row += 1) {
-    for (let col = 0; col < 3; col += 1) {
-      ctx.fillRect(x + 30 + col * 58, y + 42 + row * 42, 34, 24);
+  const rows = Math.floor((h - 110) / 48);
+  for (let row = 0; row < rows; row += 1) {
+    for (let col = 0; col < 4; col += 1) {
+      ctx.fillRect(x + 24 + col * ((w - 48) / 4), y + 36 + row * 48, 34, 28);
     }
   }
   ctx.fillStyle = "#172632";
-  ctx.font = "900 24px system-ui";
-  ctx.fillText(label, x + 34, y + 286);
+  ctx.font = "900 28px system-ui";
+  ctx.fillText(label, x + 34, y + h - 30);
 }
 
 function drawBreakableBuilding(building) {
-  if (building.type === "terminal") drawAirportTerminal(building.x, building.y);
-  if (building.type === "office") drawOfficeTower(building.x, building.y, building.label);
+  if (building.type === "terminal") drawAirportTerminal(building.x, building.y, building.w, building.h, building.label);
+  if (building.type === "office") drawOfficeTower(building.x, building.y, building.label, building.w, building.h);
   if (building.type === "hangar") drawHangar(building.x, building.y, building.label);
   if (!building.broken) return;
+  const elapsed = performance.now() - building.brokenAt;
+  const collapse = Math.min(1, elapsed / 10000);
+  const crushY = building.h * collapse;
   ctx.save();
   ctx.translate(building.x, building.y);
-  ctx.fillStyle = "rgba(23,38,50,0.55)";
+  ctx.fillStyle = "rgba(220,229,235,0.82)";
+  for (let i = 0; i < 9; i += 1) {
+    const px = (Math.sin(i * 2.1) * 0.5 + 0.5) * building.w;
+    const py = Math.min(building.h - 8, crushY + Math.sin(i) * 38);
+    ctx.beginPath();
+    ctx.arc(px, py, 36 + i * 5, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.fillStyle = "rgba(23,38,50,0.72)";
+  ctx.fillRect(0, 0, building.w, Math.max(0, crushY));
+  ctx.fillStyle = "rgba(255,209,95,0.72)";
+  for (let floor = 0; floor < 10; floor += 1) {
+    const y = Math.min(building.h - 20, crushY + floor * 11);
+    ctx.fillRect(14 + (floor % 3) * 18, y, building.w - 42, 9);
+  }
+  ctx.fillStyle = "rgba(23,38,50,0.82)";
   ctx.beginPath();
-  ctx.moveTo(0, 0);
-  ctx.lineTo(building.w * 0.42, building.h * 0.34);
-  ctx.lineTo(building.w * 0.14, building.h);
-  ctx.lineTo(0, building.h);
-  ctx.closePath();
-  ctx.fill();
-  ctx.fillStyle = "rgba(240,106,163,0.72)";
-  ctx.beginPath();
-  ctx.moveTo(building.w, 0);
-  ctx.lineTo(building.w * 0.55, building.h * 0.42);
-  ctx.lineTo(building.w * 0.92, building.h);
+  ctx.moveTo(0, building.h);
+  ctx.lineTo(building.w * 0.18, building.h - 35 - collapse * 40);
+  ctx.lineTo(building.w * 0.5, building.h - 12 - collapse * 30);
+  ctx.lineTo(building.w * 0.78, building.h - 44 - collapse * 35);
   ctx.lineTo(building.w, building.h);
   ctx.closePath();
   ctx.fill();
-  ctx.strokeStyle = "#172632";
-  ctx.lineWidth = 12;
-  ctx.beginPath();
-  ctx.moveTo(building.w * 0.2, 12);
-  ctx.lineTo(building.w * 0.48, building.h * 0.38);
-  ctx.lineTo(building.w * 0.38, building.h * 0.7);
-  ctx.lineTo(building.w * 0.68, building.h - 10);
-  ctx.stroke();
   ctx.fillStyle = "#172632";
   ctx.font = "900 30px system-ui";
-  ctx.fillText("断了", building.w * 0.32, building.h * 0.56);
+  ctx.fillText(collapse < 1 ? "从上往下塌" : "塌成碎块", building.w * 0.14, Math.max(48, crushY - 18));
   ctx.restore();
 }
 
@@ -1500,11 +1514,8 @@ function drawParkedPlane(plane) {
   ctx.save();
   ctx.translate(plane.x, plane.y);
   ctx.scale(plane.scale, plane.scale);
-  drawPlaneShape(0, 0, 0, plane.color, false);
+  drawPlaneShape(0, 0, 0, plane.color, false, plane.label);
   ctx.restore();
-  ctx.fillStyle = "#172632";
-  ctx.font = "900 34px system-ui";
-  ctx.fillText(plane.label, plane.x - 70, plane.y + 96 * plane.scale + 58);
 }
 
 function drawWalkingPilot(x, y) {
@@ -1515,19 +1526,19 @@ function drawWalkingPilot(x, y) {
     ctx.rotate(performance.now() * 0.012);
     ctx.fillStyle = "#f5c336";
     ctx.beginPath();
-    ctx.arc(0, -5, 58, 0, Math.PI * 2);
+    ctx.arc(0, -5, 76, 0, Math.PI * 2);
     ctx.fill();
     ctx.strokeStyle = "#172632";
     ctx.lineWidth = 10;
     ctx.stroke();
     ctx.fillStyle = "#ffd7b3";
     ctx.beginPath();
-    ctx.ellipse(0, -8, 34, 28, 0, 0, Math.PI * 2);
+    ctx.ellipse(0, -8, 44, 36, 0, 0, Math.PI * 2);
     ctx.fill();
     ctx.fillStyle = "#172632";
     ctx.beginPath();
-    ctx.arc(-13, -15, 5, 0, Math.PI * 2);
-    ctx.arc(13, -15, 5, 0, Math.PI * 2);
+    ctx.arc(-17, -18, 7, 0, Math.PI * 2);
+    ctx.arc(17, -18, 7, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
     return;
@@ -1541,10 +1552,10 @@ function drawWalkingPilot(x, y) {
   ctx.moveTo(10, 26);
   ctx.lineTo(18 + step * 0.25, 58);
   ctx.stroke();
-  drawEggyCharacter(0, -18, 1.05, vehicle.pilotVx * 0.02);
+  drawEggyCharacter(0, -22, 1.42, vehicle.pilotVx * 0.02);
   ctx.fillStyle = "#172632";
-  ctx.font = "900 34px system-ui";
-  ctx.fillText("我", -18, 100);
+  ctx.font = "900 42px system-ui";
+  ctx.fillText("我", -22, 132);
   ctx.restore();
 }
 
@@ -1602,13 +1613,14 @@ function drawFlightClouds() {
 }
 
 function drawAirplane(x, y, angle) {
-  drawPlaneShape(x, y, angle, "#32a7e2", true);
+  drawPlaneShape(x, y, angle, "#32a7e2", true, "我的飞机");
 }
 
-function drawPlaneShape(x, y, angle, color, showPilot) {
+function drawPlaneShape(x, y, angle, color, showPilot, label = "") {
   ctx.save();
   ctx.translate(x, y);
   ctx.rotate(angle);
+  ctx.scale(1.2, 1.2);
   ctx.fillStyle = "#fff";
   ctx.beginPath();
   ctx.ellipse(0, 0, 116, 28, 0, 0, Math.PI * 2);
@@ -1643,7 +1655,18 @@ function drawPlaneShape(x, y, angle, color, showPilot) {
   ctx.beginPath();
   ctx.arc(92, -4, 9, 0, Math.PI * 2);
   ctx.fill();
-  if (showPilot) drawEggyCharacter(16, -42, 0.45, 0);
+  if (label) {
+    ctx.save();
+    ctx.textAlign = "center";
+    ctx.lineWidth = 6;
+    ctx.strokeStyle = "#fff";
+    ctx.fillStyle = "#172632";
+    ctx.font = "900 25px system-ui";
+    ctx.strokeText(label, -18, 8);
+    ctx.fillText(label, -18, 8);
+    ctx.restore();
+  }
+  if (showPilot) drawEggyCharacter(16, -52, 0.66, 0);
   ctx.restore();
 }
 

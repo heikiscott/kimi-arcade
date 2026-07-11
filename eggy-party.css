@@ -54,7 +54,7 @@ body {
 
 .game-stage {
   position: relative;
-  padding: 16px;
+  padding: 8px;
   display: grid;
   gap: 12px;
 }
@@ -63,7 +63,7 @@ canvas {
   display: block;
   width: 100%;
   aspect-ratio: 16 / 9;
-  max-height: 78vh;
+  max-height: 84vh;
   border: 7px solid #172632;
   border-radius: 8px;
   background: #9edcff;
