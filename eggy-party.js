@@ -85,6 +85,7 @@ const vehicle = {
   fallDuration: 38000,
   floatDuration: 9000,
   planeCrashExploded: false,
+  landedPlaneVisible: false,
   selectedPlaneIndex: 0
 };
 
@@ -156,6 +157,19 @@ const airportPlanes = [
 
 function gateY(plane) {
   return plane.y + 320;
+}
+
+function landingGroundY(x) {
+  let nearest = airportPlanes[0];
+  let distance = Infinity;
+  airportPlanes.forEach((plane) => {
+    const d = Math.abs(x - plane.x);
+    if (d < distance) {
+      nearest = plane;
+      distance = d;
+    }
+  });
+  return nearest.y;
 }
 
 const flightClouds = [
@@ -344,6 +358,7 @@ function resetVehicle() {
   vehicle.pilotBall = false;
   vehicle.fallStart = 0;
   vehicle.planeCrashExploded = false;
+  vehicle.landedPlaneVisible = false;
   joystickX = 0;
   joystickY = 0;
   breakableBuildings.forEach((building) => {
@@ -395,6 +410,7 @@ function boardNearestPlane() {
   vehicle.angle = vehicle.heading;
   vehicle.vx = 0;
   vehicle.vy = 0;
+  vehicle.landedPlaneVisible = false;
   vehicle.mode = "boarded";
   statusText.textContent = `从候机楼里的登机口上了${nearest.plane.label}！现在直接看外面的机场。`;
   portalSound();
@@ -405,6 +421,7 @@ function startSmoothFlight() {
   if (selectedLocation.category !== "flight") return false;
   if (vehicle.mode === "walking") return boardNearestPlane();
   vehicle.mode = "flying";
+  vehicle.landedPlaneVisible = false;
   statusText.textContent = "飞机进入平稳飞行。操纵杆往下拉上升，往上推下降，左右拉转方向。";
   tone(440, 0, 0.12, 0.02, "triangle");
   tone(660, 0.11, 0.14, 0.02, "triangle");
@@ -415,6 +432,7 @@ function takeoffPlane() {
   if (selectedLocation.category !== "flight") return false;
   if (vehicle.mode === "walking") return boardNearestPlane();
   vehicle.mode = "flying";
+  vehicle.landedPlaneVisible = false;
   vehicle.vx += Math.cos(vehicle.heading) * 3.2;
   vehicle.vy -= 4.5;
   statusText.textContent = "起飞！飞机离开跑道，开始往天空上升。";
@@ -495,7 +513,9 @@ function finishPlaneFalling() {
   vehicle.vy = 0;
   vehicle.angle = 0;
   vehicle.planeCrashExploded = false;
-  vehicle.mode = "walking";
+  vehicle.landedPlaneVisible = true;
+  vehicle.mode = "landed";
+  vehicle.y = landingGroundY(vehicle.x);
   vehicle.pilotX = vehicle.x - 110;
   vehicle.pilotY = vehicle.y + 118;
   statusText.textContent = "飞机落到地上停住了，不爆炸，不重来；小蛋仔安全在旁边。";
@@ -768,6 +788,13 @@ function updateActivity() {
       const remaining = Math.max(0, Math.ceil((vehicle.fallDuration - fallElapsed) / 1000));
       if (!vehicle.planeCrashExploded) statusText.textContent = fallElapsed < vehicle.floatDuration ? `小蛋仔安全出来了，飞机还在空中飘，还剩 ${remaining} 秒掉下来。` : `飞机开始往下掉，还剩 ${remaining} 秒落下。`;
       if (fallElapsed >= vehicle.fallDuration && !vehicle.planeCrashExploded) finishPlaneFalling();
+    } else if (vehicle.mode === "landed") {
+      vehicle.vx = 0;
+      vehicle.vy = 0;
+      vehicle.angle = 0;
+      vehicle.y = landingGroundY(vehicle.x);
+      vehicle.pilotX = vehicle.x - 110;
+      vehicle.pilotY = vehicle.y + 118;
     } else {
       if (left) joystickX = Math.max(-1, joystickX - 0.04);
       if (right) joystickX = Math.min(1, joystickX + 0.04);
@@ -1313,15 +1340,15 @@ function drawFlightScene() {
   drawWorldCloudField(focusX, focusY);
   drawHugeAirport();
   airportPlanes.forEach((plane, index) => {
-    if ((vehicle.mode === "boarded" || vehicle.mode === "flying" || vehicle.mode === "plane-falling") && index === vehicle.selectedPlaneIndex) return;
+    if ((vehicle.mode === "boarded" || vehicle.mode === "flying" || vehicle.mode === "plane-falling" || vehicle.mode === "landed") && index === vehicle.selectedPlaneIndex) return;
     drawParkedPlane(plane);
   });
   if (vehicle.mode === "walking") {
     drawTerminalInteriorHall(focusX);
     airportPlanes.forEach((plane) => drawBoardingGate(plane));
   }
-  if (vehicle.mode === "walking" || vehicle.mode === "plane-falling") drawWalkingPilot(vehicle.pilotX, vehicle.pilotY);
-  if (vehicle.mode === "boarded" || vehicle.mode === "flying" || vehicle.mode === "plane-falling") drawAirplane(vehicle.x, vehicle.y, vehicle.angle);
+  if (vehicle.mode === "walking" || vehicle.mode === "plane-falling" || vehicle.mode === "landed") drawWalkingPilot(vehicle.pilotX, vehicle.pilotY);
+  if (vehicle.mode === "boarded" || vehicle.mode === "flying" || vehicle.mode === "plane-falling" || vehicle.mode === "landed") drawAirplane(vehicle.x, vehicle.y, vehicle.angle);
   if (vehicle.mode === "plane-falling") drawPlaneFallingOverlay();
   ctx.restore();
   drawFlightClouds();
@@ -1765,7 +1792,8 @@ function drawWorldCloudField(focusX, focusY) {
 }
 
 function drawAirplane(x, y, angle) {
-  drawPlaneShape(x, y, angle, "#32a7e2", true, "我的飞机");
+  const plane = airportPlanes[vehicle.selectedPlaneIndex] || airportPlanes[0];
+  drawPlaneShape(x, y, angle, plane.color, true, plane.label);
 }
 
 function drawPlaneShape(x, y, angle, color, showPilot, label = "") {
