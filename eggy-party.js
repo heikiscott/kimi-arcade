@@ -10,6 +10,7 @@ const parkBtn = document.querySelector("#parkBtn");
 const lobbyBtn = document.querySelector("#lobbyBtn");
 const boardFlightBtn = document.querySelector("#boardFlightBtn");
 const smoothFlightBtn = document.querySelector("#smoothFlightBtn");
+const exitFlightBtn = document.querySelector("#exitFlightBtn");
 const flightStick = document.querySelector("#flightStick");
 const flightKnob = document.querySelector("#flightKnob");
 const locationPicker = document.querySelector("#locationPicker");
@@ -111,27 +112,39 @@ const flightWorld = {
 };
 
 const airportPlanes = [
-  { x: 390, y: 1040, label: "日本航空", color: "#d8343f", scale: 0.52 },
-  { x: 560, y: 1040, label: "中国航空", color: "#2f79c8", scale: 0.52 },
-  { x: 730, y: 1040, label: "美国航空", color: "#42536b", scale: 0.52 },
-  { x: 900, y: 1040, label: "东方航空", color: "#d83258", scale: 0.54 },
-  { x: 1070, y: 1040, label: "南方航空", color: "#1f8c65", scale: 0.52 },
-  { x: 1240, y: 1040, label: "亚洲航空", color: "#d51f2a", scale: 0.52 },
-  { x: 1410, y: 1040, label: "泰国航空", color: "#7b4ab8", scale: 0.52 },
-  { x: 1580, y: 1040, label: "大韩航空", color: "#4aa3df", scale: 0.52 },
-  { x: 1750, y: 1040, label: "印度航空", color: "#c22d2d", scale: 0.52 },
-  { x: 1920, y: 1040, label: "山东航空", color: "#f28b2f", scale: 0.5 },
-  { x: 2090, y: 1040, label: "澳门航空", color: "#2270b8", scale: 0.5 },
-  { x: 2260, y: 1040, label: "三亚航空", color: "#32a852", scale: 0.5 },
-  { x: 2430, y: 1040, label: "私人飞机", color: "#8f5fd9", scale: 0.46 },
-  { x: 2600, y: 1040, label: "军事飞机", color: "#4f6b48", scale: 0.54 },
-  { x: 2770, y: 1040, label: "普通飞机", color: "#64717b", scale: 0.5 }
+  { x: 390, y: 1040, label: "日本航空", color: "#d8343f", scale: 0.86 },
+  { x: 560, y: 1040, label: "中国航空", color: "#2f79c8", scale: 0.86 },
+  { x: 730, y: 1040, label: "美国航空", color: "#42536b", scale: 0.86 },
+  { x: 900, y: 1040, label: "东方航空", color: "#d83258", scale: 0.88 },
+  { x: 1070, y: 1040, label: "南方航空", color: "#1f8c65", scale: 0.86 },
+  { x: 1240, y: 1040, label: "亚洲航空", color: "#d51f2a", scale: 0.86 },
+  { x: 1410, y: 1040, label: "泰国航空", color: "#7b4ab8", scale: 0.86 },
+  { x: 1580, y: 1040, label: "大韩航空", color: "#4aa3df", scale: 0.86 },
+  { x: 1750, y: 1040, label: "印度航空", color: "#c22d2d", scale: 0.86 },
+  { x: 1920, y: 1040, label: "山东航空", color: "#f28b2f", scale: 0.84 },
+  { x: 2090, y: 1040, label: "澳门航空", color: "#2270b8", scale: 0.84 },
+  { x: 2260, y: 1040, label: "三亚航空", color: "#32a852", scale: 0.84 },
+  { x: 2430, y: 1040, label: "私人飞机", color: "#8f5fd9", scale: 0.78 },
+  { x: 2600, y: 1040, label: "军事飞机", color: "#4f6b48", scale: 0.9 },
+  { x: 2770, y: 1040, label: "普通飞机", color: "#64717b", scale: 0.84 }
 ];
 
 const flightClouds = [
   { x: 120, y: 90, s: 0.9, speed: 0.45 },
   { x: 520, y: 54, s: 0.65, speed: 0.33 },
   { x: 900, y: 126, s: 0.8, speed: 0.38 }
+];
+
+const breakableBuildings = [
+  { id: "terminal-a", type: "terminal", label: "一号航站楼", x: 360, y: 520, w: 230, h: 130, broken: false },
+  { id: "terminal-b", type: "terminal", label: "二号航站楼", x: 820, y: 500, w: 230, h: 130, broken: false },
+  { id: "terminal-c", type: "terminal", label: "三号航站楼", x: 2060, y: 480, w: 230, h: 130, broken: false },
+  { id: "terminal-d", type: "terminal", label: "四号航站楼", x: 2620, y: 470, w: 230, h: 130, broken: false },
+  { id: "office", type: "office", label: "航司办公楼", x: 300, y: 1740, w: 220, h: 310, broken: false },
+  { id: "hotel", type: "office", label: "酒店大楼", x: 2860, y: 1760, w: 220, h: 310, broken: false },
+  { id: "repair", type: "office", label: "维修大楼", x: 1430, y: 2920, w: 220, h: 310, broken: false },
+  { id: "military-hangar", type: "hangar", label: "军事机库", x: 470, y: 2480, w: 420, h: 250, broken: false },
+  { id: "private-hangar", type: "hangar", label: "私人飞机库", x: 1980, y: 2480, w: 420, h: 250, broken: false }
 ];
 
 const laneThemes = [
@@ -291,6 +304,9 @@ function resetVehicle() {
   vehicle.pilotVx = 0;
   joystickX = 0;
   joystickY = 0;
+  breakableBuildings.forEach((building) => {
+    building.broken = false;
+  });
   updateJoystickVisual();
 }
 
@@ -350,6 +366,38 @@ function startSmoothFlight() {
   tone(440, 0, 0.12, 0.02, "triangle");
   tone(660, 0.11, 0.14, 0.02, "triangle");
   return true;
+}
+
+function exitPlane() {
+  if (selectedLocation.category !== "flight") return false;
+  if (vehicle.mode === "walking") {
+    statusText.textContent = "你现在已经在飞机外面了。";
+    return true;
+  }
+  vehicle.mode = "walking";
+  vehicle.pilotX = vehicle.x - 70;
+  vehicle.pilotY = vehicle.y + 92;
+  vehicle.pilotVx = 0;
+  vehicle.vx = 0;
+  vehicle.vy = 0;
+  joystickX = 0;
+  joystickY = 0;
+  updateJoystickVisual();
+  statusText.textContent = "下飞机了！你又站在飞机旁边，可以走路，也可以再上飞机。";
+  return true;
+}
+
+function checkBuildingCrash() {
+  if (selectedLocation.category !== "flight" || vehicle.mode !== "flying") return;
+  breakableBuildings.forEach((building) => {
+    if (building.broken) return;
+    const hit = vehicle.x > building.x - 120 && vehicle.x < building.x + building.w + 120 && vehicle.y > building.y - 90 && vehicle.y < building.y + building.h + 90;
+    if (!hit) return;
+    building.broken = true;
+    statusText.textContent = `撞到${building.label}了！楼房断掉了，飞机没有坏，还能继续飞。`;
+    tone(110, 0, 0.22, 0.035, "sawtooth");
+    tone(74, 0.18, 0.28, 0.03, "sawtooth");
+  });
 }
 
 function updateJoystickVisual() {
@@ -595,7 +643,7 @@ function updateActivity() {
       vehicle.vx += Math.cos(vehicle.heading) * thrust;
       vehicle.vy += Math.sin(vehicle.heading) * thrust - joystickY * 0.74;
       vehicle.angle += (vehicle.heading + joystickX * 0.14 - vehicle.angle) * 0.12;
-      vehicle.y = Math.max(170, Math.min(flightWorld.h - 170, vehicle.y + vehicle.vy));
+      vehicle.y = Math.max(-520, Math.min(flightWorld.h + 520, vehicle.y + vehicle.vy));
     }
   } else if (selectedLocation.category === "water") {
     if (vehicle.mode === "slide") {
@@ -630,7 +678,8 @@ function updateActivity() {
   vehicle.vy *= selectedLocation.category === "flight" ? 0.965 : 0.9;
   if (selectedLocation.category !== "flight" || vehicle.mode !== "walking") vehicle.x += vehicle.vx;
   if (selectedLocation.category === "flight") {
-    vehicle.x = Math.max(160, Math.min(flightWorld.w - 160, vehicle.x));
+    vehicle.x = Math.max(-520, Math.min(flightWorld.w + 520, vehicle.x));
+    checkBuildingCrash();
     if (Math.abs(vehicle.x - flightWorld.finishX) < 120 && Math.abs(vehicle.y - flightWorld.finishY) < 180) {
       statusText.textContent = "到白色通关线旁边了，点“开始/互动”就能闯关成功。";
     }
@@ -1176,17 +1225,9 @@ function drawHugeAirport() {
   ctx.lineTo(760, 2500);
   ctx.stroke();
 
-  drawAirportTerminal(360, 520);
-  drawAirportTerminal(820, 500);
-  drawAirportTerminal(2060, 480);
-  drawAirportTerminal(2620, 470);
+  breakableBuildings.forEach((building) => drawBreakableBuilding(building));
   drawControlTower(1640, 650);
   drawWeatherTower(1830, 410);
-  drawOfficeTower(300, 1740, "航司办公楼");
-  drawOfficeTower(2860, 1760, "酒店大楼");
-  drawOfficeTower(1430, 2920, "维修大楼");
-  drawHangar(470, 2480, "军事机库");
-  drawHangar(1980, 2480, "私人飞机库");
   drawFinishLine();
 
   ctx.strokeStyle = "rgba(255,255,255,0.28)";
@@ -1207,9 +1248,9 @@ function drawHugeAirport() {
 
 function drawPlaneRunway(plane) {
   ctx.fillStyle = "#4d5966";
-  ctx.fillRect(plane.x - 122, plane.y + 110, 244, 62);
+  ctx.fillRect(plane.x - 135, plane.y + 138, 270, 72);
   ctx.fillStyle = "#fff";
-  for (let x = plane.x - 96; x < plane.x + 96; x += 50) ctx.fillRect(x, plane.y + 137, 28, 6);
+  for (let x = plane.x - 108; x < plane.x + 108; x += 54) ctx.fillRect(x, plane.y + 170, 30, 7);
 }
 
 function drawRunway(x, y, w, h, label) {
@@ -1285,6 +1326,43 @@ function drawOfficeTower(x, y, label) {
   ctx.fillText(label, x + 34, y + 286);
 }
 
+function drawBreakableBuilding(building) {
+  if (building.type === "terminal") drawAirportTerminal(building.x, building.y);
+  if (building.type === "office") drawOfficeTower(building.x, building.y, building.label);
+  if (building.type === "hangar") drawHangar(building.x, building.y, building.label);
+  if (!building.broken) return;
+  ctx.save();
+  ctx.translate(building.x, building.y);
+  ctx.fillStyle = "rgba(23,38,50,0.55)";
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  ctx.lineTo(building.w * 0.42, building.h * 0.34);
+  ctx.lineTo(building.w * 0.14, building.h);
+  ctx.lineTo(0, building.h);
+  ctx.closePath();
+  ctx.fill();
+  ctx.fillStyle = "rgba(240,106,163,0.72)";
+  ctx.beginPath();
+  ctx.moveTo(building.w, 0);
+  ctx.lineTo(building.w * 0.55, building.h * 0.42);
+  ctx.lineTo(building.w * 0.92, building.h);
+  ctx.lineTo(building.w, building.h);
+  ctx.closePath();
+  ctx.fill();
+  ctx.strokeStyle = "#172632";
+  ctx.lineWidth = 12;
+  ctx.beginPath();
+  ctx.moveTo(building.w * 0.2, 12);
+  ctx.lineTo(building.w * 0.48, building.h * 0.38);
+  ctx.lineTo(building.w * 0.38, building.h * 0.7);
+  ctx.lineTo(building.w * 0.68, building.h - 10);
+  ctx.stroke();
+  ctx.fillStyle = "#172632";
+  ctx.font = "900 30px system-ui";
+  ctx.fillText("断了", building.w * 0.32, building.h * 0.56);
+  ctx.restore();
+}
+
 function drawFinishLine() {
   ctx.strokeStyle = "#fff";
   ctx.lineWidth = 18;
@@ -1304,27 +1382,27 @@ function drawParkedPlane(plane) {
   drawPlaneShape(0, 0, 0, plane.color, false);
   ctx.restore();
   ctx.fillStyle = "#172632";
-  ctx.font = "900 26px system-ui";
-  ctx.fillText(plane.label, plane.x - 58, plane.y + 86 * plane.scale + 34);
+  ctx.font = "900 34px system-ui";
+  ctx.fillText(plane.label, plane.x - 70, plane.y + 96 * plane.scale + 58);
 }
 
 function drawWalkingPilot(x, y) {
-  const step = Math.sin(performance.now() * 0.016) * 14;
+  const step = Math.sin(performance.now() * 0.016) * 22;
   ctx.save();
   ctx.translate(x, y);
   ctx.lineCap = "round";
   ctx.strokeStyle = "#172632";
-  ctx.lineWidth = 8;
+  ctx.lineWidth = 11;
   ctx.beginPath();
   ctx.moveTo(-10, 26);
   ctx.lineTo(-18 - step * 0.25, 58);
   ctx.moveTo(10, 26);
   ctx.lineTo(18 + step * 0.25, 58);
   ctx.stroke();
-  drawEggyCharacter(0, -8, 0.62, vehicle.pilotVx * 0.02);
+  drawEggyCharacter(0, -18, 1.05, vehicle.pilotVx * 0.02);
   ctx.fillStyle = "#172632";
-  ctx.font = "900 22px system-ui";
-  ctx.fillText("我", -12, 80);
+  ctx.font = "900 34px system-ui";
+  ctx.fillText("我", -18, 100);
   ctx.restore();
 }
 
@@ -1806,6 +1884,13 @@ smoothFlightBtn.addEventListener("click", () => {
     return;
   }
   startSmoothFlight();
+});
+exitFlightBtn.addEventListener("click", () => {
+  if (selectedLocation.category !== "flight" || screen !== "activity") {
+    statusText.textContent = "先进入开飞机地点，再点下飞机。";
+    return;
+  }
+  exitPlane();
 });
 parkBtn.addEventListener("click", () => {
   locationPicker.hidden = !locationPicker.hidden;
