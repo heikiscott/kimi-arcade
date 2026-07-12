@@ -1779,22 +1779,43 @@ function drawTerminalInteriorHall(focusX) {
     ctx.beginPath();
     roundedRect(plane.x - 190, plane.y - 72, 380, 144, 8);
     ctx.stroke();
-    ctx.strokeStyle = "#ffd15f";
-    ctx.lineWidth = 4;
-    ctx.beginPath();
-    ctx.moveTo(plane.x + 195, plane.y);
-    ctx.lineTo(apronX + apronW - 120, plane.y);
-    ctx.stroke();
     ctx.fillStyle = "#fff";
     ctx.font = "900 24px system-ui";
     ctx.fillText(`停机位 ${index + 1}`, plane.x - 178, plane.y - 88);
   });
 
+  const routePlane = vehicle.mode === "walking" ? getNearestPlane().plane : (airportPlanes[vehicle.selectedPlaneIndex] || airportPlanes[0]);
+  const routeX = apronX + apronW - 120;
+  const runway = getTakeoffTarget();
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+  ctx.strokeStyle = "#172632";
+  ctx.lineWidth = 18;
+  ctx.beginPath();
+  ctx.moveTo(routePlane.x + 195, routePlane.y);
+  ctx.lineTo(routeX, routePlane.y);
+  ctx.lineTo(routeX, runway.y);
+  ctx.lineTo(runway.x, runway.y);
+  ctx.stroke();
+
+  ctx.strokeStyle = "#ffd15f";
+  ctx.lineWidth = 5;
+  ctx.setLineDash([34, 24]);
+  ctx.beginPath();
+  ctx.moveTo(routePlane.x + 195, routePlane.y);
+  ctx.lineTo(routeX, routePlane.y);
+  ctx.lineTo(routeX, runway.y);
+  ctx.lineTo(runway.x, runway.y);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.lineCap = "butt";
+  ctx.lineJoin = "miter";
+
   ctx.fillStyle = "#172632";
   ctx.font = "900 34px system-ui";
   ctx.fillText("机场停机坪", apronX + 34, apronY - 38);
   ctx.font = "800 23px system-ui";
-  ctx.fillText("黄线是滑行路线，飞机竖着排，飞机本身横着停", apronX + 34, apronY - 8);
+  ctx.fillText("黑色滑行道只显示当前路线，不会连出一堆线", apronX + 34, apronY - 8);
   ctx.restore();
 }
 
