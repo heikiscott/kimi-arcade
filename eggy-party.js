@@ -831,13 +831,24 @@ function updateActivity() {
   if (selectedLocation.category === "flight") {
     if (vehicle.mode === "walking") {
       const walkPower = vehicle.pilotBall ? 1.45 : 0.68;
-      if (left) vehicle.pilotVx -= boost ? walkPower * 1.6 : walkPower;
-      if (right) vehicle.pilotVx += boost ? walkPower * 1.6 : walkPower;
+      const stickWalkX = Math.abs(joystickX) > 0.08 ? joystickX : 0;
+      const stickWalkY = Math.abs(joystickY) > 0.08 ? joystickY : 0;
+      if (left) vehicle.pilotVx -= walkPower;
+      if (right) vehicle.pilotVx += walkPower;
+      if (up) vehicle.pilotVy -= walkPower;
+      if (boost) vehicle.pilotVy += walkPower;
+      vehicle.pilotVx += stickWalkX * walkPower * 1.4;
+      vehicle.pilotVy += stickWalkY * walkPower * 1.4;
       vehicle.pilotVx *= vehicle.pilotBall ? 0.9 : 0.82;
+      vehicle.pilotVy *= vehicle.pilotBall ? 0.9 : 0.82;
       vehicle.pilotX = Math.max(210, Math.min(flightWorld.w - 210, vehicle.pilotX + vehicle.pilotVx));
+      vehicle.pilotY = Math.max(260, Math.min(flightWorld.h - 260, vehicle.pilotY + vehicle.pilotVy));
       const nearest = getNearestPlane();
-      vehicle.pilotY = gateY(nearest.plane) + Math.sin(performance.now() * 0.012) * 4;
-      if (nearest.distance < 155) statusText.textContent = `你走到${nearest.plane.label}旁边了，点“上飞机”。`;
+      if (nearest.distance < 155) {
+        statusText.textContent = `你走到${nearest.plane.label}旁边了，点“上飞机”。`;
+      } else {
+        statusText.textContent = "你可以在停机坪上下左右走，靠近任意一架飞机再上飞机。";
+      }
     } else if (vehicle.mode === "plane-falling") {
       const fallElapsed = performance.now() - vehicle.fallStart;
       if (fallElapsed < vehicle.floatDuration) {
