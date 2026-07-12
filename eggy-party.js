@@ -83,6 +83,7 @@ const vehicle = {
   vx: 0,
   vy: 0,
   angle: 0,
+  bank: 0,
   heading: 0,
   mode: "free",
   progress: 0,
@@ -395,6 +396,7 @@ function resetVehicle() {
   vehicle.vx = 0;
   vehicle.vy = 0;
   vehicle.angle = 0;
+  vehicle.bank = 0;
   vehicle.heading = 0;
   vehicle.mode = selectedLocation.category === "flight" ? "walking" : "free";
   vehicle.progress = 0;
@@ -460,6 +462,7 @@ function boardNearestPlane() {
   vehicle.y = nearest.plane.y;
   vehicle.heading = 0;
   vehicle.angle = vehicle.heading;
+  vehicle.bank = 0;
   vehicle.vx = 0;
   vehicle.vy = 0;
   vehicle.landedPlaneVisible = false;
@@ -558,6 +561,7 @@ function takeoffPlane() {
   vehicle.vy = -4.2;
   vehicle.heading = -0.08;
   vehicle.angle = -0.08;
+  vehicle.bank = 0;
   statusText.textContent = "你点了起飞，飞机现在才离开跑道！";
   tone(440, 0, 0.12, 0.02, "triangle");
   tone(660, 0.11, 0.14, 0.02, "triangle");
@@ -992,9 +996,11 @@ function updateActivity() {
         vehicle.vx += Math.cos(vehicle.heading) * 0.12;
         vehicle.vy += Math.sin(vehicle.heading) * 0.12;
         vehicle.angle += Math.sin(fallElapsed * 0.004) * 0.004;
+        vehicle.bank += (Math.sin(fallElapsed * 0.003) * 0.42 - vehicle.bank) * 0.035;
       } else {
         vehicle.vy += 0.16;
         vehicle.angle += 0.018;
+        vehicle.bank += (0.72 - vehicle.bank) * 0.025;
       }
       vehicle.y += vehicle.vy;
       const remaining = Math.max(0, Math.ceil((vehicle.fallDuration - fallElapsed) / 1000));
@@ -1030,6 +1036,7 @@ function updateActivity() {
         const taxiSpeed = Math.max(1.2, Math.min(6.4, distance / 62));
         vehicle.heading += shortestAngle(vehicle.heading, desiredHeading) * 0.1;
         vehicle.angle += shortestAngle(vehicle.angle, vehicle.heading) * 0.14;
+        vehicle.bank += (0 - vehicle.bank) * 0.08;
         vehicle.vx += (Math.cos(desiredHeading) * taxiSpeed - vehicle.vx) * 0.1;
         vehicle.vy += (Math.sin(desiredHeading) * taxiSpeed - vehicle.vy) * 0.1;
         vehicle.y += vehicle.vy;
@@ -1037,6 +1044,7 @@ function updateActivity() {
       } else {
         vehicle.heading = 0;
         vehicle.angle += (0 - vehicle.angle) * 0.18;
+        vehicle.bank += (0 - vehicle.bank) * 0.08;
         vehicle.vx *= 0.88;
         vehicle.vy *= 0.84;
         vehicle.y += (target.y - vehicle.y) * 0.08;
@@ -1058,10 +1066,12 @@ function updateActivity() {
       vehicle.vy = 0;
       vehicle.heading = 0;
       vehicle.angle = 0;
+      vehicle.bank = 0;
     } else if (vehicle.mode === "takeoff-roll") {
       const target = getTakeoffTarget();
       vehicle.heading = 0;
       vehicle.angle += (0 - vehicle.angle) * 0.16;
+      vehicle.bank += (0 - vehicle.bank) * 0.08;
       vehicle.vy += (0 - vehicle.vy) * 0.15;
       vehicle.y += (target.y - vehicle.y) * 0.08;
       vehicle.vx = Math.max(0.8, Math.min(PLANE_TURBO_MAX_SPEED, vehicle.vx * 0.996));
@@ -1070,6 +1080,7 @@ function updateActivity() {
       const target = getLandingTarget();
       vehicle.heading = 0;
       vehicle.angle += (0 - vehicle.angle) * 0.18;
+      vehicle.bank += (0 - vehicle.bank) * 0.08;
       vehicle.vy = 0;
       vehicle.y += (target.y - vehicle.y) * 0.16;
       vehicle.vx = Math.max(1.15, vehicle.vx * 0.985);
@@ -1089,6 +1100,7 @@ function updateActivity() {
       const taxiSpeed = Math.max(0.55, Math.min(5.2, distance / 72));
       vehicle.heading += shortestAngle(vehicle.heading, desiredHeading) * 0.09;
       vehicle.angle += shortestAngle(vehicle.angle, vehicle.heading) * 0.12;
+      vehicle.bank += (0 - vehicle.bank) * 0.08;
       vehicle.vx += (Math.cos(desiredHeading) * taxiSpeed - vehicle.vx) * 0.09;
       vehicle.vy += (Math.sin(desiredHeading) * taxiSpeed - vehicle.vy) * 0.09;
       vehicle.y += vehicle.vy;
@@ -1102,6 +1114,7 @@ function updateActivity() {
         vehicle.vy = 0;
         vehicle.heading = 0;
         vehicle.angle = 0;
+        vehicle.bank = 0;
         vehicle.mode = "parked";
         statusText.textContent = "飞机回到停机位并锁住停好了，真的不会继续跑了。";
       }
@@ -1121,6 +1134,8 @@ function updateActivity() {
       const speedResponse = landingTurboActive ? 0.55 : 0.07;
       vehicle.heading += shortestAngle(vehicle.heading, desiredHeading) * turnRate;
       vehicle.angle += shortestAngle(vehicle.angle, vehicle.heading) * (landingTurboActive ? 0.24 : 0.11);
+      const landingTurn = shortestAngle(vehicle.angle, desiredHeading);
+      vehicle.bank += (Math.max(-0.5, Math.min(0.5, landingTurn * 1.8)) - vehicle.bank) * (landingTurboActive ? 0.09 : 0.045);
       vehicle.vx += (desiredVx - vehicle.vx) * speedResponse;
       vehicle.vy += (desiredVy - vehicle.vy) * speedResponse;
       vehicle.y += vehicle.vy;
@@ -1137,6 +1152,7 @@ function updateActivity() {
         vehicle.vy = 0;
         vehicle.heading = 0;
         vehicle.angle = 0;
+        vehicle.bank = 0;
         vehicle.landingTurboUntil = 0;
         vehicle.mode = "landing-rollout";
         statusText.textContent = "降落完成，停在白线之前了。现在先沿跑道滑行减速。";
@@ -1153,7 +1169,9 @@ function updateActivity() {
       const thrust = vehicle.mode === "flying" ? 0.62 : 0.16;
       vehicle.vx += Math.cos(vehicle.heading) * thrust;
       vehicle.vy += Math.sin(vehicle.heading) * thrust - joystickY * 0.74;
-      vehicle.angle += (vehicle.heading + joystickX * 0.14 - vehicle.angle) * 0.12;
+      const targetBank = vehicle.mode === "flying" ? Math.max(-0.82, Math.min(0.82, joystickX * 0.82)) : 0;
+      vehicle.bank += (targetBank - vehicle.bank) * 0.055;
+      vehicle.angle += shortestAngle(vehicle.angle, vehicle.heading) * 0.1;
       vehicle.y += vehicle.vy;
     }
   } else if (selectedLocation.category === "water") {
@@ -2232,14 +2250,25 @@ function drawWorldCloudField(focusX, focusY) {
 
 function drawAirplane(x, y, angle) {
   const plane = airportPlanes[vehicle.selectedPlaneIndex] || airportPlanes[0];
-  drawPlaneShape(x, y, angle, plane.color, true, plane.label, plane.model, plane.tailMark);
+  drawPlaneShape(x, y, angle, plane.color, true, plane.label, plane.model, plane.tailMark, vehicle.bank);
 }
 
-function drawPlaneShape(x, y, angle, color, showPilot, label = "", model = "波音737", tailMark = "JET") {
+function drawPlaneShape(x, y, angle, color, showPilot, label = "", model = "波音737", tailMark = "JET", bank = 0) {
+  const bankAmount = Math.max(-0.88, Math.min(0.88, bank));
+  const bankDepth = Math.abs(bankAmount);
+  const paperScale = 1 - bankDepth * 0.54;
+  const liftSide = bankAmount > 0 ? -1 : 1;
   ctx.save();
   ctx.translate(x, y);
   ctx.rotate(angle);
-  ctx.scale(1.36, 1.36);
+  if (bankDepth > 0.04) {
+    ctx.fillStyle = `rgba(23, 38, 50, ${0.08 + bankDepth * 0.14})`;
+    ctx.beginPath();
+    ctx.ellipse(0, 18 + bankDepth * 18, 178, 26 + bankDepth * 10, 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.scale(1.36, 1.36 * paperScale);
+  ctx.transform(1, bankAmount * 0.16, 0, 1, 0, 0);
 
   ctx.strokeStyle = "#172632";
   ctx.lineWidth = 5;
@@ -2247,8 +2276,8 @@ function drawPlaneShape(x, y, angle, color, showPilot, label = "", model = "波�
   ctx.beginPath();
   ctx.moveTo(-14, -20);
   ctx.lineTo(-78, -92);
-  ctx.lineTo(54, -31);
-  ctx.lineTo(76, -16);
+  ctx.lineTo(54, -31 - bankAmount * 10);
+  ctx.lineTo(76, -16 - bankAmount * 7);
   ctx.closePath();
   ctx.fill();
   ctx.stroke();
@@ -2256,8 +2285,8 @@ function drawPlaneShape(x, y, angle, color, showPilot, label = "", model = "波�
   ctx.beginPath();
   ctx.moveTo(-14, 20);
   ctx.lineTo(-78, 92);
-  ctx.lineTo(54, 31);
-  ctx.lineTo(76, 16);
+  ctx.lineTo(54, 31 - bankAmount * 10);
+  ctx.lineTo(76, 16 - bankAmount * 7);
   ctx.closePath();
   ctx.fill();
   ctx.stroke();
@@ -2288,6 +2317,17 @@ function drawPlaneShape(x, y, angle, color, showPilot, label = "", model = "波�
   ctx.closePath();
   ctx.fill();
   ctx.stroke();
+
+  if (bankDepth > 0.06) {
+    ctx.fillStyle = `rgba(255, 255, 255, ${0.12 + bankDepth * 0.26})`;
+    ctx.beginPath();
+    ctx.ellipse(8, liftSide * -13, 118, 9, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = `rgba(23, 38, 50, ${0.05 + bankDepth * 0.12})`;
+    ctx.beginPath();
+    ctx.ellipse(0, liftSide * 18, 132, 8, 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
 
   ctx.fillStyle = color;
   ctx.fillRect(-126, -18, 32, 36);
