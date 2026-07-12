@@ -112,6 +112,18 @@ function getDestinationAirport() {
   return destinationAirports[vehicle.destinationIndex] || destinationAirports[0];
 }
 
+function getAirportStyle() {
+  const destination = getDestinationAirport();
+  const text = `${selectedLocation.name || ""} ${selectedLocation.detail || ""} ${vehicle.currentAirport || ""} ${destination.country || ""} ${destination.city || ""} ${destination.airport || ""}`;
+  if (/埃及|开罗|CAI/.test(text)) return { key: "egypt", name: "埃及风格", ground: "#d8b46f", field: "#cfa35e", accent: "#f0c35b" };
+  if (/美国|西雅图|洛杉矶|纽约|旧金山|SEA|LAX|JFK|SFO/.test(text)) return { key: "usa", name: "美国风格", ground: "#7fc177", field: "#6cb56e", accent: "#2f79c8" };
+  if (/英国|伦敦|LHR/.test(text)) return { key: "uk", name: "英国风格", ground: "#74b86d", field: "#5fa463", accent: "#c8323c" };
+  if (/南非|约翰内斯堡|JNB/.test(text)) return { key: "south-africa", name: "南非风格", ground: "#b5c66c", field: "#8eb05c", accent: "#f2b44b" };
+  if (/中国|北京|上海|香港|PEK|PVG|HKG/.test(text)) return { key: "china", name: "中国风格", ground: "#78bd72", field: "#65aa68", accent: "#d8343f" };
+  if (/日本|东京|大阪|HND|KIX/.test(text)) return { key: "japan", name: "日本风格", ground: "#79c17c", field: "#69ad70", accent: "#f06aa3" };
+  return { key: "global", name: "国际机场风格", ground: "#89d06a", field: "#7abf63", accent: "#32a7e2" };
+}
+
 function populateDestinationSelect() {
   if (!destinationAirportSelect) return;
   destinationAirportSelect.innerHTML = destinationAirports
@@ -2353,7 +2365,8 @@ function drawFlightScene() {
   ctx.fill();
   ctx.fillStyle = "#172632";
   ctx.font = "900 18px system-ui";
-  ctx.fillText("近景机场视野 3365 公顷", W - 288, 56);
+  const airportStyle = getAirportStyle();
+  ctx.fillText(`${airportStyle.name} · 3365 公顷`, W - 288, 56);
   ctx.font = "800 14px system-ui";
   const destination = getDestinationAirport();
   const tripProgress = Math.min(100, Math.round((vehicle.flightDistance / INTERNATIONAL_TRIP_METERS) * 100));
@@ -2398,11 +2411,19 @@ function drawFlightScene() {
 }
 
 function drawAirportTerminal(x, y, w = 310, h = 220, label = "机场") {
-  ctx.fillStyle = "#fff";
+  const style = getAirportStyle();
+  ctx.fillStyle = style.key === "egypt" ? "#fff4d3" : "#fff";
   ctx.beginPath();
   roundedRect(x, y, w, h, 8);
   ctx.fill();
-  ctx.fillStyle = "#32a7e2";
+  ctx.fillStyle = style.accent;
+  if (style.key === "china") {
+    ctx.fillStyle = "#d8343f";
+    ctx.fillRect(x - 12, y - 20, w + 24, 28);
+    ctx.fillStyle = "#ffd15f";
+    ctx.fillRect(x + 18, y - 12, w - 36, 10);
+    ctx.fillStyle = "#d8343f";
+  }
   const cols = 4;
   const rows = Math.max(2, Math.floor(h / 74));
   for (let row = 0; row < rows; row += 1) {
@@ -2416,13 +2437,14 @@ function drawAirportTerminal(x, y, w = 310, h = 220, label = "机场") {
 }
 
 function drawHugeAirport() {
-  ctx.fillStyle = "#89d06a";
+  const style = getAirportStyle();
+  ctx.fillStyle = style.ground;
   ctx.fillRect(flightWorld.x, 0, flightWorld.w, flightWorld.h);
-  ctx.fillStyle = "#7abf63";
+  ctx.fillStyle = style.field;
   ctx.beginPath();
   ctx.arc(4250, 1950, 3920, 0, Math.PI * 2);
   ctx.fill();
-  ctx.fillStyle = "#83c967";
+  ctx.fillStyle = style.key === "egypt" ? "#e8c984" : "#83c967";
   ctx.beginPath();
   roundedRect(-2500, 1180, 3820, 780, 24);
   ctx.fill();
@@ -2448,6 +2470,7 @@ function drawHugeAirport() {
   ctx.lineTo(landingRunway.rolloutEndX, 3835);
   ctx.stroke();
 
+  drawAirportStyleLandmarks(style);
   breakableBuildings.forEach((building) => drawBreakableBuilding(building));
   drawControlTower(1640, 650);
   drawWeatherTower(1830, 410);
@@ -2575,6 +2598,209 @@ function drawRunway(x, y, w, h, label) {
   } else {
     for (let sy = y + 60; sy < y + h - 60; sy += 170) ctx.fillRect(x + w / 2 - 6, sy, 12, 90);
     ctx.fillText(label, x + 18, y + 38);
+  }
+}
+
+function drawAirportStyleLandmarks(style) {
+  ctx.save();
+  if (style.key === "egypt") {
+    drawPyramid(2280, 940, 360, 230);
+    drawPyramid(2680, 1000, 260, 170);
+    drawSphinxMarker(3150, 1140);
+    drawStyleLabel(2240, 820, "埃及风格机场");
+  } else if (style.key === "usa") {
+    drawUSATerminalSign(2220, 760);
+    drawControlFlag(2600, 720, "#2f79c8", "#d8343f");
+    drawStyleLabel(2200, 650, "美国风格机场");
+  } else if (style.key === "uk") {
+    drawClockTower(2240, 760);
+    drawRedBus(2530, 1060);
+    drawStyleLabel(2180, 650, "英国风格机场");
+  } else if (style.key === "china") {
+    drawChinaGate(2180, 840);
+    drawLanterns(2620, 800);
+    drawStyleLabel(2140, 700, "中国风格机场");
+  } else if (style.key === "south-africa") {
+    drawTableMountain(2180, 820);
+    drawSavannaTree(2760, 1060);
+    drawStyleLabel(2160, 700, "南非风格机场");
+  } else if (style.key === "japan") {
+    drawJapanGate(2240, 850);
+    drawSakuraCluster(2680, 980);
+    drawStyleLabel(2180, 700, "日本风格机场");
+  } else {
+    drawStyleLabel(2200, 700, "国际机场风格");
+  }
+  ctx.restore();
+}
+
+function drawStyleLabel(x, y, text) {
+  ctx.fillStyle = "rgba(255,255,255,0.86)";
+  ctx.beginPath();
+  roundedRect(x, y, 300, 62, 8);
+  ctx.fill();
+  ctx.fillStyle = "#172632";
+  ctx.font = "900 26px system-ui";
+  ctx.fillText(text, x + 24, y + 40);
+}
+
+function drawPyramid(x, y, w, h) {
+  ctx.fillStyle = "#d49b43";
+  ctx.beginPath();
+  ctx.moveTo(x, y + h);
+  ctx.lineTo(x + w / 2, y);
+  ctx.lineTo(x + w, y + h);
+  ctx.closePath();
+  ctx.fill();
+  ctx.strokeStyle = "#8a5f2f";
+  ctx.lineWidth = 8;
+  ctx.stroke();
+  ctx.fillStyle = "rgba(255,255,255,0.24)";
+  ctx.beginPath();
+  ctx.moveTo(x + w / 2, y);
+  ctx.lineTo(x + w * 0.64, y + h);
+  ctx.lineTo(x + w, y + h);
+  ctx.closePath();
+  ctx.fill();
+}
+
+function drawSphinxMarker(x, y) {
+  ctx.fillStyle = "#c88936";
+  ctx.beginPath();
+  ctx.ellipse(x, y, 120, 42, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(x - 80, y - 42, 44, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = "#172632";
+  ctx.font = "900 20px system-ui";
+  ctx.fillText("狮身人面像", x - 95, y + 86);
+}
+
+function drawUSATerminalSign(x, y) {
+  ctx.fillStyle = "#fff";
+  ctx.beginPath();
+  roundedRect(x, y, 420, 175, 8);
+  ctx.fill();
+  ctx.fillStyle = "#2f79c8";
+  ctx.fillRect(x + 22, y + 28, 376, 42);
+  ctx.fillStyle = "#d8343f";
+  ctx.fillRect(x + 22, y + 92, 376, 42);
+  ctx.fillStyle = "#172632";
+  ctx.font = "900 32px system-ui";
+  ctx.fillText("USA TERMINAL", x + 64, y + 154);
+}
+
+function drawControlFlag(x, y, blue, red) {
+  ctx.strokeStyle = "#172632";
+  ctx.lineWidth = 9;
+  ctx.beginPath();
+  ctx.moveTo(x, y);
+  ctx.lineTo(x, y + 210);
+  ctx.stroke();
+  ctx.fillStyle = blue;
+  ctx.fillRect(x + 10, y + 10, 150, 58);
+  ctx.fillStyle = red;
+  ctx.fillRect(x + 10, y + 68, 150, 58);
+  ctx.strokeRect(x + 10, y + 10, 150, 116);
+}
+
+function drawClockTower(x, y) {
+  ctx.fillStyle = "#b88852";
+  ctx.beginPath();
+  roundedRect(x, y, 120, 300, 8);
+  ctx.fill();
+  ctx.fillStyle = "#172632";
+  ctx.fillRect(x - 16, y - 35, 152, 50);
+  ctx.fillStyle = "#fff";
+  ctx.beginPath();
+  ctx.arc(x + 60, y + 82, 36, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = "#172632";
+  ctx.lineWidth = 5;
+  ctx.stroke();
+  ctx.fillStyle = "#172632";
+  ctx.font = "900 20px system-ui";
+  ctx.fillText("UK", x + 42, y + 90);
+}
+
+function drawRedBus(x, y) {
+  ctx.fillStyle = "#c8323c";
+  ctx.beginPath();
+  roundedRect(x, y, 230, 95, 12);
+  ctx.fill();
+  ctx.fillStyle = "#fff";
+  for (let i = 0; i < 5; i += 1) ctx.fillRect(x + 20 + i * 38, y + 18, 28, 24);
+  ctx.fillStyle = "#172632";
+  ctx.beginPath();
+  ctx.arc(x + 45, y + 98, 18, 0, Math.PI * 2);
+  ctx.arc(x + 185, y + 98, 18, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+function drawChinaGate(x, y) {
+  ctx.fillStyle = "#d8343f";
+  ctx.fillRect(x, y, 360, 60);
+  ctx.fillStyle = "#ffd15f";
+  ctx.fillRect(x + 30, y + 14, 300, 12);
+  ctx.fillStyle = "#8a2d2d";
+  ctx.fillRect(x + 42, y + 60, 42, 170);
+  ctx.fillRect(x + 276, y + 60, 42, 170);
+  ctx.fillStyle = "#172632";
+  ctx.font = "900 30px system-ui";
+  ctx.fillText("中国机场", x + 116, y + 45);
+}
+
+function drawLanterns(x, y) {
+  for (let i = 0; i < 4; i += 1) {
+    ctx.fillStyle = "#d8343f";
+    ctx.beginPath();
+    ctx.ellipse(x + i * 70, y + Math.sin(performance.now() * 0.004 + i) * 10, 24, 34, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#ffd15f";
+    ctx.fillRect(x - 18 + i * 70, y - 4, 36, 8);
+  }
+}
+
+function drawTableMountain(x, y) {
+  ctx.fillStyle = "#687a55";
+  ctx.beginPath();
+  ctx.moveTo(x, y + 220);
+  ctx.lineTo(x + 120, y + 70);
+  ctx.lineTo(x + 420, y + 70);
+  ctx.lineTo(x + 560, y + 220);
+  ctx.closePath();
+  ctx.fill();
+  ctx.fillStyle = "#f2b44b";
+  ctx.font = "900 26px system-ui";
+  ctx.fillText("Table Mountain", x + 156, y + 58);
+}
+
+function drawSavannaTree(x, y) {
+  ctx.fillStyle = "#775c34";
+  ctx.fillRect(x - 14, y - 92, 28, 92);
+  ctx.fillStyle = "#5a8c3d";
+  ctx.beginPath();
+  ctx.ellipse(x, y - 110, 112, 34, 0, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+function drawJapanGate(x, y) {
+  ctx.fillStyle = "#d8343f";
+  ctx.fillRect(x, y, 340, 36);
+  ctx.fillRect(x + 58, y + 36, 35, 175);
+  ctx.fillRect(x + 247, y + 36, 35, 175);
+  ctx.fillStyle = "#172632";
+  ctx.font = "900 30px system-ui";
+  ctx.fillText("日本机场", x + 108, y - 16);
+}
+
+function drawSakuraCluster(x, y) {
+  ctx.fillStyle = "#ffb7d2";
+  for (let i = 0; i < 18; i += 1) {
+    ctx.beginPath();
+    ctx.arc(x + Math.cos(i) * (40 + (i % 5) * 18), y + Math.sin(i * 1.4) * 55, 26, 0, Math.PI * 2);
+    ctx.fill();
   }
 }
 
@@ -2880,57 +3106,83 @@ function drawPlaneShape(x, y, angle, color, showPilot, label = "", model = "波�
   ctx.lineWidth = 5;
   ctx.fillStyle = color;
   ctx.beginPath();
-  ctx.moveTo(-14, -20);
-  ctx.lineTo(-78 + wingFold, -92);
-  ctx.lineTo(54 + wingFold * 0.36, -31);
-  ctx.lineTo(76 + wingFold * 0.2, -16);
+  ctx.moveTo(-18, -18);
+  ctx.lineTo(-92 + wingFold, -104);
+  ctx.lineTo(54 + wingFold * 0.4, -36);
+  ctx.lineTo(88 + wingFold * 0.22, -18);
   ctx.closePath();
   ctx.fill();
   ctx.stroke();
 
   ctx.beginPath();
-  ctx.moveTo(-14, 20);
-  ctx.lineTo(-78 + wingFold, 92);
-  ctx.lineTo(54 + wingFold * 0.36, 31);
-  ctx.lineTo(76 + wingFold * 0.2, 16);
+  ctx.moveTo(-18, 18);
+  ctx.lineTo(-92 + wingFold, 104);
+  ctx.lineTo(54 + wingFold * 0.4, 36);
+  ctx.lineTo(88 + wingFold * 0.22, 18);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+
+  drawPlaneEngine(-24 + wingFold * 0.42, -61, bankDepth, -1);
+  drawPlaneEngine(-24 + wingFold * 0.42, 61, bankDepth, 1);
+
+  ctx.strokeStyle = "#172632";
+  ctx.lineWidth = 4;
+  ctx.beginPath();
+  ctx.moveTo(-38 + wingFold * 0.38, -38);
+  ctx.lineTo(-24 + wingFold * 0.42, -52);
+  ctx.moveTo(-38 + wingFold * 0.38, 38);
+  ctx.lineTo(-24 + wingFold * 0.42, 52);
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.moveTo(-108, -15);
+  ctx.lineTo(-168, -58);
+  ctx.lineTo(-144, -5);
   ctx.closePath();
   ctx.fill();
   ctx.stroke();
 
   ctx.beginPath();
-  ctx.moveTo(-98, -13);
-  ctx.lineTo(-148, -50);
-  ctx.lineTo(-132, -4);
-  ctx.closePath();
-  ctx.fill();
-  ctx.stroke();
-
-  ctx.beginPath();
-  ctx.moveTo(-98, 13);
-  ctx.lineTo(-148, 50);
-  ctx.lineTo(-132, 4);
+  ctx.moveTo(-108, 15);
+  ctx.lineTo(-168, 58);
+  ctx.lineTo(-144, 5);
   ctx.closePath();
   ctx.fill();
   ctx.stroke();
 
   ctx.fillStyle = "#ffffff";
   ctx.beginPath();
-  ctx.moveTo(-124, -22);
-  ctx.bezierCurveTo(-58, -34, 62, -31, 122, -7);
-  ctx.quadraticCurveTo(146, 0, 122, 7);
-  ctx.bezierCurveTo(62, 31, -58, 34, -124, 22);
-  ctx.quadraticCurveTo(-148, 0, -124, -22);
+  ctx.moveTo(-144, -22);
+  ctx.bezierCurveTo(-76, -39, 66, -36, 132, -10);
+  ctx.quadraticCurveTo(166, 0, 132, 10);
+  ctx.bezierCurveTo(66, 36, -76, 39, -144, 22);
+  ctx.quadraticCurveTo(-172, 0, -144, -22);
   ctx.closePath();
   ctx.fill();
+  ctx.stroke();
+
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 9;
+  ctx.beginPath();
+  ctx.moveTo(-120, 0);
+  ctx.bezierCurveTo(-66, -6, 58, -5, 116, 0);
+  ctx.stroke();
+
+  ctx.strokeStyle = "rgba(23,38,50,0.28)";
+  ctx.lineWidth = 4;
+  ctx.beginPath();
+  ctx.moveTo(-126, -22);
+  ctx.bezierCurveTo(-60, -32, 64, -30, 128, -10);
   ctx.stroke();
 
   if (bankDepth > 0.06) {
     ctx.fillStyle = `rgba(23, 38, 50, ${0.08 + bankDepth * 0.08})`;
     ctx.beginPath();
-    ctx.moveTo(-124, -22);
-    ctx.bezierCurveTo(-58 + foldSide * bodyThickness, -34, 62 + foldSide * bodyThickness, -31, 122 + foldSide * bodyThickness, -7);
-    ctx.quadraticCurveTo(146 + foldSide * bodyThickness, 0, 122, 7);
-    ctx.bezierCurveTo(62, 31, -58, 34, -124, 22);
+    ctx.moveTo(-144, -22);
+    ctx.bezierCurveTo(-76 + foldSide * bodyThickness, -39, 66 + foldSide * bodyThickness, -36, 132 + foldSide * bodyThickness, -10);
+    ctx.quadraticCurveTo(166 + foldSide * bodyThickness, 0, 132, 10);
+    ctx.bezierCurveTo(66, 36, -76, 39, -144, 22);
     ctx.closePath();
     ctx.fill();
     ctx.fillStyle = `rgba(255, 255, 255, ${0.1 + bankDepth * 0.18})`;
@@ -2944,22 +3196,50 @@ function drawPlaneShape(x, y, angle, color, showPilot, label = "", model = "波�
   }
 
   ctx.fillStyle = color;
-  ctx.fillRect(-126, -18, 32, 36);
-  ctx.strokeRect(-126, -18, 32, 36);
+  ctx.fillRect(-150, -18, 44, 36);
+  ctx.strokeRect(-150, -18, 44, 36);
 
   ctx.fillStyle = "#172632";
   ctx.beginPath();
-  ctx.arc(104, -5, 6, 0, Math.PI * 2);
-  ctx.arc(104, 5, 6, 0, Math.PI * 2);
+  ctx.arc(-153, -10, 8, 0, Math.PI * 2);
+  ctx.arc(-153, 10, 8, 0, Math.PI * 2);
   ctx.fill();
 
+  ctx.fillStyle = "#4b5560";
+  ctx.beginPath();
+  ctx.ellipse(-170, 0, 13, 20, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = "#172632";
+  ctx.beginPath();
+  ctx.arc(-172, 0, 6, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = "#172632";
+  ctx.beginPath();
+  ctx.arc(126, -6, 6, 0, Math.PI * 2);
+  ctx.arc(126, 6, 6, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = "rgba(50,167,226,0.82)";
+  ctx.beginPath();
+  ctx.moveTo(112, -12);
+  ctx.quadraticCurveTo(142, -8, 151, 0);
+  ctx.quadraticCurveTo(142, 8, 112, 12);
+  ctx.closePath();
+  ctx.fill();
+  ctx.strokeStyle = "#172632";
+  ctx.lineWidth = 3;
+  ctx.stroke();
+
   ctx.fillStyle = "rgba(50,167,226,0.55)";
-  for (let wx = -72; wx <= 54; wx += 21) {
+  for (let wx = -92; wx <= 66; wx += 21) {
     ctx.beginPath();
     ctx.ellipse(wx, -17, 5, 3, 0, 0, Math.PI * 2);
     ctx.ellipse(wx, 17, 5, 3, 0, 0, Math.PI * 2);
     ctx.fill();
   }
+
+  drawPlaneLandingGear(bankDepth);
 
   ctx.save();
   ctx.textAlign = "center";
@@ -2979,6 +3259,55 @@ function drawPlaneShape(x, y, angle, color, showPilot, label = "", model = "波�
 
   if (showPilot) drawEggyCharacter(16, -52, 0.66, 0);
   ctx.restore();
+}
+
+function drawPlaneEngine(x, y, bankDepth = 0, side = 1) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.fillStyle = "#172632";
+  ctx.fillRect(-8, side < 0 ? 11 : -17, 18, 8);
+  ctx.fillStyle = "#dce5eb";
+  ctx.beginPath();
+  ctx.ellipse(0, 0, 30 - bankDepth * 5, 20, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = "#172632";
+  ctx.lineWidth = 5;
+  ctx.stroke();
+  ctx.strokeStyle = "rgba(255,255,255,0.75)";
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(-12, -8);
+  ctx.lineTo(12, 8);
+  ctx.moveTo(-12, 8);
+  ctx.lineTo(12, -8);
+  ctx.stroke();
+  ctx.fillStyle = "#64717b";
+  ctx.beginPath();
+  ctx.ellipse(7, side * 1, 12, 9, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+  ctx.fillStyle = "#172632";
+  ctx.beginPath();
+  ctx.arc(9, side * 1, 4, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+}
+
+function drawPlaneLandingGear(bankDepth = 0) {
+  const alpha = 0.55 + bankDepth * 0.18;
+  ctx.fillStyle = `rgba(23,38,50,${alpha})`;
+  [
+    [86, -15, 6],
+    [86, 15, 6],
+    [-44, -29, 8],
+    [-44, 29, 8],
+    [-92, -18, 7],
+    [-92, 18, 7]
+  ].forEach(([gx, gy, r]) => {
+    ctx.beginPath();
+    ctx.arc(gx, gy, r, 0, Math.PI * 2);
+    ctx.fill();
+  });
 }
 
 function drawWaterScene() {
