@@ -148,7 +148,7 @@ h1 {
 .flight-controls {
   grid-column: 1 / -1;
   display: grid;
-  grid-template-columns: repeat(9, minmax(78px, 1fr)) minmax(260px, 1.5fr);
+  grid-template-columns: repeat(auto-fit, minmax(82px, 1fr));
   gap: 12px;
   align-items: center;
   margin-top: 12px;
@@ -167,6 +167,7 @@ h1 {
 }
 
 .flight-controls p {
+  grid-column: 1 / -1;
   margin: 0;
   color: #4f5e68;
   font-weight: 850;
