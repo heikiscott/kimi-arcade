@@ -179,6 +179,17 @@ const avatar = {
   treeLevel: 0
 };
 
+const transfer = {
+  active: false,
+  place: null,
+  startTime: 0,
+  eggX: 120,
+  eggY: 470,
+  machineX: 810,
+  machineY: 314,
+  completed: false
+};
+
 const DAY_LENGTH = 60000;
 let screen = "lobby";
 let activeCategory = "challenge";
@@ -1068,6 +1079,9 @@ function startCourse(locationName = selectedLocation.name) {
 
 function goLobby(message = "回到蛋仔派对大厅。点“乐园”选择新地点。") {
   screen = "lobby";
+  transfer.active = false;
+  transfer.place = null;
+  transfer.completed = false;
   updateContextControls();
   playing = false;
   won = false;
@@ -1095,6 +1109,28 @@ function nextLane() {
 }
 
 function selectLocation(place) {
+  startTransfer(place);
+}
+
+function startTransfer(place) {
+  getAudio();
+  transfer.active = true;
+  transfer.place = place;
+  transfer.startTime = performance.now();
+  transfer.eggX = 120;
+  transfer.eggY = 470;
+  transfer.completed = false;
+  screen = "transfer";
+  playing = false;
+  won = false;
+  elapsed = 0;
+  locationPicker.hidden = true;
+  levelText.textContent = "飞行圆桶传送机";
+  statusText.textContent = `小蛋仔正在走向飞行圆桶传送机，准备去：${place.name}。`;
+  updateContextControls();
+}
+
+function enterLocation(place) {
   selectedLocation = place;
   levelText.textContent = place.name;
   updateContextControls();
@@ -1113,7 +1149,7 @@ function selectLocation(place) {
 }
 
 function updateContextControls() {
-  if (flightControls) flightControls.hidden = selectedLocation.category !== "flight" || screen === "lobby";
+  if (flightControls) flightControls.hidden = selectedLocation.category !== "flight" || screen !== "activity";
   if (challengeControls) challengeControls.hidden = screen !== "course";
 }
 
@@ -1752,6 +1788,185 @@ function drawLobby() {
   ctx.font = "800 19px system-ui";
   ctx.fillText(isNightTime() ? "夜晚来了：僵尸会追你，快躲开！" : "左右走，跳/开始互动：坐摩天轮、爬樱花树、看喷泉。", 38, 96);
   drawDayClock();
+}
+
+function drawTransfer() {
+  drawSky();
+  ctx.fillStyle = "#6cc07a";
+  ctx.fillRect(0, 410, W, 210);
+  ctx.fillStyle = "#caa57a";
+  ctx.beginPath();
+  ctx.ellipse(520, 520, 430, 80, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  const place = transfer.place || selectedLocation;
+  const elapsedTransfer = performance.now() - transfer.startTime;
+  const progress = Math.min(1, elapsedTransfer / 5200);
+  transfer.eggX = 120 + (transfer.machineX - 92 - 120) * progress;
+  transfer.eggY = 470 + Math.sin(elapsedTransfer * 0.014) * 5;
+
+  drawTransferPreview(place);
+  drawFlyingBarrelMachine(transfer.machineX, transfer.machineY, progress);
+  drawEggyCharacter(transfer.eggX, transfer.eggY, 1, Math.sin(elapsedTransfer * 0.016) * 0.08);
+  drawTransferSpeech(transfer.eggX, transfer.eggY - 78, elapsedTransfer);
+
+  ctx.fillStyle = "#172632";
+  ctx.font = "900 34px system-ui";
+  ctx.fillText("飞行圆桶传送机", 36, 64);
+  ctx.font = "800 19px system-ui";
+  ctx.fillText(`准备去：${place.name}`, 38, 96);
+
+  if (progress >= 1 && !transfer.completed) {
+    transfer.completed = true;
+    setTimeout(() => {
+      if (screen === "transfer" && transfer.place === place) enterLocation(place);
+    }, 260);
+  }
+}
+
+function drawTransferPreview(place) {
+  ctx.save();
+  ctx.fillStyle = "rgba(255,255,255,0.88)";
+  ctx.beginPath();
+  roundedRect(42, 128, 326, 222, 8);
+  ctx.fill();
+  ctx.strokeStyle = "#172632";
+  ctx.lineWidth = 5;
+  ctx.stroke();
+  ctx.fillStyle = "#172632";
+  ctx.font = "900 22px system-ui";
+  ctx.fillText("目的地预览", 64, 164);
+  ctx.font = "800 17px system-ui";
+  ctx.fillText(place.name, 64, 194);
+  ctx.fillStyle = "#d9f5ff";
+  ctx.fillRect(66, 214, 276, 104);
+  ctx.save();
+  ctx.beginPath();
+  roundedRect(66, 214, 276, 104, 8);
+  ctx.clip();
+  drawMiniDestinationScene(66, 214, 276, 104, place.category);
+  ctx.restore();
+  ctx.fillStyle = "#4f5e68";
+  ctx.font = "800 14px system-ui";
+  ctx.fillText(place.detail || "选好后自动前往", 66, 338);
+  ctx.restore();
+}
+
+function drawMiniDestinationScene(x, y, w, h, category) {
+  ctx.fillStyle = category === "flight" ? "#aee3ff" : category === "water" ? "#b9f1ff" : category === "metro" ? "#dce5eb" : category === "fish" ? "#dff6d8" : category === "history" ? "#22364f" : "#ffe1ef";
+  ctx.fillRect(x, y, w, h);
+  ctx.fillStyle = "#6cc07a";
+  ctx.fillRect(x, y + h - 28, w, 28);
+  if (category === "flight") {
+    drawRunway(x + 18, y + 62, w - 36, 18, "机场");
+    drawPlaneShape(x + 150, y + 48, 0, "#d8343f", false, "AIR", "A320", "GO", 0);
+  } else if (category === "water") {
+    ctx.fillStyle = "#32a7e2";
+    ctx.beginPath();
+    ctx.arc(x + 78, y + 58, 34, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = "#f06aa3";
+    ctx.lineWidth = 10;
+    ctx.beginPath();
+    ctx.moveTo(x + 152, y + 12);
+    ctx.bezierCurveTo(x + 225, y + 24, x + 96, y + 58, x + 230, y + 94);
+    ctx.stroke();
+  } else if (category === "metro") {
+    ctx.fillStyle = "#424b57";
+    ctx.fillRect(x + 18, y + 64, w - 36, 16);
+    ctx.fillStyle = "#fff";
+    ctx.beginPath();
+    roundedRect(x + 58, y + 34, 150, 38, 8);
+    ctx.fill();
+  } else if (category === "fish") {
+    ctx.fillStyle = "#32a7e2";
+    ctx.fillRect(x, y + 54, w, 34);
+    drawTree(x + 66, y + 36, 0.42);
+    ctx.fillStyle = "#ffd15f";
+    ctx.fillText("鱼", x + 182, y + 76);
+  } else if (category === "history") {
+    ctx.fillStyle = "#dce5eb";
+    ctx.fillRect(x + 84, y + 18, 28, 78);
+    ctx.fillRect(x + 156, y + 18, 28, 78);
+    ctx.fillStyle = "#fff2b8";
+    ctx.fillRect(x + 120, y + 10, 24, 90);
+  } else {
+    ctx.fillStyle = "#ffd15f";
+    ctx.fillRect(x + 48, y + 70, 60, 16);
+    ctx.fillRect(x + 162, y + 44, 70, 16);
+    ctx.fillStyle = "#8f5fd9";
+    ctx.beginPath();
+    ctx.arc(x + 238, y + 72, 18, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
+function drawFlyingBarrelMachine(x, y, progress) {
+  const bob = Math.sin(performance.now() * 0.006) * 7;
+  const rotor = performance.now() * 0.04;
+  ctx.save();
+  ctx.translate(x, y + bob);
+  ctx.strokeStyle = "#172632";
+  ctx.lineWidth = 6;
+  ctx.fillStyle = "rgba(255,255,255,0.82)";
+  ctx.beginPath();
+  roundedRect(-68, -4, 136, 136, 20);
+  ctx.fill();
+  ctx.stroke();
+  ctx.fillStyle = "#32a7e2";
+  ctx.beginPath();
+  ctx.arc(0, 58, 30, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+  ctx.fillStyle = "#172632";
+  ctx.beginPath();
+  ctx.arc(0, 58, 12, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = "#172632";
+  ctx.beginPath();
+  ctx.moveTo(0, -6);
+  ctx.lineTo(0, -58);
+  ctx.stroke();
+  ctx.save();
+  ctx.translate(0, -64);
+  ctx.rotate(rotor);
+  ctx.fillStyle = "#ffd15f";
+  ctx.beginPath();
+  roundedRect(-112, -8, 224, 16, 8);
+  ctx.fill();
+  ctx.rotate(Math.PI / 2);
+  ctx.beginPath();
+  roundedRect(-80, -7, 160, 14, 7);
+  ctx.fill();
+  ctx.restore();
+  ctx.fillStyle = "#f06aa3";
+  ctx.beginPath();
+  ctx.arc(-44, 18, 10 + Math.sin(progress * Math.PI) * 4, 0, Math.PI * 2);
+  ctx.arc(44, 18, 10 + Math.cos(progress * Math.PI) * 3, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = "#172632";
+  ctx.font = "900 18px system-ui";
+  ctx.fillText("传送机", -34, 158);
+  ctx.restore();
+}
+
+function drawTransferSpeech(x, y, elapsedTransfer) {
+  const lines = ["走走走走", "快点快点", "咔咔", "我的小蛋仔"];
+  const text = lines[Math.floor(elapsedTransfer / 850) % lines.length];
+  ctx.save();
+  ctx.fillStyle = "rgba(255,255,255,0.9)";
+  ctx.beginPath();
+  roundedRect(x - 76, y - 38, 152, 36, 8);
+  ctx.fill();
+  ctx.strokeStyle = "#172632";
+  ctx.lineWidth = 3;
+  ctx.stroke();
+  ctx.fillStyle = "#172632";
+  ctx.font = "900 17px system-ui";
+  ctx.textAlign = "center";
+  ctx.fillText(text, x, y - 15);
+  ctx.textAlign = "left";
+  ctx.restore();
 }
 
 function drawNightSky() {
@@ -3569,6 +3784,8 @@ function draw() {
     drawCourse();
   } else if (screen === "activity") {
     drawActivity();
+  } else if (screen === "transfer") {
+    drawTransfer();
   } else {
     drawLobby();
   }
@@ -3763,6 +3980,10 @@ canvas.addEventListener("pointerup", stopFlightLookDrag);
 canvas.addEventListener("pointercancel", stopFlightLookDrag);
 
 startBtn.addEventListener("click", () => {
+  if (screen === "transfer") {
+    statusText.textContent = "飞行圆桶传送机正在带你过去，等小蛋仔走到头就到了。";
+    return;
+  }
   if (screen === "lobby" && lobbyInteract()) return;
   if (screen === "activity" && activityInteract()) return;
   if (selectedLocation.category && selectedLocation.category !== "lobby" && selectedLocation.category !== "challenge") {
