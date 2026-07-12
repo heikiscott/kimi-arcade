@@ -1169,7 +1169,7 @@ function updateActivity() {
       const thrust = vehicle.mode === "flying" ? 0.62 : 0.16;
       vehicle.vx += Math.cos(vehicle.heading) * thrust;
       vehicle.vy += Math.sin(vehicle.heading) * thrust - joystickY * 0.74;
-      const targetBank = vehicle.mode === "flying" ? Math.max(-0.82, Math.min(0.82, joystickX * 0.82)) : 0;
+      const targetBank = vehicle.mode === "flying" ? Math.max(-0.62, Math.min(0.62, joystickX * 0.62)) : 0;
       vehicle.bank += (targetBank - vehicle.bank) * 0.055;
       vehicle.angle += shortestAngle(vehicle.angle, vehicle.heading) * 0.1;
       vehicle.y += vehicle.vy;
@@ -2254,39 +2254,41 @@ function drawAirplane(x, y, angle) {
 }
 
 function drawPlaneShape(x, y, angle, color, showPilot, label = "", model = "波音737", tailMark = "JET", bank = 0) {
-  const bankAmount = Math.max(-0.88, Math.min(0.88, bank));
+  const bankAmount = Math.max(-0.66, Math.min(0.66, bank));
   const bankDepth = Math.abs(bankAmount);
-  const paperScale = 1 - bankDepth * 0.54;
+  const bookScale = 1 - bankDepth * 0.2;
   const liftSide = bankAmount > 0 ? -1 : 1;
+  const wingLift = bankAmount * 24;
+  const bodyThickness = bankDepth * 12;
   ctx.save();
   ctx.translate(x, y);
   ctx.rotate(angle);
   if (bankDepth > 0.04) {
-    ctx.fillStyle = `rgba(23, 38, 50, ${0.08 + bankDepth * 0.14})`;
+    ctx.fillStyle = `rgba(23, 38, 50, ${0.07 + bankDepth * 0.12})`;
     ctx.beginPath();
-    ctx.ellipse(0, 18 + bankDepth * 18, 178, 26 + bankDepth * 10, 0, 0, Math.PI * 2);
+    ctx.ellipse(0, 18 + bankDepth * 10, 178, 24 + bankDepth * 6, 0, 0, Math.PI * 2);
     ctx.fill();
   }
-  ctx.scale(1.36, 1.36 * paperScale);
-  ctx.transform(1, bankAmount * 0.16, 0, 1, 0, 0);
+  ctx.scale(1.36, 1.36 * bookScale);
+  ctx.transform(1, bankAmount * 0.08, 0, 1, 0, 0);
 
   ctx.strokeStyle = "#172632";
   ctx.lineWidth = 5;
   ctx.fillStyle = color;
   ctx.beginPath();
   ctx.moveTo(-14, -20);
-  ctx.lineTo(-78, -92);
-  ctx.lineTo(54, -31 - bankAmount * 10);
-  ctx.lineTo(76, -16 - bankAmount * 7);
+  ctx.lineTo(-78, -92 + wingLift);
+  ctx.lineTo(54, -31 + wingLift * 0.36);
+  ctx.lineTo(76, -16 + wingLift * 0.2);
   ctx.closePath();
   ctx.fill();
   ctx.stroke();
 
   ctx.beginPath();
   ctx.moveTo(-14, 20);
-  ctx.lineTo(-78, 92);
-  ctx.lineTo(54, 31 - bankAmount * 10);
-  ctx.lineTo(76, 16 - bankAmount * 7);
+  ctx.lineTo(-78, 92 + wingLift);
+  ctx.lineTo(54, 31 + wingLift * 0.36);
+  ctx.lineTo(76, 16 + wingLift * 0.2);
   ctx.closePath();
   ctx.fill();
   ctx.stroke();
@@ -2319,13 +2321,21 @@ function drawPlaneShape(x, y, angle, color, showPilot, label = "", model = "波�
   ctx.stroke();
 
   if (bankDepth > 0.06) {
-    ctx.fillStyle = `rgba(255, 255, 255, ${0.12 + bankDepth * 0.26})`;
+    ctx.fillStyle = `rgba(23, 38, 50, ${0.08 + bankDepth * 0.08})`;
     ctx.beginPath();
-    ctx.ellipse(8, liftSide * -13, 118, 9, 0, 0, Math.PI * 2);
+    ctx.moveTo(-122, 22);
+    ctx.bezierCurveTo(-54, 33 + bodyThickness, 62, 30 + bodyThickness, 121, 8 + bodyThickness);
+    ctx.quadraticCurveTo(135, 11 + bodyThickness, 122, 7);
+    ctx.bezierCurveTo(62, 31, -58, 34, -124, 22);
+    ctx.closePath();
     ctx.fill();
-    ctx.fillStyle = `rgba(23, 38, 50, ${0.05 + bankDepth * 0.12})`;
+    ctx.fillStyle = `rgba(255, 255, 255, ${0.1 + bankDepth * 0.18})`;
     ctx.beginPath();
-    ctx.ellipse(0, liftSide * 18, 132, 8, 0, 0, Math.PI * 2);
+    ctx.ellipse(8, liftSide * -11, 118, 7, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = `rgba(23, 38, 50, ${0.04 + bankDepth * 0.08})`;
+    ctx.beginPath();
+    ctx.ellipse(0, liftSide * 17, 132, 6, 0, 0, Math.PI * 2);
     ctx.fill();
   }
 
