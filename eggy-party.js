@@ -148,21 +148,21 @@ const flightWorld = {
 };
 
 const airportPlanes = [
-  { x: 760, y: 580, label: "日本航空", color: "#d8343f", scale: 1.12 },
-  { x: 760, y: 790, label: "中国航空", color: "#2f79c8", scale: 1.12 },
-  { x: 760, y: 1000, label: "美国航空", color: "#42536b", scale: 1.12 },
-  { x: 760, y: 1210, label: "东方航空", color: "#d83258", scale: 1.14 },
-  { x: 760, y: 1420, label: "南方航空", color: "#1f8c65", scale: 1.12 },
-  { x: 760, y: 1630, label: "亚洲航空", color: "#d51f2a", scale: 1.12 },
-  { x: 760, y: 1840, label: "泰国航空", color: "#7b4ab8", scale: 1.12 },
-  { x: 760, y: 2050, label: "大韩航空", color: "#4aa3df", scale: 1.12 },
-  { x: 760, y: 2260, label: "印度航空", color: "#c22d2d", scale: 1.12 },
-  { x: 760, y: 2470, label: "山东航空", color: "#f28b2f", scale: 1.1 },
-  { x: 760, y: 2680, label: "澳门航空", color: "#2270b8", scale: 1.1 },
-  { x: 760, y: 2890, label: "三亚航空", color: "#32a852", scale: 1.1 },
-  { x: 760, y: 3100, label: "私人飞机", color: "#8f5fd9", scale: 1.04 },
-  { x: 760, y: 3310, label: "军事飞机", color: "#4f6b48", scale: 1.16 },
-  { x: 760, y: 3520, label: "普通飞机", color: "#64717b", scale: 1.1 }
+  { x: 760, y: 580, label: "日本航空", model: "波音737", tailMark: "JL", color: "#d8343f", scale: 1.12 },
+  { x: 760, y: 790, label: "中国航空", model: "空客A320", tailMark: "CA", color: "#2f79c8", scale: 1.12 },
+  { x: 760, y: 1000, label: "美国航空", model: "波音737", tailMark: "AA", color: "#42536b", scale: 1.12 },
+  { x: 760, y: 1210, label: "东方航空", model: "空客A330", tailMark: "MU", color: "#d83258", scale: 1.14 },
+  { x: 760, y: 1420, label: "南方航空", model: "波音737", tailMark: "CZ", color: "#1f8c65", scale: 1.12 },
+  { x: 760, y: 1630, label: "亚洲航空", model: "空客A320", tailMark: "AK", color: "#d51f2a", scale: 1.12 },
+  { x: 760, y: 1840, label: "泰国航空", model: "空客A330", tailMark: "TG", color: "#7b4ab8", scale: 1.12 },
+  { x: 760, y: 2050, label: "大韩航空", model: "波音737", tailMark: "KE", color: "#4aa3df", scale: 1.12 },
+  { x: 760, y: 2260, label: "印度航空", model: "空客A320", tailMark: "AI", color: "#c22d2d", scale: 1.12 },
+  { x: 760, y: 2470, label: "山东航空", model: "波音737", tailMark: "SC", color: "#f28b2f", scale: 1.1 },
+  { x: 760, y: 2680, label: "澳门航空", model: "空客A320", tailMark: "NX", color: "#2270b8", scale: 1.1 },
+  { x: 760, y: 2890, label: "三亚航空", model: "波音737", tailMark: "SY", color: "#32a852", scale: 1.1 },
+  { x: 760, y: 3100, label: "海南航空", model: "空客A330", tailMark: "HU", color: "#8f5fd9", scale: 1.08 },
+  { x: 760, y: 3310, label: "春秋航空", model: "空客A320", tailMark: "9C", color: "#4f6b48", scale: 1.08 },
+  { x: 760, y: 3520, label: "吉祥航空", model: "波音737", tailMark: "HO", color: "#f06aa3", scale: 1.1 }
 ];
 
 function gateY(plane) {
@@ -1993,7 +1993,7 @@ function drawParkedPlane(plane) {
   ctx.save();
   ctx.translate(plane.x, plane.y);
   ctx.scale(plane.scale, plane.scale);
-  drawPlaneShape(0, 0, 0, plane.color, false, plane.label);
+  drawPlaneShape(0, 0, 0, plane.color, false, plane.label, plane.model, plane.tailMark);
   ctx.restore();
 }
 
@@ -2109,59 +2109,97 @@ function drawWorldCloudField(focusX, focusY) {
 
 function drawAirplane(x, y, angle) {
   const plane = airportPlanes[vehicle.selectedPlaneIndex] || airportPlanes[0];
-  drawPlaneShape(x, y, angle, plane.color, true, plane.label);
+  drawPlaneShape(x, y, angle, plane.color, true, plane.label, plane.model, plane.tailMark);
 }
 
-function drawPlaneShape(x, y, angle, color, showPilot, label = "") {
+function drawPlaneShape(x, y, angle, color, showPilot, label = "", model = "波音737", tailMark = "JET") {
   ctx.save();
   ctx.translate(x, y);
   ctx.rotate(angle);
   ctx.scale(1.36, 1.36);
-  ctx.fillStyle = "#fff";
-  ctx.beginPath();
-  ctx.ellipse(0, 0, 116, 28, 0, 0, Math.PI * 2);
-  ctx.fill();
+
   ctx.strokeStyle = "#172632";
   ctx.lineWidth = 5;
-  ctx.stroke();
   ctx.fillStyle = color;
   ctx.beginPath();
-  ctx.moveTo(-10, 0);
-  ctx.lineTo(-95, 76);
-  ctx.lineTo(60, 22);
+  ctx.moveTo(-14, -20);
+  ctx.lineTo(-78, -92);
+  ctx.lineTo(54, -31);
+  ctx.lineTo(76, -16);
   ctx.closePath();
   ctx.fill();
   ctx.stroke();
+
   ctx.beginPath();
-  ctx.moveTo(-18, -4);
-  ctx.lineTo(-85, -58);
-  ctx.lineTo(52, -18);
+  ctx.moveTo(-14, 20);
+  ctx.lineTo(-78, 92);
+  ctx.lineTo(54, 31);
+  ctx.lineTo(76, 16);
   ctx.closePath();
   ctx.fill();
   ctx.stroke();
-  ctx.fillStyle = "#f06aa3";
+
   ctx.beginPath();
-  ctx.moveTo(-96, -10);
-  ctx.lineTo(-138, -50);
-  ctx.lineTo(-120, 6);
+  ctx.moveTo(-98, -13);
+  ctx.lineTo(-148, -50);
+  ctx.lineTo(-132, -4);
   ctx.closePath();
   ctx.fill();
   ctx.stroke();
+
+  ctx.beginPath();
+  ctx.moveTo(-98, 13);
+  ctx.lineTo(-148, 50);
+  ctx.lineTo(-132, 4);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.fillStyle = "#ffffff";
+  ctx.beginPath();
+  ctx.moveTo(-124, -22);
+  ctx.bezierCurveTo(-58, -34, 62, -31, 122, -7);
+  ctx.quadraticCurveTo(146, 0, 122, 7);
+  ctx.bezierCurveTo(62, 31, -58, 34, -124, 22);
+  ctx.quadraticCurveTo(-148, 0, -124, -22);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.fillStyle = color;
+  ctx.fillRect(-126, -18, 32, 36);
+  ctx.strokeRect(-126, -18, 32, 36);
+
   ctx.fillStyle = "#172632";
   ctx.beginPath();
-  ctx.arc(92, -4, 9, 0, Math.PI * 2);
+  ctx.arc(104, -5, 6, 0, Math.PI * 2);
+  ctx.arc(104, 5, 6, 0, Math.PI * 2);
   ctx.fill();
-  if (label) {
-    ctx.save();
-    ctx.textAlign = "center";
-    ctx.lineWidth = 6;
-    ctx.strokeStyle = "#fff";
-    ctx.fillStyle = "#172632";
-    ctx.font = "900 25px system-ui";
-    ctx.strokeText(label, -18, 8);
-    ctx.fillText(label, -18, 8);
-    ctx.restore();
+
+  ctx.fillStyle = "rgba(50,167,226,0.55)";
+  for (let wx = -72; wx <= 54; wx += 21) {
+    ctx.beginPath();
+    ctx.ellipse(wx, -17, 5, 3, 0, 0, Math.PI * 2);
+    ctx.ellipse(wx, 17, 5, 3, 0, 0, Math.PI * 2);
+    ctx.fill();
   }
+
+  ctx.save();
+  ctx.textAlign = "center";
+  ctx.lineWidth = 5;
+  ctx.strokeStyle = "#fff";
+  ctx.fillStyle = "#172632";
+  ctx.font = "900 18px system-ui";
+  ctx.strokeText(model, -2, -4);
+  ctx.fillText(model, -2, -4);
+  ctx.font = "900 15px system-ui";
+  ctx.strokeText(label, -2, 17);
+  ctx.fillText(label, -2, 17);
+  ctx.fillStyle = "#fff";
+  ctx.font = "900 15px system-ui";
+  ctx.fillText(tailMark, -110, 5);
+  ctx.restore();
+
   if (showPilot) drawEggyCharacter(16, -52, 0.66, 0);
   ctx.restore();
 }
