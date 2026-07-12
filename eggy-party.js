@@ -23,6 +23,7 @@ const ballModeBtn = document.querySelector("#ballModeBtn");
 const crashSongBtn = document.querySelector("#crashSongBtn");
 const flightControls = document.querySelector("#flightControls");
 const challengeControls = document.querySelector("#challengeControls");
+const destinationAirportSelect = document.querySelector("#destinationAirportSelect");
 const flightStick = document.querySelector("#flightStick");
 const flightKnob = document.querySelector("#flightKnob");
 const locationPicker = document.querySelector("#locationPicker");
@@ -34,6 +35,8 @@ const W = canvas.width;
 const H = canvas.height;
 const PLANE_TURBO_MULTIPLIER = 100;
 const PLANE_TURBO_MAX_SPEED = 1800;
+const INTERNATIONAL_TRIP_METERS = 300000;
+const FLIGHT_METERS_PER_WORLD_UNIT = 42;
 const keys = new Set();
 const controls = new Set();
 const controlPointers = new Map();
@@ -56,6 +59,39 @@ const namedPlaces = {
   challenge: ["传送门五路", "弹簧塔五路", "机场风道五路", "地铁轨道五路", "夜晚躲避五路"]
 };
 
+const destinationAirports = [
+  { country: "新加坡", city: "新加坡", airport: "新加坡樟宜机场", code: "SIN" },
+  { country: "美国", city: "西雅图", airport: "西雅图塔科马机场", code: "SEA" },
+  { country: "美国", city: "洛杉矶", airport: "洛杉矶国际机场", code: "LAX" },
+  { country: "美国", city: "纽约", airport: "纽约肯尼迪机场", code: "JFK" },
+  { country: "美国", city: "旧金山", airport: "旧金山国际机场", code: "SFO" },
+  { country: "英国", city: "伦敦", airport: "伦敦希思罗机场", code: "LHR" },
+  { country: "法国", city: "巴黎", airport: "巴黎戴高乐机场", code: "CDG" },
+  { country: "日本", city: "东京", airport: "东京羽田机场", code: "HND" },
+  { country: "日本", city: "大阪", airport: "关西国际机场", code: "KIX" },
+  { country: "韩国", city: "首尔", airport: "仁川国际机场", code: "ICN" },
+  { country: "中国", city: "北京", airport: "北京首都机场", code: "PEK" },
+  { country: "中国", city: "上海", airport: "上海浦东机场", code: "PVG" },
+  { country: "中国", city: "香港", airport: "香港国际机场", code: "HKG" },
+  { country: "泰国", city: "曼谷", airport: "素万那普机场", code: "BKK" },
+  { country: "马来西亚", city: "吉隆坡", airport: "吉隆坡国际机场", code: "KUL" },
+  { country: "澳大利亚", city: "悉尼", airport: "悉尼金斯福德史密斯机场", code: "SYD" },
+  { country: "加拿大", city: "温哥华", airport: "温哥华国际机场", code: "YVR" },
+  { country: "德国", city: "法兰克福", airport: "法兰克福机场", code: "FRA" },
+  { country: "意大利", city: "罗马", airport: "罗马菲乌米奇诺机场", code: "FCO" },
+  { country: "西班牙", city: "马德里", airport: "马德里巴拉哈斯机场", code: "MAD" },
+  { country: "阿联酋", city: "迪拜", airport: "迪拜国际机场", code: "DXB" },
+  { country: "卡塔尔", city: "多哈", airport: "哈马德国际机场", code: "DOH" },
+  { country: "印度", city: "德里", airport: "德里英迪拉甘地机场", code: "DEL" },
+  { country: "土耳其", city: "伊斯坦布尔", airport: "伊斯坦布尔机场", code: "IST" },
+  { country: "荷兰", city: "阿姆斯特丹", airport: "史基浦机场", code: "AMS" },
+  { country: "巴西", city: "圣保罗", airport: "瓜鲁柳斯国际机场", code: "GRU" },
+  { country: "南非", city: "约翰内斯堡", airport: "奥利弗坦博机场", code: "JNB" },
+  { country: "新西兰", city: "奥克兰", airport: "奥克兰机场", code: "AKL" },
+  { country: "墨西哥", city: "墨西哥城", airport: "墨西哥城国际机场", code: "MEX" },
+  { country: "埃及", city: "开罗", airport: "开罗国际机场", code: "CAI" }
+];
+
 function buildLocations(category) {
   const names = namedPlaces[category.key] || [];
   return Array.from({ length: category.count }, (_, index) => ({
@@ -67,6 +103,26 @@ function buildLocations(category) {
 }
 
 const locations = Object.fromEntries(categories.map((category) => [category.key, buildLocations(category)]));
+
+function destinationLabel(destination) {
+  return `${destination.country} · ${destination.city} · ${destination.airport} (${destination.code})`;
+}
+
+function getDestinationAirport() {
+  return destinationAirports[vehicle.destinationIndex] || destinationAirports[0];
+}
+
+function populateDestinationSelect() {
+  if (!destinationAirportSelect) return;
+  destinationAirportSelect.innerHTML = destinationAirports
+    .map((destination, index) => `<option value="${index}">${destinationLabel(destination)}</option>`)
+    .join("");
+  destinationAirportSelect.value = String(vehicle.destinationIndex);
+}
+
+function syncDestinationSelect() {
+  if (destinationAirportSelect) destinationAirportSelect.value = String(vehicle.destinationIndex);
+}
 
 const egg = {
   x: 100,
@@ -105,6 +161,12 @@ const vehicle = {
   landingTargetX: 0,
   landingTargetY: 0,
   groundRunway: "takeoff",
+  destinationIndex: 1,
+  currentAirport: "云端机场",
+  tripOrigin: "云端机场",
+  flightDistance: 0,
+  lastFlightX: 0,
+  lastFlightY: 0,
   selectedPlaneIndex: 0
 };
 
@@ -559,6 +621,7 @@ function applyAimPower(direction = "front") {
 }
 
 function resetVehicle() {
+  const airportName = selectedLocation.category === "flight" ? selectedLocation.name : "云端机场";
   vehicle.selectedPlaneIndex = 0;
   vehicle.x = selectedLocation.category === "flight" ? airportPlanes[0].x : 520;
   vehicle.y = selectedLocation.category === "flight" ? airportPlanes[0].y : 420;
@@ -581,6 +644,11 @@ function resetVehicle() {
   vehicle.landingTargetX = 0;
   vehicle.landingTargetY = 0;
   vehicle.groundRunway = "takeoff";
+  vehicle.currentAirport = airportName;
+  vehicle.tripOrigin = airportName;
+  vehicle.flightDistance = 0;
+  vehicle.lastFlightX = vehicle.x;
+  vehicle.lastFlightY = vehicle.y;
   joystickX = 0;
   joystickY = 0;
   flightLookOffsetX = 0;
@@ -592,6 +660,7 @@ function resetVehicle() {
     building.brokenAt = 0;
   });
   updateJoystickVisual();
+  syncDestinationSelect();
 }
 
 function resetAvatar() {
@@ -750,7 +819,12 @@ function takeoffPlane() {
   vehicle.heading = -0.08;
   vehicle.angle = -0.08;
   vehicle.bank = 0;
-  statusText.textContent = "你点了起飞，飞机现在才离开跑道！";
+  vehicle.tripOrigin = vehicle.currentAirport || selectedLocation.name;
+  vehicle.flightDistance = 0;
+  vehicle.lastFlightX = vehicle.x;
+  vehicle.lastFlightY = vehicle.y;
+  const destination = getDestinationAirport();
+  statusText.textContent = `你点了起飞，飞机从${vehicle.tripOrigin}飞往${destination.airport}。飞满 300000 米就到另一个国家机场！`;
   tone(440, 0, 0.12, 0.02, "triangle");
   tone(660, 0.11, 0.14, 0.02, "triangle");
   return true;
@@ -846,6 +920,42 @@ function landPlane() {
   vehicle.angle += (0 - vehicle.angle) * 0.35;
   statusText.textContent = "自动降落开始：飞机会横着飞到停机坪后方的跑道，不会突然掉头反过来。";
   return true;
+}
+
+function updateInternationalTrip() {
+  if (selectedLocation.category !== "flight" || vehicle.mode !== "flying") return;
+  const dx = vehicle.x - vehicle.lastFlightX;
+  const dy = vehicle.y - vehicle.lastFlightY;
+  vehicle.flightDistance += Math.hypot(dx, dy) * FLIGHT_METERS_PER_WORLD_UNIT;
+  vehicle.lastFlightX = vehicle.x;
+  vehicle.lastFlightY = vehicle.y;
+  if (vehicle.flightDistance >= INTERNATIONAL_TRIP_METERS) arriveAtDestinationAirport();
+}
+
+function arriveAtDestinationAirport() {
+  const destination = getDestinationAirport();
+  vehicle.currentAirport = destination.airport;
+  vehicle.tripOrigin = destination.airport;
+  vehicle.flightDistance = 0;
+  vehicle.landingTargetX = landingRunway.targetX;
+  vehicle.landingTargetY = landingRunway.centerY;
+  vehicle.x = landingRunway.targetX;
+  vehicle.y = landingRunway.centerY;
+  vehicle.vx = 7.5;
+  vehicle.vy = 0;
+  vehicle.heading = 0;
+  vehicle.angle = 0;
+  vehicle.bank = 0;
+  vehicle.landingTurboUntil = 0;
+  vehicle.mode = "landing-rollout";
+  selectedLocation = {
+    ...selectedLocation,
+    name: destination.airport,
+    detail: `${destination.country} · ${destination.city} · 已到达目的地机场`
+  };
+  levelText.textContent = selectedLocation.name;
+  statusText.textContent = `到达！你已经飞了 300000 米，来到${destination.country}${destination.city}的${destination.airport}。`;
+  winSound();
 }
 
 function exitPlane() {
@@ -1008,7 +1118,7 @@ function updateContextControls() {
 }
 
 function getActivityHelp(category) {
-  if (category === "flight") return `${selectedLocation.name}：你在机场停机坪上，走到飞机旁边上飞机，再点“去起飞跑道”或“去降落跑道”。`;
+  if (category === "flight") return `${selectedLocation.name}：先选目的地机场，再上飞机；飞满 300000 米就到另一个国家机场。`;
   if (category === "water") return `${selectedLocation.name}：这里有大喇叭、漩涡和蛇形滑道，点互动开始滑水。`;
   if (category === "metro") return `${selectedLocation.name}：站台门在前面，点互动进驾驶台，再控制地铁往下一站开。`;
   if (category === "fish") return `${selectedLocation.name}：站在河边捞东西，可能捞到鱼、锅、僵尸蛋、宝箱或者奇怪玩具。`;
@@ -1402,6 +1512,7 @@ function updateActivity() {
   vehicle.vy *= selectedLocation.category === "flight" ? 0.965 : 0.9;
   if (selectedLocation.category !== "flight" || vehicle.mode !== "walking") vehicle.x += vehicle.vx;
   if (selectedLocation.category === "flight") {
+    updateInternationalTrip();
     checkBuildingCrash();
     if (Math.abs(vehicle.x - flightWorld.finishX) < 120 && Math.abs(vehicle.y - flightWorld.finishY) < 180) {
       statusText.textContent = "到白色通关线旁边了，点“开始/互动”就能闯关成功。";
@@ -1977,6 +2088,8 @@ function drawFlightScene() {
   ctx.font = "900 18px system-ui";
   ctx.fillText("近景机场视野 3365 公顷", W - 288, 56);
   ctx.font = "800 14px system-ui";
+  const destination = getDestinationAirport();
+  const tripProgress = Math.min(100, Math.round((vehicle.flightDistance / INTERNATIONAL_TRIP_METERS) * 100));
   const line1 = vehicle.mode === "walking"
     ? "停机坪上，走到飞机旁边"
     : vehicle.mode === "plane-falling" || vehicle.mode === "landed"
@@ -1993,9 +2106,9 @@ function drawFlightScene() {
         ? "落地后跑道滑行减速"
       : vehicle.mode === "taxi-to-gate"
           ? "降落后滑回停机位"
-        : vehicle.mode === "parked"
+      : vehicle.mode === "parked"
           ? "飞机已经锁住停好"
-      : `飞行坐标 ${Math.round(vehicle.x)} / ${Math.round(vehicle.y)}`;
+      : `目的地 ${destination.code} · ${tripProgress}%`;
   const line2 = vehicle.mode === "plane-falling" || vehicle.mode === "landed"
     ? "拖屏幕：上看、下看、左看、右看"
     : vehicle.mode === "taxi-takeoff"
@@ -2012,7 +2125,7 @@ function drawFlightScene() {
         ? "自动回到停机位"
       : vehicle.mode === "parked"
         ? "锁住了，点开始可再次飞行"
-    : "操纵杆：下拉上升，上推下降";
+    : `${Math.min(INTERNATIONAL_TRIP_METERS, Math.round(vehicle.flightDistance))} / 300000 米`;
   ctx.fillText(line1, W - 288, 82);
   ctx.fillText(line2, W - 288, 104);
 }
@@ -3666,6 +3779,13 @@ restartBtn.addEventListener("click", () => {
   }
   startCourse(selectedLocation.category === "challenge" ? selectedLocation.name : "五条路线 01");
 });
+if (destinationAirportSelect) {
+  destinationAirportSelect.addEventListener("change", () => {
+    vehicle.destinationIndex = Number(destinationAirportSelect.value) || 0;
+    const destination = getDestinationAirport();
+    statusText.textContent = `目的地改成：${destination.airport}。起飞后飞满 300000 米就到${destination.country}${destination.city}。`;
+  });
+}
 boardFlightBtn.addEventListener("click", () => {
   if (selectedLocation.category !== "flight" || screen !== "activity") {
     statusText.textContent = "先点乐园，选择开飞机地点。";
@@ -3767,6 +3887,7 @@ closePickerBtn.addEventListener("click", () => {
   locationPicker.hidden = true;
 });
 
+populateDestinationSelect();
 renderCategories();
 renderLocations();
 draw();
