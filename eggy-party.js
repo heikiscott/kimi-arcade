@@ -98,6 +98,8 @@ const vehicle = {
   planeCrashExploded: false,
   landedPlaneVisible: false,
   landingTurboUntil: 0,
+  landingTargetX: 0,
+  landingTargetY: 0,
   selectedPlaneIndex: 0
 };
 
@@ -150,19 +152,19 @@ let lastZombieCatch = 0;
 const fishLoots = ["鱼", "锅", "僵尸蛋", "宝箱", "奇怪玩具", "水草", "金色贝壳", "破旧钥匙"];
 
 const flightWorld = {
-  w: 11800,
+  w: 22000,
   h: 3900,
-  finishX: 11350,
+  finishX: 21450,
   finishY: 1820
 };
 
 const landingRunway = {
   x: 8420,
   y: 1540,
-  w: 3150,
+  w: 12500,
   h: 190,
   targetX: 8660,
-  rolloutEndX: 11020,
+  rolloutEndX: 20400,
   centerY: 1635
 };
 
@@ -204,8 +206,8 @@ function landingGroundY(x) {
 function getLandingTarget() {
   const plane = airportPlanes[vehicle.selectedPlaneIndex] || airportPlanes[0];
   return {
-    x: landingRunway.targetX,
-    y: landingRunway.centerY,
+    x: vehicle.landingTargetX || landingRunway.targetX,
+    y: vehicle.landingTargetY || landingRunway.centerY,
     plane
   };
 }
@@ -419,6 +421,8 @@ function resetVehicle() {
   vehicle.planeCrashExploded = false;
   vehicle.landedPlaneVisible = false;
   vehicle.landingTurboUntil = 0;
+  vehicle.landingTargetX = 0;
+  vehicle.landingTargetY = 0;
   joystickX = 0;
   joystickY = 0;
   flightLookOffsetX = 0;
@@ -656,11 +660,17 @@ function landPlane() {
     statusText.textContent = "现在不在飞机里，不能降落。";
     return true;
   }
+  const targetX = Math.max(
+    landingRunway.targetX,
+    Math.min(landingRunway.rolloutEndX - 1400, vehicle.x + 1200)
+  );
+  vehicle.landingTargetX = targetX;
+  vehicle.landingTargetY = landingRunway.centerY;
   const target = getLandingTarget();
   vehicle.mode = "auto-landing";
   vehicle.heading = Math.atan2(target.y - vehicle.y, target.x - vehicle.x);
   vehicle.angle += (vehicle.heading - vehicle.angle) * 0.35;
-  statusText.textContent = "自动降落开始：飞机会飞到右边新增的专用降落跑道，滑很长一段减速，然后回停机位。";
+  statusText.textContent = "自动降落开始：飞机会找前方的专用降落跑道，不会突然掉头反过来。";
   return true;
 }
 
@@ -1129,6 +1139,9 @@ function updateActivity() {
         statusText.textContent = "飞机回到停机位并锁住停好了，真的不会继续跑了。";
       }
     } else if (vehicle.mode === "auto-landing") {
+      if (vehicle.landingTargetX < vehicle.x + 260) {
+        vehicle.landingTargetX = Math.min(landingRunway.rolloutEndX - 900, vehicle.x + 900);
+      }
       const target = getLandingTarget();
       const dx = target.x - vehicle.x;
       const dy = target.y - vehicle.y;
@@ -1843,7 +1856,7 @@ function drawHugeAirport() {
   ctx.fill();
   ctx.fillStyle = "#83c967";
   ctx.beginPath();
-  roundedRect(8060, 1180, 3600, 1420, 24);
+  roundedRect(8060, 1180, 13280, 1420, 24);
   ctx.fill();
   ctx.fillStyle = "#424b57";
   drawRunway(260, 1540, 7920, 190, "起飞/降落长跑道");
@@ -1854,8 +1867,8 @@ function drawHugeAirport() {
   ctx.lineWidth = 58;
   ctx.beginPath();
   ctx.moveTo(360, 1360);
-  ctx.lineTo(11380, 1360);
-  ctx.lineTo(11380, 2680);
+  ctx.lineTo(21380, 1360);
+  ctx.lineTo(21380, 2680);
   ctx.lineTo(760, 2680);
   ctx.stroke();
 
