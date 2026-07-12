@@ -74,7 +74,9 @@ const egg = {
   vy: 0,
   r: 25,
   grounded: false,
-  face: 1
+  face: 1,
+  jetpackUntil: 0,
+  usedPowerups: new Set()
 };
 
 const vehicle = {
@@ -392,6 +394,44 @@ function getLaneHammers() {
   ];
 }
 
+function getLaneGadgets() {
+  const sets = [
+    [
+      { id: "jetpack-0", type: "jetpack", x: 300, y: 430, label: "喷气背包" },
+      { id: "high-0", type: "high", x: 575, y: 372, label: "高跳方块" },
+      { id: "portal-0", type: "portal", x: 760, y: 430, label: "传送门" }
+    ],
+    [
+      { id: "hook-1", type: "hook", x: 330, y: 405, label: "钩子" },
+      { id: "launcher-1", type: "launcher", x: 535, y: 455, label: "三角弹射" },
+      { id: "sword-1", type: "sword", x: 700, y: 390, label: "剑冲刺" }
+    ],
+    [
+      { id: "jetpack-2", type: "jetpack", x: 245, y: 455, label: "喷气背包" },
+      { id: "sword-2", type: "sword", x: 610, y: 430, label: "剑" },
+      { id: "portal-2", type: "portal", x: 800, y: 456, label: "传送门" }
+    ],
+    [
+      { id: "launcher-3", type: "launcher", x: 322, y: 426, label: "三角弹射" },
+      { id: "high-3", type: "high", x: 505, y: 350, label: "高跳方块" },
+      { id: "hook-3", type: "hook", x: 690, y: 410, label: "钩子" }
+    ],
+    [
+      { id: "jetpack-4", type: "jetpack", x: 250, y: 438, label: "喷气背包" },
+      { id: "launcher-4", type: "launcher", x: 520, y: 362, label: "三角弹射" },
+      { id: "sword-4", type: "sword", x: 720, y: 435, label: "剑冲刺" }
+    ]
+  ];
+  return sets[laneIndex] || sets[0];
+}
+
+function getTimedPlatforms() {
+  return [
+    { id: `drop-${laneIndex}-1`, x: 360, y: 470 - laneIndex * 8, w: 118, h: 24, triggerX: 285 },
+    { id: `drop-${laneIndex}-2`, x: 745, y: 438 + (laneIndex % 2) * 34, w: 112, h: 24, triggerX: 675 }
+  ].filter((p) => egg.x > p.triggerX);
+}
+
 function resetEgg() {
   egg.x = 100;
   egg.y = 462;
@@ -399,6 +439,58 @@ function resetEgg() {
   egg.vy = 0;
   egg.grounded = false;
   egg.face = 1;
+  egg.jetpackUntil = 0;
+  egg.usedPowerups = new Set();
+}
+
+function triggerGadget(gadget) {
+  if (egg.usedPowerups.has(gadget.id)) return;
+  egg.usedPowerups.add(gadget.id);
+  if (gadget.type === "jetpack") {
+    egg.jetpackUntil = performance.now() + 11000;
+    egg.vy = -7;
+    statusText.textContent = "捡到喷气背包！11 秒内按住跳，可以喷气往上飞。";
+    tone(784, 0, 0.16, 0.025, "triangle");
+    tone(1175, 0.12, 0.18, 0.022, "triangle");
+    return;
+  }
+  if (gadget.type === "launcher") {
+    egg.vx = 13;
+    egg.vy = -16;
+    statusText.textContent = "三角弹射器启动！直接把你弹过大坑。";
+    jumpSound();
+    return;
+  }
+  if (gadget.type === "high") {
+    egg.vy = -22;
+    egg.grounded = false;
+    statusText.textContent = "高跳方块！这一跳特别高。";
+    jumpSound();
+    return;
+  }
+  if (gadget.type === "sword") {
+    egg.vx = 18;
+    egg.vy = -5;
+    statusText.textContent = "剑冲刺！向前穿过难点。";
+    tone(988, 0, 0.12, 0.025, "sawtooth");
+    return;
+  }
+  if (gadget.type === "hook") {
+    egg.vx = 14;
+    egg.vy = -12;
+    egg.x = Math.min(830, egg.x + 145);
+    statusText.textContent = "钩子拉住你，甩到前面去了！";
+    tone(660, 0, 0.12, 0.02, "square");
+    return;
+  }
+  if (gadget.type === "portal") {
+    egg.x = Math.min(860, egg.x + 190);
+    egg.y = Math.max(270, egg.y - 80);
+    egg.vx = 9;
+    egg.vy = -6;
+    statusText.textContent = "传送门打开！直接传到前面一段。";
+    portalSound();
+  }
 }
 
 function resetVehicle() {
@@ -1337,6 +1429,12 @@ function updateCourse() {
     egg.grounded = false;
     jumpSound();
   }
+  if (performance.now() < egg.jetpackUntil && jump) {
+    egg.vy -= 0.72;
+    egg.vy = Math.max(-13.8, egg.vy);
+    egg.vx += egg.face * 0.12;
+    statusText.textContent = `喷气背包还剩 ${Math.max(0, Math.ceil((egg.jetpackUntil - performance.now()) / 1000))} 秒，按住跳继续飞。`;
+  }
 
   egg.vx *= egg.grounded ? 0.82 : 0.94;
   egg.vx = Math.max(-maxSpeed, Math.min(maxSpeed, egg.vx));
@@ -1346,7 +1444,7 @@ function updateCourse() {
   egg.y += egg.vy;
   egg.grounded = false;
 
-  getLanePlatforms().forEach((p) => {
+  [...getLanePlatforms(), ...getTimedPlatforms()].forEach((p) => {
     const prevBottom = egg.y - egg.vy + egg.r;
     const bottom = egg.y + egg.r;
     const withinX = egg.x + egg.r > p.x && egg.x - egg.r < p.x + p.w;
@@ -1355,6 +1453,11 @@ function updateCourse() {
       egg.vy = 0;
       egg.grounded = true;
     }
+  });
+
+  getLaneGadgets().forEach((gadget) => {
+    if (egg.usedPowerups.has(gadget.id)) return;
+    if (Math.hypot(egg.x - gadget.x, egg.y - gadget.y) < egg.r + 28) triggerGadget(gadget);
   });
 
   getLanePads().forEach((pad) => {
@@ -2957,7 +3060,9 @@ function drawCourse() {
     ctx.fillStyle = "rgba(255,255,255,0.35)";
     ctx.fillRect(p.x + 12, p.y + 8, p.w - 24, 6);
   });
+  getTimedPlatforms().forEach(drawTimedPlatform);
   getLanePads().forEach(drawPad);
+  getLaneGadgets().forEach(drawGadget);
   getLaneHammers().forEach((hammer, index) => drawHammer(hammer, index));
   laneStars.forEach((star) => {
     if (!star.got) drawStar(star.x, star.y, 18);
@@ -2968,7 +3073,7 @@ function drawCourse() {
   ctx.font = "900 28px system-ui";
   ctx.fillText(`${selectedLocation.name} · 第 ${laneIndex + 1}/5 条路线 · ${laneThemes[laneIndex].name}`, 32, 58);
   ctx.font = "800 17px system-ui";
-  ctx.fillText("跑到右边传送门，就会去下面一条新路线。", 34, 86);
+  ctx.fillText("超级难路线：捡喷气背包、踩临时路、用钩子/剑/传送门冲过去。", 34, 86);
 }
 
 function drawCourseBackdrop() {
@@ -3039,6 +3144,103 @@ function drawPad(pad) {
   ctx.textAlign = "left";
 }
 
+function drawTimedPlatform(p) {
+  const bob = Math.sin(performance.now() * 0.008 + p.x) * 3;
+  ctx.fillStyle = "#f7fbff";
+  ctx.beginPath();
+  roundedRect(p.x, p.y + bob, p.w, p.h, 8);
+  ctx.fill();
+  ctx.strokeStyle = "#172632";
+  ctx.lineWidth = 3;
+  ctx.stroke();
+  ctx.fillStyle = "#32a7e2";
+  ctx.font = "900 13px system-ui";
+  ctx.fillText("临时路", p.x + 30, p.y + bob + 17);
+}
+
+function drawGadget(gadget) {
+  if (egg.usedPowerups.has(gadget.id)) return;
+  ctx.save();
+  ctx.translate(gadget.x, gadget.y + Math.sin(performance.now() * 0.006 + gadget.x) * 4);
+  ctx.strokeStyle = "#172632";
+  ctx.lineWidth = 4;
+  if (gadget.type === "jetpack") {
+    ctx.fillStyle = "#32a7e2";
+    ctx.beginPath();
+    roundedRect(-18, -22, 36, 44, 8);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = "#ffd15f";
+    ctx.fillRect(-24, -5, 10, 22);
+    ctx.fillRect(14, -5, 10, 22);
+    ctx.fillStyle = "#ff7a3d";
+    ctx.beginPath();
+    ctx.moveTo(-10, 24);
+    ctx.lineTo(0, 44);
+    ctx.lineTo(10, 24);
+    ctx.fill();
+  } else if (gadget.type === "launcher") {
+    ctx.fillStyle = "#f06aa3";
+    ctx.beginPath();
+    ctx.moveTo(-28, 24);
+    ctx.lineTo(0, -30);
+    ctx.lineTo(28, 24);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+  } else if (gadget.type === "high") {
+    ctx.fillStyle = "#ffd15f";
+    ctx.beginPath();
+    roundedRect(-28, -24, 56, 48, 8);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = "#172632";
+    ctx.font = "900 18px system-ui";
+    ctx.fillText("跳", -9, 7);
+  } else if (gadget.type === "sword") {
+    ctx.strokeStyle = "#8f5fd9";
+    ctx.lineWidth = 8;
+    ctx.beginPath();
+    ctx.moveTo(-24, 24);
+    ctx.lineTo(24, -24);
+    ctx.stroke();
+    ctx.strokeStyle = "#172632";
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.moveTo(-10, 10);
+    ctx.lineTo(12, 32);
+    ctx.stroke();
+  } else if (gadget.type === "hook") {
+    ctx.strokeStyle = "#172632";
+    ctx.lineWidth = 5;
+    ctx.beginPath();
+    ctx.arc(0, -2, 24, 0.4, Math.PI * 1.75);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(14, 16);
+    ctx.lineTo(32, 28);
+    ctx.stroke();
+  } else if (gadget.type === "portal") {
+    const pulse = Math.sin(performance.now() * 0.01) * 5;
+    ctx.strokeStyle = "#8f5fd9";
+    ctx.lineWidth = 7;
+    ctx.beginPath();
+    ctx.ellipse(0, 0, 24 + pulse, 34, 0, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.strokeStyle = "#32a7e2";
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.ellipse(0, 0, 13, 22 + pulse * 0.3, 0, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+  ctx.fillStyle = "#172632";
+  ctx.font = "800 12px system-ui";
+  ctx.textAlign = "center";
+  ctx.fillText(gadget.label, 0, 54);
+  ctx.restore();
+  ctx.textAlign = "left";
+}
+
 function drawHammer(hammer, index) {
   const angle = performance.now() * hammer.speed * 0.03;
   const hx = hammer.x + Math.cos(angle) * hammer.r;
@@ -3086,6 +3288,24 @@ function drawPortal() {
 
 function drawEggy() {
   drawEggyCharacter(egg.x, egg.y, 0.8, egg.vx * 0.035);
+  if (performance.now() < egg.jetpackUntil) {
+    ctx.save();
+    ctx.translate(egg.x - 32, egg.y - 8);
+    ctx.fillStyle = "#32a7e2";
+    ctx.strokeStyle = "#172632";
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    roundedRect(-9, -18, 18, 34, 5);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = "#ff7a3d";
+    ctx.beginPath();
+    ctx.moveTo(-6, 16);
+    ctx.lineTo(0, 34 + Math.sin(performance.now() * 0.02) * 5);
+    ctx.lineTo(6, 16);
+    ctx.fill();
+    ctx.restore();
+  }
 }
 
 function draw() {
