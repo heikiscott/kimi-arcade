@@ -2284,9 +2284,9 @@ function drawAirplane(x, y, angle) {
 function drawPlaneShape(x, y, angle, color, showPilot, label = "", model = "波音737", tailMark = "JET", bank = 0) {
   const bankAmount = Math.max(-0.66, Math.min(0.66, bank));
   const bankDepth = Math.abs(bankAmount);
-  const bookScale = 1 - bankDepth * 0.2;
-  const liftSide = bankAmount > 0 ? -1 : 1;
-  const wingLift = bankAmount * 24;
+  const sideScale = 1 - bankDepth * 0.22;
+  const foldSide = bankAmount > 0 ? 1 : -1;
+  const wingFold = bankAmount * 28;
   const bodyThickness = bankDepth * 12;
   ctx.save();
   ctx.translate(x, y);
@@ -2294,29 +2294,29 @@ function drawPlaneShape(x, y, angle, color, showPilot, label = "", model = "波�
   if (bankDepth > 0.04) {
     ctx.fillStyle = `rgba(23, 38, 50, ${0.07 + bankDepth * 0.12})`;
     ctx.beginPath();
-    ctx.ellipse(0, 18 + bankDepth * 10, 178, 24 + bankDepth * 6, 0, 0, Math.PI * 2);
+    ctx.ellipse(foldSide * bodyThickness, 20, 178 - bankDepth * 12, 26, 0, 0, Math.PI * 2);
     ctx.fill();
   }
-  ctx.scale(1.36, 1.36 * bookScale);
-  ctx.transform(1, bankAmount * 0.08, 0, 1, 0, 0);
+  ctx.scale(1.36 * sideScale, 1.36);
+  ctx.transform(1, 0, bankAmount * 0.08, 1, 0, 0);
 
   ctx.strokeStyle = "#172632";
   ctx.lineWidth = 5;
   ctx.fillStyle = color;
   ctx.beginPath();
   ctx.moveTo(-14, -20);
-  ctx.lineTo(-78, -92 + wingLift);
-  ctx.lineTo(54, -31 + wingLift * 0.36);
-  ctx.lineTo(76, -16 + wingLift * 0.2);
+  ctx.lineTo(-78 + wingFold, -92);
+  ctx.lineTo(54 + wingFold * 0.36, -31);
+  ctx.lineTo(76 + wingFold * 0.2, -16);
   ctx.closePath();
   ctx.fill();
   ctx.stroke();
 
   ctx.beginPath();
   ctx.moveTo(-14, 20);
-  ctx.lineTo(-78, 92 + wingLift);
-  ctx.lineTo(54, 31 + wingLift * 0.36);
-  ctx.lineTo(76, 16 + wingLift * 0.2);
+  ctx.lineTo(-78 + wingFold, 92);
+  ctx.lineTo(54 + wingFold * 0.36, 31);
+  ctx.lineTo(76 + wingFold * 0.2, 16);
   ctx.closePath();
   ctx.fill();
   ctx.stroke();
@@ -2351,19 +2351,19 @@ function drawPlaneShape(x, y, angle, color, showPilot, label = "", model = "波�
   if (bankDepth > 0.06) {
     ctx.fillStyle = `rgba(23, 38, 50, ${0.08 + bankDepth * 0.08})`;
     ctx.beginPath();
-    ctx.moveTo(-122, 22);
-    ctx.bezierCurveTo(-54, 33 + bodyThickness, 62, 30 + bodyThickness, 121, 8 + bodyThickness);
-    ctx.quadraticCurveTo(135, 11 + bodyThickness, 122, 7);
+    ctx.moveTo(-124, -22);
+    ctx.bezierCurveTo(-58 + foldSide * bodyThickness, -34, 62 + foldSide * bodyThickness, -31, 122 + foldSide * bodyThickness, -7);
+    ctx.quadraticCurveTo(146 + foldSide * bodyThickness, 0, 122, 7);
     ctx.bezierCurveTo(62, 31, -58, 34, -124, 22);
     ctx.closePath();
     ctx.fill();
     ctx.fillStyle = `rgba(255, 255, 255, ${0.1 + bankDepth * 0.18})`;
     ctx.beginPath();
-    ctx.ellipse(8, liftSide * -11, 118, 7, 0, 0, Math.PI * 2);
+    ctx.ellipse(foldSide * 15, -2, 8, 26, 0, 0, Math.PI * 2);
     ctx.fill();
     ctx.fillStyle = `rgba(23, 38, 50, ${0.04 + bankDepth * 0.08})`;
     ctx.beginPath();
-    ctx.ellipse(0, liftSide * 17, 132, 6, 0, 0, Math.PI * 2);
+    ctx.ellipse(foldSide * -18, 0, 7, 30, 0, 0, Math.PI * 2);
     ctx.fill();
   }
 
