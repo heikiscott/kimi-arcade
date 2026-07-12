@@ -463,18 +463,27 @@ function boardNearestPlane() {
 function startSmoothFlight() {
   if (selectedLocation.category !== "flight") return false;
   if (vehicle.mode === "walking") return boardNearestPlane();
-  return takeoffPlane();
+  if (vehicle.mode === "taxi-ready") {
+    statusText.textContent = "飞机已经在跑道上准备好了，要你自己点“起飞”才会飞。";
+    return true;
+  }
+  statusText.textContent = "先点“滑行”到长跑道；到跑道以后再点“起飞”。";
+  return true;
 }
 
-function takeoffPlane() {
+function taxiPlane() {
   if (selectedLocation.category !== "flight") return false;
   if (vehicle.mode === "walking") return boardNearestPlane();
   if (vehicle.mode === "taxi-takeoff") {
-    statusText.textContent = "正在地上滑行，还没有起飞；等速度够了才会离地。";
+    statusText.textContent = "正在地上滑行，还没有起飞；到跑道后会等你点“起飞”。";
+    return true;
+  }
+  if (vehicle.mode === "taxi-ready") {
+    statusText.textContent = "飞机已经滑行到长跑道了，现在等你点“起飞”。";
     return true;
   }
   if (vehicle.mode !== "boarded" && vehicle.mode !== "parked") {
-    statusText.textContent = "要先在飞机旁边上飞机，才能滑行起飞。";
+    statusText.textContent = "要先在飞机旁边上飞机，才能滑行。";
     return true;
   }
   vehicle.mode = "taxi-takeoff";
@@ -483,8 +492,34 @@ function takeoffPlane() {
   vehicle.angle = 0;
   vehicle.vx = 0;
   vehicle.vy = 0;
-  statusText.textContent = "开始滑行：飞机先在地上走到长跑道，再加速起飞。";
+  statusText.textContent = "开始滑行：飞机先在地上走到长跑道，不会自己起飞。";
   portalSound();
+  return true;
+}
+
+function takeoffPlane() {
+  if (selectedLocation.category !== "flight") return false;
+  if (vehicle.mode === "walking") return boardNearestPlane();
+  if (vehicle.mode === "boarded" || vehicle.mode === "parked") {
+    statusText.textContent = "先点“滑行”到长跑道，到了跑道以后再点“起飞”。";
+    return true;
+  }
+  if (vehicle.mode === "taxi-takeoff") {
+    statusText.textContent = "还在滑行去跑道，等到跑道上停好以后再点“起飞”。";
+    return true;
+  }
+  if (vehicle.mode !== "taxi-ready") {
+    statusText.textContent = "现在不能起飞，要先滑行到长跑道。";
+    return true;
+  }
+  vehicle.mode = "flying";
+  vehicle.vx = Math.max(10.8, vehicle.vx);
+  vehicle.vy = -4.2;
+  vehicle.heading = -0.08;
+  vehicle.angle = -0.08;
+  statusText.textContent = "你点了起飞，飞机现在才离开跑道！";
+  tone(440, 0, 0.12, 0.02, "triangle");
+  tone(660, 0.11, 0.14, 0.02, "triangle");
   return true;
 }
 
@@ -904,20 +939,27 @@ function updateActivity() {
       } else {
         vehicle.heading = 0;
         vehicle.angle += (0 - vehicle.angle) * 0.18;
-        vehicle.vx += 0.22;
-        vehicle.vy += (0 - vehicle.vy) * 0.16;
+        vehicle.vx *= 0.88;
+        vehicle.vy *= 0.84;
         vehicle.y += (target.y - vehicle.y) * 0.08;
-        statusText.textContent = `飞机在长跑道上加速滑行，速度 ${Math.round(Math.abs(vehicle.vx) * 26)}，还没离地。`;
-        if (vehicle.vx > 13.8 || vehicle.x > 2760) {
-          vehicle.mode = "flying";
-          vehicle.vy = -4.2;
-          vehicle.heading = -0.08;
-          vehicle.angle = -0.08;
-          statusText.textContent = "速度够了，飞机现在才离开跑道起飞！";
-          tone(440, 0, 0.12, 0.02, "triangle");
-          tone(660, 0.11, 0.14, 0.02, "triangle");
+        statusText.textContent = "飞机已经滑行到长跑道，正在停住等你点“起飞”。";
+        if (Math.abs(vehicle.vx) < 0.5) {
+          vehicle.x = target.x;
+          vehicle.y = target.y;
+          vehicle.vx = 0;
+          vehicle.vy = 0;
+          vehicle.mode = "taxi-ready";
+          statusText.textContent = "飞机在长跑道上停好了。现在你点“起飞”，它才会飞。";
         }
       }
+    } else if (vehicle.mode === "taxi-ready") {
+      const target = getTakeoffTarget();
+      vehicle.x = target.x;
+      vehicle.y = target.y;
+      vehicle.vx = 0;
+      vehicle.vy = 0;
+      vehicle.heading = 0;
+      vehicle.angle = 0;
     } else if (vehicle.mode === "landing-rollout") {
       const target = getLandingTarget();
       vehicle.heading = 0;
@@ -1050,7 +1092,11 @@ function activityInteract() {
     if (vehicle.mode === "boarded") return startSmoothFlight();
     if (vehicle.mode === "parked") return startSmoothFlight();
     if (vehicle.mode === "taxi-takeoff") {
-      statusText.textContent = "飞机还在地面滑行，速度够了才会起飞。";
+      statusText.textContent = "飞机还在地面滑行，到跑道后会等你点起飞。";
+      return true;
+    }
+    if (vehicle.mode === "taxi-ready") {
+      statusText.textContent = "飞机在长跑道上停好了。你点“起飞”才会飞。";
       return true;
     }
     if (vehicle.mode === "landing-rollout") {
@@ -1566,11 +1612,11 @@ function drawFlightScene() {
   drawHugeAirport();
   if (vehicle.mode === "walking") drawTerminalInteriorHall(focusX);
   airportPlanes.forEach((plane, index) => {
-    if ((vehicle.mode === "boarded" || vehicle.mode === "taxi-takeoff" || vehicle.mode === "flying" || vehicle.mode === "auto-landing" || vehicle.mode === "landing-rollout" || vehicle.mode === "taxi-to-gate" || vehicle.mode === "parked" || vehicle.mode === "plane-falling" || vehicle.mode === "landed") && index === vehicle.selectedPlaneIndex) return;
+    if ((vehicle.mode === "boarded" || vehicle.mode === "taxi-takeoff" || vehicle.mode === "taxi-ready" || vehicle.mode === "flying" || vehicle.mode === "auto-landing" || vehicle.mode === "landing-rollout" || vehicle.mode === "taxi-to-gate" || vehicle.mode === "parked" || vehicle.mode === "plane-falling" || vehicle.mode === "landed") && index === vehicle.selectedPlaneIndex) return;
     drawParkedPlane(plane);
   });
   if (vehicle.mode === "walking" || vehicle.mode === "plane-falling" || vehicle.mode === "landed") drawWalkingPilot(vehicle.pilotX, vehicle.pilotY);
-  if (vehicle.mode === "boarded" || vehicle.mode === "taxi-takeoff" || vehicle.mode === "flying" || vehicle.mode === "auto-landing" || vehicle.mode === "landing-rollout" || vehicle.mode === "taxi-to-gate" || vehicle.mode === "parked" || vehicle.mode === "plane-falling" || vehicle.mode === "landed") drawAirplane(vehicle.x, vehicle.y, vehicle.angle);
+  if (vehicle.mode === "boarded" || vehicle.mode === "taxi-takeoff" || vehicle.mode === "taxi-ready" || vehicle.mode === "flying" || vehicle.mode === "auto-landing" || vehicle.mode === "landing-rollout" || vehicle.mode === "taxi-to-gate" || vehicle.mode === "parked" || vehicle.mode === "plane-falling" || vehicle.mode === "landed") drawAirplane(vehicle.x, vehicle.y, vehicle.angle);
   if (vehicle.mode === "plane-falling") drawPlaneFallingOverlay();
   ctx.restore();
   drawFlightClouds();
@@ -1589,6 +1635,8 @@ function drawFlightScene() {
       ? "小蛋仔在地面，飞机在上方"
       : vehicle.mode === "taxi-takeoff"
         ? "地面滑行中，还没起飞"
+      : vehicle.mode === "taxi-ready"
+        ? "跑道上等待你起飞"
       : vehicle.mode === "auto-landing"
         ? "自动降落，正在找跑道"
       : vehicle.mode === "landing-rollout"
@@ -1601,7 +1649,9 @@ function drawFlightScene() {
   const line2 = vehicle.mode === "plane-falling" || vehicle.mode === "landed"
     ? "拖屏幕：上看、下看、左看、右看"
     : vehicle.mode === "taxi-takeoff"
-      ? "先滑行到跑道，再加速离地"
+      ? "只滑行，不自动起飞"
+    : vehicle.mode === "taxi-ready"
+      ? "点“起飞”才会离地"
     : vehicle.mode === "auto-landing"
       ? "自动飞向长跑道，白线前减速"
       : vehicle.mode === "landing-rollout"
@@ -2979,7 +3029,7 @@ taxiFlightBtn.addEventListener("click", () => {
     boardNearestPlane();
     return;
   }
-  takeoffPlane();
+  taxiPlane();
 });
 takeoffBtn.addEventListener("click", () => {
   if (selectedLocation.category !== "flight" || screen !== "activity") {
