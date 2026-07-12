@@ -150,10 +150,20 @@ let lastZombieCatch = 0;
 const fishLoots = ["鱼", "锅", "僵尸蛋", "宝箱", "奇怪玩具", "水草", "金色贝壳", "破旧钥匙"];
 
 const flightWorld = {
-  w: 8500,
+  w: 11800,
   h: 3900,
-  finishX: 8050,
+  finishX: 11350,
   finishY: 1820
+};
+
+const landingRunway = {
+  x: 8420,
+  y: 1540,
+  w: 3150,
+  h: 190,
+  targetX: 8660,
+  rolloutEndX: 11020,
+  centerY: 1635
 };
 
 const airportPlanes = [
@@ -194,8 +204,8 @@ function landingGroundY(x) {
 function getLandingTarget() {
   const plane = airportPlanes[vehicle.selectedPlaneIndex] || airportPlanes[0];
   return {
-    x: Math.min(flightWorld.finishX - 260, Math.max(520, vehicle.x)),
-    y: 1635,
+    x: landingRunway.targetX,
+    y: landingRunway.centerY,
     plane
   };
 }
@@ -627,7 +637,7 @@ function adjustPlaneSpeed(delta) {
 function landPlane() {
   if (selectedLocation.category !== "flight") return false;
   if (vehicle.mode === "auto-landing") {
-    statusText.textContent = "飞机已经在自动飞往长跑道，正在减速降落。";
+    statusText.textContent = "飞机已经在自动飞往右边的专用降落跑道，正在减速降落。";
     return true;
   }
   if (vehicle.mode === "landing-rollout") {
@@ -650,7 +660,7 @@ function landPlane() {
   vehicle.mode = "auto-landing";
   vehicle.heading = Math.atan2(target.y - vehicle.y, target.x - vehicle.x);
   vehicle.angle += (vehicle.heading - vehicle.angle) * 0.35;
-  statusText.textContent = "自动降落开始：飞机会飞到中间那条长跑道，停在白线之前，然后滑回停机位。";
+  statusText.textContent = "自动降落开始：飞机会飞到右边新增的专用降落跑道，滑很长一段减速，然后回停机位。";
   return true;
 }
 
@@ -1084,12 +1094,12 @@ function updateActivity() {
       vehicle.vy = 0;
       vehicle.y += (target.y - vehicle.y) * 0.16;
       vehicle.vx = Math.max(1.15, vehicle.vx * 0.985);
-      statusText.textContent = `降落后还在长跑道上滑行减速，速度 ${Math.round(vehicle.vx * 26)}。`;
-      if (vehicle.x > target.x + 920 || vehicle.vx <= 1.25) {
+      statusText.textContent = `降落后在专用降落跑道滑行减速，速度 ${Math.round(vehicle.vx * 26)}。`;
+      if (vehicle.x > landingRunway.rolloutEndX || vehicle.vx <= 1.25) {
         vehicle.vx = 0;
         vehicle.vy = 0;
         vehicle.mode = "taxi-to-gate";
-        statusText.textContent = "跑道滑行减速完成，现在慢慢滑回停机位。";
+        statusText.textContent = "专用降落跑道滑行减速完成，现在慢慢滑回停机位。";
       }
     } else if (vehicle.mode === "taxi-to-gate") {
       const gate = getGateTarget();
@@ -1143,8 +1153,8 @@ function updateActivity() {
       statusText.textContent = landingTurboActive
         ? `回跑道 100 倍加速中：距离 ${Math.round(distance)} 米，速度 ${Math.round(speedNow * 26)}。`
         : distance > 150
-        ? `自动降落中：正在飞往中间长跑道，距离 ${Math.round(distance)} 米。`
-        : "自动降落中：接近长跑道白线前，正在直接减速。";
+        ? `自动降落中：正在飞往右边专用降落跑道，距离 ${Math.round(distance)} 米。`
+        : "自动降落中：接近专用降落跑道，准备长距离减速。";
       if (distance < 44 || (landingTurboActive && distance < Math.max(90, speedNow * 1.4)) || (distance < 90 && speedNow < 1.6)) {
         vehicle.x = target.x;
         vehicle.y = target.y;
@@ -1155,7 +1165,7 @@ function updateActivity() {
         vehicle.bank = 0;
         vehicle.landingTurboUntil = 0;
         vehicle.mode = "landing-rollout";
-        statusText.textContent = "降落完成，停在白线之前了。现在先沿跑道滑行减速。";
+        statusText.textContent = "降落到右边专用跑道了。现在沿着很长的跑道滑行减速。";
       }
     } else {
       if (left) joystickX = Math.max(-1, joystickX - 0.04);
@@ -1794,9 +1804,9 @@ function drawFlightScene() {
     : vehicle.mode === "takeoff-roll"
       ? "加速/减速，点起飞才离地"
     : vehicle.mode === "auto-landing"
-      ? "自动飞向长跑道，白线前减速"
+      ? "自动飞向右边专用降落跑道"
       : vehicle.mode === "landing-rollout"
-        ? "先滑跑，再回停机位"
+        ? "长距离滑跑减速，再回停机位"
       : vehicle.mode === "taxi-to-gate"
         ? "自动回到停机位"
       : vehicle.mode === "parked"
@@ -1831,16 +1841,21 @@ function drawHugeAirport() {
   ctx.beginPath();
   ctx.arc(4250, 1950, 3920, 0, Math.PI * 2);
   ctx.fill();
+  ctx.fillStyle = "#83c967";
+  ctx.beginPath();
+  roundedRect(8060, 1180, 3600, 1420, 24);
+  ctx.fill();
   ctx.fillStyle = "#424b57";
   drawRunway(260, 1540, 7920, 190, "起飞/降落长跑道");
+  drawRunway(landingRunway.x, landingRunway.y, landingRunway.w, landingRunway.h, "专用降落跑道");
   drawRunway(520, 2180, 7450, 170, "跑道 27R");
   drawRunway(4020, 300, 175, 3000, "跑道 09");
   ctx.strokeStyle = "#2d3742";
   ctx.lineWidth = 58;
   ctx.beginPath();
   ctx.moveTo(360, 1360);
-  ctx.lineTo(8200, 1360);
-  ctx.lineTo(8200, 2680);
+  ctx.lineTo(11380, 1360);
+  ctx.lineTo(11380, 2680);
   ctx.lineTo(760, 2680);
   ctx.stroke();
 
