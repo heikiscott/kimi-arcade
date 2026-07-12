@@ -153,19 +153,19 @@ const fishLoots = ["鱼", "锅", "僵尸蛋", "宝箱", "奇怪玩具", "水草"
 
 const flightWorld = {
   w: 22000,
-  h: 3900,
+  h: 4700,
   finishX: 21450,
-  finishY: 1820
+  finishY: 3835
 };
 
 const landingRunway = {
-  x: 8420,
-  y: 1540,
-  w: 12500,
+  x: 1180,
+  y: 3740,
+  w: 16300,
   h: 190,
-  targetX: 8660,
-  rolloutEndX: 20400,
-  centerY: 1635
+  targetX: 1460,
+  rolloutEndX: 16850,
+  centerY: 3835
 };
 
 const airportPlanes = [
@@ -641,7 +641,7 @@ function adjustPlaneSpeed(delta) {
 function landPlane() {
   if (selectedLocation.category !== "flight") return false;
   if (vehicle.mode === "auto-landing") {
-    statusText.textContent = "飞机已经在自动飞往右边的专用降落跑道，正在减速降落。";
+    statusText.textContent = "飞机已经在自动飞往停机坪后方的专用降落跑道，正在减速降落。";
     return true;
   }
   if (vehicle.mode === "landing-rollout") {
@@ -670,7 +670,7 @@ function landPlane() {
   vehicle.mode = "auto-landing";
   vehicle.heading = 0;
   vehicle.angle += (0 - vehicle.angle) * 0.35;
-  statusText.textContent = "自动降落开始：飞机会横着往右飞到前方跑道，不会突然掉头反过来。";
+  statusText.textContent = "自动降落开始：飞机会横着飞到停机坪后方的跑道，不会突然掉头反过来。";
   return true;
 }
 
@@ -1164,7 +1164,7 @@ function updateActivity() {
       statusText.textContent = landingTurboActive
         ? `回跑道 100 倍加速中：距离 ${Math.round(distance)} 米，速度 ${Math.round(speedNow * 26)}。`
         : distance > 150
-        ? `自动降落中：正在飞往右边专用降落跑道，距离 ${Math.round(distance)} 米。`
+        ? `自动降落中：正在飞往停机坪后方专用降落跑道，距离 ${Math.round(distance)} 米。`
         : "自动降落中：接近专用降落跑道，准备长距离减速。";
       if (distance < 44 || (landingTurboActive && distance < Math.max(90, speedNow * 1.4)) || (distance < 90 && speedNow < 1.6)) {
         vehicle.x = target.x;
@@ -1176,7 +1176,7 @@ function updateActivity() {
         vehicle.bank = 0;
         vehicle.landingTurboUntil = 0;
         vehicle.mode = "landing-rollout";
-        statusText.textContent = "降落到右边专用跑道了。现在沿着很长的跑道滑行减速。";
+        statusText.textContent = "降落到停机坪后方专用跑道了。现在沿着很长的跑道滑行减速。";
       }
     } else {
       if (left) joystickX = Math.max(-1, joystickX - 0.04);
@@ -1815,7 +1815,7 @@ function drawFlightScene() {
     : vehicle.mode === "takeoff-roll"
       ? "加速/减速，点起飞才离地"
     : vehicle.mode === "auto-landing"
-      ? "自动飞向右边专用降落跑道"
+      ? "自动飞向停机坪后方降落跑道"
       : vehicle.mode === "landing-rollout"
         ? "长距离滑跑减速，再回停机位"
       : vehicle.mode === "taxi-to-gate"
@@ -1854,7 +1854,7 @@ function drawHugeAirport() {
   ctx.fill();
   ctx.fillStyle = "#83c967";
   ctx.beginPath();
-  roundedRect(8060, 1180, 13280, 1420, 24);
+  roundedRect(940, 3600, 16900, 760, 24);
   ctx.fill();
   ctx.fillStyle = "#424b57";
   drawRunway(260, 1540, 7920, 190, "起飞/降落长跑道");
@@ -1868,6 +1868,8 @@ function drawHugeAirport() {
   ctx.lineTo(21380, 1360);
   ctx.lineTo(21380, 2680);
   ctx.lineTo(760, 2680);
+  ctx.lineTo(760, 3835);
+  ctx.lineTo(landingRunway.rolloutEndX, 3835);
   ctx.stroke();
 
   breakableBuildings.forEach((building) => drawBreakableBuilding(building));
