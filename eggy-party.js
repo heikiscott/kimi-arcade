@@ -21,6 +21,7 @@ const jumpFlightBtn = document.querySelector("#jumpFlightBtn");
 const ballModeBtn = document.querySelector("#ballModeBtn");
 const crashSongBtn = document.querySelector("#crashSongBtn");
 const flightControls = document.querySelector("#flightControls");
+const challengeControls = document.querySelector("#challengeControls");
 const flightStick = document.querySelector("#flightStick");
 const flightKnob = document.querySelector("#flightKnob");
 const locationPicker = document.querySelector("#locationPicker");
@@ -32,6 +33,7 @@ const W = canvas.width;
 const H = canvas.height;
 const keys = new Set();
 const controls = new Set();
+const controlPointers = new Map();
 
 const categories = [
   { key: "flight", title: "开飞机地点", count: 50, prefix: "云端机场", detail: "停机坪、飞机队列、大跑道" },
@@ -703,8 +705,8 @@ function updateJoystickVisual() {
 function startCourse(locationName = selectedLocation.name) {
   getAudio();
   selectedLocation = { ...selectedLocation, name: locationName, category: "challenge" };
-  updateContextControls();
   screen = "course";
+  updateContextControls();
   laneIndex = 0;
   playing = true;
   won = false;
@@ -768,6 +770,7 @@ function selectLocation(place) {
 
 function updateContextControls() {
   if (flightControls) flightControls.hidden = selectedLocation.category !== "flight" || screen === "lobby";
+  if (challengeControls) challengeControls.hidden = screen !== "course";
 }
 
 function getActivityHelp(category) {
@@ -2990,17 +2993,32 @@ document.addEventListener("keyup", (event) => {
 document.addEventListener("pointerdown", (event) => {
   const button = event.target.closest("[data-control]");
   if (!button) return;
+  event.preventDefault();
   getAudio();
-  controls.add(button.dataset.control);
+  const control = button.dataset.control;
+  controls.add(control);
+  if (event.pointerId !== undefined) controlPointers.set(event.pointerId, control);
+  if (button.setPointerCapture && event.pointerId !== undefined) button.setPointerCapture(event.pointerId);
 });
 
 document.addEventListener("pointerup", (event) => {
-  const button = event.target.closest("[data-control]");
-  if (!button) return;
-  controls.delete(button.dataset.control);
+  const control = controlPointers.get(event.pointerId);
+  if (!control) return;
+  controls.delete(control);
+  controlPointers.delete(event.pointerId);
 });
 
-document.addEventListener("pointercancel", () => controls.clear());
+document.addEventListener("pointercancel", (event) => {
+  if (event.pointerId === undefined) {
+    controlPointers.clear();
+    controls.clear();
+    return;
+  }
+  const control = controlPointers.get(event.pointerId);
+  if (!control) return;
+  controls.delete(control);
+  controlPointers.delete(event.pointerId);
+});
 
 function setJoystickFromEvent(event) {
   const rect = flightStick.getBoundingClientRect();

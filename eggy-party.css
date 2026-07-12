@@ -145,7 +145,8 @@ h1 {
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
-.flight-controls {
+.flight-controls,
+.challenge-controls {
   grid-column: 1 / -1;
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(82px, 1fr));
@@ -158,15 +159,33 @@ h1 {
   background: rgba(255, 255, 255, 0.68);
 }
 
-.flight-controls[hidden] {
+.flight-controls[hidden],
+.challenge-controls[hidden] {
   display: none;
 }
 
-.flight-controls button {
+.flight-controls button,
+.challenge-controls button {
   background: #2f79c8;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
-.flight-controls p {
+.challenge-controls button[data-control="right"] {
+  background: #38a86a;
+}
+
+.challenge-controls button[data-control="jump"] {
+  background: #f06aa3;
+}
+
+.challenge-controls button[data-control="roll"] {
+  background: #8f5fd9;
+}
+
+.flight-controls p,
+.challenge-controls p {
   grid-column: 1 / -1;
   margin: 0;
   color: #4f5e68;
@@ -350,15 +369,18 @@ button:hover {
   .score-grid,
   .button-row,
   .flight-controls,
+  .challenge-controls,
   .hint {
     grid-column: 1;
   }
 
-  .flight-controls {
+  .flight-controls,
+  .challenge-controls {
     grid-template-columns: 1fr 1fr;
   }
 
-  .flight-controls p {
+  .flight-controls p,
+  .challenge-controls p {
     grid-column: 1 / -1;
   }
 
@@ -378,7 +400,8 @@ button:hover {
     grid-template-columns: 1fr;
   }
 
-  .flight-controls {
+  .flight-controls,
+  .challenge-controls {
     grid-template-columns: 1fr;
   }
 }
