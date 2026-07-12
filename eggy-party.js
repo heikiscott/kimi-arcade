@@ -147,21 +147,21 @@ const flightWorld = {
 };
 
 const airportPlanes = [
-  { x: 560, y: 1120, label: "日本航空", color: "#d8343f", scale: 1.12 },
-  { x: 1080, y: 1120, label: "中国航空", color: "#2f79c8", scale: 1.12 },
-  { x: 1600, y: 1120, label: "美国航空", color: "#42536b", scale: 1.12 },
-  { x: 2120, y: 1120, label: "东方航空", color: "#d83258", scale: 1.14 },
-  { x: 2640, y: 1120, label: "南方航空", color: "#1f8c65", scale: 1.12 },
-  { x: 3160, y: 1120, label: "亚洲航空", color: "#d51f2a", scale: 1.12 },
-  { x: 3680, y: 1120, label: "泰国航空", color: "#7b4ab8", scale: 1.12 },
-  { x: 4200, y: 1120, label: "大韩航空", color: "#4aa3df", scale: 1.12 },
-  { x: 4720, y: 1120, label: "印度航空", color: "#c22d2d", scale: 1.12 },
-  { x: 5240, y: 1120, label: "山东航空", color: "#f28b2f", scale: 1.1 },
-  { x: 5760, y: 1120, label: "澳门航空", color: "#2270b8", scale: 1.1 },
-  { x: 6280, y: 1120, label: "三亚航空", color: "#32a852", scale: 1.1 },
-  { x: 6800, y: 1120, label: "私人飞机", color: "#8f5fd9", scale: 1.04 },
-  { x: 7320, y: 1120, label: "军事飞机", color: "#4f6b48", scale: 1.16 },
-  { x: 7840, y: 1120, label: "普通飞机", color: "#64717b", scale: 1.1 }
+  { x: 760, y: 580, label: "日本航空", color: "#d8343f", scale: 1.12 },
+  { x: 760, y: 790, label: "中国航空", color: "#2f79c8", scale: 1.12 },
+  { x: 760, y: 1000, label: "美国航空", color: "#42536b", scale: 1.12 },
+  { x: 760, y: 1210, label: "东方航空", color: "#d83258", scale: 1.14 },
+  { x: 760, y: 1420, label: "南方航空", color: "#1f8c65", scale: 1.12 },
+  { x: 760, y: 1630, label: "亚洲航空", color: "#d51f2a", scale: 1.12 },
+  { x: 760, y: 1840, label: "泰国航空", color: "#7b4ab8", scale: 1.12 },
+  { x: 760, y: 2050, label: "大韩航空", color: "#4aa3df", scale: 1.12 },
+  { x: 760, y: 2260, label: "印度航空", color: "#c22d2d", scale: 1.12 },
+  { x: 760, y: 2470, label: "山东航空", color: "#f28b2f", scale: 1.1 },
+  { x: 760, y: 2680, label: "澳门航空", color: "#2270b8", scale: 1.1 },
+  { x: 760, y: 2890, label: "三亚航空", color: "#32a852", scale: 1.1 },
+  { x: 760, y: 3100, label: "私人飞机", color: "#8f5fd9", scale: 1.04 },
+  { x: 760, y: 3310, label: "军事飞机", color: "#4f6b48", scale: 1.16 },
+  { x: 760, y: 3520, label: "普通飞机", color: "#64717b", scale: 1.1 }
 ];
 
 function gateY(plane) {
@@ -196,6 +196,13 @@ function getGateTarget() {
     x: plane.x,
     y: plane.y,
     plane
+  };
+}
+
+function getTakeoffTarget() {
+  return {
+    x: 1280,
+    y: 1635
   };
 }
 
@@ -441,7 +448,7 @@ function boardNearestPlane() {
   vehicle.selectedPlaneIndex = nearest.index;
   vehicle.x = nearest.plane.x;
   vehicle.y = nearest.plane.y;
-  vehicle.heading = -Math.PI / 2;
+  vehicle.heading = 0;
   vehicle.angle = vehicle.heading;
   vehicle.vx = 0;
   vehicle.vy = 0;
@@ -455,22 +462,27 @@ function boardNearestPlane() {
 function startSmoothFlight() {
   if (selectedLocation.category !== "flight") return false;
   if (vehicle.mode === "walking") return boardNearestPlane();
-  vehicle.mode = "flying";
-  vehicle.landedPlaneVisible = false;
-  statusText.textContent = "飞机进入平稳飞行。操纵杆往下拉上升，往上推下降，左右拉转方向。";
-  tone(440, 0, 0.12, 0.02, "triangle");
-  tone(660, 0.11, 0.14, 0.02, "triangle");
-  return true;
+  return takeoffPlane();
 }
 
 function takeoffPlane() {
   if (selectedLocation.category !== "flight") return false;
   if (vehicle.mode === "walking") return boardNearestPlane();
-  vehicle.mode = "flying";
+  if (vehicle.mode === "taxi-takeoff") {
+    statusText.textContent = "正在地上滑行，还没有起飞；等速度够了才会离地。";
+    return true;
+  }
+  if (vehicle.mode !== "boarded" && vehicle.mode !== "parked") {
+    statusText.textContent = "要先在登机口上飞机，才能滑行起飞。";
+    return true;
+  }
+  vehicle.mode = "taxi-takeoff";
   vehicle.landedPlaneVisible = false;
-  vehicle.vx += Math.cos(vehicle.heading) * 3.2;
-  vehicle.vy -= 4.5;
-  statusText.textContent = "起飞！飞机离开跑道，开始往天空上升。";
+  vehicle.heading = 0;
+  vehicle.angle = 0;
+  vehicle.vx = 0;
+  vehicle.vy = 0;
+  statusText.textContent = "开始滑行：飞机先在地上走到长跑道，再加速起飞。";
   portalSound();
   return true;
 }
@@ -853,11 +865,43 @@ function updateActivity() {
     } else if (vehicle.mode === "parked") {
       vehicle.vx = 0;
       vehicle.vy = 0;
-      vehicle.angle = -Math.PI / 2;
+      vehicle.angle = 0;
       const gate = getGateTarget();
       vehicle.x = gate.x;
       vehicle.y = gate.y;
-      vehicle.heading = -Math.PI / 2;
+      vehicle.heading = 0;
+    } else if (vehicle.mode === "taxi-takeoff") {
+      const target = getTakeoffTarget();
+      const onRunway = Math.abs(vehicle.y - target.y) < 34 && vehicle.x > target.x - 80;
+      if (!onRunway) {
+        const dx = target.x - vehicle.x;
+        const dy = target.y - vehicle.y;
+        const distance = Math.max(1, Math.hypot(dx, dy));
+        const desiredHeading = Math.atan2(dy, dx);
+        const taxiSpeed = Math.max(1.2, Math.min(6.4, distance / 62));
+        vehicle.heading += shortestAngle(vehicle.heading, desiredHeading) * 0.1;
+        vehicle.angle += shortestAngle(vehicle.angle, vehicle.heading) * 0.14;
+        vehicle.vx += (Math.cos(desiredHeading) * taxiSpeed - vehicle.vx) * 0.1;
+        vehicle.vy += (Math.sin(desiredHeading) * taxiSpeed - vehicle.vy) * 0.1;
+        vehicle.y += vehicle.vy;
+        statusText.textContent = `飞机还在地上滑行去长跑道，距离 ${Math.round(distance)} 米，还没有起飞。`;
+      } else {
+        vehicle.heading = 0;
+        vehicle.angle += (0 - vehicle.angle) * 0.18;
+        vehicle.vx += 0.22;
+        vehicle.vy += (0 - vehicle.vy) * 0.16;
+        vehicle.y += (target.y - vehicle.y) * 0.08;
+        statusText.textContent = `飞机在长跑道上加速滑行，速度 ${Math.round(Math.abs(vehicle.vx) * 26)}，还没离地。`;
+        if (vehicle.vx > 13.8 || vehicle.x > 2760) {
+          vehicle.mode = "flying";
+          vehicle.vy = -4.2;
+          vehicle.heading = -0.08;
+          vehicle.angle = -0.08;
+          statusText.textContent = "速度够了，飞机现在才离开跑道起飞！";
+          tone(440, 0, 0.12, 0.02, "triangle");
+          tone(660, 0.11, 0.14, 0.02, "triangle");
+        }
+      }
     } else if (vehicle.mode === "taxi-to-gate") {
       const gate = getGateTarget();
       const dx = gate.x - vehicle.x;
@@ -878,8 +922,8 @@ function updateActivity() {
         vehicle.y = gate.y;
         vehicle.vx = 0;
         vehicle.vy = 0;
-        vehicle.heading = -Math.PI / 2;
-        vehicle.angle = -Math.PI / 2;
+        vehicle.heading = 0;
+        vehicle.angle = 0;
         vehicle.mode = "parked";
         statusText.textContent = "飞机回到登机口并锁住停好了，真的不会继续跑了。";
       }
@@ -975,6 +1019,10 @@ function activityInteract() {
     if (vehicle.mode === "walking") return boardNearestPlane();
     if (vehicle.mode === "boarded") return startSmoothFlight();
     if (vehicle.mode === "parked") return startSmoothFlight();
+    if (vehicle.mode === "taxi-takeoff") {
+      statusText.textContent = "飞机还在地面滑行，速度够了才会起飞。";
+      return true;
+    }
     if (vehicle.mode === "taxi-to-gate") {
       statusText.textContent = "飞机正在自动滑回登机口，等它锁住停稳。";
       return true;
@@ -1483,7 +1531,7 @@ function drawFlightScene() {
   drawWorldCloudField(focusX, focusY);
   drawHugeAirport();
   airportPlanes.forEach((plane, index) => {
-    if ((vehicle.mode === "boarded" || vehicle.mode === "flying" || vehicle.mode === "auto-landing" || vehicle.mode === "taxi-to-gate" || vehicle.mode === "parked" || vehicle.mode === "plane-falling" || vehicle.mode === "landed") && index === vehicle.selectedPlaneIndex) return;
+    if ((vehicle.mode === "boarded" || vehicle.mode === "taxi-takeoff" || vehicle.mode === "flying" || vehicle.mode === "auto-landing" || vehicle.mode === "taxi-to-gate" || vehicle.mode === "parked" || vehicle.mode === "plane-falling" || vehicle.mode === "landed") && index === vehicle.selectedPlaneIndex) return;
     drawParkedPlane(plane);
   });
   if (vehicle.mode === "walking") {
@@ -1491,7 +1539,7 @@ function drawFlightScene() {
     airportPlanes.forEach((plane) => drawBoardingGate(plane));
   }
   if (vehicle.mode === "walking" || vehicle.mode === "plane-falling" || vehicle.mode === "landed") drawWalkingPilot(vehicle.pilotX, vehicle.pilotY);
-  if (vehicle.mode === "boarded" || vehicle.mode === "flying" || vehicle.mode === "auto-landing" || vehicle.mode === "taxi-to-gate" || vehicle.mode === "parked" || vehicle.mode === "plane-falling" || vehicle.mode === "landed") drawAirplane(vehicle.x, vehicle.y, vehicle.angle);
+  if (vehicle.mode === "boarded" || vehicle.mode === "taxi-takeoff" || vehicle.mode === "flying" || vehicle.mode === "auto-landing" || vehicle.mode === "taxi-to-gate" || vehicle.mode === "parked" || vehicle.mode === "plane-falling" || vehicle.mode === "landed") drawAirplane(vehicle.x, vehicle.y, vehicle.angle);
   if (vehicle.mode === "plane-falling") drawPlaneFallingOverlay();
   ctx.restore();
   drawFlightClouds();
@@ -1508,6 +1556,8 @@ function drawFlightScene() {
     ? "候机楼里面，蓝灯去登机口"
     : vehicle.mode === "plane-falling" || vehicle.mode === "landed"
       ? "小蛋仔在地面，飞机在上方"
+      : vehicle.mode === "taxi-takeoff"
+        ? "地面滑行中，还没起飞"
       : vehicle.mode === "auto-landing"
         ? "自动降落，正在找跑道"
         : vehicle.mode === "taxi-to-gate"
@@ -1517,6 +1567,8 @@ function drawFlightScene() {
       : `飞行坐标 ${Math.round(vehicle.x)} / ${Math.round(vehicle.y)}`;
   const line2 = vehicle.mode === "plane-falling" || vehicle.mode === "landed"
     ? "拖屏幕：上看、下看、左看、右看"
+    : vehicle.mode === "taxi-takeoff"
+      ? "先滑行到跑道，再加速离地"
     : vehicle.mode === "auto-landing"
       ? "自动飞向长跑道，白线前减速"
       : vehicle.mode === "taxi-to-gate"
@@ -1836,7 +1888,7 @@ function drawParkedPlane(plane) {
   ctx.save();
   ctx.translate(plane.x, plane.y);
   ctx.scale(plane.scale, plane.scale);
-  drawPlaneShape(0, 0, -Math.PI / 2, plane.color, false, plane.label);
+  drawPlaneShape(0, 0, 0, plane.color, false, plane.label);
   ctx.restore();
 }
 
