@@ -2991,24 +2991,74 @@ function drawWaterScene() {
     drawWaterFirstPersonSlide();
     return;
   }
-  ctx.fillStyle = "#25a9df";
-  ctx.fillRect(0, 335, W, 285);
-  ctx.strokeStyle = "rgba(255,255,255,0.65)";
-  ctx.lineWidth = 5;
-  for (let y = 365; y < 600; y += 40) {
-    ctx.beginPath();
-    for (let x = 0; x < W; x += 40) ctx.lineTo(x, y + Math.sin(x * 0.03 + performance.now() * 0.006) * 7);
-    ctx.stroke();
-  }
+  drawWaterParkGround();
   drawTicketBooth(70, 205);
   drawWaterFeature(selectedLocation.variant || 0);
   drawWaterElevator(390, 170);
   drawWaterStaff(535, 205);
   drawWaterGate(260, 326);
   if (vehicle.mode === "raft-ready") drawRoundRaft(vehicle.x, vehicle.y + 38, 1.15);
-  else drawPoolFloat(vehicle.x, vehicle.y + 35);
+  else drawLandShadow(vehicle.x, vehicle.y + 32);
   drawEggyCharacter(vehicle.x, vehicle.y - 5, 0.85, vehicle.angle);
   drawWaterStatusSigns();
+}
+
+function drawWaterParkGround() {
+  ctx.fillStyle = "#f3dcae";
+  ctx.fillRect(0, 335, W, 285);
+  ctx.strokeStyle = "rgba(255,255,255,0.48)";
+  ctx.lineWidth = 2;
+  for (let x = 0; x < W; x += 58) {
+    ctx.beginPath();
+    ctx.moveTo(x, 335);
+    ctx.lineTo(x, H);
+    ctx.stroke();
+  }
+  for (let y = 350; y < H; y += 46) {
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(W, y);
+    ctx.stroke();
+  }
+
+  ctx.fillStyle = "#d08b4d";
+  ctx.beginPath();
+  roundedRect(42, 416, 850, 48, 20);
+  ctx.fill();
+  ctx.fillStyle = "#172632";
+  ctx.font = "900 17px system-ui";
+  ctx.fillText("陆地安全通道", 388, 447);
+  drawParkPool(650, 392, 270, 122, "落水池");
+  drawParkPool(780, 248, 150, 76, "儿童浅水池");
+}
+
+function drawParkPool(x, y, w, h, label) {
+  ctx.fillStyle = "#25a9df";
+  ctx.beginPath();
+  roundedRect(x, y, w, h, 20);
+  ctx.fill();
+  ctx.strokeStyle = "#fff";
+  ctx.lineWidth = 7;
+  ctx.stroke();
+  ctx.strokeStyle = "rgba(255,255,255,0.65)";
+  ctx.lineWidth = 4;
+  for (let yy = y + 24; yy < y + h - 8; yy += 24) {
+    ctx.beginPath();
+    for (let xx = x + 12; xx < x + w - 12; xx += 28) {
+      ctx.lineTo(xx, yy + Math.sin(xx * 0.05 + performance.now() * 0.008) * 5);
+    }
+    ctx.stroke();
+  }
+  ctx.fillStyle = "#172632";
+  ctx.font = "900 16px system-ui";
+  ctx.fillText(label, x + 18, y + 24);
+}
+
+function drawLandShadow(x, y) {
+  ctx.fillStyle = "rgba(23,38,50,0.18)";
+  ctx.beginPath();
+  ctx.ellipse(x, y, 46, 13, 0, 0, Math.PI * 2);
+  ctx.fill();
 }
 
 function drawWaterFeature(variant) {
