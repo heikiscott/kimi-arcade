@@ -668,9 +668,9 @@ function landPlane() {
   vehicle.landingTargetY = landingRunway.centerY;
   const target = getLandingTarget();
   vehicle.mode = "auto-landing";
-  vehicle.heading = Math.atan2(target.y - vehicle.y, target.x - vehicle.x);
-  vehicle.angle += (vehicle.heading - vehicle.angle) * 0.35;
-  statusText.textContent = "自动降落开始：飞机会找前方的专用降落跑道，不会突然掉头反过来。";
+  vehicle.heading = 0;
+  vehicle.angle += (0 - vehicle.angle) * 0.35;
+  statusText.textContent = "自动降落开始：飞机会横着往右飞到前方跑道，不会突然掉头反过来。";
   return true;
 }
 
@@ -1146,19 +1146,17 @@ function updateActivity() {
       const dx = target.x - vehicle.x;
       const dy = target.y - vehicle.y;
       const distance = Math.max(1, Math.hypot(dx, dy));
-      const desiredHeading = Math.atan2(dy, dx);
       const landingTurboActive = vehicle.landingTurboUntil > performance.now();
+      const horizontalDistance = Math.max(1, target.x - vehicle.x);
       const desiredSpeed = landingTurboActive
         ? Math.min(PLANE_TURBO_MAX_SPEED, Math.max(80, Math.min(distance / 3, 340)))
-        : distance > 900 ? 9.2 : Math.max(0.55, distance / 76);
-      const desiredVx = Math.cos(desiredHeading) * desiredSpeed;
-      const desiredVy = Math.sin(desiredHeading) * desiredSpeed;
-      const turnRate = landingTurboActive ? 0.26 : 0.075;
+        : horizontalDistance > 900 ? 9.2 : Math.max(0.55, horizontalDistance / 76);
+      const desiredVx = desiredSpeed;
+      const desiredVy = Math.max(-9, Math.min(9, dy * (landingTurboActive ? 0.035 : 0.018)));
       const speedResponse = landingTurboActive ? 0.55 : 0.07;
-      vehicle.heading += shortestAngle(vehicle.heading, desiredHeading) * turnRate;
-      vehicle.angle += shortestAngle(vehicle.angle, vehicle.heading) * (landingTurboActive ? 0.24 : 0.11);
-      const landingTurn = shortestAngle(vehicle.angle, desiredHeading);
-      vehicle.bank += (Math.max(-0.5, Math.min(0.5, landingTurn * 1.8)) - vehicle.bank) * (landingTurboActive ? 0.09 : 0.045);
+      vehicle.heading += shortestAngle(vehicle.heading, 0) * 0.12;
+      vehicle.angle += shortestAngle(vehicle.angle, 0) * (landingTurboActive ? 0.18 : 0.1);
+      vehicle.bank += (0 - vehicle.bank) * 0.07;
       vehicle.vx += (desiredVx - vehicle.vx) * speedResponse;
       vehicle.vy += (desiredVy - vehicle.vy) * speedResponse;
       vehicle.y += vehicle.vy;
