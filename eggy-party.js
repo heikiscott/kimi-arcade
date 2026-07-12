@@ -167,6 +167,7 @@ const vehicle = {
   flightDistance: 0,
   lastFlightX: 0,
   lastFlightY: 0,
+  waterTicket: false,
   selectedPlaneIndex: 0
 };
 
@@ -660,6 +661,12 @@ function resetVehicle() {
   vehicle.flightDistance = 0;
   vehicle.lastFlightX = vehicle.x;
   vehicle.lastFlightY = vehicle.y;
+  vehicle.waterTicket = false;
+  if (selectedLocation.category === "water") {
+    vehicle.x = 120;
+    vehicle.y = 430;
+    vehicle.mode = "free";
+  }
   joystickX = 0;
   joystickY = 0;
   flightLookOffsetX = 0;
@@ -1155,7 +1162,7 @@ function updateContextControls() {
 
 function getActivityHelp(category) {
   if (category === "flight") return `${selectedLocation.name}：先选目的地机场，再上飞机；飞满 300000 米就到另一个国家机场。`;
-  if (category === "water") return `${selectedLocation.name}：这里有大喇叭、漩涡和蛇形滑道，点互动开始滑水。`;
+  if (category === "water") return `${selectedLocation.name}：你先在陆地售票处买票，再进场，坐电梯上去，工作人员会把你放到圆形皮划艇上。`;
   if (category === "metro") return `${selectedLocation.name}：站台门在前面，点互动进驾驶台，再控制地铁往下一站开。`;
   if (category === "fish") return `${selectedLocation.name}：站在河边捞东西，可能捞到鱼、锅、僵尸蛋、宝箱或者奇怪玩具。`;
   if (category === "history") return `${selectedLocation.name}：这是安静的历史纪念馆，可以看2001年9月11日事件时间线和纪念光柱。`;
@@ -1516,21 +1523,36 @@ function updateActivity() {
       vehicle.y += vehicle.vy;
     }
   } else if (selectedLocation.category === "water") {
-    if (vehicle.mode === "slide") {
+    if (vehicle.mode === "elevator") {
+      vehicle.progress += 0.018;
+      vehicle.x = 430;
+      vehicle.y = 430 - vehicle.progress * 255;
+      vehicle.angle = 0;
+      statusText.textContent = `电梯正在上升到水滑道入口：${Math.min(100, Math.round(vehicle.progress * 100))}%`;
+      if (vehicle.progress >= 1) {
+        vehicle.mode = "raft-ready";
+        vehicle.x = 520;
+        vehicle.y = 185;
+        vehicle.progress = 0;
+        statusText.textContent = "到顶层了！蛋仔工作人员把你放到圆形皮划艇上，点开始就出发。";
+      }
+    } else if (vehicle.mode === "slide") {
       vehicle.progress += 0.015;
-      vehicle.x = 190 + vehicle.progress * 690;
-      vehicle.y = 155 + Math.sin(vehicle.progress * Math.PI * (selectedLocation.variant + 1)) * 72 + vehicle.progress * 300;
-      vehicle.angle = Math.sin(vehicle.progress * Math.PI * 2) * 0.22;
+      vehicle.x = 520 + Math.sin(vehicle.progress * Math.PI * (selectedLocation.variant + 1)) * 130;
+      vehicle.y = 185 + vehicle.progress * 295;
+      vehicle.angle = Math.sin(vehicle.progress * Math.PI * 2) * 0.18;
       if (vehicle.progress >= 1) {
         vehicle.mode = "free";
-        vehicle.y = 420;
-        statusText.textContent = "滑下来了，扑通进水！还可以再去售票处和滑梯。";
+        vehicle.y = 430;
+        vehicle.x = 720;
+        statusText.textContent = "滑下来了，圆形皮划艇停在浅水边！还可以回到陆地再玩别的项目。";
       }
     } else {
       if (left) vehicle.vx -= speed;
       if (right) vehicle.vx += speed;
       vehicle.angle = Math.sin(performance.now() * 0.004) * 0.05;
-      vehicle.y += (420 - vehicle.y) * 0.08;
+      const targetY = vehicle.mode === "raft-ready" ? 185 : 430;
+      vehicle.y += (targetY - vehicle.y) * 0.08;
     }
   } else if (selectedLocation.category === "metro") {
     if (left) vehicle.vx -= 0.2;
@@ -1600,18 +1622,48 @@ function activityInteract() {
   }
   if (selectedLocation.category === "water") {
     if (vehicle.mode === "slide") return true;
-    if (vehicle.x < 260) {
-      statusText.textContent = "买到水上乐园门票啦，去右边楼梯上滑梯。";
+    if (vehicle.mode === "elevator") {
+      statusText.textContent = "电梯正在上升，不用走楼梯。";
+      return true;
+    }
+    if (vehicle.mode === "raft-ready") {
+      vehicle.mode = "slide";
+      vehicle.progress = 0;
+      statusText.textContent = "工作人员放好了圆形皮划艇！你现在从正前方视角顺着水滑下去。";
+      return true;
+    }
+    if (!vehicle.waterTicket) {
+      if (vehicle.x > 230) {
+        statusText.textContent = "先回到左边售票处买票，再进场。";
+        return true;
+      }
+      vehicle.waterTicket = true;
+      vehicle.mode = "ticketed";
+      statusText.textContent = "买到票啦！现在往右走到入场口，点开始/互动进场。";
       tone(784, 0, 0.12, 0.025, "triangle");
       return true;
     }
-    if (vehicle.x > 280 && vehicle.x < 720) {
-      vehicle.mode = "slide";
-      vehicle.progress = 0;
-      statusText.textContent = "爬上滑道了！这次会经过大喇叭、漩涡或者蛇形滑道。";
+    if (vehicle.mode === "ticketed") {
+      if (vehicle.x < 320) {
+        statusText.textContent = "已经买票了，往右走到入场口。";
+        return true;
+      }
+      vehicle.mode = "inside-park";
+      vehicle.x = 360;
+      vehicle.y = 430;
+      statusText.textContent = "进场啦！这里有大喇叭、漩涡、蛇形滑道。往中间电梯口走。";
       return true;
     }
-    statusText.textContent = "游到左边售票处买票，或者到中间楼梯上滑梯。";
+    if (vehicle.mode !== "inside-park") vehicle.mode = "inside-park";
+    if (vehicle.x > 350 && vehicle.x < 545) {
+      vehicle.mode = "elevator";
+      vehicle.progress = 0;
+      vehicle.x = 430;
+      vehicle.y = 430;
+      statusText.textContent = "坐上电梯了！每个项目都坐电梯上去，没有楼梯。";
+      return true;
+    }
+    statusText.textContent = "你在陆地上，往中间电梯口走，再点开始/互动。";
     return true;
   }
   if (selectedLocation.category === "metro") {
@@ -2935,6 +2987,10 @@ function drawWaterScene() {
   g.addColorStop(1, "#e9fbff");
   ctx.fillStyle = g;
   ctx.fillRect(0, 0, W, H);
+  if (vehicle.mode === "slide") {
+    drawWaterFirstPersonSlide();
+    return;
+  }
   ctx.fillStyle = "#25a9df";
   ctx.fillRect(0, 335, W, 285);
   ctx.strokeStyle = "rgba(255,255,255,0.65)";
@@ -2946,9 +3002,13 @@ function drawWaterScene() {
   }
   drawTicketBooth(70, 205);
   drawWaterFeature(selectedLocation.variant || 0);
-  drawSlideStairs(315, 225);
-  drawPoolFloat(vehicle.x, vehicle.y + 35);
+  drawWaterElevator(390, 170);
+  drawWaterStaff(535, 205);
+  drawWaterGate(260, 326);
+  if (vehicle.mode === "raft-ready") drawRoundRaft(vehicle.x, vehicle.y + 38, 1.15);
+  else drawPoolFloat(vehicle.x, vehicle.y + 35);
   drawEggyCharacter(vehicle.x, vehicle.y - 5, 0.85, vehicle.angle);
+  drawWaterStatusSigns();
 }
 
 function drawWaterFeature(variant) {
@@ -2993,24 +3053,150 @@ function drawTicketBooth(x, y) {
   ctx.fillRect(x + 86, y + 44, 42, 34);
 }
 
-function drawSlideStairs(x, y) {
+function drawWaterElevator(x, y) {
+  ctx.fillStyle = "#f7fbff";
+  ctx.beginPath();
+  roundedRect(x, y, 105, 268, 8);
+  ctx.fill();
   ctx.strokeStyle = "#172632";
   ctx.lineWidth = 5;
-  for (let i = 0; i < 7; i += 1) {
-    ctx.beginPath();
-    ctx.moveTo(x + i * 18, y + i * 19);
-    ctx.lineTo(x + 78 + i * 18, y + i * 19);
-    ctx.stroke();
-  }
-  ctx.strokeStyle = "#8f5fd9";
-  ctx.lineWidth = 8;
+  ctx.stroke();
+  ctx.fillStyle = "#32a7e2";
+  ctx.fillRect(x + 18, y + 40, 69, 170);
+  ctx.strokeStyle = "#fff";
+  ctx.lineWidth = 4;
   ctx.beginPath();
-  ctx.moveTo(x, y);
-  ctx.lineTo(x + 138, y + 132);
+  ctx.moveTo(x + 52, y + 42);
+  ctx.lineTo(x + 52, y + 208);
+  ctx.stroke();
+  ctx.fillStyle = "#ffd15f";
+  ctx.beginPath();
+  ctx.arc(x + 84, y + 230, 9, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = "#172632";
+  ctx.font = "900 19px system-ui";
+  ctx.fillText("电梯上滑道", x - 8, y - 12);
+}
+
+function drawWaterStaff(x, y) {
+  drawEggyCharacter(x, y, 0.72, Math.sin(performance.now() * 0.004) * 0.08, "#8f5fd9");
+  ctx.fillStyle = "#172632";
+  ctx.font = "900 15px system-ui";
+  ctx.fillText("工作人员", x - 33, y + 42);
+  ctx.fillStyle = "rgba(255,255,255,0.88)";
+  ctx.beginPath();
+  roundedRect(x + 42, y - 60, 130, 42, 8);
+  ctx.fill();
+  ctx.strokeStyle = "#172632";
+  ctx.lineWidth = 3;
   ctx.stroke();
   ctx.fillStyle = "#172632";
-  ctx.font = "900 18px system-ui";
-  ctx.fillText("楼梯上滑梯", x - 10, y - 12);
+  ctx.font = "900 14px system-ui";
+  ctx.fillText("我来放皮划艇", x + 54, y - 34);
+}
+
+function drawWaterGate(x, y) {
+  ctx.fillStyle = "#fff";
+  ctx.beginPath();
+  roundedRect(x, y, 108, 96, 8);
+  ctx.fill();
+  ctx.strokeStyle = "#172632";
+  ctx.lineWidth = 4;
+  ctx.stroke();
+  ctx.fillStyle = "#38a86a";
+  ctx.fillRect(x + 20, y + 36, 68, 42);
+  ctx.fillStyle = "#172632";
+  ctx.font = "900 17px system-ui";
+  ctx.fillText("入场口", x + 28, y + 24);
+}
+
+function drawRoundRaft(x, y, s = 1) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.scale(s, s);
+  ctx.fillStyle = "#ffd15f";
+  ctx.beginPath();
+  ctx.ellipse(0, 0, 58, 32, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = "#172632";
+  ctx.lineWidth = 6;
+  ctx.stroke();
+  ctx.fillStyle = "#f06aa3";
+  ctx.beginPath();
+  ctx.ellipse(0, 0, 35, 17, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+  ctx.fillStyle = "#fff";
+  ctx.beginPath();
+  ctx.ellipse(0, -4, 22, 10, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+}
+
+function drawWaterStatusSigns() {
+  ctx.fillStyle = "rgba(255,255,255,0.86)";
+  ctx.beginPath();
+  roundedRect(36, 34, 430, 74, 8);
+  ctx.fill();
+  ctx.fillStyle = "#172632";
+  ctx.font = "900 23px system-ui";
+  const label = !vehicle.waterTicket
+    ? "先去售票处买票"
+    : vehicle.mode === "ticketed"
+      ? "已买票：去入场口"
+      : vehicle.mode === "elevator"
+        ? "电梯上升中"
+        : vehicle.mode === "raft-ready"
+          ? "工作人员已放好皮划艇"
+          : "进场后去坐电梯";
+  ctx.fillText(label, 56, 64);
+  ctx.font = "800 16px system-ui";
+  ctx.fillText("不用楼梯，每个项目都坐电梯。", 56, 91);
+}
+
+function drawWaterFirstPersonSlide() {
+  const p = vehicle.progress;
+  const sky = ctx.createLinearGradient(0, 0, 0, H);
+  sky.addColorStop(0, "#b9f1ff");
+  sky.addColorStop(0.48, "#e9fbff");
+  sky.addColorStop(1, "#25a9df");
+  ctx.fillStyle = sky;
+  ctx.fillRect(0, 0, W, H);
+
+  ctx.fillStyle = "#25a9df";
+  ctx.beginPath();
+  ctx.moveTo(120, H);
+  ctx.bezierCurveTo(240 + Math.sin(p * 12) * 80, 440, 340, 260, 520, 135);
+  ctx.bezierCurveTo(700, 260, 800 + Math.cos(p * 10) * 80, 440, 920, H);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.strokeStyle = "rgba(255,255,255,0.75)";
+  ctx.lineWidth = 7;
+  for (let i = 0; i < 8; i += 1) {
+    ctx.beginPath();
+    const y = 180 + i * 58 + Math.sin(performance.now() * 0.01 + i) * 10;
+    ctx.moveTo(210, y);
+    ctx.quadraticCurveTo(520, y - 55 + Math.sin(p * 18 + i) * 38, 830, y + 20);
+    ctx.stroke();
+  }
+
+  ctx.fillStyle = "rgba(255,255,255,0.86)";
+  ctx.beginPath();
+  ctx.ellipse(520, 520, 175, 56, 0, 0, Math.PI * 2);
+  ctx.fill();
+  drawRoundRaft(520, 512, 1.8);
+  drawEggyCharacter(520, 462, 1.0, Math.sin(performance.now() * 0.009) * 0.08);
+
+  ctx.fillStyle = "rgba(255,255,255,0.88)";
+  ctx.beginPath();
+  roundedRect(34, 32, 360, 72, 8);
+  ctx.fill();
+  ctx.fillStyle = "#172632";
+  ctx.font = "900 23px system-ui";
+  ctx.fillText("正前方视角滑水中", 54, 62);
+  ctx.font = "800 16px system-ui";
+  ctx.fillText(`进度 ${Math.min(100, Math.round(p * 100))}% · 圆形皮划艇`, 54, 90);
 }
 
 function drawWaterSlide(x, y) {
