@@ -9,6 +9,7 @@ const restartBtn = document.querySelector("#restartBtn");
 const parkBtn = document.querySelector("#parkBtn");
 const lobbyBtn = document.querySelector("#lobbyBtn");
 const boardFlightBtn = document.querySelector("#boardFlightBtn");
+const taxiFlightBtn = document.querySelector("#taxiFlightBtn");
 const takeoffBtn = document.querySelector("#takeoffBtn");
 const landingBtn = document.querySelector("#landingBtn");
 const smoothFlightBtn = document.querySelector("#smoothFlightBtn");
@@ -30,7 +31,7 @@ const keys = new Set();
 const controls = new Set();
 
 const categories = [
-  { key: "flight", title: "开飞机地点", count: 50, prefix: "云端机场", detail: "候机楼里面、蓝灯登机口、大跑道" },
+  { key: "flight", title: "开飞机地点", count: 50, prefix: "云端机场", detail: "停机坪、飞机队列、大跑道" },
   { key: "water", title: "水上乐园地点", count: 20, prefix: "水花乐园", detail: "大喇叭、漩涡、蛇形滑道" },
   { key: "metro", title: "开地铁地点", count: 10, prefix: "环线地铁", detail: "站台门、驾驶台、下一站" },
   { key: "fish", title: "摸鱼地点", count: 30, prefix: "河边摸鱼", detail: "河岸、树、椅子、捞随机东西" },
@@ -165,7 +166,7 @@ const airportPlanes = [
 ];
 
 function gateY(plane) {
-  return plane.y + 320;
+  return plane.y + 170;
 }
 
 function landingGroundY(x) {
@@ -437,7 +438,7 @@ function getNearestPlane() {
 function boardNearestPlane() {
   if (selectedLocation.category !== "flight") return false;
   if (vehicle.mode !== "walking") {
-    statusText.textContent = "你已经在飞机里了，点“平稳飞行”开始飞。";
+    statusText.textContent = "你已经在飞机里了，点“滑行”先在地上走到长跑道。";
     return true;
   }
   const nearest = getNearestPlane();
@@ -454,7 +455,7 @@ function boardNearestPlane() {
   vehicle.vy = 0;
   vehicle.landedPlaneVisible = false;
   vehicle.mode = "boarded";
-  statusText.textContent = `从候机楼里的登机口上了${nearest.plane.label}！现在直接看外面的机场。`;
+  statusText.textContent = `从停机位上了${nearest.plane.label}！点“滑行”，飞机会先在地上走到长跑道。`;
   portalSound();
   return true;
 }
@@ -473,7 +474,7 @@ function takeoffPlane() {
     return true;
   }
   if (vehicle.mode !== "boarded" && vehicle.mode !== "parked") {
-    statusText.textContent = "要先在登机口上飞机，才能滑行起飞。";
+    statusText.textContent = "要先在飞机旁边上飞机，才能滑行起飞。";
     return true;
   }
   vehicle.mode = "taxi-takeoff";
@@ -494,11 +495,11 @@ function landPlane() {
     return true;
   }
   if (vehicle.mode === "taxi-to-gate") {
-    statusText.textContent = "飞机已经降落，正在自动滑回登机口。";
+    statusText.textContent = "飞机已经降落，正在自动滑回停机位。";
     return true;
   }
   if (vehicle.mode === "parked") {
-    statusText.textContent = "飞机已经锁住停在登机口了，没有再往前跑。";
+    statusText.textContent = "飞机已经锁住停在停机位了，没有再往前跑。";
     return true;
   }
   if (vehicle.mode !== "flying" && vehicle.mode !== "boarded") {
@@ -509,14 +510,14 @@ function landPlane() {
   vehicle.mode = "auto-landing";
   vehicle.heading = Math.atan2(target.y - vehicle.y, target.x - vehicle.x);
   vehicle.angle += (vehicle.heading - vehicle.angle) * 0.35;
-  statusText.textContent = "自动降落开始：飞机会飞到中间那条长跑道，停在白线之前，然后滑回登机口。";
+  statusText.textContent = "自动降落开始：飞机会飞到中间那条长跑道，停在白线之前，然后滑回停机位。";
   return true;
 }
 
 function exitPlane() {
   if (selectedLocation.category !== "flight") return false;
   if (vehicle.mode === "walking") {
-    statusText.textContent = "你现在已经在候机楼里面了。";
+    statusText.textContent = "你现在已经在停机坪上了。";
     return true;
   }
   vehicle.mode = "walking";
@@ -528,7 +529,7 @@ function exitPlane() {
   joystickX = 0;
   joystickY = 0;
   updateJoystickVisual();
-  statusText.textContent = "下飞机了！你回到候机楼里面，可以沿着蓝灯再去登机口。";
+  statusText.textContent = "下飞机了！你回到停机坪，可以走到别的飞机旁边。";
   return true;
 }
 
@@ -672,7 +673,7 @@ function updateContextControls() {
 }
 
 function getActivityHelp(category) {
-  if (category === "flight") return `${selectedLocation.name}：你在机场候机楼里面，沿着蓝灯走到登机口上飞机。`;
+  if (category === "flight") return `${selectedLocation.name}：你在机场停机坪上，走到飞机旁边上飞机，再点“滑行”。`;
   if (category === "water") return `${selectedLocation.name}：这里有大喇叭、漩涡和蛇形滑道，点互动开始滑水。`;
   if (category === "metro") return `${selectedLocation.name}：站台门在前面，点互动进驾驶台，再控制地铁往下一站开。`;
   if (category === "fish") return `${selectedLocation.name}：站在河边捞东西，可能捞到鱼、锅、僵尸蛋、宝箱或者奇怪玩具。`;
@@ -836,7 +837,7 @@ function updateActivity() {
       vehicle.pilotX = Math.max(210, Math.min(flightWorld.w - 210, vehicle.pilotX + vehicle.pilotVx));
       const nearest = getNearestPlane();
       vehicle.pilotY = gateY(nearest.plane) + Math.sin(performance.now() * 0.012) * 4;
-      if (nearest.distance < 155) statusText.textContent = `你在候机楼里走到${nearest.plane.label}登机口了，点“上飞机”。`;
+      if (nearest.distance < 155) statusText.textContent = `你走到${nearest.plane.label}旁边了，点“上飞机”。`;
     } else if (vehicle.mode === "plane-falling") {
       const fallElapsed = performance.now() - vehicle.fallStart;
       if (fallElapsed < vehicle.floatDuration) {
@@ -915,8 +916,8 @@ function updateActivity() {
       vehicle.vy += (Math.sin(desiredHeading) * taxiSpeed - vehicle.vy) * 0.09;
       vehicle.y += vehicle.vy;
       statusText.textContent = distance > 55
-        ? `已经降落，正在滑回${gate.plane.label}登机口，距离 ${Math.round(distance)} 米。`
-        : "滑回登机口，马上停稳锁住。";
+        ? `已经降落，正在滑回${gate.plane.label}停机位，距离 ${Math.round(distance)} 米。`
+        : "滑回停机位，马上停稳锁住。";
       if (distance < 38) {
         vehicle.x = gate.x;
         vehicle.y = gate.y;
@@ -925,7 +926,7 @@ function updateActivity() {
         vehicle.heading = 0;
         vehicle.angle = 0;
         vehicle.mode = "parked";
-        statusText.textContent = "飞机回到登机口并锁住停好了，真的不会继续跑了。";
+        statusText.textContent = "飞机回到停机位并锁住停好了，真的不会继续跑了。";
       }
     } else if (vehicle.mode === "auto-landing") {
       const target = getLandingTarget();
@@ -952,7 +953,7 @@ function updateActivity() {
         vehicle.heading = 0;
         vehicle.angle = 0;
         vehicle.mode = "taxi-to-gate";
-        statusText.textContent = "降落完成，停在白线之前了。现在自动滑回登机口。";
+        statusText.textContent = "降落完成，停在白线之前了。现在自动滑回停机位。";
       }
     } else {
       if (left) joystickX = Math.max(-1, joystickX - 0.04);
@@ -1024,7 +1025,7 @@ function activityInteract() {
       return true;
     }
     if (vehicle.mode === "taxi-to-gate") {
-      statusText.textContent = "飞机正在自动滑回登机口，等它锁住停稳。";
+      statusText.textContent = "飞机正在自动滑回停机位，等它锁住停稳。";
       return true;
     }
     if (vehicle.mode === "auto-landing") {
@@ -1534,10 +1535,7 @@ function drawFlightScene() {
     if ((vehicle.mode === "boarded" || vehicle.mode === "taxi-takeoff" || vehicle.mode === "flying" || vehicle.mode === "auto-landing" || vehicle.mode === "taxi-to-gate" || vehicle.mode === "parked" || vehicle.mode === "plane-falling" || vehicle.mode === "landed") && index === vehicle.selectedPlaneIndex) return;
     drawParkedPlane(plane);
   });
-  if (vehicle.mode === "walking") {
-    drawTerminalInteriorHall(focusX);
-    airportPlanes.forEach((plane) => drawBoardingGate(plane));
-  }
+  if (vehicle.mode === "walking") drawTerminalInteriorHall(focusX);
   if (vehicle.mode === "walking" || vehicle.mode === "plane-falling" || vehicle.mode === "landed") drawWalkingPilot(vehicle.pilotX, vehicle.pilotY);
   if (vehicle.mode === "boarded" || vehicle.mode === "taxi-takeoff" || vehicle.mode === "flying" || vehicle.mode === "auto-landing" || vehicle.mode === "taxi-to-gate" || vehicle.mode === "parked" || vehicle.mode === "plane-falling" || vehicle.mode === "landed") drawAirplane(vehicle.x, vehicle.y, vehicle.angle);
   if (vehicle.mode === "plane-falling") drawPlaneFallingOverlay();
@@ -1553,15 +1551,15 @@ function drawFlightScene() {
   ctx.fillText("近景机场视野 3365 公顷", W - 288, 56);
   ctx.font = "800 14px system-ui";
   const line1 = vehicle.mode === "walking"
-    ? "候机楼里面，蓝灯去登机口"
+    ? "停机坪上，走到飞机旁边"
     : vehicle.mode === "plane-falling" || vehicle.mode === "landed"
       ? "小蛋仔在地面，飞机在上方"
       : vehicle.mode === "taxi-takeoff"
         ? "地面滑行中，还没起飞"
       : vehicle.mode === "auto-landing"
         ? "自动降落，正在找跑道"
-        : vehicle.mode === "taxi-to-gate"
-          ? "降落后滑回登机口"
+      : vehicle.mode === "taxi-to-gate"
+          ? "降落后滑回停机位"
         : vehicle.mode === "parked"
           ? "飞机已经锁住停好"
       : `飞行坐标 ${Math.round(vehicle.x)} / ${Math.round(vehicle.y)}`;
@@ -1572,7 +1570,7 @@ function drawFlightScene() {
     : vehicle.mode === "auto-landing"
       ? "自动飞向长跑道，白线前减速"
       : vehicle.mode === "taxi-to-gate"
-        ? "自动回到登机口"
+        ? "自动回到停机位"
       : vehicle.mode === "parked"
         ? "锁住了，点开始可再次飞行"
     : "操纵杆：下拉上升，上推下降";
@@ -1662,7 +1660,7 @@ function drawBoardingGate(plane) {
   }
   ctx.fillStyle = "#172632";
   ctx.font = "900 22px system-ui";
-  ctx.fillText("登机口", plane.x - 42, gateY(plane) - 80);
+  ctx.fillText("停机位", plane.x - 42, gateY(plane) - 80);
 }
 
 function drawTerminalInteriorHall(focusX) {
@@ -1708,9 +1706,9 @@ function drawTerminalInteriorHall(focusX) {
 
   ctx.fillStyle = "#172632";
   ctx.font = "900 30px system-ui";
-  ctx.fillText("机场候机楼里面", startX + 40, hallY - 48);
+  ctx.fillText("机场停机坪", startX + 40, hallY - 48);
   ctx.font = "800 22px system-ui";
-  ctx.fillText("沿着蓝灯走到登机口，从里面上飞机", startX + 40, hallY - 12);
+  ctx.fillText("直接走到飞机旁边上飞机", startX + 40, hallY - 12);
   ctx.restore();
 }
 
@@ -2935,6 +2933,17 @@ boardFlightBtn.addEventListener("click", () => {
     return;
   }
   boardNearestPlane();
+});
+taxiFlightBtn.addEventListener("click", () => {
+  if (selectedLocation.category !== "flight" || screen !== "activity") {
+    statusText.textContent = "先进入开飞机地点，再点滑行。";
+    return;
+  }
+  if (vehicle.mode === "walking") {
+    boardNearestPlane();
+    return;
+  }
+  takeoffPlane();
 });
 takeoffBtn.addEventListener("click", () => {
   if (selectedLocation.category !== "flight" || screen !== "activity") {
