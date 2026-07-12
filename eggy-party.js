@@ -588,6 +588,20 @@ function adjustPlaneSpeed(delta) {
     }
     return true;
   }
+  if (vehicle.mode === "auto-landing") {
+    if (delta > 0) {
+      const currentSpeed = Math.max(4, Math.hypot(vehicle.vx, vehicle.vy));
+      const turboSpeed = Math.min(PLANE_TURBO_MAX_SPEED, currentSpeed * PLANE_TURBO_MULTIPLIER);
+      vehicle.vx = Math.cos(vehicle.heading) * turboSpeed;
+      vehicle.vy = Math.sin(vehicle.heading) * turboSpeed;
+      statusText.textContent = `回跑道超级加速 100 倍！速度 ${Math.round(turboSpeed * 26)}。`;
+    } else {
+      vehicle.vx *= 0.25;
+      vehicle.vy *= 0.25;
+      statusText.textContent = "回跑道途中减速了。";
+    }
+    return true;
+  }
   if (vehicle.mode === "landing-rollout" || vehicle.mode === "taxi-to-gate") {
     if (delta > 0) {
       vehicle.vx = Math.min(PLANE_TURBO_MAX_SPEED, Math.max(vehicle.vx * PLANE_TURBO_MULTIPLIER, 120));
