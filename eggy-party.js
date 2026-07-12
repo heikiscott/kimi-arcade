@@ -96,6 +96,7 @@ const vehicle = {
   floatDuration: 9000,
   planeCrashExploded: false,
   landedPlaneVisible: false,
+  landingTurboUntil: 0,
   selectedPlaneIndex: 0
 };
 
@@ -405,6 +406,7 @@ function resetVehicle() {
   vehicle.fallStart = 0;
   vehicle.planeCrashExploded = false;
   vehicle.landedPlaneVisible = false;
+  vehicle.landingTurboUntil = 0;
   joystickX = 0;
   joystickY = 0;
   flightLookOffsetX = 0;
@@ -590,12 +592,14 @@ function adjustPlaneSpeed(delta) {
   }
   if (vehicle.mode === "auto-landing") {
     if (delta > 0) {
+      vehicle.landingTurboUntil = performance.now() + 5000;
       const currentSpeed = Math.max(4, Math.hypot(vehicle.vx, vehicle.vy));
       const turboSpeed = Math.min(PLANE_TURBO_MAX_SPEED, currentSpeed * PLANE_TURBO_MULTIPLIER);
-      vehicle.vx = Math.cos(vehicle.heading) * turboSpeed;
-      vehicle.vy = Math.sin(vehicle.heading) * turboSpeed;
-      statusText.textContent = `回跑道超级加速 100 倍！速度 ${Math.round(turboSpeed * 26)}。`;
+      vehicle.vx *= 2;
+      vehicle.vy *= 2;
+      statusText.textContent = `回跑道超级加速 100 倍！接下来 5 秒会真的冲向跑道，速度 ${Math.round(turboSpeed * 26)}。`;
     } else {
+      vehicle.landingTurboUntil = 0;
       vehicle.vx *= 0.25;
       vehicle.vy *= 0.25;
       statusText.textContent = "回跑道途中减速了。";
@@ -1107,24 +1111,33 @@ function updateActivity() {
       const dy = target.y - vehicle.y;
       const distance = Math.max(1, Math.hypot(dx, dy));
       const desiredHeading = Math.atan2(dy, dx);
-      const desiredSpeed = distance > 900 ? 9.2 : Math.max(0.55, distance / 76);
+      const landingTurboActive = vehicle.landingTurboUntil > performance.now();
+      const desiredSpeed = landingTurboActive
+        ? Math.min(PLANE_TURBO_MAX_SPEED, Math.max(80, Math.min(distance / 3, 340)))
+        : distance > 900 ? 9.2 : Math.max(0.55, distance / 76);
       const desiredVx = Math.cos(desiredHeading) * desiredSpeed;
       const desiredVy = Math.sin(desiredHeading) * desiredSpeed;
-      vehicle.heading += shortestAngle(vehicle.heading, desiredHeading) * 0.075;
-      vehicle.angle += shortestAngle(vehicle.angle, vehicle.heading) * 0.11;
-      vehicle.vx += (desiredVx - vehicle.vx) * 0.07;
-      vehicle.vy += (desiredVy - vehicle.vy) * 0.07;
+      const turnRate = landingTurboActive ? 0.26 : 0.075;
+      const speedResponse = landingTurboActive ? 0.55 : 0.07;
+      vehicle.heading += shortestAngle(vehicle.heading, desiredHeading) * turnRate;
+      vehicle.angle += shortestAngle(vehicle.angle, vehicle.heading) * (landingTurboActive ? 0.24 : 0.11);
+      vehicle.vx += (desiredVx - vehicle.vx) * speedResponse;
+      vehicle.vy += (desiredVy - vehicle.vy) * speedResponse;
       vehicle.y += vehicle.vy;
-      statusText.textContent = distance > 150
+      const speedNow = Math.hypot(vehicle.vx, vehicle.vy);
+      statusText.textContent = landingTurboActive
+        ? `回跑道 100 倍加速中：距离 ${Math.round(distance)} 米，速度 ${Math.round(speedNow * 26)}。`
+        : distance > 150
         ? `自动降落中：正在飞往中间长跑道，距离 ${Math.round(distance)} 米。`
         : "自动降落中：接近长跑道白线前，正在直接减速。";
-      if (distance < 44 || (distance < 90 && Math.hypot(vehicle.vx, vehicle.vy) < 1.6)) {
+      if (distance < 44 || (landingTurboActive && distance < Math.max(90, speedNow * 1.4)) || (distance < 90 && speedNow < 1.6)) {
         vehicle.x = target.x;
         vehicle.y = target.y;
         vehicle.vx = Math.max(7.2, Math.abs(vehicle.vx));
         vehicle.vy = 0;
         vehicle.heading = 0;
         vehicle.angle = 0;
+        vehicle.landingTurboUntil = 0;
         vehicle.mode = "landing-rollout";
         statusText.textContent = "降落完成，停在白线之前了。现在先沿跑道滑行减速。";
       }
