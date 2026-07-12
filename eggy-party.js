@@ -155,10 +155,20 @@ let lastZombieCatch = 0;
 const fishLoots = ["鱼", "锅", "僵尸蛋", "宝箱", "奇怪玩具", "水草", "金色贝壳", "破旧钥匙"];
 
 const flightWorld = {
-  w: 22000,
+  x: -2600,
+  w: 24600,
   h: 4700,
   finishX: 21450,
   finishY: 3835
+};
+
+const leftRunway = {
+  x: -2360,
+  y: 1460,
+  w: 3600,
+  h: 190,
+  targetX: -2140,
+  centerY: 1555
 };
 
 const landingRunway = {
@@ -226,8 +236,8 @@ function getGateTarget() {
 
 function getTakeoffTarget() {
   return {
-    x: 1280,
-    y: 1635
+    x: leftRunway.targetX,
+    y: leftRunway.centerY
   };
 }
 
@@ -842,7 +852,7 @@ function jumpFromPlane() {
   vehicle.mode = "plane-falling";
   vehicle.fallStart = performance.now();
   vehicle.planeCrashExploded = false;
-  vehicle.pilotX = Math.max(210, Math.min(flightWorld.w - 210, vehicle.x - 110));
+  vehicle.pilotX = Math.max(flightWorld.x + 210, Math.min(flightWorld.x + flightWorld.w - 210, vehicle.x - 110));
   vehicle.pilotY = landingGroundY(vehicle.x) + 118;
   vehicle.pilotVy = 0;
   vehicle.pilotBall = false;
@@ -1131,7 +1141,7 @@ function updateActivity() {
       vehicle.pilotVy += stickWalkY * walkPower * 1.4;
       vehicle.pilotVx *= vehicle.pilotBall ? 0.9 : 0.82;
       vehicle.pilotVy *= vehicle.pilotBall ? 0.9 : 0.82;
-      vehicle.pilotX = Math.max(210, Math.min(flightWorld.w - 210, vehicle.pilotX + vehicle.pilotVx));
+      vehicle.pilotX = Math.max(flightWorld.x + 210, Math.min(flightWorld.x + flightWorld.w - 210, vehicle.pilotX + vehicle.pilotVx));
       vehicle.pilotY = Math.max(260, Math.min(flightWorld.h - 260, vehicle.pilotY + vehicle.pilotVy));
       const nearest = getNearestPlane();
       if (nearest.distance < 155) {
@@ -1176,7 +1186,7 @@ function updateActivity() {
       vehicle.heading = 0;
     } else if (vehicle.mode === "taxi-takeoff") {
       const target = getTakeoffTarget();
-      const onRunway = Math.abs(vehicle.y - target.y) < 34 && vehicle.x > target.x - 80;
+      const onRunway = Math.hypot(vehicle.x - target.x, vehicle.y - target.y) < 90;
       if (!onRunway) {
         const dx = target.x - vehicle.x;
         const dy = target.y - vehicle.y;
@@ -1992,16 +2002,20 @@ function drawAirportTerminal(x, y, w = 310, h = 220, label = "机场") {
 
 function drawHugeAirport() {
   ctx.fillStyle = "#89d06a";
-  ctx.fillRect(0, 0, flightWorld.w, flightWorld.h);
+  ctx.fillRect(flightWorld.x, 0, flightWorld.w, flightWorld.h);
   ctx.fillStyle = "#7abf63";
   ctx.beginPath();
   ctx.arc(4250, 1950, 3920, 0, Math.PI * 2);
   ctx.fill();
   ctx.fillStyle = "#83c967";
   ctx.beginPath();
+  roundedRect(-2500, 1180, 3820, 780, 24);
+  ctx.fill();
+  ctx.beginPath();
   roundedRect(940, 3600, 16900, 760, 24);
   ctx.fill();
   ctx.fillStyle = "#424b57";
+  drawRunway(leftRunway.x, leftRunway.y, leftRunway.w, leftRunway.h, "左侧降落跑道");
   drawRunway(260, 1540, 7920, 190, "起飞/降落长跑道");
   drawRunway(landingRunway.x, landingRunway.y, landingRunway.w, landingRunway.h, "专用降落跑道");
   drawRunway(520, 2180, 7450, 170, "跑道 27R");
@@ -2009,7 +2023,9 @@ function drawHugeAirport() {
   ctx.strokeStyle = "#2d3742";
   ctx.lineWidth = 58;
   ctx.beginPath();
-  ctx.moveTo(360, 1360);
+  ctx.moveTo(leftRunway.targetX, leftRunway.centerY);
+  ctx.lineTo(760, leftRunway.centerY);
+  ctx.lineTo(760, 1360);
   ctx.lineTo(21380, 1360);
   ctx.lineTo(21380, 2680);
   ctx.lineTo(760, 2680);
@@ -2024,7 +2040,7 @@ function drawHugeAirport() {
 
   ctx.strokeStyle = "rgba(255,255,255,0.28)";
   ctx.lineWidth = 3;
-  for (let x = 0; x <= flightWorld.w; x += 240) {
+  for (let x = flightWorld.x; x <= flightWorld.x + flightWorld.w; x += 240) {
     ctx.beginPath();
     ctx.moveTo(x, 0);
     ctx.lineTo(x, flightWorld.h);
@@ -2032,8 +2048,8 @@ function drawHugeAirport() {
   }
   for (let y = 0; y <= flightWorld.h; y += 240) {
     ctx.beginPath();
-    ctx.moveTo(0, y);
-    ctx.lineTo(flightWorld.w, y);
+    ctx.moveTo(flightWorld.x, y);
+    ctx.lineTo(flightWorld.x + flightWorld.w, y);
     ctx.stroke();
   }
 }
