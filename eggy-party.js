@@ -31,6 +31,8 @@ const closePickerBtn = document.querySelector("#closePickerBtn");
 
 const W = canvas.width;
 const H = canvas.height;
+const PLANE_TURBO_MULTIPLIER = 100;
+const PLANE_TURBO_MAX_SPEED = 1800;
 const keys = new Set();
 const controls = new Set();
 const controlPointers = new Map();
@@ -563,21 +565,37 @@ function takeoffPlane() {
 function adjustPlaneSpeed(delta) {
   if (selectedLocation.category !== "flight") return false;
   if (vehicle.mode === "takeoff-roll") {
-    vehicle.vx = Math.max(0.8, Math.min(18, vehicle.vx + delta));
-    statusText.textContent = delta > 0
-      ? `加速！跑道滑行速度 ${Math.round(vehicle.vx * 26)}。`
-      : `减速！跑道滑行速度 ${Math.round(vehicle.vx * 26)}。`;
+    if (delta > 0) {
+      vehicle.vx = Math.min(PLANE_TURBO_MAX_SPEED, Math.max(vehicle.vx * PLANE_TURBO_MULTIPLIER, 220));
+      statusText.textContent = `超级加速 100 倍！跑道滑行速度 ${Math.round(vehicle.vx * 26)}。`;
+    } else {
+      vehicle.vx = Math.max(0.8, vehicle.vx / 4);
+      statusText.textContent = `减速！跑道滑行速度 ${Math.round(vehicle.vx * 26)}。`;
+    }
     return true;
   }
   if (vehicle.mode === "flying") {
-    vehicle.vx += Math.cos(vehicle.heading) * delta * 0.75;
-    vehicle.vy += Math.sin(vehicle.heading) * delta * 0.75;
-    statusText.textContent = delta > 0 ? "飞机加速了。" : "飞机减速了。";
+    if (delta > 0) {
+      const currentSpeed = Math.max(5, Math.hypot(vehicle.vx, vehicle.vy));
+      const turboSpeed = Math.min(PLANE_TURBO_MAX_SPEED, currentSpeed * PLANE_TURBO_MULTIPLIER);
+      vehicle.vx = Math.cos(vehicle.heading) * turboSpeed;
+      vehicle.vy = Math.sin(vehicle.heading) * turboSpeed;
+      statusText.textContent = `空中超级加速 100 倍！速度 ${Math.round(turboSpeed * 26)}。`;
+    } else {
+      vehicle.vx *= 0.25;
+      vehicle.vy *= 0.25;
+      statusText.textContent = "飞机减速了。";
+    }
     return true;
   }
   if (vehicle.mode === "landing-rollout" || vehicle.mode === "taxi-to-gate") {
-    vehicle.vx = Math.max(0.4, vehicle.vx + delta * 0.35);
-    statusText.textContent = delta > 0 ? "地面滑行加速。" : "地面滑行减速。";
+    if (delta > 0) {
+      vehicle.vx = Math.min(PLANE_TURBO_MAX_SPEED, Math.max(vehicle.vx * PLANE_TURBO_MULTIPLIER, 120));
+      statusText.textContent = "地面滑行超级加速 100 倍。";
+    } else {
+      vehicle.vx = Math.max(0.4, vehicle.vx / 4);
+      statusText.textContent = "地面滑行减速。";
+    }
     return true;
   }
   statusText.textContent = "加速/减速要在跑道滑行或飞行时使用。";
@@ -1028,7 +1046,7 @@ function updateActivity() {
       vehicle.angle += (0 - vehicle.angle) * 0.16;
       vehicle.vy += (0 - vehicle.vy) * 0.15;
       vehicle.y += (target.y - vehicle.y) * 0.08;
-      vehicle.vx = Math.max(0.8, Math.min(18, vehicle.vx * 0.996));
+      vehicle.vx = Math.max(0.8, Math.min(PLANE_TURBO_MAX_SPEED, vehicle.vx * 0.996));
       statusText.textContent = `跑道滑行中，速度 ${Math.round(vehicle.vx * 26)}。点加速/减速，点起飞才会飞。`;
     } else if (vehicle.mode === "landing-rollout") {
       const target = getLandingTarget();
