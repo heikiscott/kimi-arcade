@@ -76,6 +76,7 @@ const egg = {
   grounded: false,
   face: 1,
   jetpackUntil: 0,
+  aimPower: null,
   usedPowerups: new Set()
 };
 
@@ -398,26 +399,31 @@ function getLaneGadgets() {
   const sets = [
     [
       { id: "jetpack-0", type: "jetpack", x: 300, y: 430, label: "喷气背包" },
+      { id: "air-0", type: "air", x: 440, y: 330, label: "空中弹球" },
       { id: "high-0", type: "high", x: 575, y: 372, label: "高跳方块" },
       { id: "portal-0", type: "portal", x: 760, y: 430, label: "传送门" }
     ],
     [
       { id: "hook-1", type: "hook", x: 330, y: 405, label: "钩子" },
       { id: "launcher-1", type: "launcher", x: 535, y: 455, label: "三角弹射" },
+      { id: "air-1", type: "air", x: 630, y: 310, label: "空中弹球" },
       { id: "sword-1", type: "sword", x: 700, y: 390, label: "剑冲刺" }
     ],
     [
       { id: "jetpack-2", type: "jetpack", x: 245, y: 455, label: "喷气背包" },
+      { id: "air-2", type: "air", x: 455, y: 360, label: "空中弹球" },
       { id: "sword-2", type: "sword", x: 610, y: 430, label: "剑" },
       { id: "portal-2", type: "portal", x: 800, y: 456, label: "传送门" }
     ],
     [
       { id: "launcher-3", type: "launcher", x: 322, y: 426, label: "三角弹射" },
       { id: "high-3", type: "high", x: 505, y: 350, label: "高跳方块" },
+      { id: "air-3", type: "air", x: 585, y: 270, label: "空中弹球" },
       { id: "hook-3", type: "hook", x: 690, y: 410, label: "钩子" }
     ],
     [
       { id: "jetpack-4", type: "jetpack", x: 250, y: 438, label: "喷气背包" },
+      { id: "air-4", type: "air", x: 420, y: 330, label: "空中弹球" },
       { id: "launcher-4", type: "launcher", x: 520, y: 362, label: "三角弹射" },
       { id: "sword-4", type: "sword", x: 720, y: 435, label: "剑冲刺" }
     ]
@@ -440,6 +446,7 @@ function resetEgg() {
   egg.grounded = false;
   egg.face = 1;
   egg.jetpackUntil = 0;
+  egg.aimPower = null;
   egg.usedPowerups = new Set();
 }
 
@@ -449,23 +456,27 @@ function triggerGadget(gadget) {
   if (gadget.type === "jetpack") {
     egg.jetpackUntil = performance.now() + 11000;
     egg.vy = -7;
-    statusText.textContent = "捡到喷气背包！11 秒内按住跳，可以喷气往上飞。";
+    egg.vx = Math.max(egg.vx, 7.5);
+    egg.face = 1;
+    statusText.textContent = "捡到喷气背包！11 秒内会自动往前飞，按住跳可以飞更高。";
     tone(784, 0, 0.16, 0.025, "triangle");
     tone(1175, 0.12, 0.18, 0.022, "triangle");
     return;
   }
+  if (gadget.type === "air") {
+    egg.aimPower = { type: "air", until: performance.now() + 2600 };
+    statusText.textContent = "碰到空中弹球！点圆形按钮选择往前、左、右弹。";
+    tone(1047, 0, 0.12, 0.025, "sine");
+    return;
+  }
   if (gadget.type === "launcher") {
-    egg.vx = 13;
-    egg.vy = -16;
-    statusText.textContent = "三角弹射器启动！直接把你弹过大坑。";
-    jumpSound();
+    egg.aimPower = { type: "launcher", until: performance.now() + 2600 };
+    statusText.textContent = "三角弹射器启动！点圆形按钮选择弹到前、左、右。";
     return;
   }
   if (gadget.type === "high") {
-    egg.vy = -22;
-    egg.grounded = false;
-    statusText.textContent = "高跳方块！这一跳特别高。";
-    jumpSound();
+    egg.aimPower = { type: "high", until: performance.now() + 2600 };
+    statusText.textContent = "高跳方块亮了！点圆形按钮选择往哪边高跳。";
     return;
   }
   if (gadget.type === "sword") {
@@ -476,21 +487,47 @@ function triggerGadget(gadget) {
     return;
   }
   if (gadget.type === "hook") {
-    egg.vx = 14;
-    egg.vy = -12;
-    egg.x = Math.min(830, egg.x + 145);
-    statusText.textContent = "钩子拉住你，甩到前面去了！";
-    tone(660, 0, 0.12, 0.02, "square");
+    egg.aimPower = { type: "hook", until: performance.now() + 2600 };
+    statusText.textContent = "钩子出来了！点圆形按钮选择钩到前、左、右。";
     return;
   }
   if (gadget.type === "portal") {
-    egg.x = Math.min(860, egg.x + 190);
-    egg.y = Math.max(270, egg.y - 80);
-    egg.vx = 9;
-    egg.vy = -6;
-    statusText.textContent = "传送门打开！直接传到前面一段。";
-    portalSound();
+    egg.aimPower = { type: "portal", until: performance.now() + 2600 };
+    statusText.textContent = "传送门打开！点圆形按钮选择传到前、左、右。";
   }
+}
+
+function applyAimPower(direction = "front") {
+  if (!egg.aimPower) return false;
+  const type = egg.aimPower.type;
+  const side = direction === "left" ? -1 : direction === "right" ? 1 : 0;
+  if (type === "portal") {
+    egg.x = Math.max(70, Math.min(860, egg.x + (direction === "front" ? 220 : side * 150)));
+    egg.y = Math.max(230, egg.y - 95);
+    egg.vx = direction === "front" ? 10 : side * 9;
+    egg.vy = -7;
+    statusText.textContent = `传送门把你传到${direction === "front" ? "前面" : direction === "left" ? "左边" : "右边"}！`;
+    portalSound();
+  } else if (type === "hook") {
+    egg.x = Math.max(65, Math.min(860, egg.x + (direction === "front" ? 170 : side * 150)));
+    egg.vx = direction === "front" ? 15 : side * 12;
+    egg.vy = -13;
+    statusText.textContent = `钩子把你甩到${direction === "front" ? "前面" : direction === "left" ? "左边" : "右边"}！`;
+    tone(660, 0, 0.12, 0.02, "square");
+  } else if (type === "high") {
+    egg.vx = direction === "front" ? 8 : side * 7;
+    egg.vy = -23;
+    statusText.textContent = `高跳方块向${direction === "front" ? "前" : direction === "left" ? "左" : "右"}弹！`;
+    jumpSound();
+  } else {
+    egg.vx = direction === "front" ? 15 : side * 13;
+    egg.vy = type === "air" ? -18 : -16;
+    statusText.textContent = `${type === "air" ? "空中弹球" : "三角弹射器"}把你弹到${direction === "front" ? "前面" : direction === "left" ? "左边" : "右边"}！`;
+    jumpSound();
+  }
+  egg.grounded = false;
+  egg.aimPower = null;
+  return true;
 }
 
 function resetVehicle() {
@@ -1435,6 +1472,11 @@ function updateCourse() {
     egg.vx += egg.face * 0.12;
     statusText.textContent = `喷气背包还剩 ${Math.max(0, Math.ceil((egg.jetpackUntil - performance.now()) / 1000))} 秒，按住跳继续飞。`;
   }
+  if (performance.now() < egg.jetpackUntil) {
+    egg.vx += 0.16;
+    egg.face = 1;
+  }
+  if (egg.aimPower && performance.now() > egg.aimPower.until) applyAimPower("front");
 
   egg.vx *= egg.grounded ? 0.82 : 0.94;
   egg.vx = Math.max(-maxSpeed, Math.min(maxSpeed, egg.vx));
@@ -3220,6 +3262,16 @@ function drawGadget(gadget) {
     ctx.moveTo(14, 16);
     ctx.lineTo(32, 28);
     ctx.stroke();
+  } else if (gadget.type === "air") {
+    ctx.fillStyle = "#f7fbff";
+    ctx.beginPath();
+    ctx.arc(0, 0, 27, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = "#32a7e2";
+    ctx.beginPath();
+    ctx.arc(0, 0, 12 + Math.sin(performance.now() * 0.012) * 4, 0, Math.PI * 2);
+    ctx.fill();
   } else if (gadget.type === "portal") {
     const pulse = Math.sin(performance.now() * 0.01) * 5;
     ctx.strokeStyle = "#8f5fd9";
@@ -3306,6 +3358,45 @@ function drawEggy() {
     ctx.fill();
     ctx.restore();
   }
+  drawAimPicker();
+}
+
+function getAimButtons() {
+  if (!egg.aimPower) return [];
+  return [
+    { dir: "left", label: "左", x: egg.x - 62, y: egg.y - 96 },
+    { dir: "front", label: "前", x: egg.x, y: egg.y - 126 },
+    { dir: "right", label: "右", x: egg.x + 62, y: egg.y - 96 }
+  ];
+}
+
+function drawAimPicker() {
+  if (!egg.aimPower) return;
+  const remain = Math.max(0, Math.ceil((egg.aimPower.until - performance.now()) / 1000));
+  ctx.save();
+  getAimButtons().forEach((button) => {
+    ctx.fillStyle = button.dir === "front" ? "#ffd15f" : "#f7fbff";
+    ctx.strokeStyle = "#172632";
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.arc(button.x, button.y, 25, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = "#172632";
+    ctx.font = "900 18px system-ui";
+    ctx.textAlign = "center";
+    ctx.fillText(button.label, button.x, button.y + 7);
+  });
+  ctx.fillStyle = "rgba(255,255,255,0.88)";
+  ctx.beginPath();
+  roundedRect(egg.x - 112, egg.y - 178, 224, 34, 8);
+  ctx.fill();
+  ctx.fillStyle = "#172632";
+  ctx.font = "900 14px system-ui";
+  ctx.textAlign = "center";
+  ctx.fillText(`选择发射方向 ${remain}`, egg.x, egg.y - 156);
+  ctx.restore();
+  ctx.textAlign = "left";
 }
 
 function draw() {
@@ -3455,6 +3546,21 @@ function canDragFlightLook() {
     && (vehicle.mode === "plane-falling" || vehicle.mode === "landed");
 }
 
+function handleAimPointer(event) {
+  if (screen !== "course" || !egg.aimPower) return false;
+  const rect = canvas.getBoundingClientRect();
+  const sx = canvas.width / rect.width;
+  const sy = canvas.height / rect.height;
+  const x = (event.clientX - rect.left) * sx;
+  const y = (event.clientY - rect.top) * sy;
+  const hit = getAimButtons().find((button) => Math.hypot(x - button.x, y - button.y) < 34);
+  if (!hit) return false;
+  event.preventDefault();
+  getAudio();
+  applyAimPower(hit.dir);
+  return true;
+}
+
 function updateFlightLook(clientX, clientY) {
   const zoom = 0.46;
   flightLookOffsetX -= (clientX - flightLookLastX) / zoom;
@@ -3466,6 +3572,7 @@ function updateFlightLook(clientX, clientY) {
 }
 
 canvas.addEventListener("pointerdown", (event) => {
+  if (handleAimPointer(event)) return;
   if (!canDragFlightLook()) return;
   event.preventDefault();
   flightLookDragging = true;
