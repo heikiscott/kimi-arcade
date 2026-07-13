@@ -85,6 +85,7 @@ const state = {
   destinationIndex: 0,
   selectedPlaneIndex: 0,
   inCockpit: false,
+  cabinView: false,
   autoPilot: false,
   metroT: 0,
   metroPhase: "waiting",
@@ -286,7 +287,72 @@ function createAirliner(color, model, options = {}) {
   label.rotation.x = -Math.PI / 2;
   group.add(label);
 
+  const cabinInterior = createCabinInterior(color, options);
+  cabinInterior.visible = false;
+  group.userData.cabinInterior = cabinInterior;
+  group.add(cabinInterior);
+
   return group;
+}
+
+function createCabinInterior(color, options = {}) {
+  const cabin = new THREE.Group();
+  const floor = box(4.7, 0.08, 1.25, 0x4f5e68);
+  floor.position.set(-0.25, -0.18, 0);
+  cabin.add(floor);
+
+  const wallLeft = box(4.8, 0.9, 0.06, 0xf5f1df);
+  const wallRight = box(4.8, 0.9, 0.06, 0xf5f1df);
+  wallLeft.position.set(-0.25, 0.36, -0.72);
+  wallRight.position.set(-0.25, 0.36, 0.72);
+  cabin.add(wallLeft, wallRight);
+
+  const cockpitWall = box(0.12, 1.1, 1.25, 0xd9e2ea);
+  cockpitWall.position.set(1.72, 0.44, 0);
+  const cockpitDoor = box(0.08, 0.7, 0.36, color);
+  cockpitDoor.position.set(1.78, 0.26, 0);
+  cabin.add(cockpitWall, cockpitDoor);
+
+  const dashboard = box(0.7, 0.34, 0.95, 0x172632);
+  dashboard.position.set(2.45, 0.12, 0);
+  cabin.add(dashboard);
+  for (let i = 0; i < 5; i += 1) {
+    const light = sphere(0.055, i % 2 ? 0x38a86a : 0xffd15f);
+    light.position.set(2.84, 0.26, -0.34 + i * 0.17);
+    cabin.add(light);
+  }
+
+  const pilotSeat = box(0.35, 0.42, 0.36, 0x64717b);
+  pilotSeat.position.set(2.02, -0.02, -0.28);
+  const copilotSeat = box(0.35, 0.42, 0.36, 0x64717b);
+  copilotSeat.position.set(2.02, -0.02, 0.28);
+  cabin.add(pilotSeat, copilotSeat);
+
+  const pilotHead = sphere(0.13, 0xffd6b0);
+  pilotHead.position.set(2.03, 0.35, -0.28);
+  const pilotBody = cyl(0.1, 0.13, 0.35, color, 16);
+  pilotBody.position.set(2.03, 0.12, -0.28);
+  cabin.add(pilotHead, pilotBody);
+
+  const rows = options.doubleDeck ? 5 : 4;
+  for (let row = 0; row < rows; row += 1) {
+    const x = 1.0 - row * 0.62;
+    [-0.36, 0.36].forEach((z, side) => {
+      const seat = box(0.28, 0.36, 0.28, side ? 0xf06aa3 : 0x2f79c8);
+      seat.position.set(x, -0.02, z);
+      cabin.add(seat);
+      const head = sphere(0.095, 0xffd6b0);
+      head.position.set(x, 0.28, z);
+      cabin.add(head);
+    });
+  }
+
+  const cabinLabel = makeLabel(options.doubleDeck ? "双层客舱" : "客舱");
+  cabinLabel.scale.setScalar(0.34);
+  cabinLabel.position.set(-0.4, 0.82, 0);
+  cabinLabel.rotation.x = -Math.PI / 2;
+  cabin.add(cabinLabel);
+  return cabin;
 }
 
 function taperedWing(color, side) {
@@ -915,6 +981,12 @@ function setStatus(text) {
   flightState.textContent = text;
 }
 
+function setPlaneInteriorVisible(visible) {
+  if (plane.userData.cabinInterior) {
+    plane.userData.cabinInterior.visible = visible;
+  }
+}
+
 function replaceMainPlane(option, keepTransform = false) {
   const oldPosition = plane.position.clone();
   const oldRotation = plane.rotation.clone();
@@ -932,6 +1004,7 @@ function replaceMainPlane(option, keepTransform = false) {
     plane.visible = state.currentPlace === "airport";
   }
   plane.scale.setScalar(option.scale);
+  setPlaneInteriorVisible(state.inCockpit || state.cabinView);
 }
 
 function selectedPlaneLabel() {
@@ -962,9 +1035,19 @@ function toggleCockpit() {
     setStatus("先上飞机，才能进驾驶室。");
     return;
   }
-  state.inCockpit = !state.inCockpit;
-  state.autoPilot = !state.inCockpit;
-  setStatus(state.inCockpit ? `进入驾驶室视角：你正在控制 ${selectedPlaneLabel()}。` : "你从控制室出来了，飞机切到无人驾驶，会自己保持平稳。");
+  if (state.inCockpit) {
+    state.inCockpit = false;
+    state.cabinView = true;
+    state.autoPilot = true;
+    setPlaneInteriorVisible(true);
+    setStatus("你从驾驶舱出来，走到客舱里看座椅和玩具乘客；飞机现在无人驾驶，自己平稳飞。");
+  } else {
+    state.inCockpit = true;
+    state.cabinView = false;
+    state.autoPilot = false;
+    setPlaneInteriorVisible(true);
+    setStatus(`回到驾驶舱：驾驶员就在飞机里面，你正在控制 ${selectedPlaneLabel()}。`);
+  }
 }
 
 function smoothAngle(current, target, amount) {
@@ -1030,6 +1113,7 @@ function resetGame(resetMessage = true) {
   state.tourTimer = 0;
   state.flightMeters = 0;
   state.inCockpit = false;
+  state.cabinView = false;
   state.autoPilot = false;
   state.metroT = 0;
   state.metroPhase = "waiting";
@@ -1049,6 +1133,7 @@ function resetGame(resetMessage = true) {
   eggy.scale.setScalar(1);
   state.ballMode = false;
   state.jumpVelocity = 0;
+  setPlaneInteriorVisible(false);
   eggy.visible = true;
   plane.visible = state.currentPlace === "airport";
   if (resetMessage) {
@@ -1165,6 +1250,10 @@ function startWorldTour() {
   state.mode = "tour";
   state.tourIndex = 0;
   state.tourTimer = 0;
+  state.inCockpit = false;
+  state.cabinView = false;
+  state.autoPilot = false;
+  setPlaneInteriorVisible(false);
   plane.scale.setScalar(1.18);
   plane.position.set(-18, 11, 24);
   plane.rotation.set(0, Math.PI / 2, 0);
@@ -1179,9 +1268,11 @@ function boardPlane() {
   }
   state.mode = "boarded";
   state.inCockpit = true;
+  state.cabinView = false;
   state.autoPilot = false;
+  setPlaneInteriorVisible(true);
   eggy.visible = false;
-  setStatus(`已经上 ${selectedPlaneLabel()}，现在在驾驶室里。点“滑行”，飞机会在跑道上慢慢跑。`);
+  setStatus(`已经上 ${selectedPlaneLabel()}，驾驶员就在飞机里面的驾驶舱。点“驾驶室”可以走到客舱看无人驾驶。`);
 }
 
 function taxiPlane() {
@@ -1214,7 +1305,9 @@ function exitPlane() {
   state.mode = "walk";
   state.speed = 0;
   state.inCockpit = false;
+  state.cabinView = false;
   state.autoPilot = true;
+  setPlaneInteriorVisible(false);
   eggy.visible = true;
   eggy.position.copy(plane.position).add(new THREE.Vector3(-2.5, -0.1, 3.2));
   setStatus("你从飞机里出来了，飞机保持无人驾驶平稳状态。");
@@ -1396,10 +1489,17 @@ function updateCamera(dt) {
   const target = state.currentPlace === "metro" && state.mode === "metro" && metroTrainGroup ? metroTrainGroup.position : state.mode === "walk" ? eggy.position : plane.position;
   const desired = new THREE.Vector3(target.x - 15, target.y + 9.5, target.z + 18);
   if (state.inCockpit && ["boarded", "taxi", "takeoff", "flying", "landing", "landed"].includes(state.mode)) {
-    const forward = flightForwardVector();
-    desired.set(target.x - forward.x * 0.8, target.y + 1.2, target.z - forward.z * 0.8);
-    camera.position.lerp(desired, 1 - Math.pow(0.001, dt));
-    camera.lookAt(target.x + forward.x * 18, target.y + 1.7, target.z + forward.z * 18);
+    const cam = plane.localToWorld(new THREE.Vector3(2.05, 0.58, -0.08));
+    const look = plane.localToWorld(new THREE.Vector3(4.8, 0.5, 0));
+    camera.position.lerp(cam, 1 - Math.pow(0.001, dt));
+    camera.lookAt(look);
+    return;
+  }
+  if (state.cabinView && ["boarded", "taxi", "takeoff", "flying", "landing", "landed"].includes(state.mode)) {
+    const cam = plane.localToWorld(new THREE.Vector3(1.25, 0.62, 0));
+    const look = plane.localToWorld(new THREE.Vector3(-2.25, 0.34, 0));
+    camera.position.lerp(cam, 1 - Math.pow(0.001, dt));
+    camera.lookAt(look);
     return;
   }
   if (state.mode !== "walk") desired.set(target.x - 18, target.y + 9, target.z + 20);
