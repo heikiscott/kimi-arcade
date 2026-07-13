@@ -14,6 +14,7 @@ const buttons = {
   park: document.querySelector("#parkBtn"),
   lobby: document.querySelector("#lobbyBtn"),
   tour: document.querySelector("#tourBtn"),
+  ferris: document.querySelector("#ferrisBtn"),
   accidentRide: document.querySelector("#accidentRideBtn"),
   selectPlane: document.querySelector("#selectPlaneBtn"),
   board: document.querySelector("#boardBtn"),
@@ -1696,6 +1697,7 @@ function resetGame(resetMessage = true) {
   state.ridingWheel = false;
   state.wheelT = 0;
   state.jetpackTimer = 0;
+  if (buttons.ferris) buttons.ferris.textContent = "上摩天轮";
   classScoreUsed = false;
   if (state.currentPlace === "airport") {
     eggy.position.set(-18, 1.05, 32);
@@ -1776,13 +1778,17 @@ function toggleFerrisRide() {
     state.mode = "walk";
     eggy.position.set(-35, 1.05, -14);
     eggy.rotation.set(0, 0.5, 0);
+    if (buttons.ferris) buttons.ferris.textContent = "上摩天轮";
     setStatus("泰迪熊从摩天轮下来了，可以继续在游乐园走。");
     return;
   }
   state.mode = "wheel";
   state.ridingWheel = true;
   state.wheelT = -Math.PI * 0.35;
-  setStatus("泰迪熊坐上摩天轮了！会跟着座舱转一圈，脸上还有表情。");
+  state.amusementAccident = false;
+  eggy.visible = true;
+  if (buttons.ferris) buttons.ferris.textContent = "下摩天轮";
+  setStatus("泰迪熊坐上摩天轮了！会跟着座舱转一圈，脸上还有表情。再点“下摩天轮”就下来。");
 }
 
 function startAmusementAccidentRide() {
@@ -2348,6 +2354,7 @@ buttons.start.addEventListener("click", startInteract);
 buttons.park.addEventListener("click", openPark);
 buttons.lobby.addEventListener("click", goLobby);
 buttons.tour.addEventListener("click", startWorldTour);
+buttons.ferris.addEventListener("click", toggleFerrisRide);
 buttons.accidentRide.addEventListener("click", startAmusementAccidentRide);
 buttons.selectPlane.addEventListener("click", selectNextPlane);
 buttons.board.addEventListener("click", boardPlane);
