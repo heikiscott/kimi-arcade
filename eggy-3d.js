@@ -656,6 +656,11 @@ function setStatus(text) {
   flightState.textContent = text;
 }
 
+function smoothAngle(current, target, amount) {
+  const diff = Math.atan2(Math.sin(target - current), Math.cos(target - current));
+  return current + diff * amount;
+}
+
 function renderStudentScores() {
   studentScores.innerHTML = students
     .map((student) => `<div class="student-score"><span>${student.name}</span><em>${student.score} 分</em></div>`)
@@ -733,8 +738,9 @@ function landPlane() {
   if (state.currentPlace !== "airport") return;
   if (state.mode !== "flying" && state.mode !== "takeoff") return;
   state.mode = "landing";
+  state.planeT = 0;
   state.speed = 0.46;
-  setStatus("正在自动对准降落跑道，落地后会减速。");
+  setStatus("先转弯对准降落跑道，不会倒着飞。");
 }
 
 function exitPlane() {
@@ -811,12 +817,29 @@ function updatePlane(dt) {
   }
   if (state.mode === "landing") {
     state.planeT += dt;
-    plane.position.x = THREE.MathUtils.lerp(plane.position.x, 18, dt * 0.7);
-    plane.position.z = THREE.MathUtils.lerp(plane.position.z, 26, dt * 0.9);
-    plane.position.y = THREE.MathUtils.lerp(plane.position.y, 1.18, dt * 0.55);
-    plane.rotation.y = THREE.MathUtils.lerp(plane.rotation.y, Math.PI / 2, dt * 1.2);
-    plane.rotation.z = THREE.MathUtils.lerp(plane.rotation.z, 0, dt * 1.6);
-    if (plane.position.y < 1.45 && state.planeT > 3) {
+    if (state.planeT < 2.6) {
+      plane.position.x = THREE.MathUtils.lerp(plane.position.x, 18, dt * 0.55);
+      plane.position.z -= dt * 6;
+      plane.position.y = THREE.MathUtils.lerp(plane.position.y, 12, dt * 0.75);
+      plane.rotation.y = smoothAngle(plane.rotation.y, -Math.PI / 2, dt * 0.8);
+      plane.rotation.z = THREE.MathUtils.lerp(plane.rotation.z, 0.32, dt * 1.2);
+      setStatus("正在空中转弯：机头慢慢转向降落跑道。");
+    } else if (state.planeT < 5.4) {
+      plane.position.x = THREE.MathUtils.lerp(plane.position.x, 18, dt * 1.0);
+      plane.position.z = THREE.MathUtils.lerp(plane.position.z, 12, dt * 0.7);
+      plane.position.y = THREE.MathUtils.lerp(plane.position.y, 1.25, dt * 0.55);
+      plane.rotation.y = smoothAngle(plane.rotation.y, -Math.PI / 2, dt * 1.4);
+      plane.rotation.z = THREE.MathUtils.lerp(plane.rotation.z, 0, dt * 1.8);
+      setStatus("已经对准跑道，正在下降，不会倒着落。");
+    } else {
+      plane.position.x = 18;
+      plane.position.z += dt * 10;
+      plane.position.y = THREE.MathUtils.lerp(plane.position.y, 1.15, dt * 2.2);
+      plane.rotation.y = smoothAngle(plane.rotation.y, -Math.PI / 2, dt * 2.0);
+      plane.rotation.z = THREE.MathUtils.lerp(plane.rotation.z, 0, dt * 2.4);
+      setStatus("已经落地，沿降落跑道向前滑跑减速。");
+    }
+    if (plane.position.z > 30 && state.planeT > 5.4) {
       state.mode = "landed";
       state.planeT = 0;
       setStatus("落地成功，飞机停在降落跑道上。");
