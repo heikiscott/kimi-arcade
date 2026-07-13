@@ -3,6 +3,7 @@ import * as THREE from "https://unpkg.com/three@0.165.0/build/three.module.js";
 const canvas = document.querySelector("#threeCanvas");
 const placeName = document.querySelector("#placeName");
 const flightState = document.querySelector("#flightState");
+const placeSelect = document.querySelector("#placeSelect");
 const styleSelect = document.querySelector("#styleSelect");
 const moveStick = document.querySelector("#moveStick");
 const moveKnob = document.querySelector("#moveKnob");
@@ -56,6 +57,7 @@ const state = {
   keys: new Set(),
   stick: new THREE.Vector2(0, 0),
   mode: "walk",
+  currentPlace: "airport",
   airportStyle: "china",
   yaw: -0.45,
   pitch: -0.24,
@@ -93,8 +95,7 @@ let styleObjects = new THREE.Group();
 world.add(styleObjects);
 let airportObjects = new THREE.Group();
 world.add(airportObjects);
-buildAirport();
-applyAirportStyle("china");
+buildCurrentPlace();
 
 function mat(color, roughness = 0.78) {
   return new THREE.MeshStandardMaterial({ color, roughness });
@@ -326,6 +327,163 @@ function buildAirport() {
   airportObjects.add(fountain);
 }
 
+function buildCurrentPlace() {
+  airportObjects.clear();
+  styleObjects.clear();
+  if (state.currentPlace === "airport") {
+    buildAirport();
+    applyAirportStyle(state.airportStyle);
+    plane.visible = true;
+    placeName.textContent = styleData[state.airportStyle].name;
+    setStatus("机场里只有机场。先滑行，再点起飞，飞机会贴着跑道冲出去。");
+  } else if (state.currentPlace === "amusement") {
+    buildAmusementPark();
+    plane.visible = false;
+    placeName.textContent = "3D 游乐园";
+    setStatus("这里只是游乐园：摩天轮、喷泉、樱花树和过山车，不混机场。");
+  } else if (state.currentPlace === "water") {
+    buildWaterPark();
+    plane.visible = false;
+    placeName.textContent = "3D 水上乐园";
+    setStatus("这里只是水上乐园：陆地、买票口、电梯、大喇叭滑道和水池。");
+  } else if (state.currentPlace === "metro") {
+    buildMetroStation();
+    plane.visible = false;
+    placeName.textContent = "3D 地铁站";
+    setStatus("这里只是地铁站：站台、站台门、轨道和地铁列车。");
+  }
+  resetGame(false);
+}
+
+function buildAmusementPark() {
+  const ground = new THREE.Mesh(new THREE.BoxGeometry(150, 1, 105), mat(0x8bcf75));
+  ground.position.y = -0.55;
+  ground.receiveShadow = true;
+  airportObjects.add(ground);
+
+  const plaza = cyl(18, 18, 0.18, 0xd8c19b, 64);
+  plaza.position.set(-8, 0.08, 4);
+  airportObjects.add(plaza);
+
+  const wheel = new THREE.Group();
+  const rim = new THREE.Mesh(new THREE.TorusGeometry(9, 0.28, 16, 80), mat(0x172632));
+  rim.rotation.y = Math.PI / 2;
+  wheel.add(rim);
+  for (let i = 0; i < 8; i += 1) {
+    const spoke = box(0.18, 0.18, 18, 0x172632);
+    spoke.rotation.x = (Math.PI / 8) * i;
+    wheel.add(spoke);
+    const cabin = box(1.8, 1.1, 1.4, i % 2 ? 0xf06aa3 : 0xffd15f);
+    cabin.position.set(0, Math.sin(i * Math.PI / 4) * 9, Math.cos(i * Math.PI / 4) * 9);
+    wheel.add(cabin);
+  }
+  const stand1 = box(0.7, 12, 0.7, 0x172632);
+  const stand2 = box(0.7, 12, 0.7, 0x172632);
+  stand1.position.set(0, -4.8, -3.6);
+  stand2.position.set(0, -4.8, 3.6);
+  stand1.rotation.x = -0.35;
+  stand2.rotation.x = 0.35;
+  wheel.add(stand1, stand2);
+  wheel.position.set(-45, 13, -8);
+  airportObjects.add(wheel);
+
+  const fountain = cyl(4.8, 4.8, 0.35, 0x7fc7ea, 64);
+  fountain.position.set(-10, 0.2, 2);
+  airportObjects.add(fountain);
+  for (let i = 0; i < 12; i += 1) {
+    const water = sphere(0.18, 0x9ee8ff);
+    water.position.set(-10 + Math.cos(i) * 3, 1.5 + Math.sin(i * 1.4) * 0.6, 2 + Math.sin(i) * 3);
+    airportObjects.add(water);
+  }
+
+  addSakuraTree(25, 0, -5, 8.5);
+  addCoasterTrack(18, -22);
+}
+
+function buildWaterPark() {
+  const ground = new THREE.Mesh(new THREE.BoxGeometry(150, 1, 105), mat(0xf2d69b));
+  ground.position.y = -0.55;
+  ground.receiveShadow = true;
+  airportObjects.add(ground);
+  const pool = new THREE.Mesh(new THREE.BoxGeometry(42, 0.2, 24), mat(0x3fb6df));
+  pool.position.set(18, 0.05, -8);
+  pool.receiveShadow = true;
+  airportObjects.add(pool);
+  const ticket = box(10, 5, 6, 0xffffff);
+  ticket.position.set(-42, 2.5, 20);
+  airportObjects.add(ticket);
+  const sign = makeLabel("买票口");
+  sign.position.set(-42, 5.7, 16.8);
+  airportObjects.add(sign);
+  const elevator = box(7, 14, 7, 0xd9e2ea);
+  elevator.position.set(-18, 7, 8);
+  airportObjects.add(elevator);
+  const slide = new THREE.Mesh(new THREE.TorusGeometry(8, 0.85, 12, 90, Math.PI * 1.45), mat(0xf06aa3));
+  slide.position.set(10, 9, 11);
+  slide.rotation.set(Math.PI / 2, 0.2, 0.6);
+  airportObjects.add(slide);
+  const horn = new THREE.Mesh(new THREE.ConeGeometry(6, 10, 32, 1, true), mat(0xffd15f));
+  horn.position.set(34, 6, 8);
+  horn.rotation.z = Math.PI / 2;
+  airportObjects.add(horn);
+}
+
+function buildMetroStation() {
+  const ground = new THREE.Mesh(new THREE.BoxGeometry(150, 1, 105), mat(0xb9c4cc));
+  ground.position.y = -0.55;
+  ground.receiveShadow = true;
+  airportObjects.add(ground);
+  const platform = box(120, 0.4, 16, 0xf5f1df);
+  platform.position.set(0, 0.15, 12);
+  airportObjects.add(platform);
+  const rail1 = box(120, 0.18, 0.45, 0x172632);
+  const rail2 = box(120, 0.18, 0.45, 0x172632);
+  rail1.position.set(0, 0.2, -5);
+  rail2.position.set(0, 0.2, -9);
+  airportObjects.add(rail1, rail2);
+  const train = new THREE.Group();
+  for (let i = 0; i < 3; i += 1) {
+    const car = box(15, 4.8, 5.2, 0x32a7e2);
+    car.position.set(-18 + i * 16, 2.6, -7);
+    train.add(car);
+    for (let j = 0; j < 4; j += 1) {
+      const win = box(1.8, 1.1, 0.08, 0xffffff);
+      win.position.set(-23 + i * 16 + j * 3, 3.4, -9.65);
+      train.add(win);
+    }
+  }
+  airportObjects.add(train);
+  for (let i = 0; i < 7; i += 1) {
+    const door = box(3.2, 3.8, 0.2, 0x7f8c96);
+    door.position.set(-42 + i * 14, 2.05, 3.7);
+    airportObjects.add(door);
+  }
+}
+
+function addSakuraTree(x, y, z, h) {
+  const trunk = cyl(0.45, 0.65, h, 0x7a4c29);
+  trunk.position.set(x, y + h / 2, z);
+  airportObjects.add(trunk);
+  for (let i = 0; i < 7; i += 1) {
+    const blossom = sphere(3.1, 0xf6a5c9, 1.25, 0.9, 1.15);
+    blossom.position.set(x + Math.cos(i) * 2.8, y + h + Math.sin(i * 1.6) * 1.2, z + Math.sin(i) * 2.8);
+    airportObjects.add(blossom);
+  }
+}
+
+function addCoasterTrack(x, z) {
+  for (let i = 0; i < 18; i += 1) {
+    const rail = box(5.5, 0.25, 0.45, 0x8f5fd9);
+    rail.position.set(x + i * 3.4, 3 + Math.sin(i * 0.8) * 2.2, z + Math.sin(i * 0.5) * 4);
+    rail.rotation.y = Math.sin(i * 0.5) * 0.5;
+    rail.rotation.z = Math.sin(i * 0.8) * 0.25;
+    airportObjects.add(rail);
+  }
+  const cart = box(3.2, 1.4, 2.4, 0xd8343f);
+  cart.position.set(x + 22, 5.5, z + 4);
+  airportObjects.add(cart);
+}
+
 function addRunway(x, z, w, d, label) {
   const runway = box(w, 0.08, d, 0x424b57);
   runway.position.set(x, 0.03, z);
@@ -368,6 +526,7 @@ function addBuilding(x, y, z, w, h, d, color) {
 
 function applyAirportStyle(key) {
   state.airportStyle = key;
+  if (state.currentPlace !== "airport") return;
   const data = styleData[key];
   placeName.textContent = data.name;
   scene.fog.color.set(key === "egypt" ? 0xffe3ad : 0xaee7ff);
@@ -515,27 +674,40 @@ function addScoreToMe() {
   setStatus("给你加 5 分！现在可以继续开飞机。");
 }
 
-function resetGame() {
+function resetGame(resetMessage = true) {
   state.mode = "walk";
   state.speed = 0;
   state.planeT = 0;
   classScoreUsed = false;
-  eggy.position.set(-18, 1.05, -8);
-  plane.position.set(-2, 1.15, -3);
+  if (state.currentPlace === "airport") {
+    eggy.position.set(-18, 1.05, -8);
+    plane.position.set(-2, 1.15, -3);
+  } else {
+    eggy.position.set(-28, 1.05, 10);
+    plane.position.set(-2, 1.15, -3);
+  }
   plane.rotation.set(0, Math.PI / 2, 0);
   plane.scale.setScalar(1);
   eggy.visible = true;
-  setStatus("走到飞机旁边，点“上飞机”。");
+  plane.visible = state.currentPlace === "airport";
+  if (resetMessage) {
+    setStatus(state.currentPlace === "airport" ? "走到飞机旁边，点“上飞机”。" : "这个地方没有飞机，只有当前地点自己的东西。");
+  }
   renderStudentScores();
 }
 
 function boardPlane() {
+  if (state.currentPlace !== "airport") {
+    setStatus("这里不是机场，没有飞机。请先把地点选成“机场”。");
+    return;
+  }
   state.mode = "boarded";
   eggy.visible = false;
   setStatus("已经上飞机。点“滑行”，飞机会在跑道上慢慢跑。");
 }
 
 function taxiPlane() {
+  if (state.currentPlace !== "airport") return;
   if (state.mode !== "boarded" && state.mode !== "landed") return;
   state.mode = "taxi";
   state.speed = 0.18;
@@ -543,6 +715,7 @@ function taxiPlane() {
 }
 
 function takeoffPlane() {
+  if (state.currentPlace !== "airport") return;
   if (state.mode !== "taxi") return;
   state.mode = "takeoff";
   state.speed = 0.36;
@@ -550,6 +723,7 @@ function takeoffPlane() {
 }
 
 function landPlane() {
+  if (state.currentPlace !== "airport") return;
   if (state.mode !== "flying" && state.mode !== "takeoff") return;
   state.mode = "landing";
   state.speed = 0.46;
@@ -589,6 +763,7 @@ function updateWalking(dt) {
 }
 
 function updatePlane(dt) {
+  if (state.currentPlace !== "airport") return;
   if (state.mode === "taxi") {
     plane.position.x += dt * 14;
     plane.rotation.z = Math.sin(performance.now() * 0.004) * 0.025;
@@ -599,11 +774,20 @@ function updatePlane(dt) {
   }
   if (state.mode === "takeoff") {
     state.planeT += dt;
-    plane.position.x += dt * 23;
-    plane.position.y += dt * (3.6 + state.planeT * 1.3);
-    plane.position.z += Math.sin(state.planeT * 1.6) * dt * 3;
-    plane.rotation.z = THREE.MathUtils.lerp(plane.rotation.z, -0.22, dt * 1.4);
-    if (state.planeT > 4) {
+    if (state.planeT < 1.8) {
+      plane.position.x += dt * 31;
+      plane.position.y = 1.15;
+      plane.rotation.z = THREE.MathUtils.lerp(plane.rotation.z, -0.04, dt * 2);
+      setStatus("起飞滑跑中：飞机还贴着跑道往前冲。");
+    } else {
+      const climbT = state.planeT - 1.8;
+      plane.position.x += dt * 34;
+      plane.position.y = 1.15 + climbT * climbT * 1.25;
+      plane.position.z += Math.sin(climbT * 0.8) * dt * 1.4;
+      plane.rotation.z = THREE.MathUtils.lerp(plane.rotation.z, -0.16, dt * 1.2);
+      setStatus("机头慢慢抬起来，飞机往前爬升，不是热气球那样直上。");
+    }
+    if (state.planeT > 5.2) {
       state.mode = "flying";
       state.planeT = 0;
       setStatus("飞机在空中平稳飞行，可以点“降落”。");
@@ -612,7 +796,7 @@ function updatePlane(dt) {
   if (state.mode === "flying") {
     state.planeT += dt;
     plane.position.x += dt * 13;
-    plane.position.y = 18 + Math.sin(state.planeT * 1.2) * 1.6;
+    plane.position.y = 14 + Math.sin(state.planeT * 1.2) * 1.2;
     plane.position.z += Math.sin(state.planeT * 0.8) * dt * 5;
     plane.rotation.y = Math.PI / 2 + Math.sin(state.planeT * 0.55) * 0.16;
     plane.rotation.z = Math.sin(state.planeT) * 0.16;
@@ -692,6 +876,10 @@ window.addEventListener("resize", resize);
 window.addEventListener("keydown", (event) => state.keys.add(event.code));
 window.addEventListener("keyup", (event) => state.keys.delete(event.code));
 styleSelect.addEventListener("change", () => applyAirportStyle(styleSelect.value));
+placeSelect.addEventListener("change", () => {
+  state.currentPlace = placeSelect.value;
+  buildCurrentPlace();
+});
 buttons.board.addEventListener("click", boardPlane);
 buttons.taxi.addEventListener("click", taxiPlane);
 buttons.takeoff.addEventListener("click", takeoffPlane);

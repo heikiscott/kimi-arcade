@@ -22,8 +22,17 @@
       <section class="controls">
         <div class="panel-title">
           <p>Eggy Party 3D</p>
-          <h1>立体机场</h1>
+          <h1>立体乐园</h1>
         </div>
+        <label>
+          地点
+          <select id="placeSelect">
+            <option value="airport">机场</option>
+            <option value="amusement">游乐园</option>
+            <option value="water">水上乐园</option>
+            <option value="metro">地铁站</option>
+          </select>
+        </label>
         <label>
           机场风格
           <select id="styleSelect">
@@ -49,7 +58,7 @@
           <strong>同学积分</strong>
           <div id="studentScores"></div>
         </div>
-        <p class="hint">键盘 WASD 或方向键走路。手机/iPad 用左下角摇杆。飞机会沿跑道滑行、起飞、转弯、降落。</p>
+        <p class="hint">先选地点。机场里才会出现飞机和跑道；游乐园、水上乐园、地铁站会单独显示自己的场景。</p>
       </section>
     </main>
     <script type="module" src="eggy-3d.js"></script>
