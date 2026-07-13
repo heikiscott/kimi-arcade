@@ -27,6 +27,17 @@ const tracks = [
   { id: "volcano", name: "火山", road: 0x3b3030, ground: 0x6c2d21, sky: 0xc4552f, obstacle: "岩浆石" }
 ];
 
+const cliffJumps = [
+  { label: "往左边悬崖飞", short: "左飞", dx: -6.8, lift: 0.15, dz: 2.7 },
+  { label: "往右边悬崖飞", short: "右飞", dx: 6.8, lift: 0.15, dz: 2.7 },
+  { label: "往上方左边悬崖飞", short: "上左", dx: -5.2, lift: 1.35, dz: 2.5 },
+  { label: "往上方右边悬崖飞", short: "上右", dx: 5.2, lift: 1.35, dz: 2.5 },
+  { label: "往下方前面悬崖飞", short: "下前", dx: 0.8, lift: -1.0, dz: 3.2 },
+  { label: "直走飞到前面悬崖", short: "直飞", dx: 0, lift: 0.35, dz: 3.5 },
+  { label: "往下面左边悬崖飞", short: "下左", dx: -4.8, lift: -0.85, dz: 3.0 },
+  { label: "往下面右边悬崖飞", short: "下右", dx: 4.8, lift: -0.85, dz: 3.0 }
+];
+
 const cars = [
   { id: "kart", name: "经典卡丁车", color: 0xd93a32, speed: 1.04, shape: "kart" },
   { id: "gliderKart", name: "滑翔卡丁车", color: 0xf08a2d, speed: 1.03, shape: "glider" },
@@ -568,21 +579,9 @@ function rebuildWorld() {
 
 function createRoadSegment(i) {
   const group = new THREE.Group();
-  const cliffGap = selectedTrack.id === "cliff" && i % 6 === 3;
+  const cliffGap = selectedTrack.id === "cliff" && i % 3 === 1;
   if (cliffGap) {
-    const leftPlate = box(4.2, 0.22, 3.0, selectedTrack.road);
-    const rightPlate = box(4.2, 0.22, 3.0, selectedTrack.road);
-    leftPlate.position.set(-4.4, 0, -2.4);
-    rightPlate.position.set(4.4, 0, 2.4);
-    const arrow = makeLabel("飞");
-    arrow.scale.setScalar(0.5);
-    arrow.position.set(0, 0.44, -0.3);
-    arrow.rotation.x = -Math.PI / 2;
-    const edge1 = box(12.8, 0.55, 0.22, 0x172632);
-    const edge2 = edge1.clone();
-    edge1.position.set(0, -0.08, -4.2);
-    edge2.position.set(0, -0.08, 4.2);
-    group.add(leftPlate, rightPlate, arrow, edge1, edge2);
+    buildCliffJumpSegment(group, i);
   } else {
     const road = box(12, 0.16, 9.8, selectedTrack.road);
     road.position.y = 0;
@@ -618,6 +617,45 @@ function createRoadSegment(i) {
   }
   group.position.z = -i * 10;
   return group;
+}
+
+function cliffPatternFor(index) {
+  return cliffJumps[index % cliffJumps.length];
+}
+
+function buildCliffJumpSegment(group, index) {
+  const jump = cliffPatternFor(index);
+  group.userData.jumpLabel = jump.short;
+  const startPlate = box(5.5, 0.26, 3.0, selectedTrack.road);
+  startPlate.position.set(0, 0, -3.35);
+  const targetPlate = box(5.8, 0.26, 3.25, selectedTrack.road);
+  targetPlate.position.set(jump.dx, jump.lift, jump.dz);
+  const startCliff = box(5.8, 3.2, 3.15, 0x8b5a35);
+  startCliff.position.set(0, -1.75, -3.35);
+  const targetCliff = box(6.1, 3.2 + Math.max(0, jump.lift), 3.4, 0x8b5a35);
+  targetCliff.position.set(jump.dx, jump.lift - 1.75, jump.dz);
+  const takeoff = box(5.2, 0.2, 0.75, 0xffd15f);
+  takeoff.position.set(jump.dx * 0.18, 0.18, -1.35);
+  takeoff.rotation.x = -0.25;
+  const guide = box(Math.max(1.5, Math.abs(jump.dx) * 0.62), 0.08, 0.42, 0xffffff);
+  guide.position.set(jump.dx * 0.48, Math.max(-0.2, jump.lift * 0.45) + 0.48, 0.0);
+  guide.rotation.z = -jump.dx * 0.025;
+  guide.rotation.x = -jump.lift * 0.08;
+  const middlePad = box(2.0, 0.18, 1.35, 0x39a657);
+  middlePad.position.set(jump.dx * 0.45, jump.lift * 0.45, 0.55);
+  const sign = makeLabel(jump.short);
+  sign.scale.setScalar(0.42);
+  sign.position.set(jump.dx * 0.35, Math.max(0.42, jump.lift * 0.5 + 0.62), -0.65);
+  sign.rotation.x = -Math.PI / 2;
+  const leftEdge = box(5.8, 0.5, 0.22, 0x172632);
+  const rightEdge = leftEdge.clone();
+  leftEdge.position.set(0, -0.05, -4.9);
+  rightEdge.position.set(jump.dx, jump.lift - 0.05, 4.55);
+  const cloudA = sphere(1.0, 0xffffff, 1.8, 0.55, 1.1);
+  const cloudB = sphere(0.9, 0xffffff, 1.6, 0.5, 1);
+  cloudA.position.set(jump.dx * 0.55, -1.25, -0.2);
+  cloudB.position.set(jump.dx * 0.25 + 2, -1.75, 2.1);
+  group.add(startCliff, targetCliff, startPlate, targetPlate, takeoff, guide, middlePad, sign, leftEdge, rightEdge, cloudA, cloudB);
 }
 
 function buildTrackScenery() {
@@ -770,12 +808,16 @@ function roadYawAt(pathDistance) {
 }
 
 function cliffPhase() {
-  return (distance / 42) % 60;
+  return (distance / 42) % 30;
+}
+
+function currentCliffJump() {
+  return cliffPatternFor(Math.floor((distance / 42) / 30));
 }
 
 function inCliffFlightZone() {
   const phase = cliffPhase();
-  return selectedTrack.id === "cliff" && phase > 26 && phase < 44;
+  return selectedTrack.id === "cliff" && phase > 8 && phase < 24;
 }
 
 function startRace() {
@@ -828,7 +870,7 @@ function update(dt) {
 
   const steer = (right ? 1 : 0) - (left ? 1 : 0);
   laneX += steer * dt * 8.5 * selectedTire.grip;
-  const maxLane = selectedTrack.id === "cliff" && vertical > 0.5 ? 8.2 : 4.8;
+  const maxLane = selectedTrack.id === "cliff" && vertical > 0.5 ? 9.4 : 4.8;
   laneX = THREE.MathUtils.clamp(laneX, -maxLane, maxLane);
   speed += (fast ? 24 : 0) * dt;
   speed -= (slow ? 30 : 0) * dt;
@@ -836,11 +878,12 @@ function update(dt) {
   distance += speed * dt * 42;
 
   if (jump && Math.abs(vertical) < 0.02) verticalVelocity = 9.5;
-  if (inCliffFlightZone() && selectedWing.id !== "none") flyTimer = Math.max(flyTimer, 1.35);
+  const cliffJump = currentCliffJump();
+  if (inCliffFlightZone() && selectedWing.id !== "none") flyTimer = Math.max(flyTimer, 2.25);
   if (fly && selectedWing.id !== "none") flyTimer = 1.6;
   if (flyTimer > 0) {
     flyTimer -= dt;
-    const targetFlight = selectedTrack.id === "cliff" ? 6.8 : selectedWing.id === "plane" ? 5.2 : 3.1;
+    const targetFlight = selectedTrack.id === "cliff" ? 6.2 + Math.max(0, cliffJump.lift) : selectedWing.id === "plane" ? 5.2 : 3.1;
     vertical = THREE.MathUtils.lerp(vertical, targetFlight, dt * 4);
   } else {
     vertical += verticalVelocity * dt;
@@ -860,8 +903,9 @@ function update(dt) {
   updateRoad();
   updatePickups();
   updateCamera(dt);
-  const flightText = inCliffFlightZone() && selectedWing.id !== "none" ? " · 翅膀自动打开，控制方向落到另一边" : "";
-  statusEl.textContent = `${selectedTrack.name} 3D赛道 · 第 ${currentLap()}/${totalLaps} 圈 · 速度 ${Math.round(speed * 10)} · ${selectedTrack.obstacle}${flightText}`;
+  const cliffText = selectedTrack.id === "cliff" ? ` · 下一跳:${cliffJump.short} · 每30米一个悬崖` : "";
+  const flightText = inCliffFlightZone() && selectedWing.id !== "none" ? ` · 翅膀自动打开，${cliffJump.label}` : "";
+  statusEl.textContent = `${selectedTrack.name} 3D赛道 · 第 ${currentLap()}/${totalLaps} 圈 · 速度 ${Math.round(speed * 10)} · ${selectedTrack.obstacle}${cliffText}${flightText}`;
 
   if (distance >= raceGoalDistance()) finishRace();
 }
