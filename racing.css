@@ -186,6 +186,270 @@ canvas {
   background: var(--blue);
 }
 
+.driver-button {
+  display: grid;
+  justify-items: center;
+  gap: 5px;
+  min-height: 82px;
+}
+
+.driver-avatar {
+  position: relative;
+  display: block;
+  width: 44px;
+  height: 44px;
+  overflow: hidden;
+  border: 3px solid #172632;
+  border-radius: 50%;
+  background: #ffd6b0;
+  box-shadow: inset 0 -6px 0 rgba(23, 38, 50, 0.1);
+}
+
+.driver-button.active .driver-avatar {
+  border-color: #fff;
+}
+
+.driver-avatar b,
+.driver-avatar i,
+.driver-avatar em,
+.driver-avatar small {
+  position: absolute;
+  display: block;
+  content: "";
+  font-style: normal;
+}
+
+.driver-avatar.mario b,
+.driver-avatar.luigi b {
+  left: 4px;
+  top: -2px;
+  width: 30px;
+  height: 18px;
+  border: 2px solid #172632;
+  border-radius: 14px 14px 8px 8px;
+  color: #fff;
+  background: #d93a32;
+  font-size: 12px;
+  font-weight: 950;
+  line-height: 16px;
+  text-align: center;
+}
+
+.driver-avatar.luigi b {
+  background: #39a657;
+}
+
+.driver-avatar.mario i,
+.driver-avatar.luigi i,
+.driver-avatar.princess em,
+.driver-avatar.bowser em,
+.driver-avatar.yoshi i {
+  left: 12px;
+  top: 23px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #172632;
+  box-shadow: 13px 0 0 #172632;
+}
+
+.driver-avatar.mario em,
+.driver-avatar.luigi em {
+  left: 12px;
+  top: 31px;
+  width: 18px;
+  height: 4px;
+  border-radius: 999px;
+  background: #172632;
+}
+
+.driver-avatar.mario::after,
+.driver-avatar.luigi::after {
+  content: "";
+  position: absolute;
+  left: 18px;
+  top: 25px;
+  width: 9px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ffc08d;
+  box-shadow: 0 1px 0 rgba(23, 38, 50, 0.18);
+}
+
+.driver-avatar.princess {
+  background: #ffd6b0;
+}
+
+.driver-avatar.princess b {
+  left: -6px;
+  top: -4px;
+  width: 54px;
+  height: 24px;
+  border-radius: 50%;
+  background: #ffd15f;
+}
+
+.driver-avatar.princess i {
+  left: 12px;
+  top: 1px;
+  width: 20px;
+  height: 13px;
+  clip-path: polygon(0 100%, 16% 25%, 36% 100%, 50% 0, 64% 100%, 84% 25%, 100% 100%);
+  background: #ffd15f;
+}
+
+.driver-avatar.princess small {
+  left: 14px;
+  top: 31px;
+  width: 16px;
+  height: 4px;
+  border-radius: 999px;
+  background: #d94a78;
+}
+
+.driver-avatar.bowser {
+  background: #f08a2d;
+}
+
+.driver-avatar.bowser b {
+  left: 7px;
+  top: 28px;
+  width: 30px;
+  height: 12px;
+  border-radius: 50% 50% 10px 10px;
+  background: #39a657;
+}
+
+.driver-avatar.bowser i {
+  left: 7px;
+  top: 1px;
+  width: 9px;
+  height: 13px;
+  clip-path: polygon(50% 0, 0 100%, 100% 100%);
+  background: #fff;
+  box-shadow: 22px 0 0 #fff;
+}
+
+.driver-avatar.bowser small {
+  left: 17px;
+  top: 32px;
+  width: 10px;
+  height: 5px;
+  border-radius: 0 0 999px 999px;
+  background: #172632;
+}
+
+.driver-avatar.ghost {
+  overflow: visible;
+  background: #f4f7fa;
+}
+
+.driver-avatar.ghost b,
+.driver-avatar.ghost i {
+  left: 12px;
+  top: 17px;
+  width: 6px;
+  height: 9px;
+  border-radius: 50%;
+  background: #172632;
+}
+
+.driver-avatar.ghost i {
+  left: 25px;
+}
+
+.driver-avatar.ghost em {
+  left: 3px;
+  bottom: -1px;
+  width: 38px;
+  height: 9px;
+  clip-path: polygon(0 0, 15% 100%, 30% 0, 45% 100%, 60% 0, 75% 100%, 100% 0);
+  background: #f4f7fa;
+}
+
+.driver-avatar.mushroom {
+  background: #ffe6cc;
+}
+
+.driver-avatar.mushroom b {
+  left: -4px;
+  top: -4px;
+  width: 52px;
+  height: 24px;
+  border-radius: 50% 50% 12px 12px;
+  background: #d93a32;
+}
+
+.driver-avatar.mushroom i {
+  left: 17px;
+  top: 2px;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: #fff;
+}
+
+.driver-avatar.mushroom em {
+  left: 13px;
+  top: 27px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #172632;
+  box-shadow: 13px 0 0 #172632;
+}
+
+.driver-avatar.star {
+  border-color: #b98516;
+  background: transparent;
+  box-shadow: none;
+}
+
+.driver-avatar.star b {
+  inset: -5px 0 0 0;
+  color: #ffd15f;
+  font-size: 47px;
+  line-height: 44px;
+  text-align: center;
+  text-shadow: 0 2px 0 #172632;
+}
+
+.driver-avatar.yoshi {
+  overflow: visible;
+  background: #39a657;
+}
+
+.driver-avatar.yoshi b {
+  left: 10px;
+  top: 23px;
+  width: 26px;
+  height: 16px;
+  border-radius: 50%;
+  background: #ffe6cc;
+}
+
+.driver-avatar.yoshi i {
+  top: 17px;
+}
+
+.driver-avatar.yoshi em {
+  left: 18px;
+  top: -2px;
+  width: 10px;
+  height: 11px;
+  border-radius: 50%;
+  background: #d93a32;
+}
+
+.driver-avatar.yoshi small {
+  left: 5px;
+  top: 27px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #fff;
+}
+
 .button-row {
   display: grid;
   grid-template-columns: 1fr 1fr;

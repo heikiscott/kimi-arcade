@@ -35,13 +35,14 @@ const cars = [
 ];
 
 const drivers = [
-  { id: "mario", name: "马里奥", color: 0xd93a32, hat: "M" },
-  { id: "luigi", name: "路易吉", color: 0x39a657, hat: "L" },
-  { id: "princess", name: "公主", color: 0xd94a78, hat: "P" },
-  { id: "bowser", name: "坏乌龟", color: 0xf08a2d, hat: "B" },
-  { id: "ghost", name: "幽灵", color: 0xf4f7fa, hat: "G" },
-  { id: "mushroom", name: "蘑菇", color: 0xffffff, hat: "T" },
-  { id: "star", name: "星星", color: 0xffd15f, hat: "★" }
+  { id: "mario", name: "马里奥", color: 0xd93a32, hat: "M", avatar: "mario" },
+  { id: "luigi", name: "路易吉", color: 0x39a657, hat: "L", avatar: "luigi" },
+  { id: "princess", name: "桃子公主", color: 0xd94a78, hat: "P", avatar: "princess" },
+  { id: "bowser", name: "坏乌龟", color: 0xf08a2d, hat: "B", avatar: "bowser" },
+  { id: "ghost", name: "幽灵", color: 0xf4f7fa, hat: "G", avatar: "ghost" },
+  { id: "mushroom", name: "蘑菇", color: 0xffffff, hat: "T", avatar: "mushroom" },
+  { id: "star", name: "星星", color: 0xffd15f, hat: "★", avatar: "star" },
+  { id: "yoshi", name: "耀西", color: 0x39a657, hat: "Y", avatar: "yoshi" }
 ];
 
 const tires = [
@@ -56,7 +57,7 @@ const wings = [
   { id: "plane", name: "飞机翼" }
 ];
 
-const icons = ["M", "闪", "星", "1"];
+const icons = ["M", "L", "Y", "闪", "星", "1"];
 const keys = new Set();
 const pressed = new Set();
 const totalLaps = 3;
@@ -189,17 +190,106 @@ function createCar(color, label, isPlayer = false) {
 
 function createDriver() {
   const group = new THREE.Group();
-  const head = sphere(0.25, 0xffd6b0);
+  if (selectedDriver.id === "ghost") {
+    const ghost = sphere(0.35, 0xf4f7fa, 0.9, 1.15, 0.72);
+    ghost.position.y = 0.22;
+    const eyeL = sphere(0.035, 0x172632);
+    const eyeR = sphere(0.035, 0x172632);
+    eyeL.position.set(-0.11, 0.36, -0.26);
+    eyeR.position.set(0.11, 0.36, -0.26);
+    group.add(ghost, eyeL, eyeR);
+    return group;
+  }
+  if (selectedDriver.id === "star") {
+    const star = makeStarMesh(0xffd15f);
+    star.scale.setScalar(0.42);
+    star.position.y = 0.24;
+    const eyeL = sphere(0.03, 0x172632);
+    const eyeR = sphere(0.03, 0x172632);
+    eyeL.position.set(-0.1, 0.3, -0.08);
+    eyeR.position.set(0.1, 0.3, -0.08);
+    group.add(star, eyeL, eyeR);
+    return group;
+  }
+  if (selectedDriver.id === "mushroom") {
+    const face = sphere(0.22, 0xffead2, 1, 0.9, 0.8);
+    face.position.y = 0.18;
+    const cap = sphere(0.34, 0xd93a32, 1.28, 0.52, 1);
+    cap.position.y = 0.42;
+    const spot = sphere(0.08, 0xffffff, 1, 0.35, 1);
+    spot.position.set(0, 0.5, -0.19);
+    group.add(face, cap, spot);
+    return group;
+  }
+  if (selectedDriver.id === "yoshi") {
+    const head = sphere(0.27, 0x39a657, 0.92, 1.05, 1);
+    head.position.y = 0.32;
+    const snout = sphere(0.16, 0xffead2, 1.15, 0.72, 0.9);
+    snout.position.set(0, 0.28, -0.24);
+    const crest = sphere(0.07, 0xd93a32);
+    crest.position.set(0, 0.58, 0.03);
+    const body = cyl(0.2, 0.26, 0.5, 0x39a657, 20);
+    body.position.y = -0.05;
+    group.add(head, snout, crest, body);
+    return group;
+  }
+  const head = sphere(0.25, selectedDriver.id === "bowser" ? 0xf3b15e : 0xffd6b0);
   head.position.y = 0.32;
-  const hat = cyl(0.28, 0.24, 0.18, selectedDriver.color, 24);
-  hat.position.y = 0.55;
-  const body = cyl(0.22, 0.28, 0.52, selectedDriver.color, 20);
+  const bodyColor = selectedDriver.id === "mario" || selectedDriver.id === "luigi" ? 0x245b8f : selectedDriver.color;
+  const body = cyl(0.22, 0.28, 0.52, bodyColor, 20);
   body.position.y = -0.05;
-  const label = makeLabel(selectedDriver.hat);
-  label.scale.setScalar(0.18);
-  label.position.set(0, 0.62, -0.22);
-  group.add(head, hat, body, label);
+  group.add(head, body);
+  if (selectedDriver.id === "princess") {
+    const hair = sphere(0.28, 0xffd15f, 1.12, 0.62, 0.9);
+    hair.position.y = 0.38;
+    const crown = cyl(0.18, 0.28, 0.2, 0xffd15f, 5);
+    crown.position.y = 0.64;
+    group.add(hair, crown);
+  } else if (selectedDriver.id === "bowser") {
+    const shell = sphere(0.3, 0x39a657, 1.05, 0.72, 0.8);
+    shell.position.set(0, 0.03, 0.2);
+    const hornL = cyl(0.04, 0.09, 0.22, 0xffffff, 12);
+    const hornR = hornL.clone();
+    hornL.position.set(-0.18, 0.58, -0.02);
+    hornR.position.set(0.18, 0.58, -0.02);
+    group.add(shell, hornL, hornR);
+  } else {
+    const hat = cyl(0.28, 0.24, 0.18, selectedDriver.color, 24);
+    hat.position.y = 0.55;
+    const label = makeLabel(selectedDriver.hat);
+    label.scale.setScalar(0.18);
+    label.position.set(0, 0.62, -0.22);
+    group.add(hat, label);
+    if (selectedDriver.id === "mario" || selectedDriver.id === "luigi") {
+      const nose = sphere(0.08, 0xffc08d, 1, 0.9, 0.9);
+      nose.position.set(0, 0.31, -0.25);
+      const mustache = box(0.24, 0.035, 0.04, 0x172632);
+      mustache.position.set(0, 0.22, -0.27);
+      const shirt = box(0.38, 0.18, 0.18, selectedDriver.color);
+      shirt.position.set(0, 0.02, -0.05);
+      group.add(nose, mustache, shirt);
+    }
+  }
   return group;
+}
+
+function makeStarMesh(color) {
+  const shape = new THREE.Shape();
+  const points = 10;
+  for (let i = 0; i < points; i += 1) {
+    const r = i % 2 === 0 ? 1 : 0.46;
+    const a = -Math.PI / 2 + (i / points) * Math.PI * 2;
+    const x = Math.cos(a) * r;
+    const y = Math.sin(a) * r;
+    if (i === 0) shape.moveTo(x, y);
+    else shape.lineTo(x, y);
+  }
+  shape.closePath();
+  const mesh = new THREE.Mesh(new THREE.ExtrudeGeometry(shape, { depth: 0.18, bevelEnabled: false }), mat(color));
+  mesh.rotation.x = Math.PI;
+  mesh.rotation.z = Math.PI;
+  mesh.castShadow = true;
+  return mesh;
 }
 
 function makeButtons(container, items, getLabel, isActive, onPick) {
@@ -217,6 +307,39 @@ function makeButtons(container, items, getLabel, isActive, onPick) {
   });
 }
 
+function makeDriverButtons() {
+  driverChoices.innerHTML = "";
+  drivers.forEach((driver) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "driver-button";
+    button.classList.toggle("active", driver === selectedDriver);
+    const avatar = document.createElement("span");
+    avatar.className = `driver-avatar ${driver.avatar}`;
+    avatar.setAttribute("aria-hidden", "true");
+    avatar.innerHTML = driverAvatarMarkup(driver);
+    const name = document.createElement("span");
+    name.textContent = driver.name;
+    button.append(avatar, name);
+    button.addEventListener("click", () => {
+      selectedDriver = driver;
+      refreshPlayerCar();
+      drawMenu();
+    });
+    driverChoices.append(button);
+  });
+}
+
+function driverAvatarMarkup(driver) {
+  if (driver.avatar === "princess") return "<b></b><i></i><em></em><small></small>";
+  if (driver.avatar === "bowser") return "<b></b><i></i><em></em><small></small>";
+  if (driver.avatar === "ghost") return "<b></b><i></i><em></em>";
+  if (driver.avatar === "mushroom") return "<b></b><i></i><em></em>";
+  if (driver.avatar === "star") return "<b>★</b>";
+  if (driver.avatar === "yoshi") return "<b></b><i></i><em></em><small></small>";
+  return `<b>${driver.hat}</b><i></i><em></em>`;
+}
+
 function drawMenu() {
   makeButtons(trackChoices, tracks, (track) => track.name, (track) => track === selectedTrack, (track) => {
     selectedTrack = track;
@@ -230,10 +353,7 @@ function drawMenu() {
     selectedCar = car;
     refreshPlayerCar();
   });
-  makeButtons(driverChoices, drivers, (driver) => driver.name, (driver) => driver === selectedDriver, (driver) => {
-    selectedDriver = driver;
-    refreshPlayerCar();
-  });
+  makeDriverButtons();
   makeButtons(tireChoices, tires, (tire) => tire.name, (tire) => tire === selectedTire, (tire) => {
     selectedTire = tire;
   });
