@@ -174,6 +174,8 @@ const planeOptions = [
   { model: "A350", color: 0x2f79c8, deck: "单层", position: [31, 0.55, 20], scale: 0.98 }
 ];
 
+const PLANE_GROUND_Y = 1.15;
+
 const world = new THREE.Group();
 scene.add(world);
 
@@ -1643,7 +1645,7 @@ function arriveAtNextCountryAirport() {
   state.planeT = 0;
   plane.visible = true;
   plane.scale.setScalar(1);
-  plane.position.set(18, 1.15, 30);
+  plane.position.set(18, PLANE_GROUND_Y, 30);
   plane.rotation.set(0, -Math.PI / 2, 0);
   eggy.visible = false;
   setStatus(`${destination.intro} 你已经飞到另一个国家机场了。`);
@@ -1702,7 +1704,7 @@ function resetGame(resetMessage = true) {
     plane.position.set(...option.position);
   } else {
     eggy.position.set(-28, 1.05, 10);
-    plane.position.set(-8, 1.15, 30);
+    plane.position.set(-8, PLANE_GROUND_Y, 30);
   }
   plane.rotation.set(0, Math.PI / 2, 0);
   plane.scale.setScalar(planeOptions[state.selectedPlaneIndex].scale);
@@ -1910,7 +1912,10 @@ function taxiPlane() {
   const planeMode = currentPlaneMotionMode();
   if (planeMode !== "boarded" && planeMode !== "landed") return;
   setPlaneMotionMode("taxi");
+  state.planeT = 0;
   state.speed = 0.18;
+  plane.position.y = PLANE_GROUND_Y;
+  plane.rotation.z = 0;
   setStatus("正在竖向跑道上滑行，还没有起飞。");
 }
 
@@ -1918,7 +1923,10 @@ function takeoffPlane() {
   if (state.currentPlace !== "airport") return;
   if (currentPlaneMotionMode() !== "taxi") return;
   setPlaneMotionMode("takeoff");
+  state.planeT = 0;
   state.speed = 0.36;
+  plane.position.y = PLANE_GROUND_Y;
+  plane.rotation.z = 0;
   setStatus("起飞！飞机开始离开跑道。");
 }
 
@@ -2110,6 +2118,7 @@ function updatePlane(dt) {
     const turnInput = state.stick.x;
     plane.rotation.y -= turnInput * dt * 0.85;
     plane.rotation.z = THREE.MathUtils.lerp(plane.rotation.z, -turnInput * 0.18 + Math.sin(performance.now() * 0.004) * 0.025, dt * 4);
+    plane.position.y = THREE.MathUtils.lerp(plane.position.y, PLANE_GROUND_Y, dt * 8);
     plane.position.addScaledVector(flightForwardVector(), dt * 14);
     plane.position.x = THREE.MathUtils.clamp(plane.position.x, -60, 60);
     plane.position.z = THREE.MathUtils.clamp(plane.position.z, -35, 36);
@@ -2122,23 +2131,26 @@ function updatePlane(dt) {
   if (planeMode === "takeoff") {
     state.planeT += dt;
     const forward = flightForwardVector();
-    if (state.planeT < 1.8) {
+    if (state.planeT < 2.05) {
       plane.position.addScaledVector(forward, dt * 31);
-      plane.position.y = 1.15;
-      plane.rotation.z = THREE.MathUtils.lerp(plane.rotation.z, -0.04, dt * 2);
+      plane.position.y = PLANE_GROUND_Y;
+      plane.rotation.z = THREE.MathUtils.lerp(plane.rotation.z, 0, dt * 4);
       setStatus("竖向起飞滑跑中：飞机还贴着跑道往前冲。");
     } else {
-      const climbT = state.planeT - 1.8;
+      const climbT = state.planeT - 2.05;
+      const smoothClimb = Math.min(1, climbT / 3.2);
+      const lift = smoothClimb * smoothClimb * (3 - 2 * smoothClimb);
       plane.position.addScaledVector(forward, dt * 34);
-      plane.position.y = 1.15 + climbT * climbT * 1.25;
+      plane.position.y = PLANE_GROUND_Y + lift * 8.6 + Math.max(0, climbT - 3.2) * 2.2;
       plane.position.x += Math.sin(climbT * 0.8) * dt * 1.4;
-      plane.rotation.z = THREE.MathUtils.lerp(plane.rotation.z, -0.16, dt * 1.2);
-      setStatus("机头慢慢抬起来，飞机往前爬升，不是热气球那样直上。");
+      plane.rotation.z = THREE.MathUtils.lerp(plane.rotation.z, -0.1, dt * 1.2);
+      setStatus("机头慢慢抬起来，飞机平滑爬升，不会突然掉下去。");
     }
-    if (state.planeT > 5.2) {
+    if (state.planeT > 5.8) {
       setPlaneMotionMode("flying");
       state.planeT = 0;
       state.flightMeters = 0;
+      plane.position.y = Math.max(plane.position.y, 7.5);
       setStatus("飞机在空中：左下角圆杆可以控制飞机，往下拉上升，往上推下降，左右拉就左右飞。");
     }
   }
@@ -2170,14 +2182,14 @@ function updatePlane(dt) {
     } else if (state.planeT < 5.4) {
       plane.position.x = THREE.MathUtils.lerp(plane.position.x, 18, dt * 1.0);
       plane.position.z = THREE.MathUtils.lerp(plane.position.z, 12, dt * 0.7);
-      plane.position.y = THREE.MathUtils.lerp(plane.position.y, 1.25, dt * 0.55);
+      plane.position.y = THREE.MathUtils.lerp(plane.position.y, PLANE_GROUND_Y + 0.1, dt * 0.55);
       plane.rotation.y = smoothAngle(plane.rotation.y, -Math.PI / 2, dt * 1.4);
       plane.rotation.z = THREE.MathUtils.lerp(plane.rotation.z, 0, dt * 1.8);
       setStatus("已经对准跑道，正在下降，不会倒着落。");
     } else {
       plane.position.x = 18;
       plane.position.z += dt * 10;
-      plane.position.y = THREE.MathUtils.lerp(plane.position.y, 1.15, dt * 2.2);
+      plane.position.y = THREE.MathUtils.lerp(plane.position.y, PLANE_GROUND_Y, dt * 2.2);
       plane.rotation.y = smoothAngle(plane.rotation.y, -Math.PI / 2, dt * 2.0);
       plane.rotation.z = THREE.MathUtils.lerp(plane.rotation.z, 0, dt * 2.4);
       setStatus("已经落地，沿降落跑道向前滑跑减速。");
