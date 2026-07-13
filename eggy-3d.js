@@ -31,7 +31,7 @@ const buttons = {
 
 const styleData = {
   china: { name: "中国风格机场", ground: 0x76bd72, accent: 0xd8343f, second: 0xffd15f },
-  usa: { name: "美国风格机场", ground: 0x77bd77, accent: 0x2f79c8, second: 0xd8343f },
+  usa: { name: "美国风格机场", ground: 0x77bd77, accent: 0x5f6f7a, second: 0xd8343f },
   uk: { name: "英国风格机场", ground: 0x70b86d, accent: 0xc8323c, second: 0xffffff },
   egypt: { name: "埃及风格机场", ground: 0xd8b46f, accent: 0xd49b43, second: 0xffe2a3 },
   southAfrica: { name: "南非风格机场", ground: 0xa9bf62, accent: 0xf2b44b, second: 0x356b4a },
@@ -116,7 +116,7 @@ const eggy = createEggy();
 eggy.position.set(-18, 1.05, 32);
 scene.add(eggy);
 
-const plane = createAirliner(0x2f79c8, "A320");
+const plane = createAirliner(0xf2b44b, "A320");
 plane.position.set(-8, 1.15, 30);
 plane.rotation.y = Math.PI / 2;
 scene.add(plane);
@@ -180,7 +180,7 @@ function createEggy() {
   const stem = cyl(0.07, 0.07, 0.48, 0x172632);
   stem.position.set(0, 1.45, 0);
   stem.rotation.z = 0.25;
-  const bobble = sphere(0.22, 0x32a7e2);
+  const bobble = sphere(0.22, 0xf06aa3);
   bobble.position.set(0.12, 1.72, 0);
   group.add(stem, bobble);
 
@@ -212,7 +212,7 @@ function createAirliner(color, model) {
   stripe.position.set(0.05, 0.12, 0.72);
   group.add(stripe);
 
-  const nose = sphere(0.52, 0x4aa3df, 1, 0.42, 0.08);
+  const nose = sphere(0.52, 0xd9e2ea, 1, 0.42, 0.08);
   nose.position.set(3.15, 0.16, 0.62);
   group.add(nose);
 
@@ -238,9 +238,9 @@ function createAirliner(color, model) {
   group.add(engineL, engineR);
 
   for (let i = -2.1; i <= 1.8; i += 0.44) {
-    const winL = sphere(0.055, 0x32a7e2, 1, 0.4, 0.08);
+    const winL = sphere(0.055, 0x64717b, 1, 0.4, 0.08);
     winL.position.set(i, 0.26, 0.7);
-    const winR = sphere(0.055, 0x32a7e2, 1, 0.4, 0.08);
+    const winR = sphere(0.055, 0x64717b, 1, 0.4, 0.08);
     winR.position.set(i, 0.26, -0.7);
     group.add(winL, winR);
   }
@@ -325,14 +325,14 @@ function buildAirport() {
   airportObjects.add(terminal);
 
   for (let i = 0; i < 7; i += 1) {
-    const windowBox = box(1.4, 1.2, 0.12, 0x32a7e2);
+    const windowBox = box(1.4, 1.2, 0.12, 0x64717b);
     windowBox.position.set(-38 + i * 3, 4.2, 25.92);
     airportObjects.add(windowBox);
   }
 
   const towerBase = cyl(1.1, 1.3, 8, 0xffffff);
   towerBase.position.set(-13, 4, 29);
-  const towerTop = cyl(2.2, 1.9, 2.2, 0x32a7e2, 8);
+  const towerTop = cyl(2.2, 1.9, 2.2, 0x64717b, 8);
   towerTop.position.set(-13, 9.2, 29);
   airportObjects.add(towerBase, towerTop);
 
@@ -341,7 +341,7 @@ function buildAirport() {
   addBuilding(81, 5, 38, 8, 10, 8, 0x9db0bc);
 
   for (let i = 0; i < 8; i += 1) {
-    const p = createAirliner(i % 2 ? 0xd8343f : 0x2f79c8, i % 2 ? "737" : "A320");
+    const p = createAirliner(i % 2 ? 0xd8343f : 0xf2b44b, i % 2 ? "737" : "A320");
     p.scale.setScalar(0.58);
     p.position.set(-18 + i * 5.6, 0.35, 20);
     p.rotation.y = Math.PI / 2;
@@ -914,6 +914,7 @@ function startWorldTour() {
   plane.position.set(-18, 11, 24);
   plane.rotation.set(0, Math.PI / 2, 0);
   buildWorldTourStop(state.tourIndex);
+  setStatus(`${tourCountries[state.tourIndex].intro} 点“开始/互动”去下一个国家，不会自己乱跑。`);
 }
 
 function boardPlane() {
@@ -1004,9 +1005,8 @@ function updateWorldTour(dt) {
   plane.rotation.y = -t * 0.52 + Math.PI / 2;
   plane.rotation.z = Math.sin(t * 1.3) * 0.22;
   if (state.tourTimer > 5.5) {
-    state.tourIndex = (state.tourIndex + 1) % tourCountries.length;
     state.tourTimer = 0;
-    buildWorldTourStop(state.tourIndex);
+    setStatus(`${tourCountries[state.tourIndex].intro} 点“开始/互动”去下一个国家，不会自己乱跑。`);
   }
 }
 
