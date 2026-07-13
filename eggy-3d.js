@@ -5,6 +5,7 @@ const placeName = document.querySelector("#placeName");
 const flightState = document.querySelector("#flightState");
 const placeSelect = document.querySelector("#placeSelect");
 const styleSelect = document.querySelector("#styleSelect");
+const airportSelect = document.querySelector("#airportSelect");
 const moveStick = document.querySelector("#moveStick");
 const moveKnob = document.querySelector("#moveKnob");
 const studentScores = document.querySelector("#studentScores");
@@ -13,6 +14,7 @@ const buttons = {
   park: document.querySelector("#parkBtn"),
   lobby: document.querySelector("#lobbyBtn"),
   tour: document.querySelector("#tourBtn"),
+  accidentRide: document.querySelector("#accidentRideBtn"),
   selectPlane: document.querySelector("#selectPlaneBtn"),
   board: document.querySelector("#boardBtn"),
   cockpit: document.querySelector("#cockpitBtn"),
@@ -42,8 +44,30 @@ const styleData = {
   uk: { name: "英国风格机场", ground: 0x70b86d, accent: 0xc8323c, second: 0xffffff },
   egypt: { name: "埃及风格机场", ground: 0xd8b46f, accent: 0xd49b43, second: 0xffe2a3 },
   southAfrica: { name: "南非风格机场", ground: 0xa9bf62, accent: 0xf2b44b, second: 0x356b4a },
-  japan: { name: "日本风格机场", ground: 0x79c17c, accent: 0xf06aa3, second: 0xffffff }
+  japan: { name: "日本风格机场", ground: 0x79c17c, accent: 0xf06aa3, second: 0xffffff },
+  germany: { name: "德国风格机场", ground: 0x73bd73, accent: 0x172632, second: 0xffd15f },
+  thailand: { name: "泰国风格机场", ground: 0x86c86e, accent: 0x7b4ab8, second: 0xffd15f },
+  france: { name: "法国风格机场", ground: 0x78c07b, accent: 0x2f79c8, second: 0xffffff },
+  uae: { name: "阿联酋风格机场", ground: 0xd8bd78, accent: 0x2f79c8, second: 0xffd15f },
+  australia: { name: "澳大利亚风格机场", ground: 0x82c36b, accent: 0xf2b44b, second: 0x2f79c8 },
+  korea: { name: "韩国风格机场", ground: 0x83c77e, accent: 0xd8343f, second: 0x2f79c8 },
+  india: { name: "印度风格机场", ground: 0x8bc66e, accent: 0xf28b2f, second: 0x38a86a },
+  brazil: { name: "巴西风格机场", ground: 0x73c96b, accent: 0xffd15f, second: 0x2f79c8 },
+  canada: { name: "加拿大风格机场", ground: 0x7cc171, accent: 0xd8343f, second: 0xffffff }
 };
+
+const airportLocations = [
+  ["新加坡", "樟宜机场", "SIN", "china"], ["中国", "北京首都机场", "PEK", "china"], ["中国", "上海浦东机场", "PVG", "china"], ["中国", "香港国际机场", "HKG", "china"], ["中国", "昆明长水机场", "KMG", "china"],
+  ["日本", "东京羽田机场", "HND", "japan"], ["日本", "成田机场", "NRT", "japan"], ["日本", "关西机场", "KIX", "japan"], ["韩国", "仁川机场", "ICN", "korea"], ["泰国", "曼谷素万那普机场", "BKK", "thailand"],
+  ["德国", "法兰克福机场", "FRA", "germany"], ["德国", "慕尼黑机场", "MUC", "germany"], ["英国", "伦敦希思罗机场", "LHR", "uk"], ["法国", "巴黎戴高乐机场", "CDG", "france"], ["荷兰", "阿姆斯特丹史基浦机场", "AMS", "germany"],
+  ["美国", "洛杉矶机场", "LAX", "usa"], ["美国", "纽约肯尼迪机场", "JFK", "usa"], ["美国", "西雅图机场", "SEA", "usa"], ["美国", "旧金山机场", "SFO", "usa"], ["美国", "芝加哥机场", "ORD", "usa"],
+  ["加拿大", "温哥华机场", "YVR", "canada"], ["加拿大", "多伦多机场", "YYZ", "canada"], ["阿联酋", "迪拜机场", "DXB", "uae"], ["卡塔尔", "多哈机场", "DOH", "uae"], ["印度", "德里机场", "DEL", "india"],
+  ["印度", "孟买机场", "BOM", "india"], ["澳大利亚", "悉尼机场", "SYD", "australia"], ["澳大利亚", "墨尔本机场", "MEL", "australia"], ["新西兰", "奥克兰机场", "AKL", "australia"], ["埃及", "开罗机场", "CAI", "egypt"],
+  ["南非", "约翰内斯堡机场", "JNB", "southAfrica"], ["巴西", "圣保罗机场", "GRU", "brazil"], ["巴西", "里约机场", "GIG", "brazil"], ["墨西哥", "墨西哥城机场", "MEX", "usa"], ["土耳其", "伊斯坦布尔机场", "IST", "germany"],
+  ["西班牙", "马德里机场", "MAD", "france"], ["意大利", "罗马机场", "FCO", "france"], ["瑞士", "苏黎世机场", "ZRH", "germany"], ["奥地利", "维也纳机场", "VIE", "germany"], ["芬兰", "赫尔辛基机场", "HEL", "germany"],
+  ["马来西亚", "吉隆坡机场", "KUL", "thailand"], ["印尼", "雅加达机场", "CGK", "thailand"], ["越南", "胡志明机场", "SGN", "thailand"], ["菲律宾", "马尼拉机场", "MNL", "thailand"], ["沙特", "吉达机场", "JED", "uae"],
+  ["摩洛哥", "卡萨布兰卡机场", "CMN", "egypt"], ["肯尼亚", "内罗毕机场", "NBO", "southAfrica"], ["阿根廷", "布宜诺斯艾利斯机场", "EZE", "brazil"], ["智利", "圣地亚哥机场", "SCL", "brazil"], ["葡萄牙", "里斯本机场", "LIS", "france"]
+].map(([country, airport, code, style], index) => ({ country, airport, code, style, index }));
 
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -91,6 +115,7 @@ const state = {
   tourTimer: 0,
   flightMeters: 0,
   destinationIndex: 0,
+  selectedAirportIndex: 0,
   selectedPlaneIndex: 0,
   inCockpit: false,
   cabinView: false,
@@ -98,6 +123,8 @@ const state = {
   cabinLocal: new THREE.Vector3(0.25, 0.46, 0),
   cabinMotionMode: "boarded",
   autoPilot: false,
+  amusementAccident: false,
+  amusementAccidentT: 0,
   metroT: 0,
   metroPhase: "waiting",
   metroDoorsOpen: true
@@ -120,17 +147,23 @@ const tourCountries = [
   { key: "usa", name: "美国", title: "美国环游", intro: "现在到美国：高楼、星条旗航站楼和很宽的城市道路。" },
   { key: "uk", name: "英国", title: "英国环游", intro: "现在到英国：钟楼、红色巴士和英伦风格建筑。" },
   { key: "china", name: "中国", title: "中国环游", intro: "现在到中国：红色屋顶、灯笼、高楼和宽阔广场。" },
-  { key: "southAfrica", name: "南非", title: "南非环游", intro: "现在到南非：桌山、草原树和金色大地。" }
+  { key: "southAfrica", name: "南非", title: "南非环游", intro: "现在到南非：桌山、草原树和金色大地。" },
+  { key: "germany", name: "德国", title: "德国环游", intro: "现在到德国：黑红金色标志和欧洲航站楼。" },
+  { key: "thailand", name: "泰国", title: "泰国环游", intro: "现在到泰国：金色屋顶和紫金色机场。" },
+  { key: "france", name: "法国", title: "法国环游", intro: "现在到法国：铁塔、蓝白红和巴黎机场。" },
+  { key: "uae", name: "阿联酋", title: "阿联酋环游", intro: "现在到阿联酋：沙漠机场、高塔和金色阳光。" },
+  { key: "australia", name: "澳大利亚", title: "澳大利亚环游", intro: "现在到澳大利亚：白色帆形建筑和海港机场。" },
+  { key: "korea", name: "韩国", title: "韩国环游", intro: "现在到韩国：红蓝圆形标志和现代机场。" },
+  { key: "india", name: "印度", title: "印度环游", intro: "现在到印度：橙绿配色、拱门和热闹航站楼。" },
+  { key: "brazil", name: "巴西", title: "巴西环游", intro: "现在到巴西：绿色山丘、金色标志和大城市机场。" },
+  { key: "canada", name: "加拿大", title: "加拿大环游", intro: "现在到加拿大：红色枫叶、雪白航站楼和高塔。" }
 ];
 
-const destinationAirports3d = [
-  { key: "japan", name: "日本机场", intro: "到达日本机场：可以看到樱花树、鸟居和日本风格建筑。" },
-  { key: "egypt", name: "埃及机场", intro: "到达埃及机场：金字塔和狮身人面像就在机场旁边。" },
-  { key: "usa", name: "美国机场", intro: "到达美国机场：高楼、宽路和美国风格航站楼出现了。" },
-  { key: "uk", name: "英国机场", intro: "到达英国机场：钟楼、红色巴士和英伦建筑出现了。" },
-  { key: "china", name: "中国机场", intro: "到达中国机场：红色屋顶、灯笼和高楼出现了。" },
-  { key: "southAfrica", name: "南非机场", intro: "到达南非机场：桌山和草原树出现了。" }
-];
+const destinationAirports3d = airportLocations.map((airport) => ({
+  key: airport.style,
+  name: airport.airport,
+  intro: `到达${airport.country}${airport.airport}（${airport.code}）：机场风格切换成${styleData[airport.style].name}。`
+}));
 
 const planeOptions = [
   { model: "A320", color: 0xd8343f, deck: "单层", position: [-32, 0.55, 20], scale: 0.94 },
@@ -168,7 +201,41 @@ let metroDoorGroup = null;
 let platformDoorGroup = null;
 let exitGate = null;
 let ferrisWheelGroup = null;
+let amusementAccidentPlane = null;
 buildCurrentPlace();
+
+function currentAirport() {
+  return airportLocations[state.selectedAirportIndex] || airportLocations[0];
+}
+
+function airportTitle() {
+  const airport = currentAirport();
+  return `${airport.country} · ${airport.airport} (${airport.code})`;
+}
+
+function populateAirportSelect() {
+  if (!airportSelect) return;
+  airportSelect.innerHTML = airportLocations
+    .map((airport, index) => `<option value="${index}">${String(index + 1).padStart(2, "0")} ${airport.country} · ${airport.airport} (${airport.code})</option>`)
+    .join("");
+  airportSelect.value = String(state.selectedAirportIndex);
+}
+
+function applyAirportLocation(index) {
+  state.selectedAirportIndex = Number(index) || 0;
+  const airport = currentAirport();
+  state.airportStyle = airport.style;
+  if (styleSelect) styleSelect.value = airport.style;
+  if (airportSelect) airportSelect.value = String(state.selectedAirportIndex);
+  if (state.currentPlace !== "airport") {
+    setPlace("airport");
+    return;
+  }
+  buildAirport();
+  applyAirportStyle(airport.style);
+  resetGame(false);
+  setStatus(`机场地点切换到：${airportTitle()}。这里是 50 个机场之一，可以和所有风格搭配开飞机。`);
+}
 
 function mat(color, roughness = 0.78) {
   return new THREE.MeshStandardMaterial({ color, roughness });
@@ -565,6 +632,8 @@ function makeLabel(text) {
 
 function buildAirport() {
   airportObjects.clear();
+  const airport = currentAirport();
+  const style = styleData[state.airportStyle] || styleData[airport.style] || styleData.china;
   const ground = new THREE.Mesh(new THREE.BoxGeometry(220, 1, 145), mat(0x76bd72));
   ground.position.y = -0.55;
   ground.receiveShadow = true;
@@ -602,6 +671,14 @@ function buildAirport() {
   terminal.position.set(-30, 3.5, 31);
   terminal.name = "terminal";
   airportObjects.add(terminal);
+  const airportNameSign = makeLabel(`${airport.country} ${airport.code}`);
+  airportNameSign.scale.setScalar(0.78);
+  airportNameSign.position.set(-30, 8.9, 25.7);
+  airportObjects.add(airportNameSign);
+  const styleBadge = makeLabel(style.name.replace("机场", ""));
+  styleBadge.scale.setScalar(0.52);
+  styleBadge.position.set(-30, 6.9, 25.55);
+  airportObjects.add(styleBadge);
 
   for (let i = 0; i < 7; i += 1) {
     const windowBox = box(1.4, 1.2, 0.12, 0x64717b);
@@ -649,6 +726,12 @@ function buildAirport() {
   }
   fountain.position.set(-46, 0, 9);
   airportObjects.add(fountain);
+
+  const routeBoard = makeLabel(`50机场搭配 ${state.selectedAirportIndex + 1}/50`);
+  routeBoard.scale.setScalar(0.72);
+  routeBoard.position.set(44, 0.22, -48);
+  routeBoard.rotation.x = -Math.PI / 2;
+  airportObjects.add(routeBoard);
 }
 
 function buildCurrentPlace() {
@@ -658,8 +741,8 @@ function buildCurrentPlace() {
     buildAirport();
     applyAirportStyle(state.airportStyle);
     plane.visible = true;
-    placeName.textContent = styleData[state.airportStyle].name;
-    setStatus("机场里只有机场。先滑行，再点起飞，飞机会贴着跑道冲出去。");
+    placeName.textContent = airportTitle();
+    setStatus(`${airportTitle()}：先滑行，再点起飞。现在有 50 个机场地点可以选。`);
   } else if (state.currentPlace === "amusement") {
     buildAmusementPark();
     plane.visible = false;
@@ -731,6 +814,36 @@ function buildAmusementPark() {
 
   addSakuraTree(25, 0, -5, 8.5);
   addCoasterTrack(18, -22);
+  addAmusementAccidentRide();
+}
+
+function addAmusementAccidentRide() {
+  const pad = box(18, 0.45, 12, 0x7fc7ea);
+  pad.position.set(43, 0.12, 25);
+  airportObjects.add(pad);
+  const padLabel = makeLabel("安全气垫");
+  padLabel.scale.setScalar(0.52);
+  padLabel.position.set(43, 0.48, 25);
+  padLabel.rotation.x = -Math.PI / 2;
+  airportObjects.add(padLabel);
+  const sign = makeLabel("飞机事故体验");
+  sign.scale.setScalar(0.72);
+  sign.position.set(28, 5, 34);
+  airportObjects.add(sign);
+  const rail = new THREE.Mesh(new THREE.TorusGeometry(11, 0.22, 12, 72), mat(0xffd15f));
+  rail.position.set(36, 6.2, 24);
+  rail.rotation.x = Math.PI / 2;
+  airportObjects.add(rail);
+  amusementAccidentPlane = createAirliner(0xf06aa3, "乐园小飞机", { doubleDeck: false });
+  amusementAccidentPlane.scale.setScalar(0.58);
+  amusementAccidentPlane.position.set(26, 7.2, 24);
+  amusementAccidentPlane.rotation.y = Math.PI / 2;
+  airportObjects.add(amusementAccidentPlane);
+  for (let i = 0; i < 4; i += 1) {
+    const toy = sphere(0.35, i % 2 ? 0xffd15f : 0x2f79c8);
+    toy.position.set(32 + i * 2.4, 1.1, 31);
+    airportObjects.add(toy);
+  }
 }
 
 function buildChallengeCourse() {
@@ -970,6 +1083,24 @@ function buildWorldTourStop(index) {
     sunDisk.position.set(34, 8, -4);
     sunDisk.rotation.x = Math.PI / 2;
     styleObjects.add(sunDisk);
+  } else if (country.key === "germany") {
+    addGermanyStyle();
+  } else if (country.key === "thailand") {
+    addThailandStyle();
+  } else if (country.key === "france") {
+    addFranceStyle();
+  } else if (country.key === "uae") {
+    addUaeStyle();
+  } else if (country.key === "australia") {
+    addAustraliaStyle();
+  } else if (country.key === "korea") {
+    addKoreaStyle();
+  } else if (country.key === "india") {
+    addIndiaStyle();
+  } else if (country.key === "brazil") {
+    addBrazilStyle();
+  } else if (country.key === "canada") {
+    addCanadaStyle();
   }
 
   for (let i = 0; i < 7; i += 1) {
@@ -1052,15 +1183,21 @@ function addBuilding(x, y, z, w, h, d, color) {
 
 function applyAirportStyle(key) {
   state.airportStyle = key;
+  const matchingAirport = airportLocations.findIndex((airport) => airport.style === key);
+  if (matchingAirport >= 0 && currentAirport().style !== key) {
+    state.selectedAirportIndex = matchingAirport;
+    if (airportSelect) airportSelect.value = String(state.selectedAirportIndex);
+  }
   if (state.currentPlace !== "airport") return;
-  const data = styleData[key];
-  placeName.textContent = data.name;
-  scene.fog.color.set(key === "egypt" ? 0xffe3ad : 0xaee7ff);
-  scene.background.set(key === "egypt" ? 0xffe3ad : 0xaee7ff);
+  const data = styleData[key] || styleData.china;
+  placeName.textContent = airportTitle();
+  const warmSky = key === "egypt" || key === "uae" ? 0xffe3ad : 0xaee7ff;
+  scene.fog.color.set(warmSky);
+  scene.background.set(warmSky);
   const ground = airportObjects.getObjectByName("ground");
   if (ground) ground.material.color.setHex(data.ground);
   const terminal = airportObjects.getObjectByName("terminal");
-  if (terminal) terminal.material.color.setHex(key === "egypt" ? 0xfff2d2 : 0xffffff);
+  if (terminal) terminal.material.color.setHex(key === "egypt" || key === "uae" ? 0xfff2d2 : 0xffffff);
   styleObjects.clear();
   if (key === "egypt") addEgyptStyle();
   if (key === "usa") addUsaStyle();
@@ -1068,6 +1205,15 @@ function applyAirportStyle(key) {
   if (key === "china") addChinaStyle();
   if (key === "southAfrica") addSouthAfricaStyle();
   if (key === "japan") addJapanStyle();
+  if (key === "germany") addGermanyStyle();
+  if (key === "thailand") addThailandStyle();
+  if (key === "france") addFranceStyle();
+  if (key === "uae") addUaeStyle();
+  if (key === "australia") addAustraliaStyle();
+  if (key === "korea") addKoreaStyle();
+  if (key === "india") addIndiaStyle();
+  if (key === "brazil") addBrazilStyle();
+  if (key === "canada") addCanadaStyle();
 }
 
 function addEgyptStyle() {
@@ -1148,6 +1294,114 @@ function addJapanStyle() {
   const sakura = sphere(2.4, 0xf6a5c9, 1.2, 0.9, 1.2);
   sakura.position.set(-34, 4, -21);
   styleObjects.add(gateTop, gateMid, left, right, sakura);
+}
+
+function addGermanyStyle() {
+  const black = box(18, 0.45, 0.12, 0x172632);
+  const red = box(18, 0.45, 0.12, 0xd8343f);
+  const gold = box(18, 0.45, 0.12, 0xffd15f);
+  black.position.set(-30, 8.9, 24.6);
+  red.position.set(-30, 8.35, 24.6);
+  gold.position.set(-30, 7.8, 24.6);
+  const hall = box(12, 5, 6, 0xd9e2ea);
+  hall.position.set(-52, 2.5, -20);
+  styleObjects.add(black, red, gold, hall);
+}
+
+function addThailandStyle() {
+  const roof1 = box(16, 0.8, 5, 0xffd15f);
+  const roof2 = box(12, 0.6, 4.2, 0x7b4ab8);
+  roof1.position.set(-30, 8.7, 25.1);
+  roof2.position.set(-30, 9.35, 25);
+  const spire = cyl(0.4, 1.0, 6, 0xffd15f, 24);
+  spire.position.set(-48, 3, -20);
+  styleObjects.add(roof1, roof2, spire);
+}
+
+function addFranceStyle() {
+  const tower = new THREE.Group();
+  const leg1 = box(0.5, 16, 0.5, 0x424b57);
+  const leg2 = box(0.5, 16, 0.5, 0x424b57);
+  leg1.position.set(-2, 8, 0);
+  leg2.position.set(2, 8, 0);
+  leg1.rotation.z = 0.18;
+  leg2.rotation.z = -0.18;
+  const top = box(5, 0.6, 1.2, 0x424b57);
+  top.position.set(0, 14, 0);
+  tower.add(leg1, leg2, top);
+  tower.position.set(-48, 0, -20);
+  const flagBlue = box(2, 3, 0.12, 0x2f79c8);
+  const flagWhite = box(2, 3, 0.12, 0xffffff);
+  const flagRed = box(2, 3, 0.12, 0xd8343f);
+  flagBlue.position.set(-37, 6, -20);
+  flagWhite.position.set(-35, 6, -20);
+  flagRed.position.set(-33, 6, -20);
+  styleObjects.add(tower, flagBlue, flagWhite, flagRed);
+}
+
+function addUaeStyle() {
+  const tower = cyl(1.5, 2.4, 25, 0xd9e2ea, 32);
+  tower.position.set(-50, 12.5, -20);
+  const cap = sphere(1.5, 0xffd15f, 0.9, 0.9, 0.9);
+  cap.position.set(-50, 25.5, -20);
+  const palm = cyl(0.28, 0.38, 5, 0x7a4c29);
+  palm.position.set(-37, 2.5, -20);
+  const leaves = sphere(2.3, 0x38a86a, 1.5, 0.35, 1.5);
+  leaves.position.set(-37, 5.4, -20);
+  styleObjects.add(tower, cap, palm, leaves);
+}
+
+function addAustraliaStyle() {
+  const sail1 = new THREE.Mesh(new THREE.ConeGeometry(3.2, 8, 3), mat(0xffffff));
+  sail1.position.set(-48, 4, -20);
+  sail1.rotation.y = 0.5;
+  const sail2 = new THREE.Mesh(new THREE.ConeGeometry(2.6, 7, 3), mat(0xffffff));
+  sail2.position.set(-42, 3.5, -20);
+  sail2.rotation.y = 0.2;
+  const sun = sphere(1.6, 0xf2b44b);
+  sun.position.set(-34, 7, -20);
+  styleObjects.add(sail1, sail2, sun);
+}
+
+function addKoreaStyle() {
+  const circleA = sphere(1.4, 0xd8343f, 1, 0.12, 1);
+  const circleB = sphere(1.4, 0x2f79c8, 1, 0.12, 1);
+  circleA.position.set(-47, 6, -20);
+  circleB.position.set(-44, 6, -20);
+  const palaceRoof = box(14, 0.9, 4.4, 0x2f79c8);
+  palaceRoof.position.set(-30, 8.6, 25);
+  styleObjects.add(circleA, circleB, palaceRoof);
+}
+
+function addIndiaStyle() {
+  const arch = new THREE.Mesh(new THREE.TorusGeometry(4, 0.35, 12, 48, Math.PI), mat(0xf28b2f));
+  arch.position.set(-48, 5, -20);
+  arch.rotation.z = Math.PI;
+  const dome = sphere(2.2, 0xffffff, 1, 0.65, 1);
+  dome.position.set(-48, 6.2, -20);
+  const green = box(12, 0.55, 0.12, 0x38a86a);
+  green.position.set(-30, 7.8, 24.7);
+  styleObjects.add(arch, dome, green);
+}
+
+function addBrazilStyle() {
+  const hill = sphere(4.8, 0x38a86a, 1.4, 0.45, 1);
+  hill.position.set(-48, 2.2, -20);
+  const statue = box(0.8, 7, 0.8, 0xffffff);
+  statue.position.set(-48, 7, -20);
+  const arms = box(6.5, 0.45, 0.45, 0xffffff);
+  arms.position.set(-48, 9, -20);
+  styleObjects.add(hill, statue, arms);
+}
+
+function addCanadaStyle() {
+  const leaf = sphere(2.2, 0xd8343f, 1.3, 0.7, 0.12);
+  leaf.position.set(-48, 6, -20);
+  const snow = box(16, 0.4, 0.12, 0xffffff);
+  snow.position.set(-30, 8.1, 24.7);
+  const tower = cyl(0.8, 1.1, 14, 0xd9e2ea, 24);
+  tower.position.set(-37, 7, -20);
+  styleObjects.add(leaf, snow, tower);
 }
 
 function createClouds() {
@@ -1371,12 +1625,15 @@ function flightForwardVector() {
 }
 
 function arriveAtNextCountryAirport() {
-  const destination = destinationAirports3d[state.destinationIndex % destinationAirports3d.length];
+  const destinationIndex = state.destinationIndex % destinationAirports3d.length;
+  const destination = destinationAirports3d[destinationIndex];
   state.destinationIndex += 1;
+  state.selectedAirportIndex = destinationIndex;
   state.airportStyle = destination.key;
   state.currentPlace = "airport";
   placeSelect.value = "airport";
   styleSelect.value = destination.key;
+  if (airportSelect) airportSelect.value = String(destinationIndex);
   airportObjects.clear();
   styleObjects.clear();
   buildAirport();
@@ -1432,6 +1689,8 @@ function resetGame(resetMessage = true) {
   state.metroT = 0;
   state.metroPhase = "waiting";
   state.metroDoorsOpen = true;
+  state.amusementAccident = false;
+  state.amusementAccidentT = 0;
   state.ridingWheel = false;
   state.wheelT = 0;
   state.jetpackTimer = 0;
@@ -1522,6 +1781,19 @@ function toggleFerrisRide() {
   state.ridingWheel = true;
   state.wheelT = -Math.PI * 0.35;
   setStatus("泰迪熊坐上摩天轮了！会跟着座舱转一圈，脸上还有表情。");
+}
+
+function startAmusementAccidentRide() {
+  if (state.currentPlace !== "amusement") {
+    setPlace("amusement");
+  }
+  state.ridingWheel = false;
+  state.mode = "walk";
+  state.amusementAccident = true;
+  state.amusementAccidentT = 0;
+  eggy.visible = true;
+  eggy.position.set(16, 1.05, 30);
+  setStatus("开始游乐园飞机事故体验：小飞机会先绕圈，再故障冒烟，最后落到安全气垫。");
 }
 
 function startMetroRide() {
@@ -1768,6 +2040,7 @@ function updateAmusement(dt) {
   if (state.currentPlace !== "amusement" || !ferrisWheelGroup) return;
   state.wheelT += dt * 0.62;
   ferrisWheelGroup.rotation.x = state.wheelT;
+  updateAmusementAccident(dt);
   if (!state.ridingWheel) return;
   const angle = state.wheelT + Math.PI * 0.18;
   const center = ferrisWheelGroup.position;
@@ -1775,6 +2048,59 @@ function updateAmusement(dt) {
   eggy.rotation.set(0, Math.PI, Math.sin(angle) * 0.08);
   eggy.userData.leftArm.rotation.x = Math.sin(state.wheelT * 3) * 0.28;
   eggy.userData.rightArm.rotation.x = -Math.sin(state.wheelT * 3) * 0.28;
+}
+
+function updateAmusementAccident(dt) {
+  if (!amusementAccidentPlane) return;
+  if (!state.amusementAccident) {
+    amusementAccidentPlane.position.set(26, 7.2, 24);
+    amusementAccidentPlane.rotation.set(0, Math.PI / 2, 0);
+    return;
+  }
+  state.amusementAccidentT += dt;
+  const t = state.amusementAccidentT;
+  if (t < 3.2) {
+    const a = t * 2.1;
+    amusementAccidentPlane.position.set(36 + Math.cos(a) * 11, 7.4 + Math.sin(a * 1.3) * 1.1, 24 + Math.sin(a) * 8);
+    amusementAccidentPlane.rotation.y = Math.PI / 2 - a;
+    amusementAccidentPlane.rotation.z = Math.sin(t * 4) * 0.18;
+    setStatus("游乐园飞机体验：小飞机先正常绕圈飞。");
+  } else if (t < 6.2) {
+    const u = (t - 3.2) / 3;
+    amusementAccidentPlane.position.set(47 - u * 5, 7.2 - u * 5.2, 22 + Math.sin(t * 5) * 1.2);
+    amusementAccidentPlane.rotation.y = Math.PI / 2 - u * 0.8;
+    amusementAccidentPlane.rotation.z = -0.55 * u;
+    addTemporarySmoke(amusementAccidentPlane.position.x - 1.2, amusementAccidentPlane.position.y + 0.4, amusementAccidentPlane.position.z);
+    setStatus("突然故障冒烟！这是游乐园里的安全模拟项目，飞机正在慢慢落到安全垫。");
+  } else {
+    amusementAccidentPlane.position.set(43, 1.15, 25);
+    amusementAccidentPlane.rotation.set(0, Math.PI / 2, -0.18);
+    setStatus("飞机落到安全气垫上，体验结束。玩具乘客都安全。再点“飞机事故体验”可以重来。");
+    if (t > 9.5) state.amusementAccident = false;
+  }
+}
+
+function addTemporarySmoke(x, y, z) {
+  const smoke = sphere(0.45 + Math.random() * 0.35, 0x64717b, 1.2, 0.7, 1.2);
+  smoke.material.transparent = true;
+  smoke.material.opacity = 0.42;
+  smoke.position.set(x + Math.random() * 1.4, y + Math.random() * 0.6, z + Math.random() * 1.4);
+  smoke.userData.life = 1.1;
+  smoke.userData.smoke = true;
+  airportObjects.add(smoke);
+}
+
+function updateTemporaryEffects(dt) {
+  const remove = [];
+  airportObjects.children.forEach((object) => {
+    if (!object.userData.smoke) return;
+    object.userData.life -= dt;
+    object.position.y += dt * 1.2;
+    object.scale.multiplyScalar(1 + dt * 0.7);
+    if (object.material) object.material.opacity = Math.max(0, object.userData.life * 0.38);
+    if (object.userData.life <= 0) remove.push(object);
+  });
+  remove.forEach((object) => airportObjects.remove(object));
 }
 
 function updatePlane(dt) {
@@ -1954,6 +2280,7 @@ function animate() {
   updateMetro(dt);
   updateAmusement(dt);
   updateWorldTour(dt);
+  updateTemporaryEffects(dt);
   clouds.children.forEach((cloud, i) => {
     cloud.position.x += dt * (1.2 + (i % 4) * 0.25);
     if (cloud.position.x > 110) cloud.position.x = -110;
@@ -1998,12 +2325,18 @@ function bindStick() {
 window.addEventListener("resize", resize);
 window.addEventListener("keydown", (event) => state.keys.add(event.code));
 window.addEventListener("keyup", (event) => state.keys.delete(event.code));
-styleSelect.addEventListener("change", () => applyAirportStyle(styleSelect.value));
+styleSelect.addEventListener("change", () => {
+  const nextAirport = airportLocations.findIndex((airport) => airport.style === styleSelect.value);
+  if (nextAirport >= 0) applyAirportLocation(nextAirport);
+  else applyAirportStyle(styleSelect.value);
+});
+if (airportSelect) airportSelect.addEventListener("change", () => applyAirportLocation(airportSelect.value));
 placeSelect.addEventListener("change", () => setPlace(placeSelect.value));
 buttons.start.addEventListener("click", startInteract);
 buttons.park.addEventListener("click", openPark);
 buttons.lobby.addEventListener("click", goLobby);
 buttons.tour.addEventListener("click", startWorldTour);
+buttons.accidentRide.addEventListener("click", startAmusementAccidentRide);
 buttons.selectPlane.addEventListener("click", selectNextPlane);
 buttons.board.addEventListener("click", boardPlane);
 buttons.cockpit.addEventListener("click", toggleCockpit);
@@ -2026,6 +2359,7 @@ buttons.screenExpression.addEventListener("click", nextExpression);
 buttons.classScore.addEventListener("click", addScoreToClass);
 buttons.meScore.addEventListener("click", addScoreToMe);
 
+populateAirportSelect();
 bindStick();
 renderStudentScores();
 resize();
