@@ -27,11 +27,12 @@ const tracks = [
 ];
 
 const cars = [
-  { id: "red", name: "法拉利风格", color: 0xd93a32, speed: 1.04 },
-  { id: "sport", name: "跑车", color: 0x245b8f, speed: 1.02 },
-  { id: "tesla", name: "电动车", color: 0xf4f7fa, speed: 1.0 },
-  { id: "simple", name: "简单车", color: 0xffd15f, speed: 0.96 },
-  { id: "offroad", name: "牧场越野", color: 0x39a657, speed: 0.94 }
+  { id: "kart", name: "经典卡丁车", color: 0xd93a32, speed: 1.04, shape: "kart" },
+  { id: "gliderKart", name: "滑翔卡丁车", color: 0xf08a2d, speed: 1.03, shape: "glider" },
+  { id: "sport", name: "蓝色跑车", color: 0x245b8f, speed: 1.02, shape: "sport" },
+  { id: "bike", name: "摩托赛车", color: 0xd93a32, speed: 1.06, shape: "bike" },
+  { id: "tesla", name: "电动车", color: 0xf4f7fa, speed: 1.0, shape: "electric" },
+  { id: "offroad", name: "越野车", color: 0x39a657, speed: 0.94, shape: "offroad" }
 ];
 
 const drivers = [
@@ -46,15 +47,20 @@ const drivers = [
 ];
 
 const tires = [
-  { id: "normal", name: "普通胎", grip: 1 },
-  { id: "big", name: "大轮胎", grip: 0.86 },
-  { id: "fast", name: "快轮胎", grip: 1.12 }
+  { id: "standard", name: "标准黑胎", grip: 1, radius: 0.34, width: 0.34, rim: 0xffd15f },
+  { id: "gold", name: "金圈轮胎", grip: 1.05, radius: 0.36, width: 0.36, rim: 0xffd15f },
+  { id: "monster", name: "怪兽大轮胎", grip: 0.86, radius: 0.48, width: 0.44, rim: 0xd9e2ea },
+  { id: "drift", name: "漂移轮胎", grip: 1.14, radius: 0.32, width: 0.42, rim: 0x2f79c8 },
+  { id: "slick", name: "高速光头胎", grip: 1.2, radius: 0.31, width: 0.32, rim: 0xf4f7fa }
 ];
 
 const wings = [
   { id: "none", name: "无翅膀" },
   { id: "small", name: "小翅膀" },
-  { id: "plane", name: "飞机翼" }
+  { id: "glider", name: "红色滑翔翼" },
+  { id: "plane", name: "飞机翼" },
+  { id: "rocket", name: "火箭翼" },
+  { id: "cloud", name: "云朵翼" }
 ];
 
 const icons = ["M", "L", "Y", "闪", "星", "1"];
@@ -157,22 +163,60 @@ function makeLabel(text) {
   return new THREE.Mesh(new THREE.PlaneGeometry(4.8, 1.8), material);
 }
 
-function createCar(color, label, isPlayer = false) {
+function createCar(color, label, isPlayer = false, carSpec = selectedCar) {
   const group = new THREE.Group();
-  const body = box(2.15, 0.55, 3.2, color);
-  body.position.y = 0.55;
-  const cabin = box(1.25, 0.62, 1.35, isPlayer ? 0xffffff : 0xdce5eb);
-  cabin.position.set(0, 1.04, -0.28);
-  group.add(body, cabin);
-  const nose = box(1.75, 0.32, 0.95, color);
-  nose.position.set(0, 0.7, -1.85);
-  group.add(nose);
+  const tireSpec = isPlayer ? selectedTire : tires[0];
+  const shape = carSpec.shape || "kart";
+  if (shape === "bike") {
+    const frame = cyl(0.16, 0.2, 2.7, color, 18);
+    frame.rotation.x = Math.PI / 2;
+    frame.position.set(0, 0.64, -0.15);
+    const seat = box(0.82, 0.22, 0.68, 0x172632);
+    seat.position.set(0, 0.96, 0.28);
+    const front = sphere(0.34, color, 1, 0.65, 1.2);
+    front.position.set(0, 0.76, -1.42);
+    group.add(frame, seat, front);
+  } else {
+    const bodyLength = shape === "sport" || shape === "electric" ? 3.65 : 3.15;
+    const bodyWidth = shape === "offroad" ? 2.35 : 2.15;
+    const bodyHeight = shape === "offroad" ? 0.72 : 0.55;
+    const body = box(bodyWidth, bodyHeight, bodyLength, color);
+    body.position.y = 0.58;
+    const cabin = box(shape === "kart" || shape === "glider" ? 1.05 : 1.28, 0.62, shape === "kart" || shape === "glider" ? 1.1 : 1.35, isPlayer ? 0xffffff : 0xdce5eb);
+    cabin.position.set(0, 1.06, -0.2);
+    const nose = box(bodyWidth * 0.8, 0.32, shape === "kart" || shape === "glider" ? 0.92 : 1.12, color);
+    nose.position.set(0, 0.72, -bodyLength / 2 - 0.28);
+    group.add(body, cabin, nose);
+    if (shape === "glider") {
+      const rearFin = box(1.8, 0.12, 0.42, 0xffd15f);
+      rearFin.position.set(0, 1.08, 1.48);
+      group.add(rearFin);
+    }
+    if (shape === "offroad") {
+      const bumper = box(2.7, 0.25, 0.22, 0x172632);
+      bumper.position.set(0, 0.58, -2.05);
+      group.add(bumper);
+    }
+  }
+  const steering = new THREE.Group();
+  const wheel = new THREE.Mesh(new THREE.TorusGeometry(0.32, 0.035, 8, 24), mat(0x172632));
+  wheel.rotation.x = Math.PI / 2;
+  const stick = cyl(0.035, 0.035, 0.45, 0x424b57, 12);
+  stick.rotation.x = 0.65;
+  stick.position.set(0, -0.16, 0.12);
+  steering.position.set(0, 1.08, -0.95);
+  steering.add(wheel, stick);
+  group.add(steering);
   [-0.95, 0.95].forEach((x) => {
     [-1.1, 1.0].forEach((z) => {
-      const tire = cyl(0.34, 0.34, 0.34, 0x172632, 24);
+      const spread = shape === "bike" ? 0.52 : 1;
+      const tire = cyl(tireSpec.radius, tireSpec.radius, tireSpec.width, 0x172632, 30);
       tire.rotation.z = Math.PI / 2;
-      tire.position.set(x, 0.32, z);
-      group.add(tire);
+      tire.position.set(x * spread, tireSpec.radius, shape === "bike" ? z * 1.28 : z);
+      const rim = cyl(tireSpec.radius * 0.48, tireSpec.radius * 0.48, tireSpec.width + 0.02, tireSpec.rim, 24);
+      rim.rotation.z = Math.PI / 2;
+      rim.position.copy(tire.position);
+      group.add(tire, rim);
     });
   });
   const badge = makeLabel(label);
@@ -182,7 +226,7 @@ function createCar(color, label, isPlayer = false) {
   group.add(badge);
   if (isPlayer) {
     const driver = createDriver();
-    driver.position.set(0, 1.55, -0.25);
+    driver.position.set(0, 1.58, -0.25);
     group.add(driver);
   }
   return group;
@@ -307,6 +351,28 @@ function makeButtons(container, items, getLabel, isActive, onPick) {
   });
 }
 
+function makeVisualButtons(container, items, kind, isActive, onPick) {
+  container.innerHTML = "";
+  items.forEach((item) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = `option-card ${kind}-option ${kind}-${item.id}`;
+    button.classList.toggle("active", isActive(item));
+    const preview = document.createElement("span");
+    preview.className = `option-preview ${kind}-preview`;
+    preview.setAttribute("aria-hidden", "true");
+    const name = document.createElement("span");
+    name.className = "option-name";
+    name.textContent = item.name;
+    button.append(preview, name);
+    button.addEventListener("click", () => {
+      onPick(item);
+      drawMenu();
+    });
+    container.append(button);
+  });
+}
+
 function makeDriverButtons() {
   driverChoices.innerHTML = "";
   drivers.forEach((driver) => {
@@ -349,15 +415,16 @@ function drawMenu() {
     selectedStars = star;
     rebuildWorld();
   });
-  makeButtons(carChoices, cars, (car) => car.name, (car) => car === selectedCar, (car) => {
+  makeVisualButtons(carChoices, cars, "car", (car) => car === selectedCar, (car) => {
     selectedCar = car;
     refreshPlayerCar();
   });
   makeDriverButtons();
-  makeButtons(tireChoices, tires, (tire) => tire.name, (tire) => tire === selectedTire, (tire) => {
+  makeVisualButtons(tireChoices, tires, "tire", (tire) => tire === selectedTire, (tire) => {
     selectedTire = tire;
+    refreshPlayerCar();
   });
-  makeButtons(wingChoices, wings, (wing) => wing.name, (wing) => wing === selectedWing, (wing) => {
+  makeVisualButtons(wingChoices, wings, "wing", (wing) => wing === selectedWing, (wing) => {
     selectedWing = wing;
     updateWings();
   });
@@ -381,14 +448,54 @@ function updateWings() {
   if (selectedWing.id === "none") return;
   const wingsGroup = new THREE.Group();
   wingsGroup.name = "wing-set";
-  const span = selectedWing.id === "plane" ? 4.6 : 3.2;
-  const left = box(span, 0.08, 0.55, 0xf4f7fa);
-  const right = box(span, 0.08, 0.55, 0xf4f7fa);
-  left.position.set(-1.55, 0.92, 0.2);
-  right.position.set(1.55, 0.92, 0.2);
-  left.rotation.z = 0.1;
-  right.rotation.z = -0.1;
-  wingsGroup.add(left, right);
+  if (selectedWing.id === "glider") {
+    const canopy = box(4.7, 0.1, 1.35, 0xd93a32);
+    canopy.position.set(0, 2.12, 0.75);
+    canopy.rotation.x = -0.18;
+    const leftStripe = box(1.1, 0.12, 1.42, 0xffd15f);
+    const rightStripe = leftStripe.clone();
+    leftStripe.position.set(-1.55, 2.15, 0.74);
+    rightStripe.position.set(1.55, 2.15, 0.74);
+    leftStripe.rotation.x = canopy.rotation.x;
+    rightStripe.rotation.x = canopy.rotation.x;
+    const mast = cyl(0.045, 0.045, 1.2, 0x172632, 12);
+    mast.position.set(0, 1.55, 0.4);
+    const back = box(1.4, 0.12, 0.26, 0x172632);
+    back.position.set(0, 1.32, 1.45);
+    wingsGroup.add(canopy, leftStripe, rightStripe, mast, back);
+  } else if (selectedWing.id === "rocket") {
+    [-1.35, 1.35].forEach((x) => {
+      const body = cyl(0.16, 0.16, 1.25, 0xd9e2ea, 18);
+      body.rotation.x = Math.PI / 2;
+      body.position.set(x, 0.88, 1.4);
+      const nose = cyl(0.02, 0.16, 0.28, 0xd93a32, 18);
+      nose.rotation.x = Math.PI / 2;
+      nose.position.set(x, 0.88, 0.62);
+      const flame = cyl(0.05, 0.22, 0.45, 0xff8a2a, 18);
+      flame.rotation.x = Math.PI / 2;
+      flame.position.set(x, 0.88, 2.18);
+      wingsGroup.add(body, nose, flame);
+    });
+  } else if (selectedWing.id === "cloud") {
+    [-1.45, -0.95, 0.95, 1.45].forEach((x, index) => {
+      const puff = sphere(index % 2 ? 0.28 : 0.34, 0xf4f7fa, 1.2, 0.75, 0.9);
+      puff.position.set(x, 1.08 + (index % 2) * 0.12, 1.22);
+      wingsGroup.add(puff);
+    });
+  } else {
+    const span = selectedWing.id === "plane" ? 4.8 : 2.8;
+    const color = selectedWing.id === "plane" ? 0xf4f7fa : 0xffd15f;
+    const left = box(span / 2, 0.09, selectedWing.id === "plane" ? 0.72 : 0.48, color);
+    const right = box(span / 2, 0.09, selectedWing.id === "plane" ? 0.72 : 0.48, color);
+    left.position.set(-span / 4 - 0.35, 1.05, 0.42);
+    right.position.set(span / 4 + 0.35, 1.05, 0.42);
+    left.rotation.z = 0.08;
+    right.rotation.z = -0.08;
+    const tail = box(0.6, 0.08, 0.5, 0xd93a32);
+    tail.position.set(0, 1.2, 1.48);
+    tail.rotation.x = 0.25;
+    wingsGroup.add(left, right, tail);
+  }
   playerCar.add(wingsGroup);
 }
 
