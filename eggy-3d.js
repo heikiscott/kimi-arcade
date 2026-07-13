@@ -79,11 +79,11 @@ const world = new THREE.Group();
 scene.add(world);
 
 const eggy = createEggy();
-eggy.position.set(-18, 1.05, -8);
+eggy.position.set(-18, 1.05, 32);
 scene.add(eggy);
 
 const plane = createAirliner(0x2f79c8, "A320");
-plane.position.set(-2, 1.15, -3);
+plane.position.set(-8, 1.15, 30);
 plane.rotation.y = Math.PI / 2;
 scene.add(plane);
 
@@ -281,9 +281,9 @@ function buildAirport() {
   ground.name = "ground";
   airportObjects.add(ground);
 
-  addRunway(-26, 0, 86, 7, "起飞跑道");
-  addRunway(30, -22, 76, 7, "降落跑道");
-  addTaxiway(-3, 14, 54, 4);
+  addRunway(-8, -4, 7, 92, "竖向起飞跑道");
+  addRunway(18, -4, 7, 86, "竖向降落跑道");
+  addTaxiway(-28, 24, 44, 4);
 
   const terminal = box(22, 7, 10, 0xffffff);
   terminal.position.set(-30, 3.5, 31);
@@ -488,14 +488,21 @@ function addRunway(x, z, w, d, label) {
   const runway = box(w, 0.08, d, 0x424b57);
   runway.position.set(x, 0.03, z);
   airportObjects.add(runway);
-  for (let i = -w / 2 + 4; i < w / 2 - 4; i += 8) {
+  const horizontal = w >= d;
+  const length = horizontal ? w : d;
+  for (let i = -length / 2 + 4; i < length / 2 - 4; i += 8) {
     const stripe = box(3.4, 0.09, 0.22, 0xffffff);
-    stripe.position.set(x + i, 0.11, z);
+    if (horizontal) {
+      stripe.position.set(x + i, 0.11, z);
+    } else {
+      stripe.rotation.y = Math.PI / 2;
+      stripe.position.set(x, 0.11, z + i);
+    }
     airportObjects.add(stripe);
   }
   const sign = makeLabel(label);
   sign.scale.setScalar(0.8);
-  sign.position.set(x - w / 2 + 8, 0.18, z - d / 2 - 2);
+  sign.position.set(x - w / 2 - 7, 0.18, z + d / 2 - 8);
   sign.rotation.x = -Math.PI / 2;
   airportObjects.add(sign);
 }
@@ -680,11 +687,11 @@ function resetGame(resetMessage = true) {
   state.planeT = 0;
   classScoreUsed = false;
   if (state.currentPlace === "airport") {
-    eggy.position.set(-18, 1.05, -8);
-    plane.position.set(-2, 1.15, -3);
+    eggy.position.set(-18, 1.05, 32);
+    plane.position.set(-8, 1.15, 30);
   } else {
     eggy.position.set(-28, 1.05, 10);
-    plane.position.set(-2, 1.15, -3);
+    plane.position.set(-8, 1.15, 30);
   }
   plane.rotation.set(0, Math.PI / 2, 0);
   plane.scale.setScalar(1);
@@ -711,7 +718,7 @@ function taxiPlane() {
   if (state.mode !== "boarded" && state.mode !== "landed") return;
   state.mode = "taxi";
   state.speed = 0.18;
-  setStatus("正在滑行，还没有起飞。");
+  setStatus("正在竖向跑道上滑行，还没有起飞。");
 }
 
 function takeoffPlane() {
@@ -765,25 +772,26 @@ function updateWalking(dt) {
 function updatePlane(dt) {
   if (state.currentPlace !== "airport") return;
   if (state.mode === "taxi") {
-    plane.position.x += dt * 14;
+    plane.position.z -= dt * 14;
     plane.rotation.z = Math.sin(performance.now() * 0.004) * 0.025;
-    if (plane.position.x > 28) {
+    if (plane.position.z < 5) {
       state.speed = 0;
-      setStatus("滑行到跑道中段了。点“起飞”才会离地。");
+      plane.position.z = 5;
+      setStatus("已经竖着滑到起飞跑道中段了。点“起飞”才会离地。");
     }
   }
   if (state.mode === "takeoff") {
     state.planeT += dt;
     if (state.planeT < 1.8) {
-      plane.position.x += dt * 31;
+      plane.position.z -= dt * 31;
       plane.position.y = 1.15;
       plane.rotation.z = THREE.MathUtils.lerp(plane.rotation.z, -0.04, dt * 2);
-      setStatus("起飞滑跑中：飞机还贴着跑道往前冲。");
+      setStatus("竖向起飞滑跑中：飞机还贴着跑道往前冲。");
     } else {
       const climbT = state.planeT - 1.8;
-      plane.position.x += dt * 34;
+      plane.position.z -= dt * 34;
       plane.position.y = 1.15 + climbT * climbT * 1.25;
-      plane.position.z += Math.sin(climbT * 0.8) * dt * 1.4;
+      plane.position.x += Math.sin(climbT * 0.8) * dt * 1.4;
       plane.rotation.z = THREE.MathUtils.lerp(plane.rotation.z, -0.16, dt * 1.2);
       setStatus("机头慢慢抬起来，飞机往前爬升，不是热气球那样直上。");
     }
@@ -795,16 +803,16 @@ function updatePlane(dt) {
   }
   if (state.mode === "flying") {
     state.planeT += dt;
-    plane.position.x += dt * 13;
+    plane.position.z -= dt * 13;
     plane.position.y = 14 + Math.sin(state.planeT * 1.2) * 1.2;
-    plane.position.z += Math.sin(state.planeT * 0.8) * dt * 5;
+    plane.position.x += Math.sin(state.planeT * 0.8) * dt * 5;
     plane.rotation.y = Math.PI / 2 + Math.sin(state.planeT * 0.55) * 0.16;
     plane.rotation.z = Math.sin(state.planeT) * 0.16;
   }
   if (state.mode === "landing") {
     state.planeT += dt;
-    plane.position.x = THREE.MathUtils.lerp(plane.position.x, 20, dt * 0.7);
-    plane.position.z = THREE.MathUtils.lerp(plane.position.z, -22, dt * 0.9);
+    plane.position.x = THREE.MathUtils.lerp(plane.position.x, 18, dt * 0.7);
+    plane.position.z = THREE.MathUtils.lerp(plane.position.z, 26, dt * 0.9);
     plane.position.y = THREE.MathUtils.lerp(plane.position.y, 1.18, dt * 0.55);
     plane.rotation.y = THREE.MathUtils.lerp(plane.rotation.y, Math.PI / 2, dt * 1.2);
     plane.rotation.z = THREE.MathUtils.lerp(plane.rotation.z, 0, dt * 1.6);
