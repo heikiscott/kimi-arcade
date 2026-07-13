@@ -25,9 +25,11 @@ const buttons = {
   walk: document.querySelector("#walkBtn"),
   jump: document.querySelector("#jumpBtn"),
   ball: document.querySelector("#ballBtn"),
+  expression: document.querySelector("#expressionBtn"),
   screenWalk: document.querySelector("#screenWalkBtn"),
   screenJump: document.querySelector("#screenJumpBtn"),
   screenBall: document.querySelector("#screenBallBtn"),
+  screenExpression: document.querySelector("#screenExpressionBtn"),
   classScore: document.querySelector("#classScoreBtn"),
   meScore: document.querySelector("#meScoreBtn")
 };
@@ -79,6 +81,9 @@ const state = {
   walkClock: 0,
   jumpVelocity: 0,
   ballMode: false,
+  expressionIndex: 0,
+  ridingWheel: false,
+  wheelT: 0,
   tourIndex: 0,
   tourTimer: 0,
   flightMeters: 0,
@@ -100,6 +105,8 @@ const students = [
   { name: "同学4", score: 0 }
 ];
 let classScoreUsed = false;
+
+const teddyExpressions = ["开心", "惊讶", "酷酷", "眨眼"];
 
 const tourCountries = [
   { key: "japan", name: "日本", title: "日本环游", intro: "现在到日本：能看到樱花树、鸟居和东京塔样子的高塔。" },
@@ -134,6 +141,7 @@ scene.add(world);
 const eggy = createEggy();
 eggy.position.set(-18, 1.05, 32);
 scene.add(eggy);
+applyTeddyExpression();
 
 let plane = createAirliner(planeOptions[0].color, planeOptions[0].model, planeOptions[0]);
 plane.position.set(...planeOptions[0].position);
@@ -153,6 +161,7 @@ let metroTrainGroup = null;
 let metroDoorGroup = null;
 let platformDoorGroup = null;
 let exitGate = null;
+let ferrisWheelGroup = null;
 buildCurrentPlace();
 
 function mat(color, roughness = 0.78) {
@@ -183,43 +192,88 @@ function sphere(r, color, sx = 1, sy = 1, sz = 1) {
 
 function createEggy() {
   const group = new THREE.Group();
-  const body = sphere(1.25, 0xf6c841, 1, 1.12, 0.92);
+  const fur = 0x9b6434;
+  const inner = 0xf0c18a;
+  const body = sphere(1.05, fur, 0.92, 1.12, 0.78);
   body.name = "body";
+  body.position.y = -0.05;
   group.add(body);
 
-  const face = sphere(0.78, 0xffd6b0, 1, 0.72, 0.18);
-  face.position.set(0, 0.08, 0.84);
-  group.add(face);
+  const belly = sphere(0.62, inner, 0.86, 0.72, 0.14);
+  belly.position.set(0, -0.12, 0.73);
+  group.add(belly);
+
+  const head = sphere(0.86, fur, 1.02, 0.96, 0.9);
+  head.position.set(0, 1.05, 0.02);
+  group.add(head);
+
+  const leftEar = sphere(0.28, fur, 0.95, 1, 0.72);
+  leftEar.position.set(-0.56, 1.72, 0);
+  const rightEar = sphere(0.28, fur, 0.95, 1, 0.72);
+  rightEar.position.set(0.56, 1.72, 0);
+  const leftInnerEar = sphere(0.16, 0xf6a5c9, 0.9, 1, 0.12);
+  leftInnerEar.position.set(-0.56, 1.72, 0.22);
+  const rightInnerEar = sphere(0.16, 0xf6a5c9, 0.9, 1, 0.12);
+  rightInnerEar.position.set(0.56, 1.72, 0.22);
+  group.add(leftEar, rightEar, leftInnerEar, rightInnerEar);
+
+  const muzzle = sphere(0.38, inner, 1.12, 0.72, 0.22);
+  muzzle.position.set(0, 0.92, 0.74);
+  group.add(muzzle);
 
   const leftEye = sphere(0.08, 0x172632);
-  leftEye.position.set(-0.28, 0.18, 1.02);
+  leftEye.position.set(-0.29, 1.16, 0.82);
   const rightEye = sphere(0.08, 0x172632);
-  rightEye.position.set(0.28, 0.18, 1.02);
-  group.add(leftEye, rightEye);
+  rightEye.position.set(0.29, 1.16, 0.82);
+  const leftSpark = sphere(0.025, 0xffffff);
+  leftSpark.position.set(-0.255, 1.19, 0.88);
+  const rightSpark = sphere(0.025, 0xffffff);
+  rightSpark.position.set(0.325, 1.19, 0.88);
+  group.add(leftEye, rightEye, leftSpark, rightSpark);
 
-  const mouth = box(0.42, 0.045, 0.045, 0x172632);
-  mouth.position.set(0, -0.24, 1.04);
-  group.add(mouth);
+  const leftBrow = box(0.28, 0.045, 0.04, 0x172632);
+  leftBrow.position.set(-0.29, 1.34, 0.83);
+  const rightBrow = box(0.28, 0.045, 0.04, 0x172632);
+  rightBrow.position.set(0.29, 1.34, 0.83);
+  group.add(leftBrow, rightBrow);
 
-  const stem = cyl(0.07, 0.07, 0.48, 0x172632);
-  stem.position.set(0, 1.45, 0);
-  stem.rotation.z = 0.25;
-  const bobble = sphere(0.22, 0xf06aa3);
-  bobble.position.set(0.12, 1.72, 0);
-  group.add(stem, bobble);
+  const nose = sphere(0.105, 0x172632, 1.15, 0.8, 0.78);
+  nose.position.set(0, 0.99, 0.97);
+  const mouth = box(0.34, 0.048, 0.045, 0x172632);
+  mouth.position.set(0, 0.78, 0.98);
+  const openMouth = sphere(0.13, 0x172632, 0.86, 1.15, 0.32);
+  openMouth.position.set(0, 0.78, 0.99);
+  openMouth.visible = false;
+  group.add(nose, mouth, openMouth);
 
-  group.userData.leftArm = cyl(0.12, 0.12, 0.96, 0xf6c841);
-  group.userData.rightArm = cyl(0.12, 0.12, 0.96, 0xf6c841);
-  group.userData.leftLeg = cyl(0.14, 0.16, 0.72, 0x172632);
-  group.userData.rightLeg = cyl(0.14, 0.16, 0.72, 0x172632);
+  const leftCheek = sphere(0.09, 0xf06aa3, 1, 0.6, 0.12);
+  leftCheek.position.set(-0.45, 0.88, 0.87);
+  const rightCheek = sphere(0.09, 0xf06aa3, 1, 0.6, 0.12);
+  rightCheek.position.set(0.45, 0.88, 0.87);
+  group.add(leftCheek, rightCheek);
 
-  group.userData.leftArm.position.set(-1.05, -0.08, 0.04);
-  group.userData.rightArm.position.set(1.05, -0.08, 0.04);
-  group.userData.leftLeg.position.set(-0.42, -1.17, 0.05);
-  group.userData.rightLeg.position.set(0.42, -1.17, 0.05);
+  group.userData.leftArm = cyl(0.16, 0.18, 0.84, fur);
+  group.userData.rightArm = cyl(0.16, 0.18, 0.84, fur);
+  group.userData.leftLeg = cyl(0.19, 0.22, 0.7, fur);
+  group.userData.rightLeg = cyl(0.19, 0.22, 0.7, fur);
+
+  group.userData.leftArm.position.set(-0.86, 0.06, 0.04);
+  group.userData.rightArm.position.set(0.86, 0.06, 0.04);
+  group.userData.leftLeg.position.set(-0.36, -0.94, 0.06);
+  group.userData.rightLeg.position.set(0.36, -0.94, 0.06);
   group.userData.leftArm.rotation.z = -0.4;
   group.userData.rightArm.rotation.z = 0.4;
   group.add(group.userData.leftArm, group.userData.rightArm, group.userData.leftLeg, group.userData.rightLeg);
+  group.userData.leftEye = leftEye;
+  group.userData.rightEye = rightEye;
+  group.userData.leftSpark = leftSpark;
+  group.userData.rightSpark = rightSpark;
+  group.userData.leftBrow = leftBrow;
+  group.userData.rightBrow = rightBrow;
+  group.userData.mouth = mouth;
+  group.userData.openMouth = openMouth;
+  group.userData.leftCheek = leftCheek;
+  group.userData.rightCheek = rightCheek;
   return group;
 }
 
@@ -526,6 +580,7 @@ function buildCurrentPlace() {
 }
 
 function buildAmusementPark() {
+  ferrisWheelGroup = null;
   const ground = new THREE.Mesh(new THREE.BoxGeometry(150, 1, 105), mat(0x8bcf75));
   ground.position.y = -0.55;
   ground.receiveShadow = true;
@@ -555,6 +610,7 @@ function buildAmusementPark() {
   stand2.rotation.x = 0.35;
   wheel.add(stand1, stand2);
   wheel.position.set(-45, 13, -8);
+  ferrisWheelGroup = wheel;
   airportObjects.add(wheel);
 
   const fountain = cyl(4.8, 4.8, 0.35, 0x7fc7ea, 64);
@@ -981,6 +1037,54 @@ function setStatus(text) {
   flightState.textContent = text;
 }
 
+function applyTeddyExpression() {
+  const expression = teddyExpressions[state.expressionIndex % teddyExpressions.length];
+  const u = eggy.userData;
+  u.leftEye.scale.set(1, 1, 1);
+  u.rightEye.scale.set(1, 1, 1);
+  u.leftSpark.visible = true;
+  u.rightSpark.visible = true;
+  u.mouth.visible = true;
+  u.openMouth.visible = false;
+  u.mouth.scale.set(1, 1, 1);
+  u.mouth.rotation.z = 0;
+  u.leftBrow.rotation.z = 0;
+  u.rightBrow.rotation.z = 0;
+  u.leftCheek.visible = true;
+  u.rightCheek.visible = true;
+  if (expression === "开心") {
+    u.mouth.scale.set(1.25, 1, 1);
+    u.mouth.position.y = 0.76;
+    u.leftBrow.rotation.z = 0.14;
+    u.rightBrow.rotation.z = -0.14;
+  } else if (expression === "惊讶") {
+    u.mouth.visible = false;
+    u.openMouth.visible = true;
+    u.leftBrow.rotation.z = -0.22;
+    u.rightBrow.rotation.z = 0.22;
+  } else if (expression === "酷酷") {
+    u.mouth.scale.set(0.72, 1, 1);
+    u.mouth.position.y = 0.8;
+    u.leftBrow.rotation.z = -0.28;
+    u.rightBrow.rotation.z = 0.28;
+    u.leftCheek.visible = false;
+    u.rightCheek.visible = false;
+  } else if (expression === "眨眼") {
+    u.rightEye.scale.set(1.2, 0.18, 1);
+    u.rightSpark.visible = false;
+    u.mouth.rotation.z = -0.08;
+    u.leftBrow.rotation.z = 0.18;
+    u.rightBrow.rotation.z = 0.18;
+  }
+  return expression;
+}
+
+function nextExpression() {
+  state.expressionIndex = (state.expressionIndex + 1) % teddyExpressions.length;
+  const expression = applyTeddyExpression();
+  setStatus(`泰迪熊表情：${expression}。现在不是光头蛋仔了，是有表情的泰迪熊。`);
+}
+
 function setPlaneInteriorVisible(visible) {
   if (plane.userData.cabinInterior) {
     plane.userData.cabinInterior.visible = visible;
@@ -1118,6 +1222,8 @@ function resetGame(resetMessage = true) {
   state.metroT = 0;
   state.metroPhase = "waiting";
   state.metroDoorsOpen = true;
+  state.ridingWheel = false;
+  state.wheelT = 0;
   classScoreUsed = false;
   if (state.currentPlace === "airport") {
     eggy.position.set(-18, 1.05, 32);
@@ -1167,7 +1273,7 @@ function startInteract() {
     else if (state.mode === "flying") landPlane();
     else setStatus("机场互动：可以上飞机、滑行、起飞、降落。");
   } else if (state.currentPlace === "amusement") {
-    setStatus("游乐园互动：摩天轮转起来，喷泉亮起来，樱花树下面可以继续走。");
+    toggleFerrisRide();
   } else if (state.currentPlace === "water") {
     setStatus("水上乐园互动：买票，坐电梯，上大喇叭滑道，冲进水池。");
   } else if (state.currentPlace === "metro") {
@@ -1183,6 +1289,24 @@ function openPark() {
 
 function goLobby() {
   window.location.href = "arcade.html";
+}
+
+function toggleFerrisRide() {
+  if (state.currentPlace !== "amusement") {
+    setPlace("amusement");
+  }
+  if (state.ridingWheel) {
+    state.ridingWheel = false;
+    state.mode = "walk";
+    eggy.position.set(-35, 1.05, -14);
+    eggy.rotation.set(0, 0.5, 0);
+    setStatus("泰迪熊从摩天轮下来了，可以继续在游乐园走。");
+    return;
+  }
+  state.mode = "wheel";
+  state.ridingWheel = true;
+  state.wheelT = -Math.PI * 0.35;
+  setStatus("泰迪熊坐上摩天轮了！会跟着座舱转一圈，脸上还有表情。");
 }
 
 function startMetroRide() {
@@ -1362,6 +1486,19 @@ function updateWorldTour(dt) {
   }
 }
 
+function updateAmusement(dt) {
+  if (state.currentPlace !== "amusement" || !ferrisWheelGroup) return;
+  state.wheelT += dt * 0.62;
+  ferrisWheelGroup.rotation.x = state.wheelT;
+  if (!state.ridingWheel) return;
+  const angle = state.wheelT + Math.PI * 0.18;
+  const center = ferrisWheelGroup.position;
+  eggy.position.set(center.x, center.y + Math.sin(angle) * 9, center.z + Math.cos(angle) * 9);
+  eggy.rotation.set(0, Math.PI, Math.sin(angle) * 0.08);
+  eggy.userData.leftArm.rotation.x = Math.sin(state.wheelT * 3) * 0.28;
+  eggy.userData.rightArm.rotation.x = -Math.sin(state.wheelT * 3) * 0.28;
+}
+
 function updatePlane(dt) {
   if (state.currentPlace !== "airport") return;
   if (state.mode === "taxi") {
@@ -1487,6 +1624,12 @@ function updateMetro(dt) {
 
 function updateCamera(dt) {
   const target = state.currentPlace === "metro" && state.mode === "metro" && metroTrainGroup ? metroTrainGroup.position : state.mode === "walk" ? eggy.position : plane.position;
+  if (state.ridingWheel) {
+    const desiredWheel = new THREE.Vector3(eggy.position.x - 10, eggy.position.y + 3.2, eggy.position.z + 14);
+    camera.position.lerp(desiredWheel, 1 - Math.pow(0.001, dt));
+    camera.lookAt(eggy.position.x, eggy.position.y + 1.2, eggy.position.z);
+    return;
+  }
   const desired = new THREE.Vector3(target.x - 15, target.y + 9.5, target.z + 18);
   if (state.inCockpit && ["boarded", "taxi", "takeoff", "flying", "landing", "landed"].includes(state.mode)) {
     const cam = plane.localToWorld(new THREE.Vector3(2.05, 0.58, -0.08));
@@ -1515,6 +1658,7 @@ function animate() {
   updateWalking(dt);
   updatePlane(dt);
   updateMetro(dt);
+  updateAmusement(dt);
   updateWorldTour(dt);
   clouds.children.forEach((cloud, i) => {
     cloud.position.x += dt * (1.2 + (i % 4) * 0.25);
@@ -1578,9 +1722,11 @@ buttons.reset.addEventListener("click", resetCurrentScene);
 buttons.walk.addEventListener("click", walkForward);
 buttons.jump.addEventListener("click", jumpEggy);
 buttons.ball.addEventListener("click", toggleBallMode);
+buttons.expression.addEventListener("click", nextExpression);
 buttons.screenWalk.addEventListener("click", walkForward);
 buttons.screenJump.addEventListener("click", jumpEggy);
 buttons.screenBall.addEventListener("click", toggleBallMode);
+buttons.screenExpression.addEventListener("click", nextExpression);
 buttons.classScore.addEventListener("click", addScoreToClass);
 buttons.meScore.addEventListener("click", addScoreToMe);
 

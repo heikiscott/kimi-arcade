@@ -121,9 +121,9 @@ body {
   right: 24px;
   bottom: 28px;
   display: grid;
-  grid-template-columns: repeat(3, minmax(78px, 1fr));
+  grid-template-columns: repeat(4, minmax(68px, 1fr));
   gap: 9px;
-  width: min(330px, calc(100% - 210px));
+  width: min(420px, calc(100% - 210px));
 }
 
 .screen-actions button {
@@ -288,8 +288,8 @@ button {
   .screen-actions {
     right: 14px;
     bottom: 18px;
-    width: min(280px, calc(100% - 178px));
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    width: min(360px, calc(100% - 178px));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 
   #studentScores {
