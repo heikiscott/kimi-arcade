@@ -16,6 +16,8 @@ const buttons = {
   selectPlane: document.querySelector("#selectPlaneBtn"),
   board: document.querySelector("#boardBtn"),
   cockpit: document.querySelector("#cockpitBtn"),
+  cabinWalk: document.querySelector("#cabinWalkBtn"),
+  deck: document.querySelector("#deckBtn"),
   taxi: document.querySelector("#taxiBtn"),
   takeoff: document.querySelector("#takeoffBtn"),
   metroRide: document.querySelector("#metroRideBtn"),
@@ -92,6 +94,9 @@ const state = {
   selectedPlaneIndex: 0,
   inCockpit: false,
   cabinView: false,
+  cabinDeck: 1,
+  cabinLocal: new THREE.Vector3(0.25, 0.46, 0),
+  cabinMotionMode: "boarded",
   autoPilot: false,
   metroT: 0,
   metroPhase: "waiting",
@@ -167,6 +172,10 @@ buildCurrentPlace();
 
 function mat(color, roughness = 0.78) {
   return new THREE.MeshStandardMaterial({ color, roughness });
+}
+
+function transparentMat(color, opacity = 0.46, roughness = 0.45) {
+  return new THREE.MeshStandardMaterial({ color, roughness, transparent: true, opacity, side: THREE.DoubleSide });
 }
 
 function box(w, h, d, color) {
@@ -375,11 +384,21 @@ function createCabinInterior(color, options = {}) {
   floor.position.set(-0.25, -0.18, 0);
   cabin.add(floor);
 
-  const wallLeft = box(4.8, 0.9, 0.06, 0xf5f1df);
-  const wallRight = box(4.8, 0.9, 0.06, 0xf5f1df);
+  const wallMaterial = transparentMat(0xf5f1df, 0.38);
+  const wallLeft = new THREE.Mesh(new THREE.BoxGeometry(4.8, 0.9, 0.06), wallMaterial);
+  const wallRight = new THREE.Mesh(new THREE.BoxGeometry(4.8, 0.9, 0.06), wallMaterial);
   wallLeft.position.set(-0.25, 0.36, -0.72);
   wallRight.position.set(-0.25, 0.36, 0.72);
   cabin.add(wallLeft, wallRight);
+
+  for (let i = 0; i < 8; i += 1) {
+    const x = 1.15 - i * 0.48;
+    const leftWindow = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.2, 0.025), transparentMat(0x8fd8ff, 0.72));
+    const rightWindow = leftWindow.clone();
+    leftWindow.position.set(x, 0.48, -0.755);
+    rightWindow.position.set(x, 0.48, 0.755);
+    cabin.add(leftWindow, rightWindow);
+  }
 
   const cockpitWall = box(0.12, 1.1, 1.25, 0xd9e2ea);
   cockpitWall.position.set(1.72, 0.44, 0);
@@ -421,11 +440,40 @@ function createCabinInterior(color, options = {}) {
     });
   }
 
+  if (options.doubleDeck) {
+    const upperFloor = box(3.6, 0.07, 1.12, 0x6f7c86);
+    upperFloor.position.set(-0.55, 0.8, 0);
+    cabin.add(upperFloor);
+    const stair = box(0.6, 0.16, 0.42, 0xffd15f);
+    stair.position.set(1.26, 0.32, 0);
+    stair.rotation.z = -0.5;
+    cabin.add(stair);
+    for (let row = 0; row < 4; row += 1) {
+      const x = 0.65 - row * 0.58;
+      [-0.34, 0.34].forEach((z, side) => {
+        const seat = box(0.25, 0.32, 0.25, side ? 0x8f5fd9 : 0x38a86a);
+        seat.position.set(x, 0.96, z);
+        cabin.add(seat);
+      });
+      const topLeftWindow = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.18, 0.025), transparentMat(0x8fd8ff, 0.74));
+      const topRightWindow = topLeftWindow.clone();
+      topLeftWindow.position.set(x, 1.36, -0.755);
+      topRightWindow.position.set(x, 1.36, 0.755);
+      cabin.add(topLeftWindow, topRightWindow);
+    }
+    const deckLabel = makeLabel("二楼客舱");
+    deckLabel.scale.setScalar(0.25);
+    deckLabel.position.set(-0.62, 1.52, 0);
+    deckLabel.rotation.x = -Math.PI / 2;
+    cabin.add(deckLabel);
+  }
+
   const cabinLabel = makeLabel(options.doubleDeck ? "双层客舱" : "客舱");
   cabinLabel.scale.setScalar(0.34);
   cabinLabel.position.set(-0.4, 0.82, 0);
   cabinLabel.rotation.x = -Math.PI / 2;
   cabin.add(cabinLabel);
+  cabin.userData.bounds = { minX: options.doubleDeck ? -1.95 : -1.75, maxX: 1.22, minZ: -0.46, maxZ: 0.46 };
   return cabin;
 }
 
@@ -1181,6 +1229,68 @@ function setPlaneInteriorVisible(visible) {
   }
 }
 
+function isPlaneTravelMode() {
+  return ["boarded", "taxi", "takeoff", "flying", "landing", "landed", "cabin-walk"].includes(state.mode);
+}
+
+function cabinFloorY() {
+  return state.cabinDeck === 2 ? 1.14 : 0.2;
+}
+
+function syncEggyToCabin() {
+  const local = state.cabinLocal.clone();
+  local.y = cabinFloorY();
+  const worldPosition = plane.localToWorld(local);
+  eggy.position.copy(worldPosition);
+}
+
+function currentPlaneMotionMode() {
+  return state.mode === "cabin-walk" ? state.cabinMotionMode : state.mode;
+}
+
+function setPlaneMotionMode(mode) {
+  if (state.mode === "cabin-walk") state.cabinMotionMode = mode;
+  else state.mode = mode;
+}
+
+function enterCabinWalk() {
+  if (!isPlaneTravelMode()) {
+    setStatus("先上飞机，再进客舱走动。");
+    return;
+  }
+  state.cabinMotionMode = currentPlaneMotionMode();
+  state.mode = "cabin-walk";
+  state.inCockpit = false;
+  state.cabinView = true;
+  state.autoPilot = true;
+  state.cabinDeck = 1;
+  state.cabinLocal.set(0.72, cabinFloorY(), 0);
+  state.ballMode = false;
+  eggy.visible = true;
+  eggy.scale.setScalar(0.28);
+  setPlaneInteriorVisible(true);
+  syncEggyToCabin();
+  const option = planeOptions[state.selectedPlaneIndex];
+  setStatus(option.doubleDeck ? "进入客舱走动：不会掉下去。用摇杆/WASD在过道里走，点“上二楼”去二楼看窗外。" : "进入客舱走动：不会掉下去。用摇杆/WASD在过道里走，可以从窗户看到外面。");
+}
+
+function toggleCabinDeck() {
+  if (state.mode !== "cabin-walk") {
+    enterCabinWalk();
+    return;
+  }
+  const option = planeOptions[state.selectedPlaneIndex];
+  if (!option.doubleDeck) {
+    setStatus(`${selectedPlaneLabel()} 是单层客机，没有二楼。换 A380 或 747 就能去二楼。`);
+    return;
+  }
+  state.cabinDeck = state.cabinDeck === 1 ? 2 : 1;
+  state.cabinLocal.x = THREE.MathUtils.clamp(state.cabinLocal.x, -1.45, 0.9);
+  state.cabinLocal.y = cabinFloorY();
+  syncEggyToCabin();
+  setStatus(state.cabinDeck === 2 ? "到了二楼客舱！这里也能走，还能从上层窗户看到外面。" : "回到一楼客舱。");
+}
+
 function replaceMainPlane(option, keepTransform = false) {
   const oldPosition = plane.position.clone();
   const oldRotation = plane.rotation.clone();
@@ -1225,16 +1335,23 @@ function selectNextPlane() {
 }
 
 function toggleCockpit() {
-  if (!["boarded", "taxi", "takeoff", "flying", "landing", "landed"].includes(state.mode)) {
+  if (!isPlaneTravelMode()) {
     setStatus("先上飞机，才能进驾驶室。");
     return;
   }
-  if (state.inCockpit) {
-    state.inCockpit = false;
-    state.cabinView = true;
-    state.autoPilot = true;
+  if (state.mode === "cabin-walk") {
+    state.mode = "boarded";
+    state.inCockpit = true;
+    state.cabinView = false;
+    state.autoPilot = false;
+    eggy.visible = false;
+    eggy.scale.setScalar(1);
     setPlaneInteriorVisible(true);
-    setStatus("你从驾驶舱出来，走到客舱里看座椅和玩具乘客；飞机现在无人驾驶，自己平稳飞。");
+    setStatus(`回到驾驶舱：你又在飞机里面控制 ${selectedPlaneLabel()}。`);
+    return;
+  }
+  if (state.inCockpit) {
+    enterCabinWalk();
   } else {
     state.inCockpit = true;
     state.cabinView = false;
@@ -1308,6 +1425,9 @@ function resetGame(resetMessage = true) {
   state.flightMeters = 0;
   state.inCockpit = false;
   state.cabinView = false;
+  state.cabinDeck = 1;
+  state.cabinLocal.set(0.25, cabinFloorY(), 0);
+  state.cabinMotionMode = "boarded";
   state.autoPilot = false;
   state.metroT = 0;
   state.metroPhase = "waiting";
@@ -1359,10 +1479,11 @@ function startInteract() {
     return;
   }
   if (state.currentPlace === "airport") {
+    const planeMode = currentPlaneMotionMode();
     if (state.mode === "walk") boardPlane();
-    else if (state.mode === "boarded") taxiPlane();
-    else if (state.mode === "taxi") takeoffPlane();
-    else if (state.mode === "flying") landPlane();
+    else if (planeMode === "boarded") taxiPlane();
+    else if (planeMode === "taxi") takeoffPlane();
+    else if (planeMode === "flying") landPlane();
     else setStatus("机场互动：可以上飞机、滑行、起飞、降落。");
   } else if (state.currentPlace === "amusement") {
     toggleFerrisRide();
@@ -1433,6 +1554,13 @@ function startMetroRide() {
 }
 
 function walkForward() {
+  if (state.mode === "cabin-walk") {
+    state.cabinLocal.x = THREE.MathUtils.clamp(state.cabinLocal.x - 0.35, -1.9, 1.12);
+    syncEggyToCabin();
+    state.walkClock += 1;
+    setStatus(`在${state.cabinDeck === 2 ? "二楼" : "一楼"}客舱往前走了一步，没有掉下去。`);
+    return;
+  }
   if (state.mode !== "walk") {
     setStatus("现在在飞机模式里，先下飞机才能走。");
     return;
@@ -1494,6 +1622,9 @@ function boardPlane() {
     return;
   }
   state.mode = "boarded";
+  state.cabinMotionMode = "boarded";
+  state.cabinDeck = 1;
+  state.cabinLocal.set(0.72, cabinFloorY(), 0);
   state.inCockpit = true;
   state.cabinView = false;
   state.autoPilot = false;
@@ -1504,24 +1635,26 @@ function boardPlane() {
 
 function taxiPlane() {
   if (state.currentPlace !== "airport") return;
-  if (state.mode !== "boarded" && state.mode !== "landed") return;
-  state.mode = "taxi";
+  const planeMode = currentPlaneMotionMode();
+  if (planeMode !== "boarded" && planeMode !== "landed") return;
+  setPlaneMotionMode("taxi");
   state.speed = 0.18;
   setStatus("正在竖向跑道上滑行，还没有起飞。");
 }
 
 function takeoffPlane() {
   if (state.currentPlace !== "airport") return;
-  if (state.mode !== "taxi") return;
-  state.mode = "takeoff";
+  if (currentPlaneMotionMode() !== "taxi") return;
+  setPlaneMotionMode("takeoff");
   state.speed = 0.36;
   setStatus("起飞！飞机开始离开跑道。");
 }
 
 function landPlane() {
   if (state.currentPlace !== "airport") return;
-  if (state.mode !== "flying" && state.mode !== "takeoff") return;
-  state.mode = "landing";
+  const planeMode = currentPlaneMotionMode();
+  if (planeMode !== "flying" && planeMode !== "takeoff") return;
+  setPlaneMotionMode("landing");
   state.planeT = 0;
   state.speed = 0.46;
   setStatus("先转弯对准降落跑道，不会倒着飞。");
@@ -1536,6 +1669,7 @@ function exitPlane() {
   state.autoPilot = true;
   setPlaneInteriorVisible(false);
   eggy.visible = true;
+  eggy.scale.setScalar(1);
   eggy.position.copy(plane.position).add(new THREE.Vector3(-2.5, -0.1, 3.2));
   setStatus("你从飞机里出来了，飞机保持无人驾驶平稳状态。");
 }
@@ -1588,6 +1722,31 @@ function updateWalking(dt) {
   eggy.position.z = THREE.MathUtils.clamp(eggy.position.z, -52, 52);
 }
 
+function updateCabinWalking(dt) {
+  if (state.mode !== "cabin-walk") return;
+  const bounds = plane.userData.cabinInterior?.userData.bounds || { minX: -1.9, maxX: 1.12, minZ: -0.46, maxZ: 0.46 };
+  const move = new THREE.Vector2();
+  if (state.keys.has("KeyW") || state.keys.has("ArrowUp")) move.x += 1;
+  if (state.keys.has("KeyS") || state.keys.has("ArrowDown")) move.x -= 1;
+  if (state.keys.has("KeyA") || state.keys.has("ArrowLeft")) move.y -= 1;
+  if (state.keys.has("KeyD") || state.keys.has("ArrowRight")) move.y += 1;
+  move.x += -state.stick.y;
+  move.y += state.stick.x;
+  if (move.lengthSq() > 0.001) {
+    move.normalize();
+    state.cabinLocal.x = THREE.MathUtils.clamp(state.cabinLocal.x + move.x * dt * 1.35, bounds.minX, bounds.maxX);
+    state.cabinLocal.z = THREE.MathUtils.clamp(state.cabinLocal.z + move.y * dt * 0.82, bounds.minZ, bounds.maxZ);
+    state.walkClock += dt * 13;
+    eggy.userData.leftLeg.rotation.x = Math.sin(state.walkClock) * 0.5;
+    eggy.userData.rightLeg.rotation.x = -Math.sin(state.walkClock) * 0.5;
+    eggy.userData.leftArm.rotation.x = -Math.sin(state.walkClock) * 0.35;
+    eggy.userData.rightArm.rotation.x = Math.sin(state.walkClock) * 0.35;
+    eggy.rotation.y = plane.rotation.y + Math.atan2(move.y, move.x) - Math.PI / 2;
+  }
+  state.cabinLocal.y = cabinFloorY();
+  syncEggyToCabin();
+}
+
 function updateWorldTour(dt) {
   if (state.mode !== "tour") return;
   state.tourTimer += dt;
@@ -1620,7 +1779,8 @@ function updateAmusement(dt) {
 
 function updatePlane(dt) {
   if (state.currentPlace !== "airport") return;
-  if (state.mode === "taxi") {
+  const planeMode = currentPlaneMotionMode();
+  if (planeMode === "taxi") {
     const turnInput = state.stick.x;
     plane.rotation.y -= turnInput * dt * 0.85;
     plane.rotation.z = THREE.MathUtils.lerp(plane.rotation.z, -turnInput * 0.18 + Math.sin(performance.now() * 0.004) * 0.025, dt * 4);
@@ -1633,7 +1793,7 @@ function updatePlane(dt) {
       setStatus("已经滑到起飞跑道中段了。地面上也能用左下角摇杆转弯，点“起飞”才会离地。");
     }
   }
-  if (state.mode === "takeoff") {
+  if (planeMode === "takeoff") {
     state.planeT += dt;
     const forward = flightForwardVector();
     if (state.planeT < 1.8) {
@@ -1650,13 +1810,13 @@ function updatePlane(dt) {
       setStatus("机头慢慢抬起来，飞机往前爬升，不是热气球那样直上。");
     }
     if (state.planeT > 5.2) {
-      state.mode = "flying";
+      setPlaneMotionMode("flying");
       state.planeT = 0;
       state.flightMeters = 0;
       setStatus("飞机在空中：左下角圆杆可以控制飞机，往下拉上升，往上推下降，左右拉就左右飞。");
     }
   }
-  if (state.mode === "flying") {
+  if (planeMode === "flying") {
     state.planeT += dt;
     const turnInput = state.autoPilot ? Math.sin(state.planeT * 0.45) * 0.12 : state.stick.x;
     const pitchInput = state.autoPilot ? Math.sin(state.planeT * 0.65) * 0.18 : state.stick.y;
@@ -1672,7 +1832,7 @@ function updatePlane(dt) {
       arriveAtNextCountryAirport();
     }
   }
-  if (state.mode === "landing") {
+  if (planeMode === "landing") {
     state.planeT += dt;
     if (state.planeT < 2.6) {
       plane.position.x = THREE.MathUtils.lerp(plane.position.x, 18, dt * 0.55);
@@ -1697,7 +1857,7 @@ function updatePlane(dt) {
       setStatus("已经落地，沿降落跑道向前滑跑减速。");
     }
     if (plane.position.z > 30 && state.planeT > 5.4) {
-      state.mode = "landed";
+      setPlaneMotionMode("landed");
       state.planeT = 0;
       setStatus("落地成功，飞机停在降落跑道上。");
     }
@@ -1769,6 +1929,15 @@ function updateCamera(dt) {
     camera.lookAt(look);
     return;
   }
+  if (state.mode === "cabin-walk") {
+    const camLocal = state.cabinLocal.clone().add(new THREE.Vector3(0.72, 0.44, state.cabinLocal.z > 0 ? -0.86 : 0.86));
+    const lookLocal = state.cabinLocal.clone().add(new THREE.Vector3(-0.58, 0.28, state.cabinLocal.z > 0 ? 0.46 : -0.46));
+    const cam = plane.localToWorld(camLocal);
+    const look = plane.localToWorld(lookLocal);
+    camera.position.lerp(cam, 1 - Math.pow(0.001, dt));
+    camera.lookAt(look);
+    return;
+  }
   if (state.mode !== "walk") desired.set(target.x - 18, target.y + 9, target.z + 20);
   camera.position.lerp(desired, 1 - Math.pow(0.001, dt));
   camera.lookAt(target.x, target.y + 2.4, target.z);
@@ -1781,6 +1950,7 @@ function animate() {
   animate.last = now;
   updateWalking(dt);
   updatePlane(dt);
+  updateCabinWalking(dt);
   updateMetro(dt);
   updateAmusement(dt);
   updateWorldTour(dt);
@@ -1837,6 +2007,8 @@ buttons.tour.addEventListener("click", startWorldTour);
 buttons.selectPlane.addEventListener("click", selectNextPlane);
 buttons.board.addEventListener("click", boardPlane);
 buttons.cockpit.addEventListener("click", toggleCockpit);
+buttons.cabinWalk.addEventListener("click", enterCabinWalk);
+buttons.deck.addEventListener("click", toggleCabinDeck);
 buttons.taxi.addEventListener("click", taxiPlane);
 buttons.takeoff.addEventListener("click", takeoffPlane);
 buttons.metroRide.addEventListener("click", startMetroRide);
