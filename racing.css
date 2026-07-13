@@ -197,6 +197,133 @@ canvas {
   line-height: 1.1;
 }
 
+.track-preview {
+  width: 62px;
+  height: 34px;
+  border: 3px solid #172632;
+  border-radius: 8px;
+  overflow: hidden;
+  background: linear-gradient(#9ed8f0 0 48%, #39a657 48%);
+}
+
+.track-preview::before,
+.track-preview::after {
+  content: "";
+  position: absolute;
+  display: block;
+}
+
+.track-sky .track-preview {
+  background: linear-gradient(#9ed8f0 0 74%, #ffffff 74%);
+}
+
+.track-sky .track-preview::before {
+  left: 7px;
+  top: 18px;
+  width: 50px;
+  height: 8px;
+  border-radius: 999px;
+  background: #b8d8ff;
+}
+
+.track-cliff .track-preview {
+  background: linear-gradient(#9ed8f0 0 62%, #7fcde8 62%);
+}
+
+.track-cliff .track-preview::before {
+  left: -2px;
+  top: 15px;
+  width: 25px;
+  height: 15px;
+  background: #d98a3a;
+  box-shadow: 38px 4px 0 #d98a3a;
+  clip-path: polygon(0 0, 100% 0, 78% 100%, 18% 100%);
+}
+
+.track-cliff .track-preview::after {
+  left: 24px;
+  top: 6px;
+  width: 18px;
+  height: 9px;
+  border-radius: 60% 60% 30% 30%;
+  background: #fff;
+}
+
+.track-underground .track-preview {
+  background: linear-gradient(#151a22 0 50%, #4f5a66 50%);
+}
+
+.track-underground .track-preview::before {
+  left: 5px;
+  top: 7px;
+  width: 52px;
+  height: 19px;
+  border-radius: 14px 14px 4px 4px;
+  background: #3d3430;
+}
+
+.track-airport .track-preview {
+  background: linear-gradient(#9ed8f0 0 48%, #424b57 48%);
+}
+
+.track-airport .track-preview::before {
+  left: 8px;
+  top: 8px;
+  width: 46px;
+  height: 8px;
+  border-radius: 999px;
+  background: #ffffff;
+  transform: rotate(-12deg);
+}
+
+.track-station .track-preview {
+  background: linear-gradient(#d9e5ea 0 50%, #787f87 50%);
+}
+
+.track-station .track-preview::before {
+  left: 7px;
+  top: 13px;
+  width: 48px;
+  height: 12px;
+  border-radius: 5px;
+  background: #d93a32;
+}
+
+.track-ghost .track-preview {
+  background: linear-gradient(#171827 0 48%, #453854 48%);
+}
+
+.track-ghost .track-preview::before {
+  left: 22px;
+  top: 8px;
+  width: 18px;
+  height: 19px;
+  border-radius: 50% 50% 35% 35%;
+  background: #f4f7fa;
+}
+
+.track-volcano .track-preview {
+  background: linear-gradient(#c4552f 0 50%, #3b3030 50%);
+}
+
+.track-volcano .track-preview::before {
+  left: 17px;
+  top: 8px;
+  width: 28px;
+  height: 22px;
+  background: #6c2d21;
+  clip-path: polygon(50% 0, 100% 100%, 0 100%);
+}
+
+.track-volcano .track-preview::after {
+  left: 27px;
+  top: 13px;
+  width: 8px;
+  height: 16px;
+  border-radius: 999px;
+  background: #ff8a2a;
+}
+
 .car-preview::before {
   content: "";
   position: absolute;

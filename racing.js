@@ -19,6 +19,7 @@ const touchControls = [...document.querySelectorAll("[data-drive]")];
 
 const tracks = [
   { id: "sky", name: "天上", road: 0xb8d8ff, ground: 0x92d6ff, sky: 0xaee7ff, obstacle: "云墙" },
+  { id: "cliff", name: "悬崖飞跃", road: 0xd98a3a, ground: 0x7fcde8, sky: 0x9ed8f0, obstacle: "断崖和飞跃平台" },
   { id: "underground", name: "地下", road: 0x4f5a66, ground: 0x2b2420, sky: 0x151a22, obstacle: "石头" },
   { id: "airport", name: "机场", road: 0x424b57, ground: 0x8fc36e, sky: 0x9ed8f0, obstacle: "路障" },
   { id: "station", name: "火车站", road: 0x787f87, ground: 0xc8b08d, sky: 0xd9e5ea, obstacle: "行李" },
@@ -407,7 +408,7 @@ function driverAvatarMarkup(driver) {
 }
 
 function drawMenu() {
-  makeButtons(trackChoices, tracks, (track) => track.name, (track) => track === selectedTrack, (track) => {
+  makeVisualButtons(trackChoices, tracks, "track", (track) => track === selectedTrack, (track) => {
     selectedTrack = track;
     rebuildWorld();
   });
@@ -551,8 +552,8 @@ function rebuildWorld() {
   scene.background = new THREE.Color(selectedTrack.sky);
   scene.fog = new THREE.Fog(selectedTrack.sky, 38, 175);
 
-  const ground = box(58, 0.7, 180, selectedTrack.ground);
-  ground.position.set(0, -0.65, -58);
+  const ground = box(72, 0.7, selectedTrack.id === "cliff" ? 220 : 180, selectedTrack.ground);
+  ground.position.set(0, selectedTrack.id === "cliff" ? -7.4 : -0.65, -58);
   sceneGroup.add(ground);
 
   for (let i = 0; i < 18; i += 1) {
@@ -567,21 +568,38 @@ function rebuildWorld() {
 
 function createRoadSegment(i) {
   const group = new THREE.Group();
-  const road = box(12, 0.16, 9.8, selectedTrack.road);
-  road.position.y = 0;
-  group.add(road);
-  const leftRail = box(0.22, 0.34, 9.8, 0xffffff);
-  const rightRail = box(0.22, 0.34, 9.8, 0xffffff);
-  leftRail.position.set(-6.15, 0.22, 0);
-  rightRail.position.set(6.15, 0.22, 0);
-  group.add(leftRail, rightRail);
-  for (let z = -3.2; z <= 3.2; z += 3.2) {
-    const stripe = box(0.22, 0.18, 1.2, 0xffd15f);
-    stripe.position.set(0, 0.2, z);
-    group.add(stripe);
+  const cliffGap = selectedTrack.id === "cliff" && i % 6 === 3;
+  if (cliffGap) {
+    const leftPlate = box(4.2, 0.22, 3.0, selectedTrack.road);
+    const rightPlate = box(4.2, 0.22, 3.0, selectedTrack.road);
+    leftPlate.position.set(-4.4, 0, -2.4);
+    rightPlate.position.set(4.4, 0, 2.4);
+    const arrow = makeLabel("飞");
+    arrow.scale.setScalar(0.5);
+    arrow.position.set(0, 0.44, -0.3);
+    arrow.rotation.x = -Math.PI / 2;
+    const edge1 = box(12.8, 0.55, 0.22, 0x172632);
+    const edge2 = edge1.clone();
+    edge1.position.set(0, -0.08, -4.2);
+    edge2.position.set(0, -0.08, 4.2);
+    group.add(leftPlate, rightPlate, arrow, edge1, edge2);
+  } else {
+    const road = box(12, 0.16, 9.8, selectedTrack.road);
+    road.position.y = 0;
+    group.add(road);
+    const leftRail = box(0.22, 0.34, 9.8, 0xffffff);
+    const rightRail = box(0.22, 0.34, 9.8, 0xffffff);
+    leftRail.position.set(-6.15, 0.22, 0);
+    rightRail.position.set(6.15, 0.22, 0);
+    group.add(leftRail, rightRail);
+    for (let z = -3.2; z <= 3.2; z += 3.2) {
+      const stripe = box(0.22, 0.18, 1.2, 0xffd15f);
+      stripe.position.set(0, 0.2, z);
+      group.add(stripe);
+    }
   }
-  if (selectedTrack.id === "sky") {
-    group.position.y = 6.5;
+  if (selectedTrack.id === "sky" || selectedTrack.id === "cliff") {
+    group.position.y = trackHeight();
     const cloud = sphere(1.9, 0xffffff, 1.8, 0.55, 1.1);
     cloud.position.set(i % 2 ? -8.6 : 8.6, -1.8, 0);
     group.add(cloud);
@@ -614,11 +632,20 @@ function buildTrackScenery() {
     for (let i = 0; i < 7; i += 1) addGhost(i % 2 ? -16 : 16, -18 - i * 22);
   } else if (selectedTrack.id === "volcano") {
     for (let i = 0; i < 8; i += 1) addLavaRock(i % 2 ? -16 : 15, -18 - i * 18);
-  } else if (selectedTrack.id === "sky") {
+  } else if (selectedTrack.id === "sky" || selectedTrack.id === "cliff") {
     for (let i = 0; i < 12; i += 1) {
       const cloud = sphere(2.3, 0xffffff, 1.7, 0.55, 1.1);
       cloud.position.set((i % 2 ? -19 : 18) + Math.sin(i) * 5, 5 + Math.sin(i * 1.7) * 2.5, -10 - i * 14);
       sceneGroup.add(cloud);
+    }
+    if (selectedTrack.id === "cliff") {
+      for (let i = 0; i < 8; i += 1) {
+        const cliff = box(7 + (i % 3) * 2, 4.4 + (i % 2) * 1.3, 8, 0x8b5a35);
+        cliff.position.set(i % 2 ? -22 : 22, trackHeight() - 3.1, -24 - i * 18);
+        const grass = box(cliff.geometry.parameters.width, 0.28, 8.2, 0x39a657);
+        grass.position.set(cliff.position.x, trackHeight() - 0.8, cliff.position.z);
+        sceneGroup.add(cliff, grass);
+      }
     }
   } else {
     for (let i = 0; i < 10; i += 1) {
@@ -684,7 +711,8 @@ function buildItems() {
   for (let i = 0; i < 18 + selectedStars * 3; i += 1) {
     const coin = cyl(0.36, 0.36, 0.08, 0xffd15f, 26);
     coin.rotation.x = Math.PI / 2;
-    coin.position.set(-4 + (i % 5) * 2, trackHeight() + 0.8, -24 - i * 10);
+    coin.userData.laneX = -4 + (i % 5) * 2;
+    coin.position.set(coin.userData.laneX, trackHeight() + 0.8, -24 - i * 10);
     coin.userData.baseZ = coin.position.z;
     coins.push(coin);
     pickupGroup.add(coin);
@@ -692,25 +720,29 @@ function buildItems() {
   const rivalLabels = ["LR", "星", "M", "7", "GO", "闪"];
   for (let i = 0; i < 10 + selectedStars * 2; i += 1) {
     const rival = createCar([0xd93a32, 0x245b8f, 0x39a657, 0xffd15f, 0x8f5fd9][i % 5], rivalLabels[i % rivalLabels.length]);
-    rival.position.set([-3.8, 0, 3.8][i % 3], trackHeight() + 0.45, -34 - i * 17);
+    rival.userData.laneX = [-3.8, 0, 3.8][i % 3];
+    rival.position.set(rival.userData.laneX, trackHeight() + 0.45, -34 - i * 17);
     rival.userData.baseZ = rival.position.z;
     rivalCars.push(rival);
     pickupGroup.add(rival);
   }
   for (let i = 0; i < 8 + selectedStars; i += 1) {
     const obstacle = createObstacle(i);
-    obstacle.position.set([-4.2, 0, 4.2][(i + 1) % 3], trackHeight() + 0.58, -48 - i * 25);
+    obstacle.userData.laneX = [-4.2, 0, 4.2][(i + 1) % 3];
+    obstacle.position.set(obstacle.userData.laneX, trackHeight() + 0.58, -48 - i * 25);
     obstacle.userData.baseZ = obstacle.position.z;
     obstacles.push(obstacle);
     pickupGroup.add(obstacle);
   }
   finishLine = box(12, 0.22, 1, 0xffffff);
   finishLine.position.set(0, trackHeight() + 0.22, -145);
+  finishLine.userData.laneX = 0;
   finishLine.userData.baseZ = -raceGoalDistance() / 42;
   pickupGroup.add(finishLine);
 }
 
 function createObstacle(index) {
+  if (selectedTrack.id === "cliff") return box(1.7, 0.42, 1.1, index % 2 ? 0xffd15f : 0x39a657);
   if (selectedTrack.id === "ghost") return sphere(0.9, 0xf4f7fa, 1, 1.2, 0.7);
   if (selectedTrack.id === "volcano") return sphere(0.85, 0xff6a2a, 1.1, 0.7, 1);
   if (selectedTrack.id === "airport") return box(1.8, 1.1, 1.2, 0xffd15f);
@@ -720,7 +752,30 @@ function createObstacle(index) {
 }
 
 function trackHeight() {
+  if (selectedTrack.id === "cliff") return 7.4;
   return selectedTrack.id === "sky" ? 6.5 : 0;
+}
+
+function roadCenterAt(pathDistance) {
+  if (selectedTrack.id === "cliff") {
+    return Math.sin(pathDistance * 0.075) * 4.4 + Math.sin(pathDistance * 0.022) * 2.0;
+  }
+  if (selectedTrack.id === "airport" || selectedTrack.id === "station") return Math.sin(pathDistance * 0.035) * 1.8;
+  if (selectedTrack.id === "sky") return Math.sin(pathDistance * 0.052) * 2.3;
+  return Math.sin(pathDistance * 0.03) * 1.1;
+}
+
+function roadYawAt(pathDistance) {
+  return THREE.MathUtils.clamp((roadCenterAt(pathDistance + 6) - roadCenterAt(pathDistance - 6)) * 0.035, -0.42, 0.42);
+}
+
+function cliffPhase() {
+  return (distance / 42) % 60;
+}
+
+function inCliffFlightZone() {
+  const phase = cliffPhase();
+  return selectedTrack.id === "cliff" && phase > 26 && phase < 44;
 }
 
 function startRace() {
@@ -773,17 +828,20 @@ function update(dt) {
 
   const steer = (right ? 1 : 0) - (left ? 1 : 0);
   laneX += steer * dt * 8.5 * selectedTire.grip;
-  laneX = THREE.MathUtils.clamp(laneX, -4.8, 4.8);
+  const maxLane = selectedTrack.id === "cliff" && vertical > 0.5 ? 8.2 : 4.8;
+  laneX = THREE.MathUtils.clamp(laneX, -maxLane, maxLane);
   speed += (fast ? 24 : 0) * dt;
   speed -= (slow ? 30 : 0) * dt;
   speed = THREE.MathUtils.clamp(speed, 8, 34 * selectedCar.speed + selectedStars * 2);
   distance += speed * dt * 42;
 
   if (jump && Math.abs(vertical) < 0.02) verticalVelocity = 9.5;
+  if (inCliffFlightZone() && selectedWing.id !== "none") flyTimer = Math.max(flyTimer, 1.35);
   if (fly && selectedWing.id !== "none") flyTimer = 1.6;
   if (flyTimer > 0) {
     flyTimer -= dt;
-    vertical = THREE.MathUtils.lerp(vertical, selectedWing.id === "plane" ? 5.2 : 3.1, dt * 4);
+    const targetFlight = selectedTrack.id === "cliff" ? 6.8 : selectedWing.id === "plane" ? 5.2 : 3.1;
+    vertical = THREE.MathUtils.lerp(vertical, targetFlight, dt * 4);
   } else {
     vertical += verticalVelocity * dt;
     verticalVelocity -= 20 * dt;
@@ -793,22 +851,29 @@ function update(dt) {
     }
   }
 
-  playerCar.position.set(laneX, trackHeight() + 0.48 + vertical, 5.4);
+  const roadCenter = roadCenterAt(distance / 42);
+  playerCar.position.set(roadCenter + laneX, trackHeight() + 0.48 + vertical, 5.4);
   playerCar.rotation.z = THREE.MathUtils.lerp(playerCar.rotation.z, -steer * 0.24, dt * 5);
+  playerCar.rotation.y = THREE.MathUtils.lerp(playerCar.rotation.y, roadYawAt(distance / 42), dt * 4);
   playerCar.rotation.x = THREE.MathUtils.lerp(playerCar.rotation.x, vertical > 0 ? -0.12 : 0, dt * 3);
 
   updateRoad();
   updatePickups();
   updateCamera(dt);
-  statusEl.textContent = `${selectedTrack.name} 3D赛道 · 第 ${currentLap()}/${totalLaps} 圈 · 速度 ${Math.round(speed * 10)} · ${selectedTrack.obstacle}`;
+  const flightText = inCliffFlightZone() && selectedWing.id !== "none" ? " · 翅膀自动打开，控制方向落到另一边" : "";
+  statusEl.textContent = `${selectedTrack.name} 3D赛道 · 第 ${currentLap()}/${totalLaps} 圈 · 速度 ${Math.round(speed * 10)} · ${selectedTrack.obstacle}${flightText}`;
 
   if (distance >= raceGoalDistance()) finishRace();
 }
 
 function updateRoad() {
   const offset = (distance / 42) % 10;
+  const scroll = distance / 42;
   roadSegments.forEach((segment, i) => {
     segment.position.z = 12 - i * 10 + offset;
+    const path = scroll + i * 10;
+    segment.position.x = roadCenterAt(path);
+    segment.rotation.y = roadYawAt(path);
   });
   sceneGroup.children.forEach((object, i) => {
     if (object.geometry && i % 3 === 0) object.rotation.y += 0.003;
@@ -819,6 +884,7 @@ function updatePickups() {
   const scroll = distance / 42;
   coins.forEach((coin) => {
     coin.position.z = coin.userData.baseZ + scroll;
+    coin.position.x = roadCenterAt(-coin.userData.baseZ) + coin.userData.laneX;
     coin.rotation.z += 0.08;
     if (coin.position.z > 14) coin.userData.baseZ -= 190;
     if (Math.abs(coin.position.z - playerCar.position.z) < 1.5 && Math.abs(coin.position.x - laneX) < 1.5 && coin.visible) {
@@ -829,21 +895,28 @@ function updatePickups() {
   });
   rivalCars.forEach((rival, i) => {
     rival.position.z = rival.userData.baseZ + scroll * (0.92 + (i % 3) * 0.02);
+    rival.position.x = roadCenterAt(-rival.userData.baseZ) + rival.userData.laneX;
+    rival.rotation.y = roadYawAt(-rival.userData.baseZ);
     rival.rotation.z = Math.sin(performance.now() * 0.004 + i) * 0.05;
     if (rival.position.z > 16) rival.userData.baseZ -= 210;
   });
   obstacles.forEach((obstacle) => {
     obstacle.position.z = obstacle.userData.baseZ + scroll;
+    obstacle.position.x = roadCenterAt(-obstacle.userData.baseZ) + obstacle.userData.laneX;
     obstacle.rotation.y += 0.025;
     if (obstacle.position.z > 16) obstacle.userData.baseZ -= 230;
   });
-  if (finishLine) finishLine.position.z = finishLine.userData.baseZ + scroll;
+  if (finishLine) {
+    finishLine.position.z = finishLine.userData.baseZ + scroll;
+    finishLine.position.x = roadCenterAt(-finishLine.userData.baseZ) + finishLine.userData.laneX;
+  }
 }
 
 function updateCamera(dt) {
-  const desired = new THREE.Vector3(laneX * 0.42, trackHeight() + 8.8 + vertical * 0.32, 15.8);
+  const roadCenter = roadCenterAt(distance / 42);
+  const desired = new THREE.Vector3(roadCenter + laneX * 0.42, trackHeight() + 8.8 + vertical * 0.32, 15.8);
   camera.position.lerp(desired, 1 - Math.pow(0.001, dt));
-  camera.lookAt(laneX * 0.2, trackHeight() + 0.9 + vertical * 0.2, -12);
+  camera.lookAt(roadCenter + laneX * 0.2, trackHeight() + 0.9 + vertical * 0.2, -12);
 }
 
 function finishRace() {
