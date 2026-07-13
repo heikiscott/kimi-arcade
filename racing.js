@@ -1,5 +1,6 @@
+import * as THREE from "https://unpkg.com/three@0.165.0/build/three.module.js";
+
 const canvas = document.querySelector("#raceCanvas");
-const ctx = canvas.getContext("2d");
 const statusEl = document.querySelector("#status");
 const trackChoices = document.querySelector("#trackChoices");
 const starChoices = document.querySelector("#starChoices");
@@ -17,30 +18,30 @@ const finishText = document.querySelector("#finishText");
 const touchControls = [...document.querySelectorAll("[data-drive]")];
 
 const tracks = [
-  { id: "sky", name: "天上", road: "#b8d8ff", bg: ["#77c8f0", "#eaf8ff"], obstacle: "云墙" },
-  { id: "underground", name: "地下", road: "#5b5f67", bg: ["#202833", "#4f3d30"], obstacle: "石头" },
-  { id: "airport", name: "机场", road: "#d8dce2", bg: ["#9ed8f0", "#90b56b"], obstacle: "路障" },
-  { id: "station", name: "火车站", road: "#787f87", bg: ["#d9e5ea", "#9a724f"], obstacle: "行李" },
-  { id: "ghost", name: "鬼屋", road: "#453854", bg: ["#2d2740", "#171827"], obstacle: "幽灵门" },
-  { id: "volcano", name: "火山", road: "#3b3030", bg: ["#c4552f", "#2a1d16"], obstacle: "岩浆石" }
+  { id: "sky", name: "天上", road: 0xb8d8ff, ground: 0x92d6ff, sky: 0xaee7ff, obstacle: "云墙" },
+  { id: "underground", name: "地下", road: 0x4f5a66, ground: 0x2b2420, sky: 0x151a22, obstacle: "石头" },
+  { id: "airport", name: "机场", road: 0x424b57, ground: 0x8fc36e, sky: 0x9ed8f0, obstacle: "路障" },
+  { id: "station", name: "火车站", road: 0x787f87, ground: 0xc8b08d, sky: 0xd9e5ea, obstacle: "行李" },
+  { id: "ghost", name: "鬼屋", road: 0x453854, ground: 0x251d32, sky: 0x171827, obstacle: "幽灵门" },
+  { id: "volcano", name: "火山", road: 0x3b3030, ground: 0x6c2d21, sky: 0xc4552f, obstacle: "岩浆石" }
 ];
 
 const cars = [
-  { id: "red", name: "法拉利风格", color: "#d93a32", speed: 1.04 },
-  { id: "sport", name: "跑车", color: "#245b8f", speed: 1.02 },
-  { id: "tesla", name: "电动车", color: "#f4f7fa", speed: 1.0 },
-  { id: "simple", name: "简单车", color: "#ffd15f", speed: 0.96 },
-  { id: "offroad", name: "牧场越野", color: "#39a657", speed: 0.94 }
+  { id: "red", name: "法拉利风格", color: 0xd93a32, speed: 1.04 },
+  { id: "sport", name: "跑车", color: 0x245b8f, speed: 1.02 },
+  { id: "tesla", name: "电动车", color: 0xf4f7fa, speed: 1.0 },
+  { id: "simple", name: "简单车", color: 0xffd15f, speed: 0.96 },
+  { id: "offroad", name: "牧场越野", color: 0x39a657, speed: 0.94 }
 ];
 
 const drivers = [
-  { id: "mario", name: "马里奥", color: "#d93a32", hat: "M" },
-  { id: "luigi", name: "路易吉", color: "#39a657", hat: "L" },
-  { id: "princess", name: "公主", color: "#d94a78", hat: "P" },
-  { id: "bowser", name: "坏乌龟", color: "#f08a2d", hat: "B" },
-  { id: "ghost", name: "幽灵", color: "#f4f7fa", hat: "G" },
-  { id: "mushroom", name: "蘑菇", color: "#ffffff", hat: "T" },
-  { id: "star", name: "星星", color: "#ffd15f", hat: "★" }
+  { id: "mario", name: "马里奥", color: 0xd93a32, hat: "M" },
+  { id: "luigi", name: "路易吉", color: 0x39a657, hat: "L" },
+  { id: "princess", name: "公主", color: 0xd94a78, hat: "P" },
+  { id: "bowser", name: "坏乌龟", color: 0xf08a2d, hat: "B" },
+  { id: "ghost", name: "幽灵", color: 0xf4f7fa, hat: "G" },
+  { id: "mushroom", name: "蘑菇", color: 0xffffff, hat: "T" },
+  { id: "star", name: "星星", color: 0xffd15f, hat: "★" }
 ];
 
 const tires = [
@@ -57,6 +58,9 @@ const wings = [
 
 const icons = ["M", "闪", "星", "1"];
 const keys = new Set();
+const pressed = new Set();
+const totalLaps = 3;
+
 let selectedTrack = tracks[0];
 let selectedStars = 1;
 let selectedCar = cars[0];
@@ -67,27 +71,136 @@ let selectedIcon = icons[0];
 let running = false;
 let won = false;
 let gameOver = false;
-let roadOffset = 0;
 let distance = 0;
-let airborne = 0;
-let jumpFrames = 0;
-let jumpCooldown = 0;
-let flyBoost = 0;
-let lastGapHit = -9999;
+let speed = 0;
+let laneX = 0;
+let vertical = 0;
+let verticalVelocity = 0;
+let flyTimer = 0;
+let lastTime = performance.now();
 let audioContext = null;
-const totalLaps = 3;
 
-const player = {
-  x: 450,
-  y: 500,
-  speed: 4,
-  targetSpeed: 4,
-  tilt: 0
-};
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
-let coins = [];
-let rivalCars = [];
-let cliffGaps = [];
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(62, 16 / 9, 0.1, 900);
+camera.position.set(0, 8.5, 13.5);
+
+const hemi = new THREE.HemisphereLight(0xffffff, 0x62735c, 1.2);
+scene.add(hemi);
+const sun = new THREE.DirectionalLight(0xffffff, 2.2);
+sun.position.set(-16, 28, 20);
+sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048);
+scene.add(sun);
+
+const world = new THREE.Group();
+scene.add(world);
+const roadGroup = new THREE.Group();
+world.add(roadGroup);
+const sceneGroup = new THREE.Group();
+world.add(sceneGroup);
+const pickupGroup = new THREE.Group();
+world.add(pickupGroup);
+
+const playerCar = createCar(0xd93a32, "M", true);
+scene.add(playerCar);
+
+const rivalCars = [];
+const obstacles = [];
+const coins = [];
+const roadSegments = [];
+let finishLine = null;
+
+function mat(color, roughness = 0.75) {
+  return new THREE.MeshStandardMaterial({ color, roughness });
+}
+
+function box(w, h, d, color) {
+  const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat(color));
+  mesh.castShadow = true;
+  mesh.receiveShadow = true;
+  return mesh;
+}
+
+function cyl(r1, r2, h, color, radial = 28) {
+  const mesh = new THREE.Mesh(new THREE.CylinderGeometry(r1, r2, h, radial), mat(color));
+  mesh.castShadow = true;
+  mesh.receiveShadow = true;
+  return mesh;
+}
+
+function sphere(r, color, sx = 1, sy = 1, sz = 1) {
+  const mesh = new THREE.Mesh(new THREE.SphereGeometry(r, 26, 16), mat(color));
+  mesh.scale.set(sx, sy, sz);
+  mesh.castShadow = true;
+  mesh.receiveShadow = true;
+  return mesh;
+}
+
+function makeLabel(text) {
+  const c = document.createElement("canvas");
+  c.width = 256;
+  c.height = 96;
+  const g = c.getContext("2d");
+  g.clearRect(0, 0, c.width, c.height);
+  g.fillStyle = "#172632";
+  g.font = "900 42px system-ui";
+  g.textAlign = "center";
+  g.fillText(text, 128, 62);
+  const texture = new THREE.CanvasTexture(c);
+  const material = new THREE.MeshBasicMaterial({ map: texture, transparent: true });
+  return new THREE.Mesh(new THREE.PlaneGeometry(4.8, 1.8), material);
+}
+
+function createCar(color, label, isPlayer = false) {
+  const group = new THREE.Group();
+  const body = box(2.15, 0.55, 3.2, color);
+  body.position.y = 0.55;
+  const cabin = box(1.25, 0.62, 1.35, isPlayer ? 0xffffff : 0xdce5eb);
+  cabin.position.set(0, 1.04, -0.28);
+  group.add(body, cabin);
+  const nose = box(1.75, 0.32, 0.95, color);
+  nose.position.set(0, 0.7, -1.85);
+  group.add(nose);
+  [-0.95, 0.95].forEach((x) => {
+    [-1.1, 1.0].forEach((z) => {
+      const tire = cyl(0.34, 0.34, 0.34, 0x172632, 24);
+      tire.rotation.z = Math.PI / 2;
+      tire.position.set(x, 0.32, z);
+      group.add(tire);
+    });
+  });
+  const badge = makeLabel(label);
+  badge.scale.setScalar(0.36);
+  badge.position.set(0, 1.42, -0.18);
+  badge.rotation.x = -0.25;
+  group.add(badge);
+  if (isPlayer) {
+    const driver = createDriver();
+    driver.position.set(0, 1.55, -0.25);
+    group.add(driver);
+  }
+  return group;
+}
+
+function createDriver() {
+  const group = new THREE.Group();
+  const head = sphere(0.25, 0xffd6b0);
+  head.position.y = 0.32;
+  const hat = cyl(0.28, 0.24, 0.18, selectedDriver.color, 24);
+  hat.position.y = 0.55;
+  const body = cyl(0.22, 0.28, 0.52, selectedDriver.color, 20);
+  body.position.y = -0.05;
+  const label = makeLabel(selectedDriver.hat);
+  label.scale.setScalar(0.18);
+  label.position.set(0, 0.62, -0.22);
+  group.add(head, hat, body, label);
+  return group;
+}
 
 function makeButtons(container, items, getLabel, isActive, onPick) {
   container.innerHTML = "";
@@ -107,39 +220,65 @@ function makeButtons(container, items, getLabel, isActive, onPick) {
 function drawMenu() {
   makeButtons(trackChoices, tracks, (track) => track.name, (track) => track === selectedTrack, (track) => {
     selectedTrack = track;
+    rebuildWorld();
   });
   makeButtons(starChoices, [1, 2, 3, 4], (star) => `${"★".repeat(star)}${"☆".repeat(4 - star)}`, (star) => star === selectedStars, (star) => {
     selectedStars = star;
+    rebuildWorld();
   });
   makeButtons(carChoices, cars, (car) => car.name, (car) => car === selectedCar, (car) => {
     selectedCar = car;
+    refreshPlayerCar();
   });
   makeButtons(driverChoices, drivers, (driver) => driver.name, (driver) => driver === selectedDriver, (driver) => {
     selectedDriver = driver;
+    refreshPlayerCar();
   });
   makeButtons(tireChoices, tires, (tire) => tire.name, (tire) => tire === selectedTire, (tire) => {
     selectedTire = tire;
   });
   makeButtons(wingChoices, wings, (wing) => wing.name, (wing) => wing === selectedWing, (wing) => {
     selectedWing = wing;
+    updateWings();
   });
   makeButtons(iconChoices, icons, (icon) => icon, (icon) => icon === selectedIcon, (icon) => {
     selectedIcon = icon;
+    refreshPlayerCar();
   });
-  draw();
+  render();
+}
+
+function refreshPlayerCar() {
+  while (playerCar.children.length) playerCar.remove(playerCar.children[0]);
+  const fresh = createCar(selectedCar.color, selectedIcon, true);
+  fresh.children.forEach((child) => playerCar.add(child.clone()));
+  updateWings();
+}
+
+function updateWings() {
+  const old = playerCar.getObjectByName("wing-set");
+  if (old) playerCar.remove(old);
+  if (selectedWing.id === "none") return;
+  const wingsGroup = new THREE.Group();
+  wingsGroup.name = "wing-set";
+  const span = selectedWing.id === "plane" ? 4.6 : 3.2;
+  const left = box(span, 0.08, 0.55, 0xf4f7fa);
+  const right = box(span, 0.08, 0.55, 0xf4f7fa);
+  left.position.set(-1.55, 0.92, 0.2);
+  right.position.set(1.55, 0.92, 0.2);
+  left.rotation.z = 0.1;
+  right.rotation.z = -0.1;
+  wingsGroup.add(left, right);
+  playerCar.add(wingsGroup);
 }
 
 function getAudio() {
-  if (!audioContext) {
-    audioContext = new (window.AudioContext || window.webkitAudioContext)();
-  }
-  if (audioContext.state === "suspended") {
-    audioContext.resume();
-  }
+  if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioContext.state === "suspended") audioContext.resume();
   return audioContext;
 }
 
-function playTone(freq, start, duration, gainValue = 0.04, type = "square") {
+function playTone(freq, start, duration, gainValue = 0.035, type = "square") {
   const audio = getAudio();
   const osc = audio.createOscillator();
   const gain = audio.createGain();
@@ -158,83 +297,8 @@ function playStart() {
   [392, 523, 659, 784].forEach((note, index) => playTone(note, index * 0.1, 0.08, 0.04));
 }
 
-function playCollect() {
-  playTone(880, 0, 0.06, 0.035);
-  playTone(1320, 0.07, 0.08, 0.035);
-}
-
-function playWing() {
-  [523, 784, 1046].forEach((note, index) => playTone(note, index * 0.08, 0.11, 0.04, "sine"));
-}
-
 function playFinish() {
-  const notes = [523, 659, 784, 1046, 988, 784, 880, 1174, 1046, 1318, 1568];
-  notes.forEach((note, index) => playTone(note, index * 0.14, 0.12, 0.055));
-}
-
-function startRace() {
-  running = true;
-  won = false;
-  gameOver = false;
-  distance = 0;
-  roadOffset = 0;
-  airborne = 0;
-  jumpFrames = 0;
-  jumpCooldown = 0;
-  flyBoost = 0;
-  lastGapHit = -9999;
-  player.x = 450;
-  player.speed = 4 + selectedStars * 0.45;
-  player.targetSpeed = player.speed;
-  player.tilt = 0;
-  finishCard.classList.remove("show");
-  finishTitle.textContent = "冲线成功!";
-  statusEl.textContent = `${selectedDriver.name}开着${selectedCar.name}出发! 一共 ${totalLaps} 圈，机场赛道可以穿过大飞机。`;
-  buildItems();
-  playStart();
-}
-
-function resetRace() {
-  running = false;
-  won = false;
-  gameOver = false;
-  distance = 0;
-  airborne = 0;
-  jumpFrames = 0;
-  jumpCooldown = 0;
-  flyBoost = 0;
-  finishCard.classList.remove("show");
-  statusEl.textContent = "选好地图和车，点开始赛车。";
-  buildItems();
-  draw();
-}
-
-function buildItems() {
-  coins = [];
-  rivalCars = [];
-  cliffGaps = [];
-  for (let index = 0; index < 30; index += 1) {
-    coins.push({
-      x: 250 + Math.floor(Math.random() * 400),
-      y: -120 - index * 240,
-      got: false
-    });
-  }
-  const rivalLabels = ["LR", "星", "M", "7", "GO", "闪"];
-  for (let index = 0; index < 12 + selectedStars * 2; index += 1) {
-    rivalCars.push({
-      x: 250 + Math.floor(Math.random() * 400),
-      y: -280 - index * 560,
-      color: ["#d93a32", "#245b8f", "#39a657", "#ffd15f", "#8f5fd9"][index % 5],
-      label: rivalLabels[index % rivalLabels.length]
-    });
-  }
-  for (let index = 0; index < 5 + selectedStars; index += 1) {
-    cliffGaps.push({
-      y: -900 - index * 1350,
-      h: 95
-    });
-  }
+  [523, 659, 784, 1046, 1318].forEach((note, index) => playTone(note, index * 0.15, 0.12, 0.05));
 }
 
 function raceGoalDistance() {
@@ -249,742 +313,372 @@ function currentLap() {
   return Math.min(totalLaps, Math.floor(distance / lapDistance()) + 1);
 }
 
-function update() {
-  if (!running || won || gameOver) {
-    draw();
-    requestAnimationFrame(update);
-    return;
+function rebuildWorld() {
+  roadGroup.clear();
+  sceneGroup.clear();
+  pickupGroup.clear();
+  rivalCars.length = 0;
+  obstacles.length = 0;
+  coins.length = 0;
+  roadSegments.length = 0;
+  scene.background = new THREE.Color(selectedTrack.sky);
+  scene.fog = new THREE.Fog(selectedTrack.sky, 38, 175);
+
+  const ground = box(58, 0.7, 180, selectedTrack.ground);
+  ground.position.set(0, -0.65, -58);
+  sceneGroup.add(ground);
+
+  for (let i = 0; i < 18; i += 1) {
+    const segment = createRoadSegment(i);
+    roadSegments.push(segment);
+    roadGroup.add(segment);
   }
 
-  const left = keys.has("ArrowLeft") || keys.has("a");
-  const right = keys.has("ArrowRight") || keys.has("d");
-  const fast = keys.has("ArrowUp") || keys.has("w");
-  const slow = keys.has("ArrowDown") || keys.has("s");
-  const fly = keys.has("f");
-  const turn = 5.2 * selectedTire.grip;
-  if (left) player.x -= turn;
-  if (right) player.x += turn;
-  const targetTilt = left ? -0.18 : right ? 0.18 : 0;
-  player.tilt += (targetTilt - player.tilt) * 0.18;
-  if (fly) {
-    flyBoost = Math.min(90, flyBoost + (selectedWing.id === "none" ? 1.8 : 3.2));
-    if (flyBoost < 5) playWing();
-  } else {
-    flyBoost = Math.max(0, flyBoost - 2.5);
+  buildTrackScenery();
+  buildItems();
+}
+
+function createRoadSegment(i) {
+  const group = new THREE.Group();
+  const road = box(12, 0.16, 9.8, selectedTrack.road);
+  road.position.y = 0;
+  group.add(road);
+  const leftRail = box(0.22, 0.34, 9.8, 0xffffff);
+  const rightRail = box(0.22, 0.34, 9.8, 0xffffff);
+  leftRail.position.set(-6.15, 0.22, 0);
+  rightRail.position.set(6.15, 0.22, 0);
+  group.add(leftRail, rightRail);
+  for (let z = -3.2; z <= 3.2; z += 3.2) {
+    const stripe = box(0.22, 0.18, 1.2, 0xffd15f);
+    stripe.position.set(0, 0.2, z);
+    group.add(stripe);
   }
-  jumpFrames = Math.max(0, jumpFrames - 1);
-  jumpCooldown = Math.max(0, jumpCooldown - 1);
-  const flyingNow = isPlayerAirborne();
-  player.targetSpeed = (4 + selectedStars * 0.45) * selectedCar.speed + (fast ? 1.8 : 0) - (slow ? 1.5 : 0) + (flyingNow ? 0.9 : 0);
-  player.speed += (player.targetSpeed - player.speed) * 0.08;
-  player.x = Math.max(34, Math.min(canvas.width - 34, player.x));
-  roadOffset = (roadOffset + player.speed) % 80;
-  distance += player.speed;
-  airborne = Math.max(0, airborne - 1);
-
-  coins.forEach((coin) => {
-    coin.y += player.speed;
-    if (!coin.got && Math.hypot(player.x - coin.x, player.y - coin.y) < 42) {
-      coin.got = true;
-      playCollect();
-    }
-    if (coin.y > canvas.height + 80) {
-      coin.y = -300 - Math.random() * 900;
-      coin.x = roadCenterAtY(180) - 190 + Math.floor(Math.random() * 380);
-      coin.got = false;
-    }
-  });
-
-  rivalCars.forEach((rival) => {
-    rival.y += player.speed * 0.82;
-    if (rival.y > canvas.height + 90) {
-      rival.y = -600 - Math.random() * 900;
-      rival.x = roadCenterAtY(140) - 185 + Math.floor(Math.random() * 370);
-    }
-    if (selectedTrack.id !== "airport" && !flyingNow && Math.abs(player.x - rival.x) < 52 && Math.abs(player.y - rival.y) < 78) {
-      endRace(`撞到写着 ${rival.label} 的车，嘎了。`);
-    }
-  });
-
-  cliffGaps.forEach((gap) => {
-    gap.y += player.speed;
-    if (gap.y > canvas.height + 120) {
-      gap.y = -900 - Math.random() * 1100;
-    }
-    const inGap = player.y > gap.y && player.y < gap.y + gap.h;
-    if (inGap && distance - lastGapHit > 140) {
-      lastGapHit = distance;
-      if (selectedWing.id === "none" && !isPlayerAirborne()) {
-        endRace(selectedTrack.id === "sky" ? "没有翅膀，从天上掉下去了，嘎了。" : "没有翅膀，掉进悬崖，嘎了。");
-      } else {
-        airborne = Math.max(airborne, selectedWing.id === "none" ? 34 : 76);
-        statusEl.textContent = selectedWing.id === "none" ? "你自己跳起来，飞过悬崖!" : "翅膀自动打开，飞过悬崖!";
-        playWing();
-      }
-    }
-  });
-
-  if (distance >= raceGoalDistance()) {
-    won = true;
-    running = false;
-    finishTitle.textContent = "冲线成功!";
-    finishText.textContent = `${selectedCar.name}在${selectedTrack.name}赛道赢了!`;
-    finishCard.classList.add("show");
-    statusEl.textContent = "赢了! 赛车结尾片段开始。";
-    playFinish();
-  }
-
-  draw();
-  requestAnimationFrame(update);
-}
-
-function jumpPlayer() {
-  if (!running || won || gameOver || jumpCooldown > 0) return;
-  jumpFrames = 34;
-  jumpCooldown = 44;
-  statusEl.textContent = "你的车跳起来了，别的车不会跳!";
-  playTone(560, 0, 0.08, 0.04, "sine");
-  playTone(760, 0.08, 0.08, 0.04, "sine");
-}
-
-function isPlayerAirborne() {
-  return airborne > 0 || jumpFrames > 0 || flyBoost > 0;
-}
-
-function endRace(message) {
-  if (gameOver || won) return;
-  gameOver = true;
-  running = false;
-  finishTitle.textContent = "嘎了!";
-  finishText.textContent = message;
-  finishCard.classList.add("show");
-  statusEl.textContent = message;
-  playTone(160, 0, 0.18, 0.05, "triangle");
-  playTone(95, 0.16, 0.28, 0.045, "triangle");
-}
-
-function draw() {
-  drawBackground();
-  drawRoad();
-  drawItems();
-  drawCar();
-  drawHud();
-}
-
-function drawBackground() {
-  const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
-  gradient.addColorStop(0, selectedTrack.bg[0]);
-  gradient.addColorStop(1, selectedTrack.bg[1]);
-  ctx.fillStyle = gradient;
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-
   if (selectedTrack.id === "sky") {
-    drawCloud(120, 90);
-    drawCloud(730, 150);
-    drawSkyLoop();
+    group.position.y = 6.5;
+    const cloud = sphere(1.9, 0xffffff, 1.8, 0.55, 1.1);
+    cloud.position.set(i % 2 ? -8.6 : 8.6, -1.8, 0);
+    group.add(cloud);
   }
+  if (selectedTrack.id === "underground") {
+    const leftWall = box(0.7, 5.6, 9.8, 0x3d3430);
+    const rightWall = box(0.7, 5.6, 9.8, 0x3d3430);
+    leftWall.position.set(-7.0, 2.4, 0);
+    rightWall.position.set(7.0, 2.4, 0);
+    group.add(leftWall, rightWall);
+    if (i % 2 === 0) {
+      const lamp = sphere(0.22, 0xffd15f);
+      lamp.position.set(0, 4.8, -2);
+      group.add(lamp);
+    }
+  }
+  group.position.z = -i * 10;
+  return group;
+}
+
+function buildTrackScenery() {
   if (selectedTrack.id === "airport") {
-    drawAirportScene();
-    ctx.fillStyle = "rgba(255,255,255,0.5)";
-    ctx.fillRect(34, 450, 180, 26);
-    ctx.fillRect(690, 430, 160, 24);
-  }
-  if (selectedTrack.id === "station") {
-    ctx.fillStyle = "#344653";
-    ctx.fillRect(46, 420, 190, 74);
-    ctx.fillStyle = "#d9e5ea";
-    ctx.fillRect(66, 438, 34, 22);
-    ctx.fillRect(116, 438, 34, 22);
-  }
-  if (selectedTrack.id === "volcano") {
-    ctx.fillStyle = "#ff7a2f";
-    ctx.beginPath();
-    ctx.moveTo(30, 620);
-    ctx.lineTo(160, 250);
-    ctx.lineTo(300, 620);
-    ctx.fill();
-  }
-  if (selectedTrack.id === "ghost") {
-    drawHauntedHouse();
-  }
-}
-
-function drawAirportScene() {
-  drawHugeAirportPlane();
-  drawCheeringCrowd(48, 284, "快点赢啊!");
-  drawCheeringCrowd(702, 300, "冲线!");
-  drawCheeringCrowd(42, 526, "第 3 圈!");
-  drawCheeringCrowd(698, 526, "加油!");
-  ctx.fillStyle = "rgba(23,38,50,0.55)";
-  ctx.fillRect(0, 388, canvas.width, 18);
-  ctx.fillStyle = "#fff";
-  ctx.font = "bold 18px system-ui";
-  ctx.textAlign = "center";
-  ctx.fillText("机场跑道 · 可以飞起来穿过大飞机", canvas.width / 2, 382);
-  ctx.textAlign = "left";
-}
-
-function drawCheeringCrowd(x, y, text) {
-  for (let i = 0; i < 7; i += 1) {
-    const px = x + i * 24;
-    ctx.fillStyle = ["#d93a32", "#245b8f", "#39a657", "#ffd15f"][i % 4];
-    ctx.beginPath();
-    ctx.arc(px, y, 8, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillRect(px - 6, y + 10, 12, 24);
-    ctx.strokeStyle = "#172632";
-    ctx.lineWidth = 3;
-    ctx.beginPath();
-    ctx.moveTo(px - 7, y + 16);
-    ctx.lineTo(px - 16, y + 4 + Math.sin(distance / 60 + i) * 4);
-    ctx.moveTo(px + 7, y + 16);
-    ctx.lineTo(px + 16, y + 4 - Math.sin(distance / 60 + i) * 4);
-    ctx.stroke();
-  }
-  ctx.fillStyle = "rgba(255,255,255,0.9)";
-  ctx.beginPath();
-  ctx.roundRect(x - 8, y - 58, 182, 34, 8);
-  ctx.fill();
-  ctx.strokeStyle = "#172632";
-  ctx.lineWidth = 3;
-  ctx.stroke();
-  ctx.fillStyle = "#172632";
-  ctx.font = "bold 18px system-ui";
-  ctx.textAlign = "center";
-  ctx.fillText(text, x + 83, y - 35);
-  ctx.textAlign = "left";
-}
-
-function drawSkyLoop() {
-  const cx = 682 + Math.sin(distance / 900) * 70;
-  const cy = 260;
-  ctx.strokeStyle = "rgba(255,255,255,0.82)";
-  ctx.lineWidth = 18;
-  ctx.beginPath();
-  ctx.arc(cx, cy, 84, 0, Math.PI * 2);
-  ctx.stroke();
-  ctx.strokeStyle = "rgba(36,91,143,0.58)";
-  ctx.lineWidth = 6;
-  ctx.stroke();
-  ctx.fillStyle = "#245b8f";
-  ctx.font = "bold 18px system-ui";
-  ctx.textAlign = "center";
-  ctx.fillText("云朵过山车圈", cx, cy + 6);
-  ctx.textAlign = "left";
-}
-
-function drawHauntedHouse() {
-  ctx.fillStyle = "rgba(0,0,0,0.28)";
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  ctx.fillStyle = "#15101f";
-  ctx.beginPath();
-  ctx.moveTo(42, 360);
-  ctx.lineTo(120, 250);
-  ctx.lineTo(200, 360);
-  ctx.closePath();
-  ctx.fill();
-  ctx.fillRect(58, 360, 126, 130);
-  ctx.fillStyle = "#ffd15f";
-  ctx.fillRect(78, 382, 26, 28);
-  ctx.fillRect(138, 382, 26, 28);
-  ctx.fillStyle = "#15101f";
-  ctx.beginPath();
-  ctx.moveTo(690, 364);
-  ctx.lineTo(782, 238);
-  ctx.lineTo(870, 364);
-  ctx.closePath();
-  ctx.fill();
-  ctx.fillRect(708, 364, 142, 150);
-  ctx.fillStyle = "#ffd15f";
-  ctx.fillRect(733, 392, 28, 30);
-  ctx.fillRect(798, 392, 28, 30);
-
-  drawGhostMonster(126, 116, "鬼");
-  drawZombieMonster(760, 126, "僵尸");
-  drawZombieMonster(84, 536, "丧尸", "#78a56b");
-  drawMummyMonster(806, 536, "逆尸");
-  drawSkeletonHead(246, 214);
-  drawPumpkin(646, 222);
-  drawPumpkin(210, 522);
-  drawGhostMonster(720 + Math.sin(distance / 44) * 18, 312, "幽灵");
-}
-
-function drawGhostMonster(x, y, label) {
-  ctx.save();
-  ctx.translate(x, y + Math.sin(distance / 52 + x) * 8);
-  ctx.fillStyle = "rgba(244,247,250,0.86)";
-  ctx.beginPath();
-  ctx.arc(0, 0, 34, Math.PI, 0);
-  ctx.lineTo(34, 58);
-  ctx.lineTo(18, 46);
-  ctx.lineTo(4, 58);
-  ctx.lineTo(-10, 46);
-  ctx.lineTo(-34, 58);
-  ctx.closePath();
-  ctx.fill();
-  ctx.fillStyle = "#172632";
-  ctx.beginPath();
-  ctx.arc(-12, 6, 5, 0, Math.PI * 2);
-  ctx.arc(12, 6, 5, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.font = "bold 13px system-ui";
-  ctx.textAlign = "center";
-  ctx.fillText(label, 0, 32);
-  ctx.restore();
-}
-
-function drawZombieMonster(x, y, label, skin = "#8dbb7a") {
-  ctx.save();
-  ctx.translate(x, y);
-  ctx.fillStyle = skin;
-  ctx.beginPath();
-  ctx.roundRect(-22, -28, 44, 50, 12);
-  ctx.fill();
-  ctx.fillStyle = "#573b58";
-  ctx.fillRect(-28, 22, 56, 54);
-  ctx.fillStyle = "#172632";
-  ctx.beginPath();
-  ctx.arc(-8, -8, 4, 0, Math.PI * 2);
-  ctx.arc(10, -8, 4, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.strokeStyle = "#172632";
-  ctx.lineWidth = 3;
-  ctx.beginPath();
-  ctx.moveTo(-10, 9);
-  ctx.lineTo(12, 13);
-  ctx.stroke();
-  ctx.fillStyle = "#fffaf0";
-  ctx.font = "bold 14px system-ui";
-  ctx.textAlign = "center";
-  ctx.fillText(label, 0, 54);
-  ctx.restore();
-}
-
-function drawMummyMonster(x, y, label) {
-  ctx.save();
-  ctx.translate(x, y);
-  ctx.fillStyle = "#d9cbb4";
-  ctx.beginPath();
-  ctx.roundRect(-24, -38, 48, 112, 18);
-  ctx.fill();
-  ctx.strokeStyle = "#fff4df";
-  ctx.lineWidth = 5;
-  for (let line = -28; line < 68; line += 18) {
-    ctx.beginPath();
-    ctx.moveTo(-22, line);
-    ctx.lineTo(22, line + 10);
-    ctx.stroke();
-  }
-  ctx.fillStyle = "#172632";
-  ctx.beginPath();
-  ctx.arc(-8, -14, 4, 0, Math.PI * 2);
-  ctx.arc(9, -14, 4, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.fillStyle = "#fffaf0";
-  ctx.font = "bold 14px system-ui";
-  ctx.textAlign = "center";
-  ctx.fillText(label, 0, 94);
-  ctx.restore();
-}
-
-function drawSkeletonHead(x, y) {
-  ctx.save();
-  ctx.translate(x, y);
-  ctx.fillStyle = "#f4f0df";
-  ctx.beginPath();
-  ctx.arc(0, 0, 32, 0, Math.PI * 2);
-  ctx.roundRect(-18, 16, 36, 32, 8);
-  ctx.fill();
-  ctx.fillStyle = "#172632";
-  ctx.beginPath();
-  ctx.arc(-11, -4, 8, 0, Math.PI * 2);
-  ctx.arc(12, -4, 8, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.fillRect(-14, 28, 28, 5);
-  ctx.fillStyle = "#f4f0df";
-  ctx.fillRect(-8, 28, 3, 9);
-  ctx.fillRect(3, 28, 3, 9);
-  ctx.fillStyle = "#fffaf0";
-  ctx.font = "bold 14px system-ui";
-  ctx.textAlign = "center";
-  ctx.fillText("骷髅头", 0, 66);
-  ctx.restore();
-}
-
-function drawPumpkin(x, y) {
-  ctx.save();
-  ctx.translate(x, y);
-  ctx.fillStyle = "#2f6b35";
-  ctx.fillRect(-5, -34, 10, 22);
-  ctx.fillStyle = "#f08a2d";
-  ctx.beginPath();
-  ctx.ellipse(-18, 0, 22, 30, 0, 0, Math.PI * 2);
-  ctx.ellipse(18, 0, 22, 30, 0, 0, Math.PI * 2);
-  ctx.ellipse(0, 0, 28, 34, 0, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.fillStyle = "#172632";
-  ctx.beginPath();
-  ctx.moveTo(-16, -8);
-  ctx.lineTo(-5, -8);
-  ctx.lineTo(-11, 2);
-  ctx.closePath();
-  ctx.moveTo(16, -8);
-  ctx.lineTo(5, -8);
-  ctx.lineTo(11, 2);
-  ctx.closePath();
-  ctx.fill();
-  ctx.fillRect(-12, 14, 24, 7);
-  ctx.fillStyle = "#fffaf0";
-  ctx.font = "bold 13px system-ui";
-  ctx.textAlign = "center";
-  ctx.fillText("Pumpkin", 0, 52);
-  ctx.restore();
-}
-
-function drawCloud(x, y) {
-  ctx.fillStyle = "rgba(255,255,255,0.75)";
-  ctx.beginPath();
-  ctx.ellipse(x, y, 54, 20, 0, 0, Math.PI * 2);
-  ctx.ellipse(x + 36, y + 8, 62, 22, 0, 0, Math.PI * 2);
-  ctx.fill();
-}
-
-function drawHugeAirportPlane() {
-  ctx.save();
-  ctx.translate(450, 178);
-  ctx.fillStyle = "rgba(244,247,250,0.96)";
-  ctx.beginPath();
-  ctx.roundRect(-460, -56, 920, 112, 54);
-  ctx.fill();
-  ctx.fillStyle = "#cbd7df";
-  ctx.beginPath();
-  ctx.moveTo(-70, -42);
-  ctx.lineTo(210, -166);
-  ctx.lineTo(292, -132);
-  ctx.lineTo(92, -28);
-  ctx.fill();
-  ctx.beginPath();
-  ctx.moveTo(-70, 42);
-  ctx.lineTo(210, 166);
-  ctx.lineTo(292, 132);
-  ctx.lineTo(92, 28);
-  ctx.fill();
-  ctx.fillStyle = "#d93a32";
-  ctx.beginPath();
-  ctx.roundRect(-466, -38, 82, 76, 28);
-  ctx.fill();
-  ctx.fillStyle = "#172632";
-  ctx.beginPath();
-  ctx.roundRect(-170, -40, 90, 80, 8);
-  ctx.roundRect(78, -40, 90, 80, 8);
-  ctx.fill();
-  ctx.fillStyle = "rgba(255,255,255,0.86)";
-  ctx.fillRect(-78, -14, 156, 28);
-  ctx.fillStyle = "#fff";
-  ctx.font = "bold 18px system-ui";
-  ctx.textAlign = "center";
-  ctx.fillText("入口门", -125, 7);
-  ctx.fillText("出口门", 123, 7);
-  ctx.textAlign = "left";
-  ctx.fillStyle = "#245b8f";
-  for (let x = -340; x <= 340; x += 54) {
-    ctx.fillRect(x, -10, 24, 20);
-  }
-  ctx.fillStyle = "#d93a32";
-  ctx.font = "bold 24px system-ui";
-  ctx.textAlign = "center";
-  ctx.fillText("穿过这架大飞机!", 0, 88);
-  ctx.textAlign = "left";
-  ctx.restore();
-}
-
-function roadCenterAtY(y) {
-  const depth = (canvas.height - y) / canvas.height;
-  const lapWave = Math.sin(distance / 820);
-  const tightCurve = Math.sin(distance / 360 + depth * 4.8);
-  const straight = Math.abs(Math.sin(distance / 1350)) < 0.34 ? 0.22 : 1;
-  return 450 + (lapWave * 58 + tightCurve * 72 * straight) * (0.24 + depth);
-}
-
-function roadHalfWidthAtY(y) {
-  return 130 + (y / canvas.height) * 150;
-}
-
-function drawRoad() {
-  ctx.fillStyle = selectedTrack.road;
-  ctx.beginPath();
-  for (let y = 0; y <= canvas.height; y += 32) {
-    const x = roadCenterAtY(y) - roadHalfWidthAtY(y);
-    if (y === 0) ctx.moveTo(x, y);
-    else ctx.lineTo(x, y);
-  }
-  for (let y = canvas.height; y >= 0; y -= 32) {
-    ctx.lineTo(roadCenterAtY(y) + roadHalfWidthAtY(y), y);
-  }
-  ctx.closePath();
-  ctx.fill();
-
-  ctx.strokeStyle = "rgba(255,255,255,0.72)";
-  ctx.lineWidth = 6;
-  ctx.setLineDash([36, 44]);
-  ctx.lineDashOffset = roadOffset;
-  ctx.beginPath();
-  for (let y = 0; y <= canvas.height; y += 24) {
-    const x = roadCenterAtY(y);
-    if (y === 0) ctx.moveTo(x, y);
-    else ctx.lineTo(x, y);
-  }
-  ctx.stroke();
-  ctx.setLineDash([]);
-
-  cliffGaps.forEach((gap) => {
-    if (gap.y > canvas.height || gap.y + gap.h < 0) return;
-    ctx.fillStyle = "rgba(23, 18, 20, 0.92)";
-    ctx.beginPath();
-    ctx.moveTo(roadCenterAtY(gap.y) - roadHalfWidthAtY(gap.y), gap.y);
-    ctx.lineTo(roadCenterAtY(gap.y) + roadHalfWidthAtY(gap.y), gap.y);
-    ctx.lineTo(roadCenterAtY(gap.y + gap.h) + roadHalfWidthAtY(gap.y + gap.h), gap.y + gap.h);
-    ctx.lineTo(roadCenterAtY(gap.y + gap.h) - roadHalfWidthAtY(gap.y + gap.h), gap.y + gap.h);
-    ctx.closePath();
-    ctx.fill();
-    ctx.fillStyle = "#ffd15f";
-    ctx.font = "bold 18px system-ui";
-    ctx.textAlign = "center";
-    ctx.fillText("悬崖", roadCenterAtY(gap.y + gap.h / 2), gap.y + gap.h / 2 + 6);
-    ctx.textAlign = "left";
-  });
-}
-
-function drawItems() {
-  rivalCars.forEach((rival) => {
-    drawRivalCar(rival);
-  });
-
-  coins.forEach((coin) => {
-    if (coin.got) return;
-    ctx.fillStyle = "#ffd15f";
-    ctx.beginPath();
-    for (let i = 0; i < 10; i += 1) {
-      const angle = -Math.PI / 2 + i * (Math.PI / 5);
-      const radius = i % 2 === 0 ? 18 : 8;
-      ctx.lineTo(coin.x + Math.cos(angle) * radius, coin.y + Math.sin(angle) * radius);
+    addAirplane(-18, 1.5, -22, 1.1);
+    addAirplane(18, 1.5, -62, 1.25);
+    addTower(-22, -82);
+  } else if (selectedTrack.id === "station") {
+    addTrain(-20, -48);
+    addTrain(21, -100);
+  } else if (selectedTrack.id === "ghost") {
+    for (let i = 0; i < 7; i += 1) addGhost(i % 2 ? -16 : 16, -18 - i * 22);
+  } else if (selectedTrack.id === "volcano") {
+    for (let i = 0; i < 8; i += 1) addLavaRock(i % 2 ? -16 : 15, -18 - i * 18);
+  } else if (selectedTrack.id === "sky") {
+    for (let i = 0; i < 12; i += 1) {
+      const cloud = sphere(2.3, 0xffffff, 1.7, 0.55, 1.1);
+      cloud.position.set((i % 2 ? -19 : 18) + Math.sin(i) * 5, 5 + Math.sin(i * 1.7) * 2.5, -10 - i * 14);
+      sceneGroup.add(cloud);
     }
-    ctx.closePath();
-    ctx.fill();
-  });
-}
-
-function drawRivalCar(rival) {
-  ctx.fillStyle = "#1f2933";
-  ctx.fillRect(rival.x - 30, rival.y - 28, 9, 20);
-  ctx.fillRect(rival.x + 21, rival.y - 28, 9, 20);
-  ctx.fillRect(rival.x - 30, rival.y + 18, 9, 20);
-  ctx.fillRect(rival.x + 21, rival.y + 18, 9, 20);
-  ctx.fillStyle = rival.color;
-  ctx.beginPath();
-  ctx.roundRect(rival.x - 26, rival.y - 38, 52, 78, 14);
-  ctx.fill();
-  ctx.fillStyle = "#fff";
-  ctx.font = "bold 18px system-ui";
-  ctx.textAlign = "center";
-  ctx.fillText(rival.label, rival.x, rival.y + 8);
-  ctx.textAlign = "left";
-}
-
-function drawCar() {
-  const x = player.x;
-  const flightProgress = airborne > 0 ? (76 - airborne) / 76 : 0;
-  const gapLift = airborne > 0 ? 24 + Math.sin(flightProgress * Math.PI) * 58 : 0;
-  const jumpProgress = jumpFrames > 0 ? (34 - jumpFrames) / 34 : 0;
-  const jumpLift = jumpFrames > 0 ? Math.sin(jumpProgress * Math.PI) * 72 : 0;
-  const flyLift = flyBoost > 0 ? 36 + flyBoost * 0.75 : 0;
-  const lift = Math.max(gapLift, jumpLift, flyLift);
-  const y = player.y - lift;
-  const playerAirborne = isPlayerAirborne();
-  const wingOpen = selectedWing.id !== "none" && playerAirborne;
-  if (playerAirborne) {
-    ctx.fillStyle = "rgba(255,255,255,0.48)";
-    ctx.beginPath();
-    ctx.ellipse(x, player.y + 44, 54, 12, 0, 0, Math.PI * 2);
-    ctx.fill();
-  }
-
-  ctx.save();
-  ctx.translate(x, y);
-  ctx.rotate(player.tilt);
-
-  if (wingOpen) {
-    ctx.fillStyle = selectedWing.id === "plane" ? "#e7f1f5" : "#9fb0b9";
-    ctx.beginPath();
-    ctx.moveTo(-72, 8);
-    ctx.lineTo(-25, -18);
-    ctx.lineTo(-16, 8);
-    ctx.lineTo(-66, 28);
-    ctx.fill();
-    ctx.beginPath();
-    ctx.moveTo(72, 8);
-    ctx.lineTo(25, -18);
-    ctx.lineTo(16, 8);
-    ctx.lineTo(66, 28);
-    ctx.fill();
-  } else if (selectedWing.id !== "none") {
-    ctx.fillStyle = "#9fb0b9";
-    ctx.fillRect(-44, 22, 22, 8);
-    ctx.fillRect(22, 22, 22, 8);
-  }
-
-  ctx.fillStyle = "#1f2933";
-  const tireW = selectedTire.id === "big" ? 14 : 10;
-  ctx.fillRect(-36, -4, tireW, 24);
-  ctx.fillRect(24, -4, tireW, 24);
-  ctx.fillRect(-36, 44, tireW, 24);
-  ctx.fillRect(24, 44, tireW, 24);
-  ctx.fillStyle = selectedCar.color;
-  ctx.beginPath();
-  ctx.roundRect(-30, -20, 60, 94, 18);
-  ctx.fill();
-  ctx.fillStyle = "rgba(255,255,255,0.78)";
-  ctx.fillRect(-18, 2, 36, 20);
-  ctx.fillStyle = "rgba(23,38,50,0.28)";
-  ctx.fillRect(-24, -33, 48, 7);
-  drawDriver(0, -50);
-  ctx.fillStyle = "#172632";
-  ctx.font = "bold 18px system-ui";
-  ctx.textAlign = "center";
-  ctx.fillText(selectedIcon, 0, 48);
-  ctx.textAlign = "left";
-  ctx.restore();
-}
-
-function drawDriver(x, y) {
-  ctx.fillStyle = selectedDriver.color;
-  if (selectedDriver.id === "star") {
-    ctx.beginPath();
-    for (let i = 0; i < 10; i += 1) {
-      const angle = -Math.PI / 2 + i * (Math.PI / 5);
-      const radius = i % 2 === 0 ? 16 : 7;
-      ctx.lineTo(x + Math.cos(angle) * radius, y + Math.sin(angle) * radius);
-    }
-    ctx.closePath();
-    ctx.fill();
-  } else if (selectedDriver.id === "ghost") {
-    ctx.beginPath();
-    ctx.arc(x, y, 14, Math.PI, 0);
-    ctx.lineTo(x + 14, y + 18);
-    ctx.lineTo(x + 4, y + 12);
-    ctx.lineTo(x - 4, y + 18);
-    ctx.lineTo(x - 14, y + 12);
-    ctx.closePath();
-    ctx.fill();
   } else {
-    ctx.beginPath();
-    ctx.arc(x, y, 13, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = "#172632";
-    ctx.font = "bold 10px system-ui";
-    ctx.textAlign = "center";
-    ctx.fillText(selectedDriver.hat, x, y + 4);
-    ctx.textAlign = "left";
+    for (let i = 0; i < 10; i += 1) {
+      const rock = box(4, 3 + (i % 3), 5, 0x574b43);
+      rock.position.set(i % 2 ? -18 : 18, 1.3, -15 - i * 15);
+      sceneGroup.add(rock);
+    }
   }
 }
 
-function drawHud() {
-  ctx.fillStyle = "rgba(255,250,240,0.88)";
-  ctx.fillRect(18, 18, 238, 106);
-  ctx.fillStyle = "#172632";
-  ctx.font = "bold 18px system-ui";
-  ctx.fillText(`${selectedTrack.name} · ${"★".repeat(selectedStars)}`, 34, 48);
-  ctx.fillText(`第 ${currentLap()} / ${totalLaps} 圈`, 34, 78);
-  ctx.fillText(`总进度 ${Math.min(100, Math.floor((distance / raceGoalDistance()) * 100))}%`, 34, 108);
-  if (airborne > 0) {
-    ctx.fillStyle = "#d93a32";
-    ctx.fillText("飞行中", 160, 78);
-  } else if (jumpFrames > 0) {
-    ctx.fillStyle = "#d93a32";
-    ctx.fillText("跳跃中", 160, 78);
-  } else if (flyBoost > 0) {
-    ctx.fillStyle = "#d93a32";
-    ctx.fillText("自己飞", 160, 78);
-  }
+function addAirplane(x, y, z, s) {
+  const group = new THREE.Group();
+  const body = cyl(0.65, 0.65, 6.8, 0xffffff, 32);
+  body.rotation.x = Math.PI / 2;
+  const wing = box(7.5, 0.12, 1.1, 0xdce5eb);
+  const tail = box(2.2, 1.4, 0.18, 0xd93a32);
+  tail.position.z = 3.1;
+  tail.position.y = 0.8;
+  group.add(body, wing, tail);
+  group.position.set(x, y, z);
+  group.scale.setScalar(s);
+  sceneGroup.add(group);
 }
 
-window.addEventListener("keydown", (event) => {
-  const key = event.key.length === 1 ? event.key.toLowerCase() : event.key;
-  keys.add(key);
-  if (event.key === " ") {
-    jumpPlayer();
+function addTower(x, z) {
+  const base = cyl(0.8, 1.2, 8, 0xffffff);
+  base.position.set(x, 4, z);
+  const top = cyl(2.0, 1.8, 2, 0x64717b, 8);
+  top.position.set(x, 9.2, z);
+  sceneGroup.add(base, top);
+}
+
+function addTrain(x, z) {
+  const train = new THREE.Group();
+  for (let i = 0; i < 4; i += 1) {
+    const car = box(3.4, 2.3, 5.6, i % 2 ? 0xd93a32 : 0x245b8f);
+    car.position.z = -i * 5.8;
+    train.add(car);
   }
-  if (["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", " ", "f", "F"].includes(event.key)) {
-    event.preventDefault();
+  train.position.set(x, 1.2, z);
+  sceneGroup.add(train);
+}
+
+function addGhost(x, z) {
+  const ghost = sphere(1.1, 0xf4f7fa, 1, 1.25, 0.75);
+  ghost.position.set(x, 1.8, z);
+  const eye1 = sphere(0.12, 0x171827);
+  const eye2 = sphere(0.12, 0x171827);
+  eye1.position.set(x - 0.32, 2.05, z - 0.75);
+  eye2.position.set(x + 0.32, 2.05, z - 0.75);
+  sceneGroup.add(ghost, eye1, eye2);
+}
+
+function addLavaRock(x, z) {
+  const rock = sphere(1.5, 0x3b3030, 1.1, 0.75, 1);
+  rock.position.set(x, 0.8, z);
+  const glow = sphere(0.8, 0xff6a2a, 1.2, 0.3, 1);
+  glow.position.set(x, 1.2, z);
+  sceneGroup.add(rock, glow);
+}
+
+function buildItems() {
+  for (let i = 0; i < 18 + selectedStars * 3; i += 1) {
+    const coin = cyl(0.36, 0.36, 0.08, 0xffd15f, 26);
+    coin.rotation.x = Math.PI / 2;
+    coin.position.set(-4 + (i % 5) * 2, trackHeight() + 0.8, -24 - i * 10);
+    coin.userData.baseZ = coin.position.z;
+    coins.push(coin);
+    pickupGroup.add(coin);
   }
-});
+  const rivalLabels = ["LR", "星", "M", "7", "GO", "闪"];
+  for (let i = 0; i < 10 + selectedStars * 2; i += 1) {
+    const rival = createCar([0xd93a32, 0x245b8f, 0x39a657, 0xffd15f, 0x8f5fd9][i % 5], rivalLabels[i % rivalLabels.length]);
+    rival.position.set([-3.8, 0, 3.8][i % 3], trackHeight() + 0.45, -34 - i * 17);
+    rival.userData.baseZ = rival.position.z;
+    rivalCars.push(rival);
+    pickupGroup.add(rival);
+  }
+  for (let i = 0; i < 8 + selectedStars; i += 1) {
+    const obstacle = createObstacle(i);
+    obstacle.position.set([-4.2, 0, 4.2][(i + 1) % 3], trackHeight() + 0.58, -48 - i * 25);
+    obstacle.userData.baseZ = obstacle.position.z;
+    obstacles.push(obstacle);
+    pickupGroup.add(obstacle);
+  }
+  finishLine = box(12, 0.22, 1, 0xffffff);
+  finishLine.position.set(0, trackHeight() + 0.22, -145);
+  finishLine.userData.baseZ = -raceGoalDistance() / 42;
+  pickupGroup.add(finishLine);
+}
 
-window.addEventListener("keyup", (event) => {
-  const key = event.key.length === 1 ? event.key.toLowerCase() : event.key;
-  keys.delete(key);
-});
+function createObstacle(index) {
+  if (selectedTrack.id === "ghost") return sphere(0.9, 0xf4f7fa, 1, 1.2, 0.7);
+  if (selectedTrack.id === "volcano") return sphere(0.85, 0xff6a2a, 1.1, 0.7, 1);
+  if (selectedTrack.id === "airport") return box(1.8, 1.1, 1.2, 0xffd15f);
+  if (selectedTrack.id === "station") return box(1.4, 1.0, 1.2, 0x9a6429);
+  if (selectedTrack.id === "sky") return sphere(1.0, 0xffffff, 1.5, 0.65, 1);
+  return sphere(0.9, 0x6d625a, 1, 0.8, 1);
+}
 
-const driveKeyMap = {
-  left: "a",
-  right: "d",
-  fast: "w",
-  slow: "s",
-  fly: "f"
-};
+function trackHeight() {
+  return selectedTrack.id === "sky" ? 6.5 : 0;
+}
 
-function pressDriveControl(action, button) {
-  button.classList.add("is-pressed");
-  if (action === "jump") {
-    jumpPlayer();
+function startRace() {
+  running = true;
+  won = false;
+  gameOver = false;
+  distance = 0;
+  speed = 12 + selectedStars * 1.3;
+  laneX = 0;
+  vertical = 0;
+  verticalVelocity = 0;
+  flyTimer = 0;
+  finishCard.classList.remove("show");
+  finishTitle.textContent = "冲线成功!";
+  statusEl.textContent = `${selectedDriver.name}开着${selectedCar.name}出发！现在是 3D ${selectedTrack.name}赛道，一共 ${totalLaps} 圈。`;
+  rebuildWorld();
+  playStart();
+}
+
+function resetRace() {
+  running = false;
+  won = false;
+  gameOver = false;
+  distance = 0;
+  speed = 0;
+  laneX = 0;
+  vertical = 0;
+  verticalVelocity = 0;
+  flyTimer = 0;
+  finishCard.classList.remove("show");
+  statusEl.textContent = "选好地图和车，点开始赛车。";
+  rebuildWorld();
+}
+
+function controlDown(name) {
+  return keys.has(name) || pressed.has(name);
+}
+
+function update(dt) {
+  if (!running || won || gameOver) {
+    render();
     return;
   }
-  const key = driveKeyMap[action];
-  if (key) keys.add(key);
+  const left = controlDown("ArrowLeft") || controlDown("a") || controlDown("left");
+  const right = controlDown("ArrowRight") || controlDown("d") || controlDown("right");
+  const fast = controlDown("w") || controlDown("fast");
+  const slow = controlDown("s") || controlDown("slow");
+  const jump = controlDown(" ") || controlDown("jump");
+  const fly = controlDown("f") || controlDown("fly");
+
+  const steer = (right ? 1 : 0) - (left ? 1 : 0);
+  laneX += steer * dt * 8.5 * selectedTire.grip;
+  laneX = THREE.MathUtils.clamp(laneX, -4.8, 4.8);
+  speed += (fast ? 24 : 0) * dt;
+  speed -= (slow ? 30 : 0) * dt;
+  speed = THREE.MathUtils.clamp(speed, 8, 34 * selectedCar.speed + selectedStars * 2);
+  distance += speed * dt * 42;
+
+  if (jump && Math.abs(vertical) < 0.02) verticalVelocity = 9.5;
+  if (fly && selectedWing.id !== "none") flyTimer = 1.6;
+  if (flyTimer > 0) {
+    flyTimer -= dt;
+    vertical = THREE.MathUtils.lerp(vertical, selectedWing.id === "plane" ? 5.2 : 3.1, dt * 4);
+  } else {
+    vertical += verticalVelocity * dt;
+    verticalVelocity -= 20 * dt;
+    if (vertical <= 0) {
+      vertical = 0;
+      verticalVelocity = 0;
+    }
+  }
+
+  playerCar.position.set(laneX, trackHeight() + 0.48 + vertical, 5.4);
+  playerCar.rotation.z = THREE.MathUtils.lerp(playerCar.rotation.z, -steer * 0.24, dt * 5);
+  playerCar.rotation.x = THREE.MathUtils.lerp(playerCar.rotation.x, vertical > 0 ? -0.12 : 0, dt * 3);
+
+  updateRoad();
+  updatePickups();
+  updateCamera(dt);
+  statusEl.textContent = `${selectedTrack.name} 3D赛道 · 第 ${currentLap()}/${totalLaps} 圈 · 速度 ${Math.round(speed * 10)} · ${selectedTrack.obstacle}`;
+
+  if (distance >= raceGoalDistance()) finishRace();
 }
 
-function releaseDriveControl(action, button) {
-  button.classList.remove("is-pressed");
-  const key = driveKeyMap[action];
-  if (key) keys.delete(key);
+function updateRoad() {
+  const offset = (distance / 42) % 10;
+  roadSegments.forEach((segment, i) => {
+    segment.position.z = 12 - i * 10 + offset;
+  });
+  sceneGroup.children.forEach((object, i) => {
+    if (object.geometry && i % 3 === 0) object.rotation.y += 0.003;
+  });
 }
 
-touchControls.forEach((button) => {
-  const action = button.dataset.drive;
-  button.addEventListener("pointerdown", (event) => {
-    event.preventDefault();
-    button.setPointerCapture(event.pointerId);
-    pressDriveControl(action, button);
+function updatePickups() {
+  const scroll = distance / 42;
+  coins.forEach((coin) => {
+    coin.position.z = coin.userData.baseZ + scroll;
+    coin.rotation.z += 0.08;
+    if (coin.position.z > 14) coin.userData.baseZ -= 190;
+    if (Math.abs(coin.position.z - playerCar.position.z) < 1.5 && Math.abs(coin.position.x - laneX) < 1.5 && coin.visible) {
+      coin.visible = false;
+      playTone(880, 0, 0.07, 0.025);
+    }
+    if (coin.position.z < -20) coin.visible = true;
   });
-  button.addEventListener("pointerup", (event) => {
-    event.preventDefault();
-    releaseDriveControl(action, button);
+  rivalCars.forEach((rival, i) => {
+    rival.position.z = rival.userData.baseZ + scroll * (0.92 + (i % 3) * 0.02);
+    rival.rotation.z = Math.sin(performance.now() * 0.004 + i) * 0.05;
+    if (rival.position.z > 16) rival.userData.baseZ -= 210;
   });
-  button.addEventListener("pointercancel", () => releaseDriveControl(action, button));
-  button.addEventListener("lostpointercapture", () => releaseDriveControl(action, button));
-  button.addEventListener("contextmenu", (event) => event.preventDefault());
-});
+  obstacles.forEach((obstacle) => {
+    obstacle.position.z = obstacle.userData.baseZ + scroll;
+    obstacle.rotation.y += 0.025;
+    if (obstacle.position.z > 16) obstacle.userData.baseZ -= 230;
+  });
+  if (finishLine) finishLine.position.z = finishLine.userData.baseZ + scroll;
+}
 
+function updateCamera(dt) {
+  const desired = new THREE.Vector3(laneX * 0.42, trackHeight() + 8.8 + vertical * 0.32, 15.8);
+  camera.position.lerp(desired, 1 - Math.pow(0.001, dt));
+  camera.lookAt(laneX * 0.2, trackHeight() + 0.9 + vertical * 0.2, -12);
+}
+
+function finishRace() {
+  running = false;
+  won = true;
+  finishTitle.textContent = "3D冲线成功!";
+  finishText.textContent = `${selectedDriver.name}完成 ${totalLaps} 圈，天空地下赛车变成立体版了。`;
+  finishCard.classList.add("show");
+  playFinish();
+}
+
+function resize() {
+  const rect = canvas.getBoundingClientRect();
+  renderer.setSize(rect.width, rect.height, false);
+  camera.aspect = rect.width / rect.height;
+  camera.updateProjectionMatrix();
+}
+
+function render() {
+  renderer.render(scene, camera);
+}
+
+function animate(now = performance.now()) {
+  requestAnimationFrame(animate);
+  const dt = Math.min(0.033, (now - lastTime) / 1000);
+  lastTime = now;
+  update(dt);
+  render();
+}
+
+function bindControls() {
+  window.addEventListener("keydown", (event) => {
+    keys.add(event.key.length === 1 ? event.key.toLowerCase() : event.key);
+  });
+  window.addEventListener("keyup", (event) => {
+    keys.delete(event.key.length === 1 ? event.key.toLowerCase() : event.key);
+  });
+  touchControls.forEach((button) => {
+    const name = button.dataset.drive;
+    const down = (event) => {
+      event.preventDefault();
+      pressed.add(name);
+      button.classList.add("is-pressed");
+    };
+    const up = () => {
+      pressed.delete(name);
+      button.classList.remove("is-pressed");
+    };
+    button.addEventListener("pointerdown", down);
+    button.addEventListener("pointerup", up);
+    button.addEventListener("pointercancel", up);
+    button.addEventListener("pointerleave", up);
+  });
+}
+
+window.addEventListener("resize", resize);
 startBtn.addEventListener("click", startRace);
 resetBtn.addEventListener("click", resetRace);
 againBtn.addEventListener("click", startRace);
-
-if (!CanvasRenderingContext2D.prototype.roundRect) {
-  CanvasRenderingContext2D.prototype.roundRect = function roundRect(x, y, w, h, r) {
-    this.beginPath();
-    this.moveTo(x + r, y);
-    this.lineTo(x + w - r, y);
-    this.quadraticCurveTo(x + w, y, x + w, y + r);
-    this.lineTo(x + w, y + h - r);
-    this.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
-    this.lineTo(x + r, y + h);
-    this.quadraticCurveTo(x, y + h, x, y + h - r);
-    this.lineTo(x, y + r);
-    this.quadraticCurveTo(x, y, x + r, y);
-    this.closePath();
-    return this;
-  };
-}
-
+bindControls();
+resize();
+refreshPlayerCar();
+rebuildWorld();
 drawMenu();
-buildItems();
-update();
+animate();
