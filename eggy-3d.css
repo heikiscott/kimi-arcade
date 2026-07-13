@@ -158,7 +158,7 @@ select {
 
 .button-grid {
   display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 10px;
 }
 
@@ -185,6 +185,56 @@ button:nth-child(6) {
   background: #64717b;
 }
 
+.button-grid button:nth-child(7) {
+  background: #8f5fd9;
+}
+
+.button-grid button:nth-child(8) {
+  background: #f28b2f;
+}
+
+.score-board {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 2px solid rgba(23, 38, 50, 0.12);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.68);
+}
+
+.score-board strong {
+  font-size: 1.05rem;
+}
+
+#studentScores {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.student-score {
+  min-height: 54px;
+  padding: 9px 10px;
+  border: 2px solid rgba(23, 38, 50, 0.12);
+  border-radius: 8px;
+  background: #fff;
+  display: grid;
+  gap: 3px;
+  font-weight: 950;
+}
+
+.student-score span {
+  color: #64717b;
+  font-size: 0.78rem;
+}
+
+.student-score em {
+  color: #172632;
+  font-style: normal;
+  font-size: 1.18rem;
+}
+
 .hint {
   grid-column: 1 / -1;
   margin: 0;
@@ -209,5 +259,9 @@ button:nth-child(6) {
 
   .button-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  #studentScores {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }

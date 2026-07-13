@@ -6,13 +6,16 @@ const flightState = document.querySelector("#flightState");
 const styleSelect = document.querySelector("#styleSelect");
 const moveStick = document.querySelector("#moveStick");
 const moveKnob = document.querySelector("#moveKnob");
+const studentScores = document.querySelector("#studentScores");
 const buttons = {
   board: document.querySelector("#boardBtn"),
   taxi: document.querySelector("#taxiBtn"),
   takeoff: document.querySelector("#takeoffBtn"),
   land: document.querySelector("#landBtn"),
   exit: document.querySelector("#exitBtn"),
-  reset: document.querySelector("#resetBtn")
+  reset: document.querySelector("#resetBtn"),
+  classScore: document.querySelector("#classScoreBtn"),
+  meScore: document.querySelector("#meScoreBtn")
 };
 
 const styleData = {
@@ -60,6 +63,15 @@ const state = {
   planeT: 0,
   walkClock: 0
 };
+
+const students = [
+  { name: "我", score: 0 },
+  { name: "同学1", score: 0 },
+  { name: "同学2", score: 0 },
+  { name: "同学3", score: 0 },
+  { name: "同学4", score: 0 }
+];
+let classScoreUsed = false;
 
 const world = new THREE.Group();
 scene.add(world);
@@ -478,16 +490,43 @@ function setStatus(text) {
   flightState.textContent = text;
 }
 
+function renderStudentScores() {
+  studentScores.innerHTML = students
+    .map((student) => `<div class="student-score"><span>${student.name}</span><em>${student.score} 分</em></div>`)
+    .join("");
+}
+
+function addScoreToClass() {
+  if (classScoreUsed) {
+    setStatus("全班这一次已经加过分了，点“重来”以后可以再来一次。");
+    return;
+  }
+  students.forEach((student) => {
+    student.score += 1;
+  });
+  classScoreUsed = true;
+  renderStudentScores();
+  setStatus("全班同学每人加 1 分，这一次已经完成。");
+}
+
+function addScoreToMe() {
+  students[0].score += 5;
+  renderStudentScores();
+  setStatus("给你加 5 分！现在可以继续开飞机。");
+}
+
 function resetGame() {
   state.mode = "walk";
   state.speed = 0;
   state.planeT = 0;
+  classScoreUsed = false;
   eggy.position.set(-18, 1.05, -8);
   plane.position.set(-2, 1.15, -3);
   plane.rotation.set(0, Math.PI / 2, 0);
   plane.scale.setScalar(1);
   eggy.visible = true;
   setStatus("走到飞机旁边，点“上飞机”。");
+  renderStudentScores();
 }
 
 function boardPlane() {
@@ -659,7 +698,10 @@ buttons.takeoff.addEventListener("click", takeoffPlane);
 buttons.land.addEventListener("click", landPlane);
 buttons.exit.addEventListener("click", exitPlane);
 buttons.reset.addEventListener("click", resetGame);
+buttons.classScore.addEventListener("click", addScoreToClass);
+buttons.meScore.addEventListener("click", addScoreToMe);
 
 bindStick();
+renderStudentScores();
 resize();
 animate();
