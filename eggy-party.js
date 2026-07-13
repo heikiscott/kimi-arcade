@@ -46,6 +46,7 @@ const categories = [
   { key: "water", title: "水上乐园地点", count: 20, prefix: "水花乐园", detail: "大喇叭、漩涡、蛇形滑道" },
   { key: "metro", title: "开地铁地点", count: 10, prefix: "环线地铁", detail: "站台门、驾驶台、下一站" },
   { key: "fish", title: "摸鱼地点", count: 30, prefix: "河边摸鱼", detail: "河岸、树、椅子、捞随机东西" },
+  { key: "food", title: "餐厅吃饭地点", count: 12, prefix: "蛋仔餐厅", detail: "点餐、上菜、一餐吃饱" },
   { key: "history", title: "历史纪念馆", count: 1, prefix: "历史纪念馆", detail: "9/11事件回顾、双塔纪念光柱" },
   { key: "challenge", title: "闯关游戏地点", count: 40, prefix: "五条路线", detail: "每条路线机关都不一样" }
 ];
@@ -55,6 +56,7 @@ const namedPlaces = {
   water: ["大喇叭水城", "漩涡水城", "蛇形滑道湾", "彩虹水寨", "冲浪河谷"],
   metro: ["港湾控制站", "欧南园驾驶站", "牛车水换乘站", "克拉码头终点站", "滨海湾地下站"],
   fish: ["河边摸鱼树下", "公园长椅河岸", "荷叶浅滩", "小桥摸鱼点", "柳树水湾"],
+  food: ["芋头包餐厅", "蛋仔早餐店", "商场美食街", "机场家庭餐厅", "水上乐园小吃店", "超级晚餐屋"],
   history: ["9/11历史纪念馆"],
   challenge: ["传送门五路", "弹簧塔五路", "机场风道五路", "地铁轨道五路", "夜晚躲避五路"]
 };
@@ -180,6 +182,9 @@ const vehicle = {
   lastFlightX: 0,
   lastFlightY: 0,
   waterTicket: false,
+  mealStep: 0,
+  mealEnergy: 35,
+  mealFoodIndex: 0,
   selectedPlaneIndex: 0
 };
 
@@ -674,10 +679,18 @@ function resetVehicle() {
   vehicle.lastFlightX = vehicle.x;
   vehicle.lastFlightY = vehicle.y;
   vehicle.waterTicket = false;
+  vehicle.mealStep = 0;
+  vehicle.mealEnergy = 35;
+  vehicle.mealFoodIndex = selectedLocation.variant || 0;
   if (selectedLocation.category === "water") {
     vehicle.x = 120;
     vehicle.y = 430;
     vehicle.mode = "free";
+  }
+  if (selectedLocation.category === "food") {
+    vehicle.x = 210;
+    vehicle.y = 432;
+    vehicle.mode = "choosing-food";
   }
   joystickX = 0;
   joystickY = 0;
@@ -1177,6 +1190,7 @@ function getActivityHelp(category) {
   if (category === "water") return `${selectedLocation.name}：你先在陆地售票处买票，再进场，坐电梯上去，工作人员会把你放到圆形皮划艇上。`;
   if (category === "metro") return `${selectedLocation.name}：站台门在前面，点互动进驾驶台，再控制地铁往下一站开。`;
   if (category === "fish") return `${selectedLocation.name}：站在河边捞东西，可能捞到鱼、锅、僵尸蛋、宝箱或者奇怪玩具。`;
+  if (category === "food") return `${selectedLocation.name}：走到餐桌旁边，点开始/互动点餐；一餐里可以吃到好吃的，吃完补满能量。`;
   if (category === "history") return `${selectedLocation.name}：这是安静的历史纪念馆，可以看2001年9月11日事件时间线和纪念光柱。`;
   return `${selectedLocation.name}：选择好了。`;
 }
@@ -1690,6 +1704,36 @@ function activityInteract() {
     tone(988, 0, 0.14, 0.024, "sine");
     return true;
   }
+  if (selectedLocation.category === "food") {
+    const foods = ["芋头包", "苹果", "饺子", "蛋包饭", "小蛋糕", "热汤"];
+    const food = foods[vehicle.mealFoodIndex % foods.length];
+    if (vehicle.mealStep === 0) {
+      vehicle.mealStep = 1;
+      vehicle.mode = "ordered-food";
+      vehicle.x = 430;
+      statusText.textContent = `点餐成功：今天一餐吃 ${food}。等服务蛋仔把餐盘端上来。`;
+      tone(659, 0, 0.12, 0.02, "triangle");
+      tone(784, 0.12, 0.12, 0.02, "triangle");
+      return true;
+    }
+    if (vehicle.mealStep === 1) {
+      vehicle.mealStep = 2;
+      vehicle.mode = "eating-food";
+      vehicle.mealEnergy = Math.min(100, vehicle.mealEnergy + 45);
+      statusText.textContent = `开吃！${food}已经上桌了，蛋仔一口一口吃，能量补到 ${vehicle.mealEnergy}%。`;
+      tone(523, 0, 0.1, 0.02, "sine");
+      tone(659, 0.11, 0.1, 0.02, "sine");
+      tone(784, 0.22, 0.12, 0.02, "sine");
+      return true;
+    }
+    vehicle.mealStep = 0;
+    vehicle.mode = "choosing-food";
+    vehicle.mealFoodIndex += 1;
+    vehicle.mealEnergy = 100;
+    statusText.textContent = "这一餐吃饱啦！能量满满。再点一次可以换一道新的食物。";
+    winSound();
+    return true;
+  }
   if (selectedLocation.category === "history") {
     statusText.textContent = "9/11历史纪念馆：记住历史，纪念遇难者，也学习珍惜和平。";
     tone(392, 0, 0.2, 0.018, "sine");
@@ -1917,7 +1961,7 @@ function drawTransferPreview(place) {
 }
 
 function drawMiniDestinationScene(x, y, w, h, category) {
-  ctx.fillStyle = category === "flight" ? "#aee3ff" : category === "water" ? "#b9f1ff" : category === "metro" ? "#dce5eb" : category === "fish" ? "#dff6d8" : category === "history" ? "#22364f" : "#ffe1ef";
+  ctx.fillStyle = category === "flight" ? "#aee3ff" : category === "water" ? "#b9f1ff" : category === "metro" ? "#dce5eb" : category === "fish" ? "#dff6d8" : category === "food" ? "#fff0d8" : category === "history" ? "#22364f" : "#ffe1ef";
   ctx.fillRect(x, y, w, h);
   ctx.fillStyle = "#6cc07a";
   ctx.fillRect(x, y + h - 28, w, 28);
@@ -1948,6 +1992,17 @@ function drawMiniDestinationScene(x, y, w, h, category) {
     drawTree(x + 66, y + 36, 0.42);
     ctx.fillStyle = "#ffd15f";
     ctx.fillText("鱼", x + 182, y + 76);
+  } else if (category === "food") {
+    ctx.fillStyle = "#9a6429";
+    ctx.beginPath();
+    roundedRect(x + 42, y + 64, w - 84, 34, 10);
+    ctx.fill();
+    drawFoodPlate(x + w / 2, y + 80, 0.55, "芋头包");
+    ctx.fillStyle = "#172632";
+    ctx.font = "900 15px system-ui";
+    ctx.textAlign = "center";
+    ctx.fillText("餐厅", x + w / 2, y + 38);
+    ctx.textAlign = "left";
   } else if (category === "history") {
     ctx.fillStyle = "#dce5eb";
     ctx.fillRect(x + 84, y + 18, 28, 78);
@@ -2306,6 +2361,7 @@ function drawActivity() {
   if (selectedLocation.category === "water") drawWaterScene();
   if (selectedLocation.category === "metro") drawMetroScene();
   if (selectedLocation.category === "fish") drawFishScene();
+  if (selectedLocation.category === "food") drawFoodScene();
   if (selectedLocation.category === "history") drawHistoryMemorialScene();
   drawActivityTitle();
 }
@@ -3825,6 +3881,159 @@ function drawLootBubble(x, y, label) {
   ctx.textAlign = "center";
   ctx.fillText(label, x, y + 6);
   ctx.textAlign = "left";
+}
+
+function drawFoodScene() {
+  const foods = ["芋头包", "苹果", "饺子", "蛋包饭", "小蛋糕", "热汤"];
+  const food = foods[vehicle.mealFoodIndex % foods.length];
+  const g = ctx.createLinearGradient(0, 0, 0, H);
+  g.addColorStop(0, "#ffe9bd");
+  g.addColorStop(0.52, "#fff7e8");
+  g.addColorStop(1, "#ffd8bf");
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, W, H);
+
+  ctx.fillStyle = "#e8b86d";
+  ctx.fillRect(0, 420, W, H - 420);
+  ctx.strokeStyle = "rgba(154,100,41,0.26)";
+  ctx.lineWidth = 2;
+  for (let x = 0; x < W; x += 80) {
+    ctx.beginPath();
+    ctx.moveTo(x, 420);
+    ctx.lineTo(x - 90, H);
+    ctx.stroke();
+  }
+
+  ctx.fillStyle = "#fff";
+  ctx.beginPath();
+  roundedRect(52, 112, 246, 210, 8);
+  ctx.fill();
+  ctx.strokeStyle = "#172632";
+  ctx.lineWidth = 5;
+  ctx.stroke();
+  ctx.fillStyle = "#172632";
+  ctx.font = "900 30px system-ui";
+  ctx.fillText("今日菜单", 84, 154);
+  ctx.font = "850 20px system-ui";
+  ["芋头包", "苹果", "饺子", "蛋包饭"].forEach((item, i) => {
+    ctx.fillText(`${i + 1}. ${item}`, 86, 196 + i * 35);
+  });
+
+  drawRestaurantTable(520, 448);
+  drawFoodPlate(520, 397, 1.12, vehicle.mealStep >= 1 ? food : "餐盘");
+  drawEggyCharacter(vehicle.x, vehicle.y, 0.95, Math.sin(performance.now() * 0.01) * 0.04);
+  drawWaiterEggy(725, 390, vehicle.mealStep);
+  drawEnergyBar(666, 155, vehicle.mealEnergy);
+
+  ctx.fillStyle = "#172632";
+  ctx.font = "900 24px system-ui";
+  if (vehicle.mealStep === 0) {
+    ctx.fillText("点“开始/互动”点餐，一餐就能吃到好吃的。", 356, 126);
+  } else if (vehicle.mealStep === 1) {
+    ctx.fillText(`服务蛋仔端来了：${food}`, 356, 126);
+  } else {
+    ctx.fillText(`正在吃 ${food}，能量越来越满。`, 356, 126);
+  }
+
+  const bite = vehicle.mealStep === 2 ? Math.sin(performance.now() * 0.018) : 0;
+  if (vehicle.mealStep === 2) {
+    ctx.fillStyle = "#172632";
+    ctx.font = "900 22px system-ui";
+    ctx.fillText(bite > 0 ? "嚼嚼嚼" : "好吃！", 452, 304);
+  }
+}
+
+function drawRestaurantTable(x, y) {
+  ctx.fillStyle = "#8f5a2d";
+  ctx.beginPath();
+  roundedRect(x - 180, y - 54, 360, 86, 28);
+  ctx.fill();
+  ctx.fillStyle = "#654022";
+  ctx.fillRect(x - 142, y + 28, 26, 90);
+  ctx.fillRect(x + 116, y + 28, 26, 90);
+  ctx.fillStyle = "#fff2b8";
+  ctx.fillRect(x - 152, y - 36, 304, 26);
+}
+
+function drawFoodPlate(x, y, s = 1, label = "餐盘") {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.scale(s, s);
+  ctx.fillStyle = "#f7fbff";
+  ctx.beginPath();
+  ctx.ellipse(0, 20, 82, 28, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = "#172632";
+  ctx.lineWidth = 4;
+  ctx.stroke();
+  if (label === "苹果") {
+    ctx.fillStyle = "#e13835";
+    ctx.beginPath();
+    ctx.arc(-12, 6, 26, 0, Math.PI * 2);
+    ctx.arc(12, 6, 26, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#3ca45d";
+    ctx.fillRect(0, -30, 8, 24);
+  } else if (label === "饺子") {
+    ctx.fillStyle = "#fff7e8";
+    for (let i = -2; i <= 2; i += 1) {
+      ctx.beginPath();
+      ctx.arc(i * 24, 8, 19, Math.PI, 0);
+      ctx.lineTo(i * 24 + 19, 8);
+      ctx.fill();
+      ctx.stroke();
+    }
+  } else if (label === "热汤") {
+    ctx.fillStyle = "#ffd15f";
+    ctx.beginPath();
+    ctx.ellipse(0, 8, 54, 24, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    ctx.strokeStyle = "rgba(23,38,50,0.55)";
+    for (let i = -1; i <= 1; i += 1) {
+      ctx.beginPath();
+      ctx.moveTo(i * 20, -36);
+      ctx.bezierCurveTo(i * 20 - 14, -22, i * 20 + 14, -8, i * 20, 5);
+      ctx.stroke();
+    }
+  } else {
+    ctx.fillStyle = label === "餐盘" ? "#dce5eb" : label === "小蛋糕" ? "#f06aa3" : label === "蛋包饭" ? "#ffd15f" : "#c4925d";
+    ctx.beginPath();
+    roundedRect(-46, -20, 92, 54, 16);
+    ctx.fill();
+    ctx.stroke();
+  }
+  ctx.fillStyle = "#172632";
+  ctx.font = "900 16px system-ui";
+  ctx.textAlign = "center";
+  ctx.fillText(label, 0, 68);
+  ctx.textAlign = "left";
+  ctx.restore();
+}
+
+function drawWaiterEggy(x, y, mealStep) {
+  drawEggyCharacter(x, y, 0.72, 0, "#ffe3a6");
+  ctx.fillStyle = "#172632";
+  ctx.font = "900 17px system-ui";
+  ctx.fillText("服务蛋仔", x - 38, y - 82);
+  if (mealStep >= 1) drawFoodPlate(x - 68, y - 28, 0.38, "餐盘");
+}
+
+function drawEnergyBar(x, y, value) {
+  ctx.fillStyle = "rgba(255,255,255,0.92)";
+  ctx.beginPath();
+  roundedRect(x, y, 250, 58, 8);
+  ctx.fill();
+  ctx.strokeStyle = "#172632";
+  ctx.lineWidth = 4;
+  ctx.stroke();
+  ctx.fillStyle = "#172632";
+  ctx.font = "900 18px system-ui";
+  ctx.fillText("吃饭能量", x + 18, y + 24);
+  ctx.fillStyle = "#dce5eb";
+  ctx.fillRect(x + 18, y + 34, 214, 14);
+  ctx.fillStyle = value >= 100 ? "#38a86a" : "#f06aa3";
+  ctx.fillRect(x + 18, y + 34, 214 * Math.max(0, Math.min(100, value)) / 100, 14);
 }
 
 function drawHistoryMemorialScene() {
