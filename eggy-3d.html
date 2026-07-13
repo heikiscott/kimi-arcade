@@ -18,6 +18,11 @@
         <div class="stick" id="moveStick" aria-label="移动摇杆">
           <span id="moveKnob"></span>
         </div>
+        <div class="screen-actions" aria-label="屏幕操作按钮">
+          <button id="screenWalkBtn" type="button">走</button>
+          <button id="screenJumpBtn" type="button">跳</button>
+          <button id="screenBallBtn" type="button">变滚球</button>
+        </div>
       </section>
       <section class="controls">
         <div class="panel-title">
@@ -45,12 +50,19 @@
           </select>
         </label>
         <div class="button-grid">
+          <button id="startBtn" type="button">开始/互动</button>
+          <button id="parkBtn" type="button">乐园</button>
+          <button id="lobbyBtn" type="button">回大厅</button>
+          <button id="tourBtn" type="button">环游世界</button>
           <button id="boardBtn" type="button">上飞机</button>
           <button id="taxiBtn" type="button">竖向滑行</button>
           <button id="takeoffBtn" type="button">跑道起飞</button>
           <button id="landBtn" type="button">降落</button>
           <button id="exitBtn" type="button">下飞机</button>
           <button id="resetBtn" type="button">重来</button>
+          <button id="walkBtn" type="button">走</button>
+          <button id="jumpBtn" type="button">跳</button>
+          <button id="ballBtn" type="button">变滚球</button>
           <button id="classScoreBtn" type="button">全班加分</button>
           <button id="meScoreBtn" type="button">给我加分</button>
         </div>
@@ -58,7 +70,7 @@
           <strong>同学积分</strong>
           <div id="studentScores"></div>
         </div>
-        <p class="hint">先选地点。机场里才会出现飞机和跑道；游乐园、水上乐园、地铁站会单独显示自己的场景。</p>
+        <p class="hint">飞机在空中时，左下角圆杆就是飞机操纵杆：往下拉上升，往上推下降，左拉左飞，右拉右飞。飞够 300000 米会到下一个国家机场。</p>
       </section>
     </main>
     <script type="module" src="eggy-3d.js"></script>

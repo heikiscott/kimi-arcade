@@ -9,12 +9,22 @@ const moveStick = document.querySelector("#moveStick");
 const moveKnob = document.querySelector("#moveKnob");
 const studentScores = document.querySelector("#studentScores");
 const buttons = {
+  start: document.querySelector("#startBtn"),
+  park: document.querySelector("#parkBtn"),
+  lobby: document.querySelector("#lobbyBtn"),
+  tour: document.querySelector("#tourBtn"),
   board: document.querySelector("#boardBtn"),
   taxi: document.querySelector("#taxiBtn"),
   takeoff: document.querySelector("#takeoffBtn"),
   land: document.querySelector("#landBtn"),
   exit: document.querySelector("#exitBtn"),
   reset: document.querySelector("#resetBtn"),
+  walk: document.querySelector("#walkBtn"),
+  jump: document.querySelector("#jumpBtn"),
+  ball: document.querySelector("#ballBtn"),
+  screenWalk: document.querySelector("#screenWalkBtn"),
+  screenJump: document.querySelector("#screenJumpBtn"),
+  screenBall: document.querySelector("#screenBallBtn"),
   classScore: document.querySelector("#classScoreBtn"),
   meScore: document.querySelector("#meScoreBtn")
 };
@@ -63,7 +73,13 @@ const state = {
   pitch: -0.24,
   speed: 0,
   planeT: 0,
-  walkClock: 0
+  walkClock: 0,
+  jumpVelocity: 0,
+  ballMode: false,
+  tourIndex: 0,
+  tourTimer: 0,
+  flightMeters: 0,
+  destinationIndex: 0
 };
 
 const students = [
@@ -74,6 +90,24 @@ const students = [
   { name: "同学4", score: 0 }
 ];
 let classScoreUsed = false;
+
+const tourCountries = [
+  { key: "japan", name: "日本", title: "日本环游", intro: "现在到日本：能看到樱花树、鸟居和东京塔样子的高塔。" },
+  { key: "egypt", name: "埃及", title: "埃及环游", intro: "现在到埃及：金字塔、狮身人面像和沙漠机场就在下面。" },
+  { key: "usa", name: "美国", title: "美国环游", intro: "现在到美国：高楼、星条旗航站楼和很宽的城市道路。" },
+  { key: "uk", name: "英国", title: "英国环游", intro: "现在到英国：钟楼、红色巴士和英伦风格建筑。" },
+  { key: "china", name: "中国", title: "中国环游", intro: "现在到中国：红色屋顶、灯笼、高楼和宽阔广场。" },
+  { key: "southAfrica", name: "南非", title: "南非环游", intro: "现在到南非：桌山、草原树和金色大地。" }
+];
+
+const destinationAirports3d = [
+  { key: "japan", name: "日本机场", intro: "到达日本机场：可以看到樱花树、鸟居和日本风格建筑。" },
+  { key: "egypt", name: "埃及机场", intro: "到达埃及机场：金字塔和狮身人面像就在机场旁边。" },
+  { key: "usa", name: "美国机场", intro: "到达美国机场：高楼、宽路和美国风格航站楼出现了。" },
+  { key: "uk", name: "英国机场", intro: "到达英国机场：钟楼、红色巴士和英伦建筑出现了。" },
+  { key: "china", name: "中国机场", intro: "到达中国机场：红色屋顶、灯笼和高楼出现了。" },
+  { key: "southAfrica", name: "南非机场", intro: "到达南非机场：桌山和草原树出现了。" }
+];
 
 const world = new THREE.Group();
 scene.add(world);
@@ -460,6 +494,64 @@ function buildMetroStation() {
   }
 }
 
+function buildWorldTourStop(index) {
+  const country = tourCountries[index % tourCountries.length];
+  airportObjects.clear();
+  styleObjects.clear();
+  const data = styleData[country.key] || styleData.china;
+  const ground = new THREE.Mesh(new THREE.BoxGeometry(170, 1, 118), mat(data.ground));
+  ground.position.y = -0.55;
+  ground.receiveShadow = true;
+  airportObjects.add(ground);
+
+  const route = new THREE.Mesh(new THREE.TorusGeometry(28, 0.25, 12, 96), mat(0xffffff));
+  route.position.set(0, 0.08, 0);
+  route.rotation.x = Math.PI / 2;
+  airportObjects.add(route);
+
+  plane.visible = true;
+  eggy.visible = false;
+  placeName.textContent = country.title;
+  setStatus(country.intro);
+
+  if (country.key === "japan") {
+    addJapanStyle();
+    addSakuraTree(22, 0, -14, 9);
+    const tower = box(2.2, 24, 2.2, 0xd8343f);
+    tower.position.set(38, 12, 8);
+    styleObjects.add(tower);
+  } else if (country.key === "egypt") {
+    addEgyptStyle();
+    addPyramid(18, 18, 8, 6);
+  } else if (country.key === "usa") {
+    addUsaStyle();
+    addBuilding(22, 8, -10, 8, 16, 8, 0xa8b5c0);
+    addBuilding(34, 12, 2, 9, 24, 9, 0xd9e2ea);
+    addBuilding(48, 7, -14, 8, 14, 8, 0x9db0bc);
+  } else if (country.key === "uk") {
+    addUkStyle();
+    const bridge = box(28, 1.2, 3, 0xb88852);
+    bridge.position.set(20, 4, 10);
+    styleObjects.add(bridge);
+  } else if (country.key === "china") {
+    addChinaStyle();
+    addBuilding(28, 9, -12, 10, 18, 10, 0xd9e2ea);
+    addBuilding(44, 13, 4, 10, 26, 10, 0xa8b5c0);
+  } else if (country.key === "southAfrica") {
+    addSouthAfricaStyle();
+    const sunDisk = cyl(4, 4, 0.4, 0xf2b44b, 32);
+    sunDisk.position.set(34, 8, -4);
+    sunDisk.rotation.x = Math.PI / 2;
+    styleObjects.add(sunDisk);
+  }
+
+  for (let i = 0; i < 7; i += 1) {
+    const marker = cyl(0.7, 0.7, 1.2, data.second || 0xffffff, 20);
+    marker.position.set(Math.cos(i * 0.9) * 34, 0.6, Math.sin(i * 0.9) * 22);
+    airportObjects.add(marker);
+  }
+}
+
 function addSakuraTree(x, y, z, h) {
   const trunk = cyl(0.45, 0.65, h, 0x7a4c29);
   trunk.position.set(x, y + h / 2, z);
@@ -661,6 +753,32 @@ function smoothAngle(current, target, amount) {
   return current + diff * amount;
 }
 
+function flightForwardVector() {
+  return new THREE.Vector3(Math.cos(plane.rotation.y), 0, -Math.sin(plane.rotation.y));
+}
+
+function arriveAtNextCountryAirport() {
+  const destination = destinationAirports3d[state.destinationIndex % destinationAirports3d.length];
+  state.destinationIndex += 1;
+  state.airportStyle = destination.key;
+  state.currentPlace = "airport";
+  placeSelect.value = "airport";
+  styleSelect.value = destination.key;
+  airportObjects.clear();
+  styleObjects.clear();
+  buildAirport();
+  applyAirportStyle(destination.key);
+  state.mode = "landed";
+  state.flightMeters = 0;
+  state.planeT = 0;
+  plane.visible = true;
+  plane.scale.setScalar(1);
+  plane.position.set(18, 1.15, 30);
+  plane.rotation.set(0, -Math.PI / 2, 0);
+  eggy.visible = false;
+  setStatus(`${destination.intro} 你已经飞到另一个国家机场了。`);
+}
+
 function renderStudentScores() {
   studentScores.innerHTML = students
     .map((student) => `<div class="student-score"><span>${student.name}</span><em>${student.score} 分</em></div>`)
@@ -690,6 +808,8 @@ function resetGame(resetMessage = true) {
   state.mode = "walk";
   state.speed = 0;
   state.planeT = 0;
+  state.tourTimer = 0;
+  state.flightMeters = 0;
   classScoreUsed = false;
   if (state.currentPlace === "airport") {
     eggy.position.set(-18, 1.05, 32);
@@ -700,12 +820,100 @@ function resetGame(resetMessage = true) {
   }
   plane.rotation.set(0, Math.PI / 2, 0);
   plane.scale.setScalar(1);
+  eggy.scale.setScalar(1);
+  state.ballMode = false;
+  state.jumpVelocity = 0;
   eggy.visible = true;
   plane.visible = state.currentPlace === "airport";
   if (resetMessage) {
     setStatus(state.currentPlace === "airport" ? "走到飞机旁边，点“上飞机”。" : "这个地方没有飞机，只有当前地点自己的东西。");
   }
   renderStudentScores();
+}
+
+function resetCurrentScene() {
+  buildCurrentPlace();
+  resetGame(true);
+}
+
+function setPlace(value) {
+  state.currentPlace = value;
+  placeSelect.value = value;
+  buildCurrentPlace();
+}
+
+function startInteract() {
+  if (state.mode === "tour") {
+    state.tourIndex = (state.tourIndex + 1) % tourCountries.length;
+    state.tourTimer = 0;
+    buildWorldTourStop(state.tourIndex);
+    return;
+  }
+  if (state.currentPlace === "airport") {
+    if (state.mode === "walk") boardPlane();
+    else if (state.mode === "boarded") taxiPlane();
+    else if (state.mode === "taxi") takeoffPlane();
+    else if (state.mode === "flying") landPlane();
+    else setStatus("机场互动：可以上飞机、滑行、起飞、降落。");
+  } else if (state.currentPlace === "amusement") {
+    setStatus("游乐园互动：摩天轮转起来，喷泉亮起来，樱花树下面可以继续走。");
+  } else if (state.currentPlace === "water") {
+    setStatus("水上乐园互动：买票，坐电梯，上大喇叭滑道，冲进水池。");
+  } else if (state.currentPlace === "metro") {
+    setStatus("地铁站互动：站台门提示，列车准备进站。");
+  }
+}
+
+function openPark() {
+  const order = ["amusement", "water", "metro", "airport"];
+  const current = order.indexOf(state.currentPlace);
+  setPlace(order[(current + 1 + order.length) % order.length]);
+}
+
+function goLobby() {
+  window.location.href = "arcade.html";
+}
+
+function walkForward() {
+  if (state.mode !== "walk") {
+    setStatus("现在在飞机模式里，先下飞机才能走。");
+    return;
+  }
+  const direction = new THREE.Vector3(Math.sin(eggy.rotation.y), 0, Math.cos(eggy.rotation.y));
+  eggy.position.addScaledVector(direction, 4.5);
+  state.walkClock += 1;
+  setStatus("往前走了一步。");
+}
+
+function jumpEggy() {
+  if (state.mode !== "walk") {
+    setStatus("在飞机里不能跳，先下飞机。");
+    return;
+  }
+  if (Math.abs(eggy.position.y - 1.05) < 0.05) {
+    state.jumpVelocity = 9.5;
+    setStatus("跳起来了。");
+  }
+}
+
+function toggleBallMode() {
+  if (state.mode !== "walk") {
+    setStatus("在飞机里不能变滚球，先下飞机。");
+    return;
+  }
+  state.ballMode = !state.ballMode;
+  eggy.scale.setScalar(state.ballMode ? 0.9 : 1);
+  setStatus(state.ballMode ? "变成滚球了，可以滚着走。" : "变回小蛋仔了。");
+}
+
+function startWorldTour() {
+  state.mode = "tour";
+  state.tourIndex = 0;
+  state.tourTimer = 0;
+  plane.scale.setScalar(1.18);
+  plane.position.set(-18, 11, 24);
+  plane.rotation.set(0, Math.PI / 2, 0);
+  buildWorldTourStop(state.tourIndex);
 }
 
 function boardPlane() {
@@ -754,6 +962,14 @@ function exitPlane() {
 
 function updateWalking(dt) {
   if (state.mode !== "walk") return;
+  if (state.jumpVelocity !== 0 || eggy.position.y > 1.05) {
+    eggy.position.y += state.jumpVelocity * dt;
+    state.jumpVelocity -= 22 * dt;
+    if (eggy.position.y <= 1.05) {
+      eggy.position.y = 1.05;
+      state.jumpVelocity = 0;
+    }
+  }
   const move = new THREE.Vector3();
   if (state.keys.has("KeyW") || state.keys.has("ArrowUp")) move.z -= 1;
   if (state.keys.has("KeyS") || state.keys.has("ArrowDown")) move.z += 1;
@@ -770,9 +986,28 @@ function updateWalking(dt) {
     eggy.userData.rightLeg.rotation.x = -Math.sin(state.walkClock) * 0.55;
     eggy.userData.leftArm.rotation.x = -Math.sin(state.walkClock) * 0.38;
     eggy.userData.rightArm.rotation.x = Math.sin(state.walkClock) * 0.38;
+    if (state.ballMode) eggy.rotation.z -= dt * 6;
   }
   eggy.position.x = THREE.MathUtils.clamp(eggy.position.x, -78, 82);
   eggy.position.z = THREE.MathUtils.clamp(eggy.position.z, -52, 52);
+}
+
+function updateWorldTour(dt) {
+  if (state.mode !== "tour") return;
+  state.tourTimer += dt;
+  const t = state.tourTimer;
+  const radiusX = 34;
+  const radiusZ = 24;
+  plane.position.x = Math.cos(t * 0.52) * radiusX;
+  plane.position.z = Math.sin(t * 0.52) * radiusZ;
+  plane.position.y = 10 + Math.sin(t * 1.1) * 2;
+  plane.rotation.y = -t * 0.52 + Math.PI / 2;
+  plane.rotation.z = Math.sin(t * 1.3) * 0.22;
+  if (state.tourTimer > 5.5) {
+    state.tourIndex = (state.tourIndex + 1) % tourCountries.length;
+    state.tourTimer = 0;
+    buildWorldTourStop(state.tourIndex);
+  }
 }
 
 function updatePlane(dt) {
@@ -804,16 +1039,25 @@ function updatePlane(dt) {
     if (state.planeT > 5.2) {
       state.mode = "flying";
       state.planeT = 0;
-      setStatus("飞机在空中平稳飞行，可以点“降落”。");
+      state.flightMeters = 0;
+      setStatus("飞机在空中：左下角圆杆可以控制飞机，往下拉上升，往上推下降，左右拉就左右飞。");
     }
   }
   if (state.mode === "flying") {
     state.planeT += dt;
-    plane.position.z -= dt * 13;
-    plane.position.y = 14 + Math.sin(state.planeT * 1.2) * 1.2;
-    plane.position.x += Math.sin(state.planeT * 0.8) * dt * 5;
-    plane.rotation.y = Math.PI / 2 + Math.sin(state.planeT * 0.55) * 0.16;
-    plane.rotation.z = Math.sin(state.planeT) * 0.16;
+    const turnInput = state.stick.x;
+    const pitchInput = state.stick.y;
+    plane.rotation.y -= turnInput * dt * 0.95;
+    plane.rotation.z = THREE.MathUtils.lerp(plane.rotation.z, -turnInput * 0.32, dt * 3);
+    const forward = flightForwardVector();
+    plane.position.addScaledVector(forward, dt * 22);
+    plane.position.y = THREE.MathUtils.clamp(plane.position.y + pitchInput * dt * 10, 4, 34);
+    state.flightMeters += dt * 42000;
+    const percent = Math.min(100, Math.round((state.flightMeters / 300000) * 100));
+    setStatus(`手动飞行中：下拉上升，上推下降，左拉左飞，右拉右飞。去下一个国家机场 ${percent}%`);
+    if (state.flightMeters >= 300000) {
+      arriveAtNextCountryAirport();
+    }
   }
   if (state.mode === "landing") {
     state.planeT += dt;
@@ -862,6 +1106,7 @@ function animate() {
   animate.last = now;
   updateWalking(dt);
   updatePlane(dt);
+  updateWorldTour(dt);
   clouds.children.forEach((cloud, i) => {
     cloud.position.x += dt * (1.2 + (i % 4) * 0.25);
     if (cloud.position.x > 110) cloud.position.x = -110;
@@ -907,16 +1152,23 @@ window.addEventListener("resize", resize);
 window.addEventListener("keydown", (event) => state.keys.add(event.code));
 window.addEventListener("keyup", (event) => state.keys.delete(event.code));
 styleSelect.addEventListener("change", () => applyAirportStyle(styleSelect.value));
-placeSelect.addEventListener("change", () => {
-  state.currentPlace = placeSelect.value;
-  buildCurrentPlace();
-});
+placeSelect.addEventListener("change", () => setPlace(placeSelect.value));
+buttons.start.addEventListener("click", startInteract);
+buttons.park.addEventListener("click", openPark);
+buttons.lobby.addEventListener("click", goLobby);
+buttons.tour.addEventListener("click", startWorldTour);
 buttons.board.addEventListener("click", boardPlane);
 buttons.taxi.addEventListener("click", taxiPlane);
 buttons.takeoff.addEventListener("click", takeoffPlane);
 buttons.land.addEventListener("click", landPlane);
 buttons.exit.addEventListener("click", exitPlane);
-buttons.reset.addEventListener("click", resetGame);
+buttons.reset.addEventListener("click", resetCurrentScene);
+buttons.walk.addEventListener("click", walkForward);
+buttons.jump.addEventListener("click", jumpEggy);
+buttons.ball.addEventListener("click", toggleBallMode);
+buttons.screenWalk.addEventListener("click", walkForward);
+buttons.screenJump.addEventListener("click", jumpEggy);
+buttons.screenBall.addEventListener("click", toggleBallMode);
 buttons.classScore.addEventListener("click", addScoreToClass);
 buttons.meScore.addEventListener("click", addScoreToMe);
 
