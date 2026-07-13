@@ -84,6 +84,7 @@ const state = {
   expressionIndex: 0,
   ridingWheel: false,
   wheelT: 0,
+  jetpackTimer: 0,
   tourIndex: 0,
   tourTimer: 0,
   flightMeters: 0,
@@ -264,6 +265,24 @@ function createEggy() {
   group.userData.leftArm.rotation.z = -0.4;
   group.userData.rightArm.rotation.z = 0.4;
   group.add(group.userData.leftArm, group.userData.rightArm, group.userData.leftLeg, group.userData.rightLeg);
+
+  const jetpack = new THREE.Group();
+  const pack = box(0.5, 0.72, 0.22, 0x64717b);
+  pack.position.set(0, 0.2, -0.72);
+  const jetL = cyl(0.1, 0.12, 0.55, 0xd9e2ea, 18);
+  const jetR = cyl(0.1, 0.12, 0.55, 0xd9e2ea, 18);
+  jetL.position.set(-0.22, -0.14, -0.86);
+  jetR.position.set(0.22, -0.14, -0.86);
+  const fireL = new THREE.Mesh(new THREE.ConeGeometry(0.13, 0.42, 18), mat(0xffd15f));
+  const fireR = new THREE.Mesh(new THREE.ConeGeometry(0.13, 0.42, 18), mat(0xffd15f));
+  fireL.position.set(-0.22, -0.58, -0.86);
+  fireR.position.set(0.22, -0.58, -0.86);
+  fireL.rotation.x = Math.PI;
+  fireR.rotation.x = Math.PI;
+  jetpack.add(pack, jetL, jetR, fireL, fireR);
+  jetpack.visible = false;
+  group.add(jetpack);
+
   group.userData.leftEye = leftEye;
   group.userData.rightEye = rightEye;
   group.userData.leftSpark = leftSpark;
@@ -274,6 +293,7 @@ function createEggy() {
   group.userData.openMouth = openMouth;
   group.userData.leftCheek = leftCheek;
   group.userData.rightCheek = rightCheek;
+  group.userData.jetpack = jetpack;
   return group;
 }
 
@@ -406,6 +426,38 @@ function createCabinInterior(color, options = {}) {
   cabinLabel.position.set(-0.4, 0.82, 0);
   cabinLabel.rotation.x = -Math.PI / 2;
   cabin.add(cabinLabel);
+  return cabin;
+}
+
+function createFerrisCabin(color) {
+  const cabin = new THREE.Group();
+  const floor = box(1.9, 0.16, 1.5, color);
+  floor.position.y = -0.55;
+  const roof = box(1.9, 0.14, 1.5, color);
+  roof.position.y = 0.55;
+  cabin.add(floor, roof);
+  [-0.82, 0.82].forEach((x) => {
+    [-0.58, 0.58].forEach((z) => {
+      const post = cyl(0.045, 0.045, 1.1, 0x172632, 12);
+      post.position.set(x, 0, z);
+      cabin.add(post);
+    });
+  });
+  [-0.55, 0.05, 0.55].forEach((y) => {
+    const front = box(1.75, 0.06, 0.06, 0x172632);
+    front.position.set(0, y, 0.62);
+    const back = box(1.75, 0.06, 0.06, 0x172632);
+    back.position.set(0, y, -0.62);
+    const left = box(0.06, 0.06, 1.25, 0x172632);
+    left.position.set(-0.86, y, 0);
+    const right = box(0.06, 0.06, 1.25, 0x172632);
+    right.position.set(0.86, y, 0);
+    cabin.add(front, back, left, right);
+  });
+  const seat = box(1.2, 0.22, 0.55, 0xf5f1df);
+  seat.position.set(0, -0.18, 0);
+  cabin.add(seat);
+  cabin.userData.isFerrisCabin = true;
   return cabin;
 }
 
@@ -565,6 +617,11 @@ function buildCurrentPlace() {
     plane.visible = false;
     placeName.textContent = "3D 游乐园";
     setStatus("这里只是游乐园：摩天轮、喷泉、樱花树和过山车，不混机场。");
+  } else if (state.currentPlace === "challenge") {
+    buildChallengeCourse();
+    plane.visible = false;
+    placeName.textContent = "3D 闯关游戏";
+    setStatus("闯关游戏回来了：走到喷气背包会获得保护，踩平台到白色终点线就赢。");
   } else if (state.currentPlace === "water") {
     buildWaterPark();
     plane.visible = false;
@@ -591,6 +648,7 @@ function buildAmusementPark() {
   airportObjects.add(plaza);
 
   const wheel = new THREE.Group();
+  const wheelBase = new THREE.Group();
   const rim = new THREE.Mesh(new THREE.TorusGeometry(9, 0.28, 16, 80), mat(0x172632));
   rim.rotation.y = Math.PI / 2;
   wheel.add(rim);
@@ -598,7 +656,7 @@ function buildAmusementPark() {
     const spoke = box(0.18, 0.18, 18, 0x172632);
     spoke.rotation.x = (Math.PI / 8) * i;
     wheel.add(spoke);
-    const cabin = box(1.8, 1.1, 1.4, i % 2 ? 0xf06aa3 : 0xffd15f);
+    const cabin = createFerrisCabin(i % 2 ? 0xf06aa3 : 0xffd15f);
     cabin.position.set(0, Math.sin(i * Math.PI / 4) * 9, Math.cos(i * Math.PI / 4) * 9);
     wheel.add(cabin);
   }
@@ -608,10 +666,11 @@ function buildAmusementPark() {
   stand2.position.set(0, -4.8, 3.6);
   stand1.rotation.x = -0.35;
   stand2.rotation.x = 0.35;
-  wheel.add(stand1, stand2);
+  wheelBase.add(stand1, stand2);
   wheel.position.set(-45, 13, -8);
+  wheelBase.position.set(-45, 13, -8);
   ferrisWheelGroup = wheel;
-  airportObjects.add(wheel);
+  airportObjects.add(wheelBase, wheel);
 
   const fountain = cyl(4.8, 4.8, 0.35, 0x7fc7ea, 64);
   fountain.position.set(-10, 0.2, 2);
@@ -624,6 +683,37 @@ function buildAmusementPark() {
 
   addSakuraTree(25, 0, -5, 8.5);
   addCoasterTrack(18, -22);
+}
+
+function buildChallengeCourse() {
+  const ground = new THREE.Mesh(new THREE.BoxGeometry(150, 1, 105), mat(0x6fc17a));
+  ground.position.y = -0.55;
+  ground.receiveShadow = true;
+  airportObjects.add(ground);
+  for (let i = 0; i < 5; i += 1) {
+    const platform = box(18, 0.7, 9, i % 2 ? 0xffd15f : 0xf06aa3);
+    platform.position.set(-42 + i * 20, 0.45 + i * 0.35, -18 + Math.sin(i) * 9);
+    airportObjects.add(platform);
+    const sign = makeLabel(`第 ${i + 1} 段`);
+    sign.scale.setScalar(0.45);
+    sign.position.set(platform.position.x, platform.position.y + 0.55, platform.position.z);
+    sign.rotation.x = -Math.PI / 2;
+    airportObjects.add(sign);
+  }
+  const jetBase = cyl(2.2, 2.2, 0.22, 0x2f79c8, 32);
+  jetBase.position.set(-38, 0.12, 22);
+  const jetSign = makeLabel("喷气背包");
+  jetSign.scale.setScalar(0.62);
+  jetSign.position.set(-38, 0.3, 17);
+  jetSign.rotation.x = -Math.PI / 2;
+  airportObjects.add(jetBase, jetSign);
+  const finish = box(30, 0.12, 2.5, 0xffffff);
+  finish.position.set(44, 0.1, -22);
+  const finishLabel = makeLabel("终点 WIN");
+  finishLabel.scale.setScalar(0.7);
+  finishLabel.position.set(44, 0.25, -26);
+  finishLabel.rotation.x = -Math.PI / 2;
+  airportObjects.add(finish, finishLabel);
 }
 
 function buildWaterPark() {
@@ -1224,6 +1314,7 @@ function resetGame(resetMessage = true) {
   state.metroDoorsOpen = true;
   state.ridingWheel = false;
   state.wheelT = 0;
+  state.jetpackTimer = 0;
   classScoreUsed = false;
   if (state.currentPlace === "airport") {
     eggy.position.set(-18, 1.05, 32);
@@ -1239,6 +1330,7 @@ function resetGame(resetMessage = true) {
   eggy.scale.setScalar(1);
   state.ballMode = false;
   state.jumpVelocity = 0;
+  if (eggy.userData.jetpack) eggy.userData.jetpack.visible = false;
   setPlaneInteriorVisible(false);
   eggy.visible = true;
   plane.visible = state.currentPlace === "airport";
@@ -1274,6 +1366,8 @@ function startInteract() {
     else setStatus("机场互动：可以上飞机、滑行、起飞、降落。");
   } else if (state.currentPlace === "amusement") {
     toggleFerrisRide();
+  } else if (state.currentPlace === "challenge") {
+    setStatus("闯关游戏：走到蓝色喷气背包会自动戴上，跳得更安全；走过白色终点线就赢。");
   } else if (state.currentPlace === "water") {
     setStatus("水上乐园互动：买票，坐电梯，上大喇叭滑道，冲进水池。");
   } else if (state.currentPlace === "metro") {
@@ -1282,7 +1376,7 @@ function startInteract() {
 }
 
 function openPark() {
-  const order = ["amusement", "water", "metro", "airport"];
+  const order = ["amusement", "challenge", "water", "metro", "airport"];
   const current = order.indexOf(state.currentPlace);
   setPlace(order[(current + 1 + order.length) % order.length]);
 }
@@ -1350,13 +1444,22 @@ function walkForward() {
 }
 
 function jumpEggy() {
+  if (state.ridingWheel) {
+    state.ridingWheel = false;
+    state.mode = "walk";
+    state.jetpackTimer = 12;
+    eggy.userData.jetpack.visible = true;
+    state.jumpVelocity = 7.5;
+    setStatus("泰迪熊从摩天轮跳出来了，自动获得喷气背包保护，可以安全一点。");
+    return;
+  }
   if (state.mode !== "walk") {
     setStatus("在飞机里不能跳，先下飞机。");
     return;
   }
   if (Math.abs(eggy.position.y - 1.05) < 0.05) {
-    state.jumpVelocity = 9.5;
-    setStatus("跳起来了。");
+    state.jumpVelocity = state.jetpackTimer > 0 ? 13.5 : 9.5;
+    setStatus(state.jetpackTimer > 0 ? "喷气背包帮你跳得更高。" : "跳起来了。");
   }
 }
 
@@ -1439,9 +1542,25 @@ function exitPlane() {
 
 function updateWalking(dt) {
   if (state.mode !== "walk") return;
+  if (state.currentPlace === "challenge") {
+    if (Math.hypot(eggy.position.x + 38, eggy.position.z - 22) < 4) {
+      state.jetpackTimer = 12;
+      eggy.userData.jetpack.visible = true;
+      setStatus("拿到喷气背包了！12 秒内跳得更安全。");
+    }
+    if (eggy.position.x > 31 && eggy.position.x < 58 && eggy.position.z < -18 && eggy.position.z > -28) {
+      setStatus("闯关成功！泰迪熊走过白色终点线。");
+    }
+  }
+  if (state.jetpackTimer > 0) {
+    state.jetpackTimer = Math.max(0, state.jetpackTimer - dt);
+    eggy.userData.jetpack.visible = true;
+  } else if (eggy.userData.jetpack) {
+    eggy.userData.jetpack.visible = false;
+  }
   if (state.jumpVelocity !== 0 || eggy.position.y > 1.05) {
     eggy.position.y += state.jumpVelocity * dt;
-    state.jumpVelocity -= 22 * dt;
+    state.jumpVelocity -= (state.jetpackTimer > 0 ? 12 : 22) * dt;
     if (eggy.position.y <= 1.05) {
       eggy.position.y = 1.05;
       state.jumpVelocity = 0;
@@ -1478,7 +1597,7 @@ function updateWorldTour(dt) {
   plane.position.x = Math.cos(t * 0.52) * radiusX;
   plane.position.z = Math.sin(t * 0.52) * radiusZ;
   plane.position.y = 10 + Math.sin(t * 1.1) * 2;
-  plane.rotation.y = -t * 0.52 + Math.PI / 2;
+  plane.rotation.y = Math.PI * 1.5 - t * 0.52;
   plane.rotation.z = Math.sin(t * 1.3) * 0.22;
   if (state.tourTimer > 5.5) {
     state.tourTimer = 0;
@@ -1502,24 +1621,29 @@ function updateAmusement(dt) {
 function updatePlane(dt) {
   if (state.currentPlace !== "airport") return;
   if (state.mode === "taxi") {
-    plane.position.z -= dt * 14;
-    plane.rotation.z = Math.sin(performance.now() * 0.004) * 0.025;
+    const turnInput = state.stick.x;
+    plane.rotation.y -= turnInput * dt * 0.85;
+    plane.rotation.z = THREE.MathUtils.lerp(plane.rotation.z, -turnInput * 0.18 + Math.sin(performance.now() * 0.004) * 0.025, dt * 4);
+    plane.position.addScaledVector(flightForwardVector(), dt * 14);
+    plane.position.x = THREE.MathUtils.clamp(plane.position.x, -60, 60);
+    plane.position.z = THREE.MathUtils.clamp(plane.position.z, -35, 36);
     if (plane.position.z < 5) {
       state.speed = 0;
       plane.position.z = 5;
-      setStatus("已经竖着滑到起飞跑道中段了。点“起飞”才会离地。");
+      setStatus("已经滑到起飞跑道中段了。地面上也能用左下角摇杆转弯，点“起飞”才会离地。");
     }
   }
   if (state.mode === "takeoff") {
     state.planeT += dt;
+    const forward = flightForwardVector();
     if (state.planeT < 1.8) {
-      plane.position.z -= dt * 31;
+      plane.position.addScaledVector(forward, dt * 31);
       plane.position.y = 1.15;
       plane.rotation.z = THREE.MathUtils.lerp(plane.rotation.z, -0.04, dt * 2);
       setStatus("竖向起飞滑跑中：飞机还贴着跑道往前冲。");
     } else {
       const climbT = state.planeT - 1.8;
-      plane.position.z -= dt * 34;
+      plane.position.addScaledVector(forward, dt * 34);
       plane.position.y = 1.15 + climbT * climbT * 1.25;
       plane.position.x += Math.sin(climbT * 0.8) * dt * 1.4;
       plane.rotation.z = THREE.MathUtils.lerp(plane.rotation.z, -0.16, dt * 1.2);
