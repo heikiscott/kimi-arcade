@@ -115,6 +115,8 @@ const state = {
   tourIndex: 0,
   tourTimer: 0,
   flightMeters: 0,
+  boardingT: 0,
+  boardingFrom: new THREE.Vector3(),
   destinationIndex: 0,
   selectedAirportIndex: 0,
   selectedPlaneIndex: 0,
@@ -176,6 +178,8 @@ const planeOptions = [
 ];
 
 const PLANE_GROUND_Y = 1.15;
+const PLANE_AIR_MIN_Y = 8.5;
+const EGGY_STAND_OFFSET = 1.1;
 
 const world = new THREE.Group();
 scene.add(world);
@@ -199,6 +203,7 @@ let styleObjects = new THREE.Group();
 world.add(styleObjects);
 let airportObjects = new THREE.Group();
 world.add(airportObjects);
+let challengePlatforms = [];
 let metroTrainGroup = null;
 let metroDoorGroup = null;
 let platformDoorGroup = null;
@@ -688,6 +693,7 @@ function buildAirport() {
     windowBox.position.set(-38 + i * 3, 4.2, 25.92);
     airportObjects.add(windowBox);
   }
+  addBoardingGate();
 
   const towerBase = cyl(1.1, 1.3, 8, 0xffffff);
   towerBase.position.set(-13, 4, 29);
@@ -735,6 +741,50 @@ function buildAirport() {
   routeBoard.position.set(44, 0.22, -48);
   routeBoard.rotation.x = -Math.PI / 2;
   airportObjects.add(routeBoard);
+}
+
+function addBoardingGate() {
+  const floor = box(18, 0.18, 9, 0xd9e2ea);
+  floor.position.set(-30, 0.1, 24.2);
+  const carpet = box(14, 0.08, 2.2, 0x2f79c8);
+  carpet.position.set(-30, 0.22, 23.5);
+  const counter = box(5.6, 1.5, 1.1, 0xffffff);
+  counter.position.set(-34.5, 0.9, 22.4);
+  const scanner = box(1.2, 1.0, 0.55, 0x172632);
+  scanner.position.set(-31.3, 1.05, 22.4);
+  const gateFrame = box(0.45, 4.2, 0.45, 0xd8343f);
+  const gateFrameR = gateFrame.clone();
+  gateFrame.position.set(-25.5, 2.15, 22.1);
+  gateFrameR.position.set(-25.5, 2.15, 25.1);
+  const gateTop = box(0.55, 0.45, 3.5, 0xd8343f);
+  gateTop.position.set(-25.5, 4.15, 23.6);
+  const gateLabel = makeLabel("登机口 A1");
+  gateLabel.scale.setScalar(0.58);
+  gateLabel.position.set(-25.55, 4.95, 23.6);
+  gateLabel.rotation.y = Math.PI / 2;
+  const bridge = box(13, 2.3, 3.2, 0xd9e2ea);
+  bridge.position.set(-18, 2.55, 23.6);
+  const glassL = box(12.2, 1.15, 0.08, 0x8fdcff);
+  const glassR = glassL.clone();
+  glassL.position.set(-18, 2.76, 22.0);
+  glassR.position.set(-18, 2.76, 25.2);
+  const agent = createGateAgent();
+  agent.position.set(-35.8, 1.25, 22.8);
+  airportObjects.add(floor, carpet, counter, scanner, gateFrame, gateFrameR, gateTop, gateLabel, bridge, glassL, glassR, agent);
+}
+
+function createGateAgent() {
+  const agent = new THREE.Group();
+  const body = cyl(0.34, 0.42, 1.15, 0x2f79c8, 24);
+  body.position.y = 0.08;
+  const head = sphere(0.32, 0xffd6b0);
+  head.position.y = 0.82;
+  const hat = box(0.7, 0.16, 0.5, 0xd8343f);
+  hat.position.y = 1.12;
+  const ticket = box(0.54, 0.06, 0.34, 0xffd15f);
+  ticket.position.set(0.48, 0.42, 0.05);
+  agent.add(body, head, hat, ticket);
+  return agent;
 }
 
 function buildCurrentPlace() {
@@ -850,6 +900,7 @@ function addAmusementAccidentRide() {
 }
 
 function buildChallengeCourse() {
+  challengePlatforms = [];
   const ground = new THREE.Mesh(new THREE.BoxGeometry(150, 1, 105), mat(0x6fc17a));
   ground.position.y = -0.55;
   ground.receiveShadow = true;
@@ -857,6 +908,15 @@ function buildChallengeCourse() {
   for (let i = 0; i < 5; i += 1) {
     const platform = box(18, 0.7, 9, i % 2 ? 0xffd15f : 0xf06aa3);
     platform.position.set(-42 + i * 20, 0.45 + i * 0.35, -18 + Math.sin(i) * 9);
+    platform.userData.solidPlatform = true;
+    challengePlatforms.push({
+      x: platform.position.x,
+      z: platform.position.z,
+      halfW: 9.2,
+      halfD: 4.7,
+      standY: platform.position.y + 0.35 + EGGY_STAND_OFFSET,
+      name: `第 ${i + 1} 段平台`
+    });
     airportObjects.add(platform);
     const sign = makeLabel(`第 ${i + 1} 段`);
     sign.scale.setScalar(0.45);
@@ -1683,6 +1743,7 @@ function resetGame(resetMessage = true) {
   state.planeT = 0;
   state.tourTimer = 0;
   state.flightMeters = 0;
+  state.boardingT = 0;
   state.inCockpit = false;
   state.cabinView = false;
   state.cabinDeck = 1;
@@ -1704,6 +1765,10 @@ function resetGame(resetMessage = true) {
     const option = planeOptions[state.selectedPlaneIndex];
     replaceMainPlane(option);
     plane.position.set(...option.position);
+  } else if (state.currentPlace === "challenge" && challengePlatforms.length) {
+    const firstPlatform = challengePlatforms[0];
+    eggy.position.set(firstPlatform.x, firstPlatform.standY, firstPlatform.z);
+    plane.position.set(-8, PLANE_GROUND_Y, 30);
   } else {
     eggy.position.set(-28, 1.05, 10);
     plane.position.set(-8, PLANE_GROUND_Y, 30);
@@ -1865,7 +1930,8 @@ function jumpEggy() {
     setStatus("在飞机里不能跳，先下飞机。");
     return;
   }
-  if (Math.abs(eggy.position.y - 1.05) < 0.05) {
+  const standY = challengeGroundYAt(eggy.position.x, eggy.position.z);
+  if (Math.abs(eggy.position.y - standY) < 0.08) {
     state.jumpVelocity = state.jetpackTimer > 0 ? 13.5 : 9.5;
     setStatus(state.jetpackTimer > 0 ? "喷气背包帮你跳得更高。" : "跳起来了。");
   }
@@ -1901,6 +1967,22 @@ function boardPlane() {
     setStatus("这里不是机场，没有飞机。请先把地点选成“机场”。");
     return;
   }
+  state.mode = "boarding";
+  state.boardingT = 0;
+  state.boardingFrom.copy(eggy.position);
+  state.inCockpit = false;
+  state.cabinView = false;
+  state.autoPilot = false;
+  state.cabinMotionMode = "boarded";
+  state.cabinDeck = 1;
+  state.cabinLocal.set(0.72, cabinFloorY(), 0);
+  setPlaneInteriorVisible(false);
+  eggy.visible = true;
+  eggy.scale.setScalar(1);
+  setStatus("正在机场室内登机：泰迪熊走向登机口，检票员会检票，然后走廊桥进飞机。");
+}
+
+function finishBoarding() {
   state.mode = "boarded";
   state.cabinMotionMode = "boarded";
   state.cabinDeck = 1;
@@ -1910,7 +1992,7 @@ function boardPlane() {
   state.autoPilot = false;
   setPlaneInteriorVisible(true);
   eggy.visible = false;
-  setStatus(`已经上 ${selectedPlaneLabel()}，驾驶员就在飞机里面的驾驶舱。点“驾驶室”可以走到客舱看无人驾驶。`);
+  setStatus(`检票完成，已经通过廊桥上 ${selectedPlaneLabel()}，驾驶员就在飞机里面的驾驶舱。点“客舱走动”可以去客舱看无人驾驶。`);
 }
 
 function taxiPlane() {
@@ -1960,31 +2042,73 @@ function exitPlane() {
   setStatus("你从飞机里出来了，飞机保持无人驾驶平稳状态。");
 }
 
+function boardingPoint(t) {
+  const p0 = state.boardingFrom;
+  const p1 = new THREE.Vector3(-35.6, 1.05, 22.8);
+  const p2 = new THREE.Vector3(-28.4, 1.05, 23.6);
+  const p3 = new THREE.Vector3(plane.position.x - 4.8, 1.05, plane.position.z + 3.2);
+  if (t < 0.38) return p0.clone().lerp(p1, t / 0.38);
+  if (t < 0.68) return p1.clone().lerp(p2, (t - 0.38) / 0.3);
+  return p2.clone().lerp(p3, (t - 0.68) / 0.32);
+}
+
+function updateBoarding(dt) {
+  if (state.mode !== "boarding") return;
+  state.boardingT += dt;
+  const t = Math.min(1, state.boardingT / 4.8);
+  const previous = eggy.position.clone();
+  eggy.position.copy(boardingPoint(t));
+  const move = eggy.position.clone().sub(previous);
+  if (move.lengthSq() > 0.0001) eggy.rotation.y = Math.atan2(move.x, move.z);
+  state.walkClock += dt * 14;
+  eggy.userData.leftLeg.rotation.x = Math.sin(state.walkClock) * 0.58;
+  eggy.userData.rightLeg.rotation.x = -Math.sin(state.walkClock) * 0.58;
+  eggy.userData.leftArm.rotation.x = -Math.sin(state.walkClock) * 0.4;
+  eggy.userData.rightArm.rotation.x = Math.sin(state.walkClock) * 0.4;
+  if (t < 0.38) setStatus("机场室内：泰迪熊正在走向登机口。");
+  else if (t < 0.68) setStatus("检票员正在检票，登机牌自动交给他。");
+  else setStatus("检票完成，正在走廊桥进飞机。");
+  if (t >= 1) finishBoarding();
+}
+
+function challengeGroundYAt(x, z) {
+  if (state.currentPlace !== "challenge") return 1.05;
+  let standY = 1.05;
+  challengePlatforms.forEach((platform) => {
+    const inside = Math.abs(x - platform.x) <= platform.halfW && Math.abs(z - platform.z) <= platform.halfD;
+    if (inside) standY = Math.max(standY, platform.standY);
+  });
+  return standY;
+}
+
+function currentChallengePlatform() {
+  if (state.currentPlace !== "challenge") return null;
+  return challengePlatforms.find((platform) => (
+    Math.abs(eggy.position.x - platform.x) <= platform.halfW
+    && Math.abs(eggy.position.z - platform.z) <= platform.halfD
+    && Math.abs(eggy.position.y - platform.standY) < 0.2
+  )) || null;
+}
+
 function updateWalking(dt) {
   if (state.mode !== "walk") return;
-  if (state.currentPlace === "challenge") {
-    if (Math.hypot(eggy.position.x + 38, eggy.position.z - 22) < 4) {
-      state.jetpackTimer = 12;
-      eggy.userData.jetpack.visible = true;
-      setStatus("拿到喷气背包了！12 秒内跳得更安全。");
-    }
-    if (eggy.position.x > 31 && eggy.position.x < 58 && eggy.position.z < -18 && eggy.position.z > -28) {
-      setStatus("闯关成功！泰迪熊走过白色终点线。");
-    }
-  }
   if (state.jetpackTimer > 0) {
     state.jetpackTimer = Math.max(0, state.jetpackTimer - dt);
     eggy.userData.jetpack.visible = true;
   } else if (eggy.userData.jetpack) {
     eggy.userData.jetpack.visible = false;
   }
-  if (state.jumpVelocity !== 0 || eggy.position.y > 1.05) {
+  const groundY = challengeGroundYAt(eggy.position.x, eggy.position.z);
+  if (state.jumpVelocity !== 0 || eggy.position.y > groundY) {
     eggy.position.y += state.jumpVelocity * dt;
     state.jumpVelocity -= (state.jetpackTimer > 0 ? 12 : 22) * dt;
-    if (eggy.position.y <= 1.05) {
-      eggy.position.y = 1.05;
+    const landingY = challengeGroundYAt(eggy.position.x, eggy.position.z);
+    if (eggy.position.y <= landingY) {
+      eggy.position.y = landingY;
       state.jumpVelocity = 0;
     }
+  } else if (eggy.position.y < groundY) {
+    eggy.position.y = groundY;
   }
   const move = new THREE.Vector3();
   if (state.keys.has("KeyW") || state.keys.has("ArrowUp")) move.z -= 1;
@@ -2006,6 +2130,20 @@ function updateWalking(dt) {
   }
   eggy.position.x = THREE.MathUtils.clamp(eggy.position.x, -78, 82);
   eggy.position.z = THREE.MathUtils.clamp(eggy.position.z, -52, 52);
+  if (state.currentPlace === "challenge") {
+    const platformY = challengeGroundYAt(eggy.position.x, eggy.position.z);
+    if (eggy.position.y < platformY) eggy.position.y = platformY;
+    if (Math.hypot(eggy.position.x + 38, eggy.position.z - 22) < 4) {
+      state.jetpackTimer = 12;
+      eggy.userData.jetpack.visible = true;
+      setStatus("拿到喷气背包了！12 秒内跳得更安全。");
+    } else if (eggy.position.x > 31 && eggy.position.x < 58 && eggy.position.z < -18 && eggy.position.z > -28) {
+      setStatus("闯关成功！泰迪熊走过白色终点线。");
+    } else {
+      const platform = currentChallengePlatform();
+      if (platform && move.lengthSq() > 0.001) setStatus(`踩在${platform.name}上，不会穿过去。`);
+    }
+  }
 }
 
 function updateCabinWalking(dt) {
@@ -2156,7 +2294,7 @@ function updatePlane(dt) {
       setPlaneMotionMode("flying");
       state.planeT = 0;
       state.flightMeters = 0;
-      plane.position.y = Math.max(plane.position.y, 7.5);
+      plane.position.y = Math.max(plane.position.y, PLANE_AIR_MIN_Y);
       setStatus("飞机在空中：左下角圆杆可以控制飞机，往下拉上升，往上推下降，左右拉就左右飞。");
     }
   }
@@ -2168,7 +2306,7 @@ function updatePlane(dt) {
     plane.rotation.z = THREE.MathUtils.lerp(plane.rotation.z, -turnInput * 0.32, dt * 3);
     const forward = flightForwardVector();
     plane.position.addScaledVector(forward, dt * 22);
-    plane.position.y = THREE.MathUtils.clamp(plane.position.y + pitchInput * dt * 10, 4, 34);
+    plane.position.y = THREE.MathUtils.clamp(plane.position.y + pitchInput * dt * 10, PLANE_AIR_MIN_Y, 34);
     state.flightMeters += dt * 42000;
     const percent = Math.min(100, Math.round((state.flightMeters / 300000) * 100));
     setStatus(state.autoPilot ? `无人驾驶平稳飞行中：飞机自己保持航向。去下一个国家机场 ${percent}%` : `手动飞行中：下拉上升，上推下降，左拉左飞，右拉右飞。去下一个国家机场 ${percent}%`);
@@ -2251,7 +2389,7 @@ function updateMetro(dt) {
 }
 
 function updateCamera(dt) {
-  const target = state.currentPlace === "metro" && state.mode === "metro" && metroTrainGroup ? metroTrainGroup.position : state.mode === "walk" ? eggy.position : plane.position;
+  const target = state.currentPlace === "metro" && state.mode === "metro" && metroTrainGroup ? metroTrainGroup.position : (state.mode === "walk" || state.mode === "boarding") ? eggy.position : plane.position;
   if (state.ridingWheel) {
     const desiredWheel = new THREE.Vector3(eggy.position.x - 10, eggy.position.y + 3.2, eggy.position.z + 14);
     camera.position.lerp(desiredWheel, 1 - Math.pow(0.001, dt));
@@ -2292,6 +2430,7 @@ function animate() {
   const now = performance.now();
   const dt = Math.min(0.033, (now - (animate.last || now)) / 1000);
   animate.last = now;
+  updateBoarding(dt);
   updateWalking(dt);
   updatePlane(dt);
   updateCabinWalking(dt);
