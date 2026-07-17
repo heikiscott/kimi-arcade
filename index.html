@@ -3,113 +3,402 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>财富街区</title>
-    <link rel="stylesheet" href="styles.css" />
+    <title>我的小游戏大厅</title>
+    <link rel="stylesheet" href="arcade.css" />
   </head>
   <body>
-    <a class="home-link" href="arcade.html">游戏大厅</a>
-    <main class="game-shell">
-      <section class="board-panel" aria-label="游戏棋盘">
-        <div class="board-wrap">
-          <div class="board" id="board">
-            <div class="board-center">
-              <svg class="city-art" viewBox="0 0 420 240" role="img" aria-label="城市天际线">
-                <defs>
-                  <linearGradient id="sky" x1="0" x2="1" y1="0" y2="1">
-                    <stop offset="0" stop-color="#d7f3ff" />
-                    <stop offset="0.55" stop-color="#f9e9b5" />
-                    <stop offset="1" stop-color="#ffd0a6" />
-                  </linearGradient>
-                </defs>
-                <rect width="420" height="240" rx="18" fill="url(#sky)" />
-                <circle cx="344" cy="54" r="30" fill="#ffb45c" opacity="0.86" />
-                <path d="M0 183 C54 150 92 167 134 143 C182 116 226 133 268 107 C315 77 360 93 420 62 L420 240 L0 240 Z" fill="#86b6d2" opacity="0.48" />
-                <g fill="#2d596b">
-                  <rect x="34" y="128" width="34" height="88" rx="3" />
-                  <rect x="78" y="98" width="48" height="116" rx="4" />
-                  <rect x="138" y="116" width="36" height="100" rx="3" />
-                  <rect x="186" y="74" width="56" height="142" rx="5" />
-                  <rect x="255" y="106" width="42" height="110" rx="4" />
-                  <rect x="312" y="88" width="62" height="128" rx="5" />
-                </g>
-                <g fill="#f9f6dc" opacity="0.86">
-                  <rect x="88" y="114" width="8" height="10" rx="1" />
-                  <rect x="106" y="114" width="8" height="10" rx="1" />
-                  <rect x="88" y="142" width="8" height="10" rx="1" />
-                  <rect x="106" y="142" width="8" height="10" rx="1" />
-                  <rect x="202" y="94" width="10" height="12" rx="1" />
-                  <rect x="224" y="94" width="10" height="12" rx="1" />
-                  <rect x="202" y="126" width="10" height="12" rx="1" />
-                  <rect x="224" y="126" width="10" height="12" rx="1" />
-                  <rect x="330" y="108" width="10" height="12" rx="1" />
-                  <rect x="352" y="108" width="10" height="12" rx="1" />
-                  <rect x="330" y="141" width="10" height="12" rx="1" />
-                  <rect x="352" y="141" width="10" height="12" rx="1" />
-                </g>
-                <path d="M0 213 L420 213 L420 240 L0 240 Z" fill="#235064" />
-                <path d="M44 226 H376" stroke="#ffdc7d" stroke-width="5" stroke-linecap="round" stroke-dasharray="23 19" />
-              </svg>
-              <div class="brand-block">
-                <p class="eyebrow">CITY TYCOON</p>
-                <h1>财富街区</h1>
-                <p>买地、收租、抽卡，先让对手破产。</p>
-              </div>
-              <div class="mini-ledger" id="miniLedger"></div>
-            </div>
+    <main class="arcade-shell">
+      <section class="hero">
+        <div>
+          <p class="label">Kimi Arcade</p>
+          <h1>我的小游戏大厅</h1>
+          <p>这里放你造出来的游戏。点一个卡片就开始玩，所有游戏都可以从各自页面回到大厅。</p>
+          <a class="hero-entry" href="eggy-3d.html?v=airline-challenge-20260714">
+            点这里看登机口检票新版
+            <span>机场室内 -> 检票员 -> 廊桥 -> 上飞机</span>
+          </a>
+        </div>
+        <div class="hero-panel">
+          <span>32 个游戏 + 14 个短片</span>
+          <strong>全部可打开</strong>
+          <p>大富翁、地铁、飞机、飞行棋、跳棋、围棋五子棋、应用棋、俄罗斯方块、蛋仔派对、隐秘密室、高铁、马里奥、迷宫、猜谜、打地鼠、赛车、滑船问答、扑克游戏、画画、小托福阅读、英文单词、英文语法、打字、数学、语文、历史题、节日题、过家家、商场、游乐园、方块世界、双电梯控制、历史时间线、9/11 视频、泰坦尼克号、动车事故、地铁事故、多罗西梦境、绿野仙踪短片、重返奥兹国短片、小侦探变小短片、英雄救援短片、过山车事故短片、鬼屋尖叫短片、高塔电梯</p>
+          <div class="share-box">
+            <span>发给别人用这个</span>
+            <a href="https://heikiscott.github.io/kimi-arcade/arcade.html">https://heikiscott.github.io/kimi-arcade/arcade.html</a>
           </div>
         </div>
       </section>
 
-      <aside class="control-panel" aria-label="游戏控制台">
-        <section class="status-card">
-          <div class="turn-row">
-            <span class="turn-dot" id="turnDot"></span>
-            <div>
-              <p class="label">当前回合</p>
-              <h2 id="turnTitle">超级马里奥</h2>
-            </div>
-          </div>
-          <div class="dice-area">
-            <div class="die" id="dieOne">1</div>
-            <div class="die" id="dieTwo">1</div>
-          </div>
-          <div class="button-row">
-            <button class="primary" id="rollBtn" type="button">掷骰</button>
-            <button id="buyBtn" type="button" disabled>购买</button>
-            <button id="skipBuyBtn" type="button" disabled>不买</button>
-            <button id="endBtn" type="button" disabled>结束回合</button>
-          </div>
-        </section>
+      <section class="game-grid">
+        <a class="game-card wealth" href="index.html">
+          <span>城市买卖 · 可玩</span>
+          <strong>财富街区</strong>
+          <p>像 Monopoly 一样买城市、收租、选择买或不买。</p>
+          <em>进入游戏</em>
+        </a>
 
-        <section class="players" id="players"></section>
+        <a class="game-card metro" href="metro.html">
+          <span>轨道驾驶 · 可玩</span>
+          <strong>新加坡地铁</strong>
+          <p>环线轨道，分岔站选择左边、直走或右边。</p>
+          <em>A/S/D 驾驶</em>
+        </a>
 
-        <section class="property-card" id="propertyCard">
-          <p class="label">当前城市/国家</p>
-          <h3>起点</h3>
-          <p>经过或停留可获得 50万。</p>
-        </section>
+        <a class="game-card flight" href="flight.html">
+          <span>飞行驾驶 · 可玩</span>
+          <strong>安全降落</strong>
+          <p>避开高楼，选择樟宜、西雅图或洛杉矶机场降落。</p>
+          <em>W/A/S/D 控制</em>
+        </a>
 
-        <section class="log-card">
-          <div class="log-head">
-            <p class="label">事件记录</p>
-            <button id="resetBtn" class="icon-button" type="button" title="重新开始" aria-label="重新开始">
-              <span aria-hidden="true">↻</span>
-            </button>
-          </div>
-          <ol id="log"></ol>
-        </section>
-      </aside>
+        <a class="game-card ludo" href="ludo.html">
+          <span>棋盘游戏 · 可玩</span>
+          <strong>飞行棋</strong>
+          <p>掷骰起飞、绕圈回家，撞到别人就送回基地。</p>
+          <em>空格掷骰</em>
+        </a>
+
+        <a class="game-card checkers" href="checkers.html">
+          <span>棋盘游戏 · 可玩</span>
+          <strong>跳棋</strong>
+          <p>点棋子再点目标格；走错就是犯规判负。</p>
+          <em>点选移动</em>
+        </a>
+
+        <a class="game-card go-gomoku" href="go-gomoku.html">
+          <span>棋盘游戏 · 练习</span>
+          <strong>围棋五子棋</strong>
+          <p>围棋练吃子，五子棋和电脑对战。点棋盘就能下。</p>
+          <em>开始练棋</em>
+        </a>
+
+        <a class="game-card app-chess" href="app-chess.html">
+          <span>棋盘游戏 · 应用图标</span>
+          <strong>应用棋</strong>
+          <p>手机桌面变棋盘，蓝队和橙队应用互相移动、吃子、抢主页。</p>
+          <em>开始下棋</em>
+        </a>
+
+        <a class="game-card tetris" href="tetris.html">
+          <span>方块游戏 · 可玩</span>
+          <strong>俄罗斯方块</strong>
+          <p>移动、旋转、落下方块，排满一整行就消掉得分。</p>
+          <em>方向键 / 按钮</em>
+        </a>
+
+        <a class="game-card eggy-party" href="eggy-party.html">
+          <span>派对闯关 · 蛋仔风格</span>
+          <strong>蛋仔派对</strong>
+          <p>先到摩天轮喷泉大厅，点乐园选择地点；闯关每次五条路线，过传送门到下一条。</p>
+          <em>进入大厅</em>
+        </a>
+
+        <a class="game-card eggy-party" href="eggy-3d.html?v=airline-challenge-20260714">
+          <span>派对闯关 · 立体版</span>
+          <strong>蛋仔派对 3D</strong>
+          <p>机场室内登机口会检票，走廊桥上飞机；闯关平台能踩住，不会像幽灵穿过去。</p>
+          <em>登机新版</em>
+        </a>
+
+        <a class="game-card secret-room" href="secret-room.html">
+          <span>魔法故事 · 五间密室</span>
+          <strong>魔法学院密室</strong>
+          <p>哈利波特风格的魔法学院故事：整理房间，调查隐藏线索，念开门咒往前走。</p>
+          <em>进入密室</em>
+        </a>
+
+        <a class="game-card poker" href="poker-games.html">
+          <span>扑克牌 · 三种玩法</span>
+          <strong>扑克游戏馆</strong>
+          <p>斗地主、小猫钓鱼、五张接大牌。手机和 iPad 都能点牌玩。</p>
+          <em>开始打牌</em>
+        </a>
+
+        <a class="game-card rail" href="rail.html">
+          <span>列车驾驶 · 可玩</span>
+          <strong>高铁驾驶</strong>
+          <p>加速、刹车、停稳开门；进站太快会犯规。</p>
+          <em>A/S/D 控制</em>
+        </a>
+
+        <a class="game-card history" href="history-911.html">
+          <span>历史短片 · 安全讲解</span>
+          <strong>9/11 时间线</strong>
+          <p>包含帝国大厦意外撞机、五角大楼、宾夕法尼亚和双塔时间线。</p>
+          <em>播放短片</em>
+        </a>
+
+        <a class="game-card video-911" href="911-video.html">
+          <span>历史视频 · 单独动画</span>
+          <strong>9/11 动画视频</strong>
+          <p>单独的动画视频页面，可以直接播放和下载动画文件。</p>
+          <em>打开视频</em>
+        </a>
+
+        <a class="game-card titanic" href="titanic.html">
+          <span>历史短片 · 沉船示意</span>
+          <strong>泰坦尼克号</strong>
+          <p>右舷撞冰山、水密舱进水、船头下沉、船体断裂。</p>
+          <em>播放短片</em>
+        </a>
+
+        <a class="game-card train-history" href="train-2011.html">
+          <span>历史短片 · 铁路安全</span>
+          <strong>动车事故</strong>
+          <p>晴天山地高铁，10 节车厢高速行驶后断节坠落。</p>
+          <em>播放短片</em>
+        </a>
+
+        <a class="game-card metro-accident" href="metro-accident.html">
+          <span>安全短片 · 可控制</span>
+          <strong>闪电地铁事故</strong>
+          <p>站台门和车门开关，玩偶机器人上车，三节地铁开往克拉码头后断电翻倒。</p>
+          <em>开门 · 上车 · 翻倒</em>
+        </a>
+
+        <a class="game-card coaster-accident" href="coaster-accident.html">
+          <span>安全短片 · 过山车</span>
+          <strong>过山车事故</strong>
+          <p>过山车正常出发、高速过弯、故障报警、安全网接住和救援完成。</p>
+          <em>播放事故视频</em>
+        </a>
+
+        <a class="game-card haunted-scream" href="haunted-scream.html">
+          <span>鬼屋短片 · 尖叫视频</span>
+          <strong>鬼屋尖叫</strong>
+          <p>游客进鬼屋，幽灵、僵尸、骷髅和南瓜出现，大家尖叫又跑出来。</p>
+          <em>播放尖叫视频</em>
+        </a>
+
+        <a class="game-card dorothy" href="dorothy-tornado.html">
+          <span>童话短片 · 梦境</span>
+          <strong>多罗西龙卷风</strong>
+          <p>小女孩在房子里，龙卷风把房子卷到天上又落下来。</p>
+          <em>播放梦境</em>
+        </a>
+
+        <a class="game-card oz-movie" href="oz-movie.html">
+          <span>童话短片 · 原创电影</span>
+          <strong>绿野仙踪短片</strong>
+          <p>15 幕原创动画：高小姐、托托、龙卷风、女巫、黄砖路、翡翠城和回家。</p>
+          <em>播放电影</em>
+        </a>
+
+        <a class="game-card return-oz" href="return-oz.html">
+          <span>童话短片 · 角色对白</span>
+          <strong>重返奥兹国</strong>
+          <p>原创奇幻短片：多罗西回到翡翠城，角色会自己说话，不只是旁白。</p>
+          <em>播放对白电影</em>
+        </a>
+
+        <a class="game-card detective-shrink" href="detective-shrink.html">
+          <span>侦探短片 · 变小事件</span>
+          <strong>小侦探变小</strong>
+          <p>原创侦探短片：少年侦探追踪黑影，神秘糖豆发光后变成小侦探。</p>
+          <em>播放侦探电影</em>
+        </a>
+
+        <a class="game-card rescue-hero" href="rescue-hero.html">
+          <span>救援短片 · 安全视频</span>
+          <strong>英雄救援</strong>
+          <p>英雄穿短裤倒下，小男孩大声呼救，救援人员赶来，最后把英雄救醒。</p>
+          <em>播放救人视频</em>
+        </a>
+
+        <a class="game-card mario" href="mario.html">
+          <span>平台游戏 · 可玩</span>
+          <strong>马里奥跳跃</strong>
+          <p>红帽小人收金币、跳平台，到旗子就赢并播放复古胜利音乐。</p>
+          <em>A/D + 空格</em>
+        </a>
+
+        <a class="game-card maze" href="maze.html">
+          <span>迷宫游戏 · 可玩</span>
+          <strong>小人走迷宫</strong>
+          <p>小人在迷宫里找出口，走到星星门就赢，最后播放结尾片段。</p>
+          <em>方向键 / WASD</em>
+        </a>
+
+        <a class="game-card riddle" href="riddle.html">
+          <span>猜谜游戏 · 可玩</span>
+          <strong>甜甜猜谜</strong>
+          <p>猜盐、猜馅、猜面，答对就出现一句土味情话。</p>
+          <em>点选答案</em>
+        </a>
+
+        <a class="game-card whack" href="whack-a-mole.html">
+          <span>反应游戏 · 可玩</span>
+          <strong>打地鼠</strong>
+          <p>30 秒挑战，点冒出来的目标得分，别点到炸弹。</p>
+          <em>开始挑战</em>
+        </a>
+
+        <a class="game-card racing" href="racing.html?v=multi-cliff-20260713">
+          <span>赛车游戏 · 新版3D可玩</span>
+          <strong>3D 天空地下赛车</strong>
+          <p>有连续悬崖飞跃：左飞、右飞、上飞、下飞，每隔一段都有新平台和弯道。</p>
+          <em>多悬崖新版</em>
+        </a>
+
+        <a class="game-card boat-quiz" href="boat-quiz.html">
+          <span>滑船游戏 · 问答闯关</span>
+          <strong>滑船问答</strong>
+          <p>小船滑到问答门会停下，答对继续，答错重玩。题库有动画知识。</p>
+          <em>开始滑船</em>
+        </a>
+
+        <a class="game-card drawing" href="draw.html">
+          <span>创作工具 · 可画</span>
+          <strong>自由画画板</strong>
+          <p>选颜色、调画笔、用橡皮擦、撤销，还能把画下载下来。</p>
+          <em>开始画画</em>
+        </a>
+
+        <a class="game-card english" href="english-words.html">
+          <span>学习游戏 · 英文</span>
+          <strong>英文单词</strong>
+          <p>看中文选英文，练苹果、飞机、地铁、城市这些常用单词。</p>
+          <em>开始背单词</em>
+        </a>
+
+        <a class="game-card english" href="toefl-reading-practice.html">
+          <span>学习游戏 · 小托福</span>
+          <strong>小托福阅读模拟</strong>
+          <p>用《阅读中级 1-47》做模拟练习：看原书页、遮答案、计时、自动判分、错题重做。</p>
+          <em>开始阅读</em>
+        </a>
+
+        <a class="game-card grammar" href="english-grammar.html">
+          <span>学习游戏 · 语法</span>
+          <strong>英文语法</strong>
+          <p>练 am/is/are、时态、冠词、介词、代词和比较级。</p>
+          <em>开始做语法</em>
+        </a>
+
+        <a class="game-card typing" href="typing-practice.html">
+          <span>学习游戏 · 打字</span>
+          <strong>打字练习</strong>
+          <p>照着英文句子打，打完全对就自动换下一句。</p>
+          <em>开始打字</em>
+        </a>
+
+        <a class="game-card math" href="math-challenge.html">
+          <span>学习游戏 · 数学</span>
+          <strong>数学高斯挑战</strong>
+          <p>工程问题、奥数题、高斯求和、分数题、几何题一起练。</p>
+          <em>开始做题</em>
+        </a>
+
+        <a class="game-card chinese" href="chinese-grade4.html">
+          <span>学习游戏 · 语文</span>
+          <strong>四年级语文</strong>
+          <p>原创练习题：成语、修辞、标点、阅读概括和作文方法。</p>
+          <em>开始练语文</em>
+        </a>
+
+        <a class="game-card history-quiz" href="history-quiz.html">
+          <span>学习游戏 · 历史</span>
+          <strong>历史题</strong>
+          <p>丝绸之路、特洛伊、荷马史诗、埃及法老、胡夫金字塔和狮身人面像。</p>
+          <em>开始答历史</em>
+        </a>
+
+        <a class="game-card festival-quiz" href="festival-quiz.html">
+          <span>学习游戏 · 节日</span>
+          <strong>节日题</strong>
+          <p>中国农历节日和外国节日日期分开练。</p>
+          <em>开始答节日</em>
+        </a>
+
+        <a class="game-card home-play" href="home-play.html">
+          <span>生活游戏 · 可遥控</span>
+          <strong>家里过家家</strong>
+          <p>四个小娃娃在家里走路，拿东西，看电视，打游戏，出门打球。</p>
+          <em>1/2/3/4 选娃娃</em>
+        </a>
+
+        <a class="game-card mall" href="mall.html">
+          <span>生活游戏 · 买东西</span>
+          <strong>商场买东西</strong>
+          <p>六层大商场：吃饭、地铁站、商店街、无人机、游乐园、免费冰场。</p>
+          <em>1-6 换楼层 · 坐地铁</em>
+        </a>
+
+        <a class="game-card amusement" href="amusement.html">
+          <span>游乐园 · 可玩项目</span>
+          <strong>超级游乐园</strong>
+          <p>过山车、海盗船、鬼屋、旋转木马、餐厅，还有多个主题园区。</p>
+          <em>选择项目开始玩</em>
+        </a>
+
+        <a class="game-card block-world" href="block-world.html">
+          <span>方块游戏 · 可建造</span>
+          <strong>方块世界</strong>
+          <p>免费放方块盖房子，去乡村、高楼城市、地铁站、机场和高铁站。</p>
+          <em>点格子盖东西</em>
+        </a>
+
+        <a class="game-card elevator-tower" href="elevator-control.html">
+          <span>安全短片 · 高塔示意</span>
+          <strong>高塔电梯</strong>
+          <p>哈利法塔风格高塔，空电梯钢缆断开后往下掉的安全示意。</p>
+          <em>播放短片</em>
+        </a>
+
+        <a class="game-card two-elevators" href="two-elevators.html">
+          <span>电梯游戏 · 双电梯控制</span>
+          <strong>双电梯控制</strong>
+          <p>一号和二号电梯分开控制，有楼层、开门关门、上人下人和载重限制。</p>
+          <em>开始控制</em>
+        </a>
+
+        <a class="game-card elevator-old" href="elevator-tower.html">
+          <span>安全短片 · 电梯控制</span>
+          <strong>高塔电梯短片</strong>
+          <p>另一个高塔电梯控制台页面，有上楼、下楼、开门、关门和断绳坠落按钮。</p>
+          <em>打开控制台</em>
+        </a>
+      </section>
+
+      <section class="quick-section" aria-label="撞击事件分开入口">
+        <div>
+          <p class="label">Impact Points</p>
+          <h2>撞击地点分开看</h2>
+          <p>每个点单独进入：地点、撞击示意、后面反应都分开，不挤在一起。</p>
+        </div>
+        <div class="quick-grid">
+          <a class="impact-link" href="history-911.html#empire">
+            <span>1945 · 纽约</span>
+            <strong>帝国大厦意外撞机</strong>
+            <em>看这个点</em>
+          </a>
+          <a class="impact-link" href="history-911.html#north">
+            <span>8:46 AM · 纽约</span>
+            <strong>北塔撞击分析</strong>
+            <em>看第一处</em>
+          </a>
+          <a class="impact-link" href="history-911.html#south">
+            <span>9:03 AM · 纽约</span>
+            <strong>南塔撞击分析</strong>
+            <em>看第二处</em>
+          </a>
+          <a class="impact-link" href="history-911.html#pentagon">
+            <span>9:37 AM · 华盛顿附近</span>
+            <strong>五角大楼地点</strong>
+            <em>看这个点</em>
+          </a>
+          <a class="impact-link" href="history-911.html#field">
+            <span>10:03 AM · 宾州</span>
+            <strong>宾夕法尼亚田野</strong>
+            <em>看这个点</em>
+          </a>
+          <a class="impact-link" href="history-911.html#after">
+            <span>之后 · 反应</span>
+            <strong>倒塌与救援反应</strong>
+            <em>看后面</em>
+          </a>
+        </div>
+      </section>
     </main>
-
-    <div class="modal" id="cardModal" hidden>
-      <div class="modal-panel">
-        <p class="label" id="modalLabel">机会卡</p>
-        <h2 id="modalTitle">好运降临</h2>
-        <p id="modalText"></p>
-        <button class="primary" id="modalClose" type="button">知道了</button>
-      </div>
-    </div>
-
-    <script src="game.js"></script>
   </body>
 </html>

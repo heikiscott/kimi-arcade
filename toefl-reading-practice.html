@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>小托福阅读中级模拟练习</title>
+    <link rel="stylesheet" href="toefl-reading-practice.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="topbar">
+        <a class="back-link" href="arcade.html">游戏大厅</a>
+        <div>
+          <p class="eyebrow">Master TOEFL Junior Intermediate 1</p>
+          <h1>小托福阅读中级模拟练习</h1>
+        </div>
+        <div class="timer" id="timer">30:00</div>
+      </header>
+
+      <section class="practice-layout">
+        <article class="page-viewer">
+          <div class="viewer-toolbar">
+            <button id="prevPage" type="button">上一页</button>
+            <label>
+              页码
+              <input id="pageInput" type="number" min="1" max="47" value="21" />
+            </label>
+            <button id="nextPage" type="button">下一页</button>
+            <button id="textMode" type="button">文本阅读</button>
+            <button id="imageMode" type="button">原图模式</button>
+            <button id="maskToggle" type="button">遮住答案区</button>
+            <button id="zoomIn" type="button">放大</button>
+            <button id="zoomOut" type="button">缩小</button>
+          </div>
+          <div class="source-note" id="sourceNote">正在看第 21 页：Unit 1 Main Idea Practice Test</div>
+          <div class="text-stage" id="textStage">
+            <h2 id="textTitle">文本阅读</h2>
+            <div id="textContent"></div>
+            <div class="word-pop" id="wordPop">
+              <strong id="wordText">word</strong>
+              <span id="wordMeaning">中文意思</span>
+              <button id="collectClickedWord" type="button">收进单词本</button>
+            </div>
+          </div>
+          <div class="book-stage" id="bookStage">
+            <img id="pageImage" alt="TOEFL Junior reading page" />
+            <div class="answer-mask" id="answerMask">答案区已遮住</div>
+          </div>
+        </article>
+
+        <aside class="quiz-panel">
+          <div class="mode-row">
+            <button id="startExam" type="button">开始模拟</button>
+            <button id="wrongOnly" type="button">错题重做</button>
+            <button id="resetExam" type="button">重来</button>
+          </div>
+
+          <section class="score-card">
+            <div>
+              <span>进度</span>
+              <strong id="progressText">1 / 12</strong>
+            </div>
+            <div>
+              <span>得分</span>
+              <strong id="scoreText">0</strong>
+            </div>
+            <div>
+              <span>错题</span>
+              <strong id="wrongText">0</strong>
+            </div>
+          </section>
+
+          <section class="question-card">
+            <p class="question-type" id="questionType">Main Idea</p>
+            <h2 id="questionText">题目加载中...</h2>
+            <div class="choices" id="choices"></div>
+            <div class="action-row">
+              <button id="submitAnswer" type="button">提交答案</button>
+              <button id="nextQuestion" type="button">下一题</button>
+            </div>
+            <p class="feedback" id="feedback">先看左边原书页面，再在这里选答案。</p>
+          </section>
+
+          <section class="answer-sheet">
+            <h2>答题卡</h2>
+            <div id="answerSheet"></div>
+          </section>
+
+          <section class="study-lab">
+            <h2>逐句复述翻译</h2>
+            <p class="mini-help">先读英文，自己说一遍意思，再点中文。不会的内容收进练习本。</p>
+            <div class="sentence-card">
+              <p class="sentence-meta" id="sentenceMeta">Page 21</p>
+              <p class="sentence-en" id="sentenceEn"></p>
+              <p class="sentence-cn hidden" id="sentenceCn"></p>
+              <textarea id="retellInput" rows="4" placeholder="在这里写中文意思，或者用自己的英文复述。"></textarea>
+              <div class="voice-box">
+                <div class="voice-head">
+                  <strong>录音翻译</strong>
+                  <span id="voiceStatus">未开始</span>
+                </div>
+                <div class="action-row voice-actions">
+                  <button id="startRecord" type="button">开始录音翻译</button>
+                  <button id="stopRecord" type="button">停止录音</button>
+                  <button id="checkVoiceText" type="button">检查文字翻译</button>
+                </div>
+                <p class="voice-transcript" id="voiceTranscript">录音后，这里会出现你说出的中文翻译。</p>
+                <div class="voice-score" id="voiceScore">正确率 --</div>
+                <p class="feedback" id="voiceFeedback">录音会自动检查中文意思；不支持录音时，也可以直接打字后点“检查复述”。</p>
+              </div>
+              <div class="action-row">
+                <button id="prevSentence" type="button">上一句</button>
+                <button id="showTranslation" type="button">看翻译</button>
+                <button id="checkRetell" type="button">检查复述</button>
+                <button id="nextSentence" type="button">下一句</button>
+              </div>
+              <p class="feedback" id="retellFeedback">复述时抓住关键词就行，不用每个词都一样。</p>
+              <div class="collect-row">
+                <button id="collectWord" type="button">收单词</button>
+                <button id="collectPhrase" type="button">收词组</button>
+                <button id="collectSentence" type="button">收句子</button>
+              </div>
+            </div>
+          </section>
+
+          <section class="weak-book">
+            <h2>不会/错误练习本</h2>
+            <div class="custom-add">
+              <select id="customType">
+                <option value="word">单词</option>
+                <option value="phrase">词组</option>
+                <option value="sentence">句子</option>
+              </select>
+              <input id="customText" type="text" placeholder="输入不会的内容" />
+              <button id="addCustom" type="button">加入</button>
+            </div>
+            <div class="weak-tabs">
+              <button class="weak-tab active" data-weak-tab="word" type="button">单词</button>
+              <button class="weak-tab" data-weak-tab="phrase" type="button">词组</button>
+              <button class="weak-tab" data-weak-tab="sentence" type="button">句子</button>
+            </div>
+            <div id="weakList" class="weak-list"></div>
+            <div class="drill-box">
+              <p id="drillPrompt">点一个不会的内容开始练。</p>
+              <input id="drillInput" type="text" placeholder="默写 / 翻译 / 造句" />
+              <div class="action-row">
+                <button id="checkDrill" type="button">检查练习</button>
+                <button id="masterItem" type="button">我会了</button>
+              </div>
+              <p class="feedback" id="drillFeedback"></p>
+            </div>
+          </section>
+        </aside>
+      </section>
+    </main>
+
+    <script src="toefl-reading-practice.js"></script>
+  </body>
+</html>

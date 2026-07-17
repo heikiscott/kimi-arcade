@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>绿野仙踪 — 黄砖路</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+  body {
+    font-family: -apple-system, "PingFang SC", sans-serif;
+    background: linear-gradient(180deg, #87ceeb 0%, #b8e0d2 55%, #d4b06a 55%, #c19553 100%);
+    min-height: 100vh;
+    overflow: hidden;
+  }
+  .home-link {
+    position: fixed; top: 14px; left: 14px; z-index: 20;
+    padding: 8px 14px; border-radius: 8px;
+    background: rgba(255,255,255,0.92); color: #2a4a2f;
+    font-weight: 900; text-decoration: none;
+    box-shadow: 0 6px 14px rgba(0,0,0,0.2);
+  }
+  .hud {
+    position: fixed; top: 14px; left: 50%; transform: translateX(-50%);
+    z-index: 20; display: flex; gap: 16px;
+    padding: 10px 22px; border-radius: 12px;
+    background: rgba(46, 71, 50, 0.88); color: #fff;
+    font-weight: 800; font-size: 16px;
+  }
+  .hud span { color: #ffd54f; }
+  #stage { position: relative; width: 100vw; height: 100vh; overflow: hidden; }
+  .cloud {
+    position: absolute; top: 8%;
+    width: 90px; height: 28px;
+    background: #fff; border-radius: 999px;
+    opacity: 0.85;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+  }
+  .cloud::before, .cloud::after {
+    content: ""; position: absolute; background: #fff; border-radius: 50%;
+  }
+  .cloud::before { width: 36px; height: 36px; top: -14px; left: 14px; }
+  .cloud::after { width: 28px; height: 28px; top: -10px; left: 44px; }
+  .road {
+    position: absolute;
+    bottom: 0; left: 0;
+    width: 200%; height: 38%;
+    background:
+      repeating-linear-gradient(90deg,
+        #f9d976 0 90px, #f5c54a 90px 92px),
+      repeating-linear-gradient(0deg,
+        #f9d976 0 60px, #e8b941 60px 62px);
+    background-blend-mode: multiply;
+    border-top: 5px solid #8b6a2f;
+  }
+  #dorothy {
+    position: absolute;
+    bottom: 16%; left: 18%;
+    width: 70px; height: 100px;
+    z-index: 10;
+    transition: bottom 0.18s cubic-bezier(0.3,1.6,0.5,1);
+  }
+  #dorothy.jump { bottom: 30%; }
+  .item {
+    position: absolute; bottom: 18%;
+    width: 70px; height: 90px;
+    z-index: 8;
+  }
+  .item.witch { width: 80px; height: 100px; bottom: 22%; }
+  .item.poppy { width: 40px; height: 40px; bottom: 18%; }
+  .emerald-city {
+    position: absolute;
+    bottom: 22%; right: -260px;
+    width: 240px; height: 220px;
+    z-index: 5;
+    transition: right 1.2s ease-out;
+  }
+  .emerald-city.arrived { right: 12%; }
+  .game-over {
+    position: fixed; top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    background: linear-gradient(135deg, #2a4a2f, #1a3320);
+    color: #fff;
+    padding: 30px 50px;
+    border-radius: 16px;
+    text-align: center;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+    display: none;
+    z-index: 100;
+    min-width: 320px;
+  }
+  .game-over.show { display: block; }
+  .game-over h2 { color: #ffd54f; margin-bottom: 12px; font-size: 28px; }
+  .game-over p { font-size: 17px; margin: 8px 0; }
+  .game-over button {
+    margin-top: 16px;
+    padding: 10px 28px; font-size: 16px; font-weight: 800;
+    background: #ffd54f; color: #2a4a2f; border: none;
+    border-radius: 8px; cursor: pointer;
+  }
+  .start-overlay {
+    position: fixed; inset: 0;
+    background: rgba(46, 71, 50, 0.94);
+    color: #fff;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    z-index: 200; gap: 14px;
+    text-align: center; padding: 20px;
+  }
+  .start-overlay h1 { font-size: 38px; color: #ffd54f; text-shadow: 2px 2px 0 #1a3320; }
+  .start-overlay p { font-size: 16px; max-width: 420px; line-height: 1.6; }
+  .start-overlay button {
+    margin-top: 12px;
+    padding: 14px 36px; font-size: 18px; font-weight: 800;
+    background: #ffd54f; color: #2a4a2f; border: none;
+    border-radius: 10px; cursor: pointer;
+    box-shadow: 0 6px 0 #c8a73f;
+  }
+  .start-overlay .key {
+    display: inline-block; padding: 2px 10px;
+    background: #ffd54f; color: #2a4a2f; border-radius: 5px;
+    font-weight: 900; margin: 0 3px;
+  }
+  .companions {
+    position: fixed; bottom: 14px; left: 50%;
+    transform: translateX(-50%);
+    z-index: 20;
+    display: flex; gap: 8px;
+    background: rgba(255,255,255,0.85);
+    padding: 8px 14px; border-radius: 999px;
+  }
+  .companion-slot {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    background: rgba(0,0,0,0.1);
+    display: grid; place-items: center;
+    font-size: 22px;
+    opacity: 0.3;
+  }
+  .companion-slot.got { opacity: 1; background: #ffd54f; }
+</style>
+</head>
+<body>
+<a class="home-link" href="arcade.html">游戏大厅</a>
+<div class="hud">
+  <div>距离: <span id="distance">0</span>m</div>
+  <div>翡翠: <span id="emeralds">0</span></div>
+  <div>生命: <span id="lives">3</span></div>
+</div>
+<div id="stage">
+  <div class="cloud" style="left: 10%; animation: drift 30s linear infinite;"></div>
+  <div class="cloud" style="left: 40%; top: 14%; animation: drift 45s linear infinite;"></div>
+  <div class="cloud" style="left: 70%; top: 6%; animation: drift 38s linear infinite;"></div>
+  <div class="road" id="road"></div>
+  <div id="dorothy">
+    <svg viewBox="0 0 70 100" xmlns="http://www.w3.org/2000/svg">
+      <!-- hair -->
+      <ellipse cx="35" cy="22" rx="18" ry="14" fill="#5b3a1e"/>
+      <!-- head -->
+      <ellipse cx="35" cy="28" rx="13" ry="14" fill="#f5c28f" stroke="#2a1a0e" stroke-width="1.2"/>
+      <!-- pigtails -->
+      <ellipse cx="18" cy="34" rx="6" ry="10" fill="#5b3a1e" stroke="#2a1a0e" stroke-width="1"/>
+      <ellipse cx="52" cy="34" rx="6" ry="10" fill="#5b3a1e" stroke="#2a1a0e" stroke-width="1"/>
+      <!-- bows -->
+      <circle cx="18" cy="40" r="3" fill="#d92b2b"/>
+      <circle cx="52" cy="40" r="3" fill="#d92b2b"/>
+      <!-- eyes -->
+      <circle cx="30" cy="28" r="1.6" fill="#1f3a8a"/>
+      <circle cx="40" cy="28" r="1.6" fill="#1f3a8a"/>
+      <!-- mouth -->
+      <path d="M 31 34 Q 35 36 39 34" stroke="#2a1a0e" stroke-width="1" fill="none"/>
+      <!-- bangs -->
+      <path d="M 22 18 Q 35 14 48 18 L 48 24 Q 35 22 22 24 Z" fill="#5b3a1e"/>
+      <!-- dress (gingham blue/white) -->
+      <path d="M 22 42 L 18 78 L 52 78 L 48 42 Z" fill="#5a8cd6" stroke="#2a1a0e" stroke-width="1.2"/>
+      <path d="M 25 50 L 45 50 M 25 60 L 45 60 M 25 70 L 45 70" stroke="#fff" stroke-width="1.5" opacity="0.6"/>
+      <path d="M 32 42 L 32 78 M 38 42 L 38 78" stroke="#fff" stroke-width="1.5" opacity="0.6"/>
+      <!-- apron -->
+      <path d="M 28 42 L 26 70 L 44 70 L 42 42 Z" fill="#fff" opacity="0.85"/>
+      <!-- arms -->
+      <rect x="14" y="44" width="5" height="20" rx="2" fill="#f5c28f" stroke="#2a1a0e" stroke-width="1"/>
+      <rect x="51" y="44" width="5" height="20" rx="2" fill="#f5c28f" stroke="#2a1a0e" stroke-width="1"/>
+      <!-- ruby slippers -->
+      <ellipse cx="26" cy="92" rx="8" ry="5" fill="#d92b2b" stroke="#7a1414" stroke-width="1.2"/>
+      <ellipse cx="44" cy="92" rx="8" ry="5" fill="#d92b2b" stroke="#7a1414" stroke-width="1.2"/>
+      <circle cx="26" cy="90" r="1.5" fill="#fff" opacity="0.8"/>
+      <circle cx="44" cy="90" r="1.5" fill="#fff" opacity="0.8"/>
+      <!-- basket (Toto) -->
+      <rect x="50" y="58" width="14" height="10" rx="2" fill="#a06b2f" stroke="#5b3a1e" stroke-width="1"/>
+      <circle cx="57" cy="60" r="3" fill="#1a1a1a"/>
+      <circle cx="58" cy="59" r="0.5" fill="#fff"/>
+    </svg>
+  </div>
+  <div class="emerald-city" id="emeraldCity">
+    <svg viewBox="0 0 240 220" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="emerald" x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0" stop-color="#7ddb8f"/>
+          <stop offset="1" stop-color="#2a8a4a"/>
+        </linearGradient>
+      </defs>
+      <!-- towers -->
+      <rect x="20" y="80" width="40" height="120" fill="url(#emerald)" stroke="#1a5530" stroke-width="2"/>
+      <polygon points="20,80 40,40 60,80" fill="#5fc77a" stroke="#1a5530" stroke-width="2"/>
+      <rect x="80" y="50" width="60" height="150" fill="url(#emerald)" stroke="#1a5530" stroke-width="2"/>
+      <polygon points="80,50 110,10 140,50" fill="#5fc77a" stroke="#1a5530" stroke-width="2"/>
+      <rect x="160" y="80" width="50" height="120" fill="url(#emerald)" stroke="#1a5530" stroke-width="2"/>
+      <polygon points="160,80 185,40 210,80" fill="#5fc77a" stroke="#1a5530" stroke-width="2"/>
+      <!-- windows -->
+      <rect x="30" y="100" width="8" height="12" fill="#ffd54f"/>
+      <rect x="42" y="100" width="8" height="12" fill="#ffd54f"/>
+      <rect x="30" y="130" width="8" height="12" fill="#ffd54f"/>
+      <rect x="42" y="130" width="8" height="12" fill="#ffd54f"/>
+      <rect x="95" y="80" width="10" height="14" fill="#ffd54f"/>
+      <rect x="115" y="80" width="10" height="14" fill="#ffd54f"/>
+      <rect x="95" y="110" width="10" height="14" fill="#ffd54f"/>
+      <rect x="115" y="110" width="10" height="14" fill="#ffd54f"/>
+      <rect x="170" y="100" width="10" height="14" fill="#ffd54f"/>
+      <rect x="190" y="100" width="10" height="14" fill="#ffd54f"/>
+      <!-- flag -->
+      <line x1="110" y1="10" x2="110" y2="-15" stroke="#1a5530" stroke-width="2"/>
+      <polygon points="110,-15 130,-10 110,-5" fill="#ffd54f"/>
+    </svg>
+  </div>
+</div>
+<div class="companions">
+  <div class="companion-slot" id="slot-scarecrow" title="稻草人">🌾</div>
+  <div class="companion-slot" id="slot-tinman" title="铁皮人">⚙️</div>
+  <div class="companion-slot" id="slot-lion" title="胆小狮">🦁</div>
+</div>
+
+<div class="start-overlay" id="startOverlay">
+  <h1>🌪️ 绿野仙踪 🌈</h1>
+  <p>多萝西被龙卷风吹到了奥兹国。沿着黄砖路走到翡翠城,一路上收集稻草人、铁皮人、胆小狮,小心西方坏女巫和罂粟花!</p>
+  <p>
+    <span class="key">空格 / ↑</span> 跳跃 &nbsp;
+    <span class="key">→</span> 加速 &nbsp;
+    <span class="key">←</span> 减速
+  </p>
+  <button id="startBtn">出发!</button>
+</div>
+
+<div class="game-over" id="gameOver">
+  <h2 id="gameOverTitle">🌈 到达翡翠城!</h2>
+  <p>走过 <span id="finalDistance">0</span> 米</p>
+  <p>收集 <span id="finalEmeralds">0</span> 颗翡翠</p>
+  <p id="finalComment"></p>
+  <button onclick="location.reload()">再试一次</button>
+</div>
+
+<style>
+  @keyframes drift {
+    from { transform: translateX(0); }
+    to { transform: translateX(120vw); }
+  }
+</style>
+
+<script>
+const ITEMS = {
+  scarecrow: { emoji: "🌾", points: 50, type: "companion", label: "稻草人 +智慧" },
+  tinman:    { emoji: "⚙️", points: 50, type: "companion", label: "铁皮人 +心" },
+  lion:      { emoji: "🦁", points: 50, type: "companion", label: "胆小狮 +勇气" },
+  emerald:   { emoji: "💚", points: 10, type: "coin", label: "+10" },
+  apple:     { emoji: "🍎", points: 5, type: "coin", label: "+5" },
+  witch:     { emoji: "🧙‍♀️", points: -50, type: "hazard", label: "坏女巫!" },
+  poppy:     { emoji: "🌺", points: -1, type: "hazard", label: "睡着了..." },
+  monkey:    { emoji: "🐒", points: -20, type: "hazard", label: "飞猴!" }
+};
+
+const stage = document.getElementById('stage');
+const road = document.getElementById('road');
+const dorothy = document.getElementById('dorothy');
+const emeraldCity = document.getElementById('emeraldCity');
+const distEl = document.getElementById('distance');
+const emeraldEl = document.getElementById('emeralds');
+const livesEl = document.getElementById('lives');
+const gameOverEl = document.getElementById('gameOver');
+const startOverlay = document.getElementById('startOverlay');
+
+let distance = 0;
+let emeralds = 0;
+let lives = 3;
+let speed = 4;
+let baseSpeed = 4;
+let jumping = false;
+let playing = false;
+let roadOffset = 0;
+let items = [];
+let spawnTimer = 0;
+let companionsGot = { scarecrow: false, tinman: false, lion: false };
+const WIN_DISTANCE = 1000;
+
+document.getElementById('startBtn').addEventListener('click', () => {
+  startOverlay.style.display = 'none';
+  playing = true;
+  requestAnimationFrame(loop);
+});
+
+document.addEventListener('keydown', (e) => {
+  if (!playing) return;
+  if ((e.code === 'Space' || e.code === 'ArrowUp') && !jumping) {
+    jumping = true;
+    dorothy.classList.add('jump');
+    setTimeout(() => {
+      dorothy.classList.remove('jump');
+      jumping = false;
+    }, 500);
+  }
+  if (e.code === 'ArrowRight') speed = baseSpeed * 2;
+  if (e.code === 'ArrowLeft') speed = baseSpeed * 0.4;
+});
+document.addEventListener('keyup', (e) => {
+  if (e.code === 'ArrowRight' || e.code === 'ArrowLeft') speed = baseSpeed;
+});
+
+function spawnItem() {
+  const rand = Math.random();
+  let key;
+  if (rand < 0.04 && !companionsGot.scarecrow && distance > 100) key = 'scarecrow';
+  else if (rand < 0.08 && !companionsGot.tinman && distance > 300) key = 'tinman';
+  else if (rand < 0.12 && !companionsGot.lion && distance > 500) key = 'lion';
+  else if (rand < 0.25) key = 'witch';
+  else if (rand < 0.40) key = 'poppy';
+  else if (rand < 0.50) key = 'monkey';
+  else if (rand < 0.80) key = 'emerald';
+  else key = 'apple';
+
+  const info = ITEMS[key];
+  const el = document.createElement('div');
+  el.className = `item ${key}`;
+  el.style.right = '-80px';
+  el.style.fontSize = key === 'witch' ? '64px' : key === 'poppy' ? '34px' : '46px';
+  el.style.display = 'grid';
+  el.style.placeItems = 'center';
+  el.textContent = info.emoji;
+  stage.appendChild(el);
+  items.push({ el, key, x: window.innerWidth + 80, info });
+}
+
+function showFloatText(x, y, text, color) {
+  const t = document.createElement('div');
+  t.textContent = text;
+  t.style.cssText = `position:absolute;left:${x}px;top:${y}px;color:${color};font-weight:900;font-size:22px;text-shadow:2px 2px 4px #000;pointer-events:none;z-index:50;animation:floatUp 1s ease-out forwards;`;
+  stage.appendChild(t);
+  setTimeout(() => t.remove(), 1000);
+}
+
+function checkCollision(item) {
+  const dRect = dorothy.getBoundingClientRect();
+  const iRect = item.el.getBoundingClientRect();
+  return !(dRect.right < iRect.left + 10 ||
+           dRect.left > iRect.right - 10 ||
+           dRect.bottom < iRect.top + 10 ||
+           dRect.top > iRect.bottom - 10);
+}
+
+function handleHit(item) {
+  const rect = item.el.getBoundingClientRect();
+  const { key, info } = item;
+
+  if (info.type === 'companion') {
+    companionsGot[key] = true;
+    document.getElementById(`slot-${key}`).classList.add('got');
+    emeralds += info.points;
+    showFloatText(rect.left, rect.top, info.label, '#ffd54f');
+  } else if (info.type === 'coin') {
+    emeralds += info.points;
+    showFloatText(rect.left, rect.top, info.label, '#7ddb8f');
+  } else if (info.type === 'hazard') {
+    if (jumping && key !== 'witch') {
+      showFloatText(rect.left, rect.top, '躲开了!', '#7ddb8f');
+    } else {
+      lives -= 1;
+      flash();
+      showFloatText(rect.left, rect.top, info.label, '#ff5555');
+      if (lives <= 0) return endGame(false);
+    }
+  }
+
+  item.el.remove();
+  items = items.filter(i => i !== item);
+  updateHUD();
+}
+
+function flash() {
+  document.body.style.transition = 'background 0.1s';
+  const orig = document.body.style.background;
+  document.body.style.background = '#ff5555';
+  setTimeout(() => { document.body.style.background = ''; }, 150);
+}
+
+function updateHUD() {
+  distEl.textContent = Math.floor(distance);
+  emeraldEl.textContent = emeralds;
+  livesEl.textContent = '❤'.repeat(Math.max(0, lives));
+}
+
+function endGame(won) {
+  playing = false;
+  document.getElementById('gameOverTitle').textContent = won ? '🌈 到达翡翠城!' : '💔 倒在了黄砖路上...';
+  document.getElementById('finalDistance').textContent = Math.floor(distance);
+  document.getElementById('finalEmeralds').textContent = emeralds;
+  const got = Object.values(companionsGot).filter(Boolean).length;
+  let comment = won
+    ? (got === 3 ? '齐人到达,大圆满!奥兹巫师为你鼓掌 👏' : `带了 ${got}/3 个伙伴,还差一点点完美`)
+    : '再来一次,这次小心罂粟花!';
+  document.getElementById('finalComment').textContent = comment;
+  gameOverEl.classList.add('show');
+  if (won) emeraldCity.classList.add('arrived');
+}
+
+let last = performance.now();
+function loop(now) {
+  if (!playing) return;
+  const dt = Math.min(50, now - last);
+  last = now;
+
+  distance += speed * dt / 60;
+  roadOffset = (roadOffset + speed * dt / 16) % 92;
+  road.style.transform = `translateX(${-roadOffset}px)`;
+
+  spawnTimer -= dt;
+  if (spawnTimer <= 0) {
+    spawnItem();
+    spawnTimer = 600 + Math.random() * 700;
+  }
+
+  items.forEach(item => {
+    item.x -= speed * dt / 16;
+    item.el.style.right = `${window.innerWidth - item.x}px`;
+    if (item.x < -100) {
+      item.el.remove();
+      items = items.filter(i => i !== item);
+    } else if (checkCollision(item)) {
+      handleHit(item);
+    }
+  });
+
+  updateHUD();
+
+  if (distance >= WIN_DISTANCE) {
+    setTimeout(() => endGame(true), 800);
+    playing = false;
+    return;
+  }
+
+  requestAnimationFrame(loop);
+}
+</script>
+
+<style>
+  @keyframes floatUp {
+    0% { transform: translate(0, 0); opacity: 1; }
+    100% { transform: translate(0, -50px); opacity: 0; }
+  }
+</style>
+
+</body>
+</html>

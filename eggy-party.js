@@ -30,6 +30,8 @@ const locationPicker = document.querySelector("#locationPicker");
 const categoryRow = document.querySelector("#categoryRow");
 const locationList = document.querySelector("#locationList");
 const closePickerBtn = document.querySelector("#closePickerBtn");
+const chooseMusicBtn = document.querySelector("#chooseMusicBtn");
+const localMusicInput = document.querySelector("#localMusicInput");
 
 const W = canvas.width;
 const H = canvas.height;
@@ -148,7 +150,10 @@ const egg = {
   face: 1,
   jetpackUntil: 0,
   aimPower: null,
-  usedPowerups: new Set()
+  usedPowerups: new Set(),
+  supportBlocks: [],
+  blockCharges: 10,
+  lastBlockAt: 0
 };
 
 const vehicle = {
@@ -221,6 +226,11 @@ let elapsed = 0;
 let starCount = 0;
 let laneStars = [];
 let audioContext = null;
+let courseMusicTimer = null;
+let courseMusicStep = 0;
+let courseMusicAudio = null;
+let localMusicUrl = "";
+let localMusicName = "";
 let joystickX = 0;
 let joystickY = 0;
 let joystickPointerId = null;
@@ -373,11 +383,11 @@ const breakableBuildings = [
 ];
 
 const laneThemes = [
-  { name: "彩虹平台", sky: "#9edcff", accent: "#ffd15f" },
-  { name: "水花跳台", sky: "#b9f1ff", accent: "#32a7e2" },
-  { name: "机场传送", sky: "#d9f5ff", accent: "#424b57" },
-  { name: "地铁弯道", sky: "#dce5eb", accent: "#f06aa3" },
-  { name: "夜晚躲避", sky: "#22364f", accent: "#8f5fd9" }
+  { name: "云上彩虹桥", sky: "#90d8ff", accent: "#ffd15f" },
+  { name: "高空水雾桥", sky: "#a8efff", accent: "#32a7e2" },
+  { name: "机场云风道", sky: "#cdeeff", accent: "#424b57" },
+  { name: "云中弯轨", sky: "#cbdfff", accent: "#f06aa3" },
+  { name: "夜空悬浮路", sky: "#22364f", accent: "#8f5fd9" }
 ];
 
 function getAudio() {
@@ -413,6 +423,73 @@ function portalSound() {
 
 function winSound() {
   [523, 659, 784, 1046, 1319].forEach((note, i) => tone(note, i * 0.13, 0.16, 0.026, "triangle"));
+}
+
+function stopCourseMusic() {
+  if (courseMusicTimer) window.clearTimeout(courseMusicTimer);
+  courseMusicTimer = null;
+  if (courseMusicAudio) {
+    courseMusicAudio.pause();
+    courseMusicAudio.currentTime = 0;
+  }
+}
+
+function playCourseMusic() {
+  stopCourseMusic();
+  if (localMusicUrl) {
+    courseMusicAudio = new Audio(localMusicUrl);
+    courseMusicAudio.loop = true;
+    courseMusicAudio.volume = 0.72;
+    courseMusicAudio.play().then(() => {
+      statusText.textContent = `正在播放你选的音乐：${localMusicName || "本地音乐"}。`;
+    }).catch(() => {
+      statusText.textContent = "这首本地音乐暂时播不出来，先用备用闯关音乐。";
+      playSyntheticCourseMusic();
+    });
+    return;
+  }
+  playSyntheticCourseMusic();
+}
+
+function playSyntheticCourseMusic() {
+  const audio = getAudio();
+  if (!audio) return;
+  const lead = [
+    784, 0, 1047, 0, 1319, 0, 1047, 0,
+    988, 0, 1175, 0, 1568, 0, 1319, 0,
+    880, 0, 1175, 0, 1480, 0, 1175, 0,
+    1047, 0, 1319, 0, 1760, 0, 1568, 0,
+    1175, 1047, 988, 880, 988, 1175, 1319, 0,
+    1047, 880, 784, 698, 784, 988, 1047, 0
+  ];
+  const counter = [
+    392, 0, 523, 0, 659, 0, 523, 0,
+    370, 0, 494, 0, 622, 0, 494, 0
+  ];
+  const bass = [196, 196, 262, 262, 220, 220, 294, 294];
+  const step = 0.082;
+  for (let i = 0; i < 48; i += 1) {
+    const index = (courseMusicStep + i) % lead.length;
+    const start = i * step;
+    const note = lead[index];
+    const harmony = counter[(courseMusicStep + i) % counter.length];
+    if (note) {
+      tone(note, start, 0.064, 0.013, "square");
+      tone(note * 2, start + 0.012, 0.032, 0.0045, "triangle");
+    }
+    if (harmony && i % 2 === 0) tone(harmony, start + 0.012, 0.06, 0.006, "triangle");
+    if (i % 4 === 0) tone(bass[(courseMusicStep / 4 + i / 4) % bass.length], start, 0.13, 0.013, "square");
+    if (i % 4 === 2) tone(bass[(courseMusicStep / 4 + i / 4) % bass.length] * 1.5, start, 0.05, 0.007, "square");
+    if (i % 8 === 6) {
+      tone(1568, start, 0.025, 0.004, "square");
+      tone(2093, start + 0.026, 0.026, 0.004, "square");
+    }
+    tone(i % 4 === 0 ? 104 : 2794, start, i % 4 === 0 ? 0.048 : 0.018, i % 4 === 0 ? 0.008 : 0.0025, i % 4 === 0 ? "sawtooth" : "square");
+  }
+  courseMusicStep = (courseMusicStep + 48) % lead.length;
+  courseMusicTimer = window.setTimeout(() => {
+    if (screen === "course" && playing && !won) playCourseMusic();
+  }, step * 48 * 1000);
 }
 
 function crashSong() {
@@ -557,6 +634,12 @@ function getTimedPlatforms() {
   ].filter((p) => egg.x > p.triggerX);
 }
 
+function getSupportBlocks() {
+  const now = performance.now();
+  egg.supportBlocks = egg.supportBlocks.filter((block) => now - block.createdAt < 12500);
+  return egg.supportBlocks;
+}
+
 function resetEgg() {
   egg.x = 100;
   egg.y = 462;
@@ -567,6 +650,37 @@ function resetEgg() {
   egg.jetpackUntil = 0;
   egg.aimPower = null;
   egg.usedPowerups = new Set();
+  egg.supportBlocks = [];
+  egg.blockCharges = 10;
+  egg.lastBlockAt = 0;
+}
+
+function placeSupportBlock() {
+  if (screen !== "course" || !playing || won) return false;
+  const now = performance.now();
+  if (now - egg.lastBlockAt < 180) return false;
+  egg.lastBlockAt = now;
+  if (egg.blockCharges <= 0) egg.blockCharges = 10;
+  const block = {
+    id: `support-${now}`,
+    x: Math.max(36, Math.min(W - 122, egg.x - 44)),
+    y: Math.max(210, Math.min(H - 92, egg.y + egg.r + 10)),
+    w: 88,
+    h: 22,
+    color: laneThemes[laneIndex].accent,
+    createdAt: now
+  };
+  egg.supportBlocks.push(block);
+  if (egg.supportBlocks.length > 18) egg.supportBlocks.shift();
+  egg.blockCharges -= 1;
+  egg.grounded = false;
+  egg.vy = Math.min(egg.vy, -3.2);
+  statusText.textContent = egg.blockCharges > 0
+    ? `脚下放了一个悬浮方块，还能连放 ${egg.blockCharges} 次。`
+    : "十次方块用完了，练习模式马上补满，继续跳。";
+  tone(587, 0, 0.08, 0.018, "square");
+  tone(784, 0.08, 0.08, 0.016, "square");
+  return true;
 }
 
 function triggerGadget(gadget) {
@@ -1091,6 +1205,7 @@ function updateJoystickVisual() {
 
 function startCourse(locationName = selectedLocation.name) {
   getAudio();
+  stopCourseMusic();
   selectedLocation = { ...selectedLocation, name: locationName, category: "challenge" };
   screen = "course";
   updateContextControls();
@@ -1107,9 +1222,12 @@ function startCourse(locationName = selectedLocation.name) {
   timeText.textContent = "0.0";
   statusText.textContent = `开始 ${locationName}！第 1/5 条路线，跑到右边传送门。`;
   locationPicker.hidden = true;
+  courseMusicStep = 0;
+  playCourseMusic();
 }
 
 function goLobby(message = "回到蛋仔派对大厅。点“乐园”选择新地点。") {
+  stopCourseMusic();
   screen = "lobby";
   transfer.active = false;
   transfer.place = null;
@@ -1130,6 +1248,7 @@ function nextLane() {
   if (laneIndex >= 4) {
     won = true;
     playing = false;
+    stopCourseMusic();
     statusText.textContent = `通关！五条路线全部完成，拿到 ${starCount}/15 颗星，用时 ${elapsed.toFixed(1)} 秒。`;
     winSound();
     return;
@@ -1146,6 +1265,7 @@ function selectLocation(place) {
 
 function startTransfer(place) {
   getAudio();
+  stopCourseMusic();
   transfer.active = true;
   transfer.place = place;
   transfer.startTime = performance.now();
@@ -1171,6 +1291,7 @@ function enterLocation(place) {
     return;
   }
   screen = "activity";
+  stopCourseMusic();
   updateContextControls();
   playing = false;
   locationPicker.hidden = true;
@@ -1750,8 +1871,9 @@ function updateCourse() {
   const right = isDown("right") || keys.has("arrowright") || keys.has("d");
   const jump = isDown("jump") || keys.has("arrowup") || keys.has("w") || keys.has(" ");
   const roll = isDown("roll") || keys.has("arrowdown") || keys.has("s");
+  const jetpackActive = performance.now() < egg.jetpackUntil;
   const accel = roll ? 0.82 : 0.52;
-  const maxSpeed = roll ? 8.5 : 5.4;
+  const maxSpeed = jetpackActive ? 10.8 : roll ? 8.5 : 5.4;
 
   if (left) {
     egg.vx -= accel;
@@ -1761,32 +1883,33 @@ function updateCourse() {
     egg.vx += accel;
     egg.face = 1;
   }
-  if (jump && egg.grounded) {
+  if (keys.has("b")) placeSupportBlock();
+
+  if (jump && egg.grounded && !jetpackActive) {
     egg.vy = -13.5;
     egg.grounded = false;
     jumpSound();
   }
-  if (performance.now() < egg.jetpackUntil && jump) {
-    egg.vy -= 0.72;
-    egg.vy = Math.max(-13.8, egg.vy);
-    egg.vx += egg.face * 0.12;
-    statusText.textContent = `喷气背包还剩 ${Math.max(0, Math.ceil((egg.jetpackUntil - performance.now()) / 1000))} 秒，按住跳继续飞。`;
-  }
-  if (performance.now() < egg.jetpackUntil) {
-    egg.vx += 0.16;
-    egg.face = 1;
+  if (jetpackActive) {
+    const lift = jump ? -0.86 : 0;
+    const sink = roll ? 0.72 : 0;
+    egg.vy += lift + sink - 0.2;
+    egg.vy = Math.max(-9.8, Math.min(8.5, egg.vy));
+    if (left || right) egg.vx += (right ? 0.22 : -0.22);
+    if (!left && !right) egg.vx += egg.face * 0.06;
+    statusText.textContent = `喷气背包还剩 ${Math.max(0, Math.ceil((egg.jetpackUntil - performance.now()) / 1000))} 秒：上键上飞，下键下飞，B/脚下方块垫路。`;
   }
   if (egg.aimPower && performance.now() > egg.aimPower.until) applyAimPower("front");
 
   egg.vx *= egg.grounded ? 0.82 : 0.94;
   egg.vx = Math.max(-maxSpeed, Math.min(maxSpeed, egg.vx));
-  egg.vy += 0.62;
+  egg.vy += jetpackActive ? 0.22 : 0.62;
   egg.vy = Math.min(17, egg.vy);
   egg.x += egg.vx;
   egg.y += egg.vy;
   egg.grounded = false;
 
-  [...getLanePlatforms(), ...getTimedPlatforms()].forEach((p) => {
+  [...getLanePlatforms(), ...getTimedPlatforms(), ...getSupportBlocks()].forEach((p) => {
     const prevBottom = egg.y - egg.vy + egg.r;
     const bottom = egg.y + egg.r;
     const withinX = egg.x + egg.r > p.x && egg.x - egg.r < p.x + p.w;
@@ -4256,6 +4379,7 @@ function drawCourse() {
     ctx.fillRect(p.x + 12, p.y + 8, p.w - 24, 6);
   });
   getTimedPlatforms().forEach(drawTimedPlatform);
+  getSupportBlocks().forEach(drawSupportBlock);
   getLanePads().forEach(drawPad);
   getLaneGadgets().forEach(drawGadget);
   getLaneHammers().forEach((hammer, index) => drawHammer(hammer, index));
@@ -4268,45 +4392,56 @@ function drawCourse() {
   ctx.font = "900 28px system-ui";
   ctx.fillText(`${selectedLocation.name} · 第 ${laneIndex + 1}/5 条路线 · ${laneThemes[laneIndex].name}`, 32, 58);
   ctx.font = "800 17px system-ui";
-  ctx.fillText("超级难路线：捡喷气背包、踩临时路、用钩子/剑/传送门冲过去。", 34, 86);
+  ctx.fillText("天空闯关：下面没有草地，喷气背包可上下飞，脚下方块能在空中垫路。", 34, 86);
 }
 
 function drawCourseBackdrop() {
   const y = 150 + laneIndex * 34;
   const theme = laneThemes[laneIndex];
-  ctx.fillStyle = "rgba(255,255,255,0.42)";
-  ctx.fillRect(0, y, W, 26);
-  ctx.fillRect(0, y + 86, W, 26);
+  const drift = (performance.now() * 0.018) % 260;
+  ctx.fillStyle = "rgba(255,255,255,0.68)";
+  for (let i = -1; i < 6; i += 1) {
+    const cx = i * 260 - drift;
+    drawCloud(cx, 520 + Math.sin(i + laneIndex) * 18, 1.7);
+    drawCloud(cx + 120, 575 + Math.cos(i) * 12, 1.25);
+  }
+  ctx.fillStyle = "rgba(255,255,255,0.2)";
+  ctx.fillRect(0, y, W, 2);
+  ctx.fillRect(0, y + 86, W, 2);
   ctx.fillStyle = theme.accent;
-  ctx.globalAlpha = 0.18;
-  for (let i = 0; i < 5; i += 1) {
-    ctx.fillRect(70 + i * 190, y + i * 2, 110, 10);
+  ctx.globalAlpha = 0.2;
+  for (let i = 0; i < 7; i += 1) {
+    ctx.beginPath();
+    ctx.arc(74 + i * 158, y + 10 + Math.sin(i + performance.now() * 0.003) * 8, 8, 0, Math.PI * 2);
+    ctx.fill();
   }
   ctx.globalAlpha = 1;
   if (laneIndex === 1) {
-    ctx.fillStyle = "#25a9df";
-    ctx.fillRect(0, 520, W, 100);
-    ctx.strokeStyle = "rgba(255,255,255,0.7)";
+    ctx.strokeStyle = "rgba(50,167,226,0.7)";
+    ctx.lineWidth = 5;
     for (let wave = 0; wave < 3; wave += 1) {
       ctx.beginPath();
-      for (let x = 0; x < W; x += 35) ctx.lineTo(x, 545 + wave * 26 + Math.sin(x * 0.04 + performance.now() * 0.005) * 6);
+      for (let x = 0; x < W; x += 35) ctx.lineTo(x, 250 + wave * 42 + Math.sin(x * 0.04 + performance.now() * 0.005) * 6);
       ctx.stroke();
     }
   }
   if (laneIndex === 2) {
-    ctx.fillStyle = "#424b57";
-    ctx.fillRect(80, 512, 820, 36);
-    ctx.fillStyle = "#fff";
-    for (let x = 110; x < 860; x += 85) ctx.fillRect(x, 526, 44, 6);
-    drawPlaneShape(770, 470, -0.05, "#32a7e2", false);
+    drawPlaneShape(790, 245, -0.05, "#32a7e2", false);
+    ctx.fillStyle = "rgba(23,38,50,0.75)";
+    ctx.font = "900 18px system-ui";
+    ctx.fillText("高空风道", 718, 308);
   }
   if (laneIndex === 3) {
-    ctx.fillStyle = "#172632";
-    ctx.fillRect(0, 510, W, 20);
-    ctx.fillRect(0, 570, W, 18);
-    ctx.fillStyle = "#ffd15f";
+    ctx.strokeStyle = "rgba(23,38,50,0.45)";
+    ctx.lineWidth = 8;
     ctx.beginPath();
-    roundedRect(650, 448, 260, 70, 15);
+    ctx.moveTo(70, 305);
+    ctx.bezierCurveTo(260, 245, 375, 385, 535, 315);
+    ctx.bezierCurveTo(700, 235, 790, 370, 955, 300);
+    ctx.stroke();
+    ctx.fillStyle = "rgba(255,209,95,0.8)";
+    ctx.beginPath();
+    roundedRect(650, 328, 260, 56, 15);
     ctx.fill();
   }
   if (laneIndex === 4) {
@@ -4317,7 +4452,7 @@ function drawCourseBackdrop() {
     ctx.arc(910, 84, 30, 0, Math.PI * 2);
     ctx.fill();
   }
-  const laneNames = ["彩虹跳台", "水上浪桥", "机场风道", "地铁轨道", "夜晚躲避"];
+  const laneNames = ["彩虹云桥", "水雾跳台", "机场风道", "云中弯轨", "夜空躲避"];
   ctx.fillStyle = "rgba(255,255,255,0.82)";
   ctx.beginPath();
   roundedRect(760, 118, 230, 54, 8);
@@ -4325,6 +4460,28 @@ function drawCourseBackdrop() {
   ctx.fillStyle = "#172632";
   ctx.font = "900 25px system-ui";
   ctx.fillText(laneNames[laneIndex], 790, 153);
+}
+
+function drawSupportBlock(block) {
+  const age = performance.now() - block.createdAt;
+  const alpha = age > 9500 ? Math.max(0.25, 1 - (age - 9500) / 3000) : 1;
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.fillStyle = block.color;
+  ctx.beginPath();
+  roundedRect(block.x, block.y, block.w, block.h, 7);
+  ctx.fill();
+  ctx.strokeStyle = "#172632";
+  ctx.lineWidth = 3;
+  ctx.stroke();
+  ctx.fillStyle = "rgba(255,255,255,0.45)";
+  ctx.fillRect(block.x + 9, block.y + 6, block.w - 18, 5);
+  ctx.fillStyle = "#172632";
+  ctx.font = "900 12px system-ui";
+  ctx.textAlign = "center";
+  ctx.fillText("脚下方块", block.x + block.w / 2, block.y + 17);
+  ctx.restore();
+  ctx.textAlign = "left";
 }
 
 function drawPad(pad) {
@@ -4585,6 +4742,10 @@ document.addEventListener("pointerdown", (event) => {
   event.preventDefault();
   getAudio();
   const control = button.dataset.control;
+  if (control === "block") {
+    placeSupportBlock();
+    return;
+  }
   controls.add(control);
   if (event.pointerId !== undefined) controlPointers.set(event.pointerId, control);
   if (button.setPointerCapture && event.pointerId !== undefined) button.setPointerCapture(event.pointerId);
@@ -4873,6 +5034,18 @@ crashSongBtn.addEventListener("click", () => {
   getAudio();
   crashSong();
   statusText.textContent = "空难之歌：这是游戏里的原创警报旋律。";
+});
+chooseMusicBtn.addEventListener("click", () => {
+  localMusicInput.click();
+});
+localMusicInput.addEventListener("change", () => {
+  const file = localMusicInput.files && localMusicInput.files[0];
+  if (!file) return;
+  if (localMusicUrl) URL.revokeObjectURL(localMusicUrl);
+  localMusicUrl = URL.createObjectURL(file);
+  localMusicName = file.name;
+  stopCourseMusic();
+  statusText.textContent = `已选择本地音乐：${file.name}。开始闯关时会播放它。`;
 });
 parkBtn.addEventListener("click", () => {
   locationPicker.hidden = !locationPicker.hidden;

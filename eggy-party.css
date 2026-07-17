@@ -212,6 +212,10 @@ h1 {
   background: #8f5fd9;
 }
 
+.challenge-controls button[data-control="block"] {
+  background: #ff8a3d;
+}
+
 .flight-controls p,
 .challenge-controls p {
   grid-column: 1 / -1;

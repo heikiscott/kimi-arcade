@@ -14,6 +14,13 @@ const buttons = {
   park: document.querySelector("#parkBtn"),
   lobby: document.querySelector("#lobbyBtn"),
   tour: document.querySelector("#tourBtn"),
+  shenzhen: document.querySelector("#shenzhenBtn"),
+  doublePlane: document.querySelector("#doublePlaneBtn"),
+  parkPlane: document.querySelector("#parkPlaneBtn"),
+  worldWindow: document.querySelector("#worldWindowBtn"),
+  elevatorUp: document.querySelector("#elevatorUpBtn"),
+  elevatorDown: document.querySelector("#elevatorDownBtn"),
+  towerTop: document.querySelector("#towerTopBtn"),
   ferris: document.querySelector("#ferrisBtn"),
   accidentRide: document.querySelector("#accidentRideBtn"),
   selectPlane: document.querySelector("#selectPlaneBtn"),
@@ -58,7 +65,7 @@ const styleData = {
 };
 
 const airportLocations = [
-  ["新加坡", "樟宜机场", "SIN", "china"], ["中国", "北京首都机场", "PEK", "china"], ["中国", "上海浦东机场", "PVG", "china"], ["中国", "香港国际机场", "HKG", "china"], ["中国", "昆明长水机场", "KMG", "china"],
+  ["新加坡", "樟宜机场", "SIN", "china"], ["中国", "北京首都机场", "PEK", "china"], ["中国", "上海浦东机场", "PVG", "china"], ["中国", "香港国际机场", "HKG", "china"], ["中国", "深圳宝安国际机场", "SZX", "china"], ["中国", "昆明长水机场", "KMG", "china"],
   ["日本", "东京羽田机场", "HND", "japan"], ["日本", "成田机场", "NRT", "japan"], ["日本", "关西机场", "KIX", "japan"], ["韩国", "仁川机场", "ICN", "korea"], ["泰国", "曼谷素万那普机场", "BKK", "thailand"],
   ["德国", "法兰克福机场", "FRA", "germany"], ["德国", "慕尼黑机场", "MUC", "germany"], ["英国", "伦敦希思罗机场", "LHR", "uk"], ["法国", "巴黎戴高乐机场", "CDG", "france"], ["荷兰", "阿姆斯特丹史基浦机场", "AMS", "germany"],
   ["美国", "洛杉矶机场", "LAX", "usa"], ["美国", "纽约肯尼迪机场", "JFK", "usa"], ["美国", "西雅图机场", "SEA", "usa"], ["美国", "旧金山机场", "SFO", "usa"], ["美国", "芝加哥机场", "ORD", "usa"],
@@ -103,6 +110,10 @@ const state = {
   airportStyle: "china",
   yaw: -0.45,
   pitch: -0.24,
+  cameraYaw: -0.7,
+  cameraPitch: 0.22,
+  cameraDistance: 29,
+  cameraDragging: false,
   speed: 0,
   planeT: 0,
   walkClock: 0,
@@ -132,6 +143,16 @@ const state = {
   metroPhase: "waiting",
   metroDoorsOpen: true,
   challengeToolCooldown: 0
+  ,
+  worldWindowLevel: 1,
+  worldWindowTargetLevel: 1,
+  shenzhenTicket: false,
+  shenzhenHotel: false,
+  shenzhenPlaneType: "double",
+  landmarkIndex: 0,
+  insideLandmark: false,
+  waterRide: false,
+  waterRideT: 0
 };
 
 const students = [
@@ -179,7 +200,9 @@ const planeOptions = [
   { model: "A380", airlineCn: "阿联酋航空", airlineEn: "EMIRATES", short: "阿联酋", tailMark: "EK", reg: "A6-EKA", color: 0xd8343f, tailColor: 0x1f8c4d, accent: 0xffd15f, deck: "双层", position: [27, 0.66, 20], scale: 1.15, doubleDeck: true },
   { model: "B777", airlineCn: "全日空", airlineEn: "ALL NIPPON AIRWAYS", short: "ANA", tailMark: "NH", reg: "JA777A", color: 0x2352a1, tailColor: 0x2352a1, accent: 0x8fdcff, deck: "单层", position: [40, 0.55, 20], scale: 1.03 },
   { model: "A350", airlineCn: "国泰航空", airlineEn: "CATHAY PACIFIC", short: "国泰", tailMark: "CX", reg: "B-LRA", color: 0x0f766e, tailColor: 0x0f766e, accent: 0xf5f1df, deck: "单层", position: [52, 0.55, 20], scale: 1.02 },
-  { model: "A330", airlineCn: "泰国航空", airlineEn: "THAI AIRWAYS", short: "泰航", tailMark: "TG", reg: "HS-TGA", color: 0x6a3fad, tailColor: 0x6a3fad, accent: 0xffd15f, deck: "单层", position: [64, 0.55, 20], scale: 1.0 }
+  { model: "A330", airlineCn: "泰国航空", airlineEn: "THAI AIRWAYS", short: "泰航", tailMark: "TG", reg: "HS-TGA", color: 0x6a3fad, tailColor: 0x6a3fad, accent: 0xffd15f, deck: "单层", position: [64, 0.55, 20], scale: 1.0 },
+  { model: "A380-SZX", airlineCn: "深圳世界之窗号", airlineEn: "WINDOW OF THE WORLD", short: "世界之窗", tailMark: "WOW", reg: "SZX-336", color: 0x2f79c8, tailColor: 0xd8343f, accent: 0xffd15f, deck: "双层", position: [78, 0.68, 20], scale: 1.18, doubleDeck: true },
+  { model: "A380-FUN", airlineCn: "游乐园飞机", airlineEn: "AMUSEMENT AIR", short: "乐园飞机", tailMark: "FUN", reg: "FUN-777", color: 0xf06aa3, tailColor: 0x8f5fd9, accent: 0xffd15f, deck: "双层+游乐园", position: [94, 0.7, 20], scale: 1.22, doubleDeck: true }
 ];
 
 const PLANE_GROUND_Y = 1.15;
@@ -209,12 +232,19 @@ world.add(styleObjects);
 let airportObjects = new THREE.Group();
 world.add(airportObjects);
 let challengePlatforms = [];
+let challengeDangerZones = [];
 let metroTrainGroup = null;
 let metroDoorGroup = null;
 let platformDoorGroup = null;
 let exitGate = null;
 let ferrisWheelGroup = null;
 let amusementAccidentPlane = null;
+let shenzhenElevatorCar = null;
+let shenzhenCenterElevatorCar = null;
+let shenzhenLiftLabel = null;
+let waterRaft = null;
+let waterRidePath = [];
+let landmarkDoorMarkers = [];
 buildCurrentPlace();
 
 function currentAirport() {
@@ -276,6 +306,17 @@ function cyl(r1, r2, h, color, radial = 32) {
   const mesh = new THREE.Mesh(new THREE.CylinderGeometry(r1, r2, h, radial), mat(color));
   mesh.castShadow = true;
   mesh.receiveShadow = true;
+  return mesh;
+}
+
+function strutBetween(start, end, radius, color) {
+  const from = new THREE.Vector3(...start);
+  const to = new THREE.Vector3(...end);
+  const mid = from.clone().lerp(to, 0.5);
+  const length = from.distanceTo(to);
+  const mesh = cyl(radius, radius, length, color, 14);
+  mesh.position.copy(mid);
+  mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), to.clone().sub(from).normalize());
   return mesh;
 }
 
@@ -870,6 +911,209 @@ function createGateAgent() {
   return agent;
 }
 
+function createEiffelTower() {
+  const tower = new THREE.Group();
+  const iron = 0x4b5158;
+  const levels = [
+    { y: 0, half: 5.8 },
+    { y: 8, half: 4.2 },
+    { y: 19, half: 2.3 },
+    { y: 31, half: 0.9 },
+    { y: 38, half: 0.22 }
+  ];
+  for (let i = 0; i < levels.length - 1; i += 1) {
+    const a = levels[i];
+    const b = levels[i + 1];
+    [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([sx, sz]) => {
+      tower.add(strutBetween([sx * a.half, a.y, sz * a.half], [sx * b.half, b.y, sz * b.half], 0.18, iron));
+      tower.add(strutBetween([sx * a.half, a.y, sz * a.half], [-sx * b.half * 0.72, b.y, sz * b.half], 0.08, iron));
+      tower.add(strutBetween([sx * a.half, a.y, sz * a.half], [sx * b.half, b.y, -sz * b.half * 0.72], 0.08, iron));
+    });
+  }
+  [8, 19, 31].forEach((y, i) => {
+    const size = [9.4, 5.4, 2.6][i];
+    const platform = box(size, 0.45, size, iron);
+    platform.position.y = y;
+    tower.add(platform);
+    const front = box(size + 0.5, 0.28, 0.22, 0xffd15f);
+    front.position.set(0, y + 0.75, -size / 2);
+    const back = front.clone();
+    back.position.z *= -1;
+    const left = box(0.22, 0.28, size + 0.5, 0xffd15f);
+    left.position.set(-size / 2, y + 0.75, 0);
+    const right = left.clone();
+    right.position.x *= -1;
+    tower.add(front, back, left, right);
+  });
+  const archFront = new THREE.Mesh(new THREE.TorusGeometry(3.5, 0.16, 10, 48, Math.PI), mat(iron));
+  archFront.position.set(0, 4.2, -5.85);
+  archFront.rotation.z = Math.PI;
+  const archBack = archFront.clone();
+  archBack.position.z = 5.85;
+  const archLeft = archFront.clone();
+  archLeft.position.set(-5.85, 4.2, 0);
+  archLeft.rotation.y = Math.PI / 2;
+  archLeft.rotation.z = Math.PI;
+  const archRight = archLeft.clone();
+  archRight.position.x = 5.85;
+  tower.add(archFront, archBack, archLeft, archRight);
+  const spire = cyl(0.16, 0.38, 7.5, iron, 18);
+  spire.position.y = 40;
+  const beacon = sphere(0.55, 0xffd15f, 1, 1, 1);
+  beacon.position.y = 44;
+  tower.add(spire, beacon);
+  const name = makeLabel("Eiffel Tower 埃菲尔铁塔");
+  name.scale.setScalar(0.78);
+  name.position.set(0, 6.4, -8.2);
+  tower.add(name);
+  return tower;
+}
+
+function addSlantedElevatorRail(x, z) {
+  const railA = box(0.22, 0.22, 27, 0xd9e2ea);
+  const railB = railA.clone();
+  railA.position.set(x - 3.3, 14.3, z - 3.3);
+  railB.position.set(x + 3.3, 14.3, z - 3.3);
+  railA.rotation.x = -0.36;
+  railB.rotation.x = -0.36;
+  airportObjects.add(railA, railB);
+  shenzhenElevatorCar = box(2.1, 1.8, 1.8, 0x8fdcff);
+  shenzhenElevatorCar.material.transparent = true;
+  shenzhenElevatorCar.material.opacity = 0.78;
+  airportObjects.add(shenzhenElevatorCar);
+  shenzhenLiftLabel = makeLabel("斜电梯");
+  shenzhenLiftLabel.scale.setScalar(0.42);
+  airportObjects.add(shenzhenLiftLabel);
+}
+
+function addCenterElevator(x, z) {
+  const shaft = box(1.4, 17, 1.4, 0xd9e2ea);
+  shaft.position.set(x, 27.5, z);
+  airportObjects.add(shaft);
+  shenzhenCenterElevatorCar = box(1.7, 2.1, 1.7, 0xffd15f);
+  airportObjects.add(shenzhenCenterElevatorCar);
+  const upSign = makeLabel("中间直电梯");
+  upSign.scale.setScalar(0.42);
+  upSign.position.set(x, 21.2, z - 3.3);
+  airportObjects.add(upSign);
+}
+
+function buildShenzhenWorldWindow() {
+  shenzhenElevatorCar = null;
+  shenzhenCenterElevatorCar = null;
+  shenzhenLiftLabel = null;
+  const ground = new THREE.Mesh(new THREE.BoxGeometry(175, 1, 128), mat(0x86c86e));
+  ground.position.y = -0.55;
+  ground.receiveShadow = true;
+  airportObjects.add(ground);
+
+  const plaza = box(110, 0.12, 56, 0xf5f1df);
+  plaza.position.set(0, 0.06, 0);
+  airportObjects.add(plaza);
+  const gate = box(32, 8, 5, 0xd8343f);
+  gate.position.set(-54, 4, 6);
+  const gateTop = box(36, 1.2, 6.2, 0xffd15f);
+  gateTop.position.set(-54, 8.6, 6);
+  airportObjects.add(gate, gateTop);
+  const mainSign = makeLabel("深圳世界之窗  Window of the World");
+  mainSign.scale.setScalar(1.08);
+  mainSign.position.set(-54, 10.4, 2.4);
+  airportObjects.add(mainSign);
+
+  const hotel = box(18, 18, 14, 0xffffff);
+  hotel.position.set(-62, 9, -28);
+  airportObjects.add(hotel);
+  const hotelLabel = makeLabel("酒店：放好行李");
+  hotelLabel.scale.setScalar(0.58);
+  hotelLabel.position.set(-62, 19.5, -35.5);
+  airportObjects.add(hotelLabel);
+  for (let y = 4; y < 17; y += 3) {
+    for (let x = -68; x <= -56; x += 4) {
+      const win = box(1.2, 1.1, 0.08, 0x8fdcff);
+      win.position.set(x, y, -35.05);
+      airportObjects.add(win);
+    }
+  }
+
+  const ticket = box(17, 5, 8, 0x2f79c8);
+  ticket.position.set(-34, 2.5, 23);
+  airportObjects.add(ticket);
+  const ticketLabel = makeLabel("买票口 / 入园");
+  ticketLabel.scale.setScalar(0.62);
+  ticketLabel.position.set(-34, 5.8, 18.4);
+  airportObjects.add(ticketLabel);
+
+  const route = box(62, 0.16, 4, 0xffd15f);
+  route.position.set(-13, 0.16, 12);
+  airportObjects.add(route);
+  const routeLabel = makeLabel("先酒店 -> 买票 -> 埃菲尔铁塔");
+  routeLabel.scale.setScalar(0.58);
+  routeLabel.position.set(-13, 0.45, 12);
+  routeLabel.rotation.x = -Math.PI / 2;
+  airportObjects.add(routeLabel);
+
+  const tower = createEiffelTower();
+  tower.position.set(30, 0, 0);
+  airportObjects.add(tower);
+  addSlantedElevatorRail(30, 0);
+  addCenterElevator(30, 0);
+
+  const floor1 = makeLabel("1楼：入口按钮 ▲");
+  floor1.scale.setScalar(0.42);
+  floor1.position.set(18, 2.2, -8);
+  const floor2 = makeLabel("2楼：餐厅平台 ▲ ▼");
+  floor2.scale.setScalar(0.42);
+  floor2.position.set(20, 10.2, -8);
+  const floor3 = makeLabel("3楼：观景台 ▼ + 中间直电梯 ▲");
+  floor3.scale.setScalar(0.42);
+  floor3.position.set(20, 20.2, -8);
+  const top = makeLabel("塔顶：楼梯上去的富豪公寓门口");
+  top.scale.setScalar(0.44);
+  top.position.set(30, 39.8, 0);
+  airportObjects.add(floor1, floor2, floor3, top);
+
+  const restaurant = box(10, 2.2, 7, 0xf06aa3);
+  restaurant.position.set(43, 9.4, 0);
+  const restaurantLabel = makeLabel("2楼餐厅");
+  restaurantLabel.scale.setScalar(0.42);
+  restaurantLabel.position.set(43, 11.0, -4.2);
+  airportObjects.add(restaurant, restaurantLabel);
+  const lookout = box(11, 1.1, 11, 0x8fdcff);
+  lookout.material.transparent = true;
+  lookout.material.opacity = 0.48;
+  lookout.position.set(30, 19.1, 0);
+  airportObjects.add(lookout);
+
+  const miniLandmarks = [
+    ["金字塔", -10, -28, 0xd49b43],
+    ["凯旋门", 0, -31, 0xd9e2ea],
+    ["风车", 12, -30, 0xffffff],
+    ["自由女神像", 58, -25, 0x38a86a]
+  ];
+  miniLandmarks.forEach(([name, x, z, color]) => {
+    if (name === "金字塔") {
+      const pyramid = new THREE.Mesh(new THREE.ConeGeometry(4.5, 5, 4), mat(color));
+      pyramid.position.set(x, 2.4, z);
+      pyramid.rotation.y = Math.PI / 4;
+      airportObjects.add(pyramid);
+    } else {
+      const statue = cyl(0.55, 0.8, 5, color, 16);
+      statue.position.set(x, 2.5, z);
+      airportObjects.add(statue);
+    }
+    const label = makeLabel(name);
+    label.scale.setScalar(0.38);
+    label.position.set(x, 5.7, z);
+    airportObjects.add(label);
+  });
+
+  eggy.position.set(-65, 1.05, 9);
+  plane.visible = false;
+  eggy.visible = true;
+  placeName.textContent = "深圳世界之窗";
+  setStatus("到达深圳：先去酒店放好东西，再买票入园。第一站是 Eiffel Tower 埃菲尔铁塔。点“电梯上”坐斜电梯。");
+}
+
 function buildCurrentPlace() {
   airportObjects.clear();
   styleObjects.clear();
@@ -899,6 +1143,10 @@ function buildCurrentPlace() {
     plane.visible = false;
     placeName.textContent = "3D 地铁站";
     setStatus("这里只是地铁站：站台、站台门、轨道和地铁列车。");
+  } else if (state.currentPlace === "shenzhen") {
+    buildShenzhenWorldWindow();
+  } else if (state.currentPlace === "landmarks") {
+    buildLandmarksPark();
   }
   resetGame(false);
 }
@@ -984,6 +1232,7 @@ function addAmusementAccidentRide() {
 
 function buildChallengeCourse() {
   challengePlatforms = [];
+  challengeDangerZones = [];
   const voidFloor = new THREE.Mesh(new THREE.BoxGeometry(170, 0.5, 125), mat(0x172632));
   voidFloor.position.y = -0.75;
   voidFloor.receiveShadow = true;
@@ -1097,9 +1346,28 @@ function buildChallengeCourse() {
   finishLabel.position.set(57, 3.45, -36);
   finishLabel.rotation.x = -Math.PI / 2;
   airportObjects.add(finish, finishLabel);
+
+  [
+    { x: -17, z: -22, y: 2.9, name: "红色摆锤" },
+    { x: 8, z: -10, y: 3.4, name: "旋转杆" },
+    { x: 35, z: -18, y: 3.9, name: "尖刺坑" }
+  ].forEach((danger, i) => {
+    const pole = cyl(0.14, 0.14, 5, 0xd8343f, 14);
+    pole.position.set(danger.x, danger.y + 1.8, danger.z);
+    const arm = box(8 + i * 1.2, 0.35, 0.35, 0xd8343f);
+    arm.position.set(danger.x, danger.y + 3.9, danger.z);
+    arm.rotation.y = i * 0.7;
+    const sign = makeLabel(danger.name);
+    sign.scale.setScalar(0.42);
+    sign.position.set(danger.x, danger.y + 5.1, danger.z);
+    airportObjects.add(pole, arm, sign);
+    challengeDangerZones.push({ x: danger.x, z: danger.z, radius: 4.6, name: danger.name });
+  });
 }
 
 function buildWaterPark() {
+  waterRaft = null;
+  waterRidePath = [];
   const ground = new THREE.Mesh(new THREE.BoxGeometry(150, 1, 105), mat(0xf2d69b));
   ground.position.y = -0.55;
   ground.receiveShadow = true;
@@ -1125,6 +1393,153 @@ function buildWaterPark() {
   horn.position.set(34, 6, 8);
   horn.rotation.z = Math.PI / 2;
   airportObjects.add(horn);
+  const walkway = box(56, 0.14, 4, 0xffffff);
+  walkway.position.set(-12, 0.18, 2);
+  airportObjects.add(walkway);
+  const startPad = box(12, 0.35, 9, 0x38a86a);
+  startPad.position.set(-18, 7.2, 8);
+  airportObjects.add(startPad);
+  const startLabel = makeLabel("坐电梯到滑道入口");
+  startLabel.scale.setScalar(0.5);
+  startLabel.position.set(-18, 8.2, 2.8);
+  airportObjects.add(startLabel);
+  waterRaft = new THREE.Group();
+  const tube = new THREE.Mesh(new THREE.TorusGeometry(1.3, 0.28, 18, 50), mat(0xffd15f));
+  tube.rotation.x = Math.PI / 2;
+  const seat = sphere(0.48, 0x2f79c8, 1.2, 0.38, 1.2);
+  seat.position.y = 0.08;
+  waterRaft.add(tube, seat);
+  waterRaft.position.set(-42, 0.75, 20);
+  airportObjects.add(waterRaft);
+  waterRidePath = [
+    new THREE.Vector3(-42, 0.75, 20),
+    new THREE.Vector3(-18, 8.0, 8),
+    new THREE.Vector3(8, 9.0, 11),
+    new THREE.Vector3(27, 6.4, 8),
+    new THREE.Vector3(34, 2.2, -3),
+    new THREE.Vector3(18, 0.8, -8)
+  ];
+  const rideSign = makeLabel("点“开始/互动”：坐皮划艇滑大喇叭");
+  rideSign.scale.setScalar(0.58);
+  rideSign.position.set(4, 3.2, 31);
+  airportObjects.add(rideSign);
+}
+
+function buildLandmarksPark() {
+  landmarkDoorMarkers = [];
+  const ground = new THREE.Mesh(new THREE.BoxGeometry(185, 1, 132), mat(0x8bcf75));
+  ground.position.y = -0.55;
+  ground.receiveShadow = true;
+  airportObjects.add(ground);
+  const title = makeLabel("全国名胜仿真乐园");
+  title.scale.setScalar(1.15);
+  title.position.set(-54, 9, -48);
+  airportObjects.add(title);
+  const plaza = cyl(22, 22, 0.18, 0xf5f1df, 64);
+  plaza.position.set(-48, 0.1, -30);
+  airportObjects.add(plaza);
+  const landmarks = [
+    { name: "北京长城", x: -54, z: -8, color: 0xb88852, type: "wall" },
+    { name: "北京故宫", x: -22, z: -10, color: 0xd8343f, type: "palace" },
+    { name: "杭州西湖", x: 10, z: -12, color: 0x7fc7ea, type: "lake" },
+    { name: "西安兵马俑", x: 44, z: -12, color: 0xc88936, type: "soldiers" },
+    { name: "张家界", x: -54, z: 28, color: 0x64717b, type: "peaks" },
+    { name: "拉萨布达拉宫", x: -18, z: 30, color: 0xffffff, type: "potala" },
+    { name: "敦煌莫高窟", x: 18, z: 30, color: 0xd49b43, type: "cave" },
+    { name: "黄山迎客松", x: 52, z: 28, color: 0x356b4a, type: "mountain" },
+    { name: "上海东方明珠", x: 74, z: -38, color: 0xf06aa3, type: "tower" }
+  ];
+  landmarks.forEach((item, index) => {
+    addLandmarkModel(item);
+    const pad = box(11, 0.18, 5, 0xffd15f);
+    pad.position.set(item.x, 0.16, item.z + 8);
+    airportObjects.add(pad);
+    const door = makeLabel(`进入 ${index + 1}`);
+    door.scale.setScalar(0.42);
+    door.position.set(item.x, 0.55, item.z + 8);
+    door.rotation.x = -Math.PI / 2;
+    airportObjects.add(door);
+    landmarkDoorMarkers.push({ ...item, index, x: item.x, z: item.z + 8 });
+  });
+  eggy.position.set(-58, 1.05, -37);
+  plane.visible = false;
+  eggy.visible = true;
+  placeName.textContent = "全国名胜";
+  setStatus("全国名胜区：走到黄色入口，点“开始/互动”可以进入不同名胜内部。按住屏幕拖动可以看不同角度。");
+}
+
+function addLandmarkModel(item) {
+  if (item.type === "wall") {
+    for (let i = 0; i < 7; i += 1) {
+      const wall = box(7, 2.2, 2.4, item.color);
+      wall.position.set(item.x - 18 + i * 6, 1.1 + Math.sin(i) * 0.3, item.z + Math.sin(i * 0.8) * 2);
+      wall.rotation.y = Math.sin(i * 0.7) * 0.35;
+      airportObjects.add(wall);
+    }
+    const tower = box(5, 5, 5, item.color);
+    tower.position.set(item.x, 2.5, item.z);
+    airportObjects.add(tower);
+  } else if (item.type === "palace") {
+    const hall = box(18, 7, 12, 0xd8343f);
+    hall.position.set(item.x, 3.5, item.z);
+    const roof = box(22, 1.4, 14, 0xffd15f);
+    roof.position.set(item.x, 7.8, item.z);
+    airportObjects.add(hall, roof);
+  } else if (item.type === "lake") {
+    const lake = cyl(10, 10, 0.2, 0x7fc7ea, 64);
+    lake.position.set(item.x, 0.18, item.z);
+    const bridge = box(18, 0.5, 1.8, 0xffffff);
+    bridge.position.set(item.x, 0.65, item.z);
+    airportObjects.add(lake, bridge);
+  } else if (item.type === "soldiers") {
+    for (let i = 0; i < 12; i += 1) {
+      const soldier = cyl(0.28, 0.36, 2.2, item.color, 16);
+      soldier.position.set(item.x - 6 + (i % 4) * 4, 1.1, item.z - 3 + Math.floor(i / 4) * 3);
+      airportObjects.add(soldier);
+    }
+  } else if (item.type === "peaks") {
+    for (let i = 0; i < 6; i += 1) {
+      const peak = cyl(0.9, 2.1, 10 + i * 1.5, item.color, 10);
+      peak.position.set(item.x - 8 + i * 3.5, 5 + i * 0.75, item.z + Math.sin(i) * 4);
+      airportObjects.add(peak);
+    }
+  } else if (item.type === "potala") {
+    for (let i = 0; i < 4; i += 1) {
+      const tier = box(18 - i * 2.6, 3.2, 10 - i * 1.2, i % 2 ? 0xd8343f : 0xffffff);
+      tier.position.set(item.x, 1.6 + i * 3.2, item.z);
+      airportObjects.add(tier);
+    }
+  } else if (item.type === "cave") {
+    const cliff = box(20, 10, 5, item.color);
+    cliff.position.set(item.x, 5, item.z);
+    airportObjects.add(cliff);
+    for (let i = 0; i < 4; i += 1) {
+      const cave = new THREE.Mesh(new THREE.TorusGeometry(1.2, 0.18, 10, 32, Math.PI), mat(0x172632));
+      cave.position.set(item.x - 6 + i * 4, 4, item.z - 2.7);
+      cave.rotation.z = Math.PI;
+      airportObjects.add(cave);
+    }
+  } else if (item.type === "mountain") {
+    addPyramid(item.x - 5, item.z, 6, 9);
+    addPyramid(item.x + 4, item.z - 2, 5, 7);
+    const trunk = cyl(0.35, 0.45, 4, 0x7a4c29);
+    trunk.position.set(item.x + 9, 2, item.z + 3);
+    const pine = sphere(2.2, item.color, 1.7, 0.55, 1.2);
+    pine.position.set(item.x + 10.2, 4.8, item.z + 3);
+    airportObjects.add(trunk, pine);
+  } else if (item.type === "tower") {
+    const pole = cyl(0.45, 0.8, 18, 0xd9e2ea, 24);
+    pole.position.set(item.x, 9, item.z);
+    const ball1 = sphere(2.4, item.color);
+    ball1.position.set(item.x, 5.6, item.z);
+    const ball2 = sphere(1.6, item.color);
+    ball2.position.set(item.x, 13.5, item.z);
+    airportObjects.add(pole, ball1, ball2);
+  }
+  const label = makeLabel(item.name);
+  label.scale.setScalar(0.52);
+  label.position.set(item.x, 10.8, item.z - 7);
+  airportObjects.add(label);
 }
 
 function createMetroTrain() {
@@ -1805,6 +2220,100 @@ function selectNextPlane() {
   setStatus(`已选择第 ${state.selectedPlaneIndex + 1} 架：${selectedPlaneLabel()}。现在你开这一架飞机。`);
 }
 
+function findPlaneIndexByTail(tailMark) {
+  return planeOptions.findIndex((option) => option.tailMark === tailMark);
+}
+
+function selectSpecialPlane(tailMark, message) {
+  const nextIndex = findPlaneIndexByTail(tailMark);
+  if (nextIndex < 0) return;
+  if (!["walk", "landed"].includes(state.mode)) {
+    setStatus("先让飞机停好，才能换成这架飞机。");
+    return;
+  }
+  state.selectedPlaneIndex = nextIndex;
+  replaceMainPlane(planeOptions[state.selectedPlaneIndex]);
+  if (state.currentPlace === "airport") {
+    airportObjects.clear();
+    styleObjects.clear();
+    buildAirport();
+    applyAirportStyle(state.airportStyle);
+  }
+  setStatus(message);
+}
+
+function chooseDoublePlane() {
+  state.shenzhenPlaneType = "double";
+  if (state.currentPlace !== "airport") setPlace("airport");
+  selectSpecialPlane("WOW", "已选择普通双层飞机：深圳世界之窗号。它是双层客舱，先从室内登机口检票，再走廊桥上飞机。");
+}
+
+function chooseParkPlane() {
+  state.shenzhenPlaneType = "park";
+  if (state.currentPlace !== "airport") setPlace("airport");
+  selectSpecialPlane("FUN", "已选择游乐园飞机：里面想象成有小游戏、彩色座椅和游乐园区域的双层飞机。");
+}
+
+function goShenzhen() {
+  const szxIndex = airportLocations.findIndex((airport) => airport.code === "SZX");
+  if (szxIndex >= 0) state.destinationIndex = szxIndex;
+  state.selectedAirportIndex = airportLocations.findIndex((airport) => airport.code === "SIN");
+  if (state.selectedAirportIndex < 0) state.selectedAirportIndex = 0;
+  state.airportStyle = "china";
+  styleSelect.value = "china";
+  if (airportSelect) airportSelect.value = String(state.destinationIndex);
+  if (state.shenzhenPlaneType === "park") {
+    state.selectedPlaneIndex = findPlaneIndexByTail("FUN");
+  } else {
+    state.selectedPlaneIndex = findPlaneIndexByTail("WOW");
+  }
+  if (state.selectedPlaneIndex < 0) state.selectedPlaneIndex = 0;
+  setPlace("airport");
+  setStatus("深圳旅行开始：你在室内登机口，工作人员会检票。点“上飞机”走廊桥，再点“竖向滑行”“跑道起飞”，目的地是深圳宝安国际机场。");
+}
+
+function openWorldWindow() {
+  state.shenzhenHotel = true;
+  state.shenzhenTicket = true;
+  setPlace("shenzhen");
+  state.worldWindowLevel = 1;
+  state.worldWindowTargetLevel = 1;
+  eggy.position.set(18, 1.05, -8);
+  state.cameraYaw = -0.78;
+  state.cameraPitch = 0.08;
+  setStatus("已到深圳：酒店放好东西、票也买好了。现在站在 Eiffel Tower 埃菲尔铁塔一楼电梯口。按住屏幕拖动可以换角度。");
+}
+
+function worldWindowLevelName(level) {
+  if (level <= 1) return "1楼入口";
+  if (level === 2) return "2楼餐厅平台";
+  if (level === 3) return "3楼观景台";
+  return "塔顶楼梯和富豪公寓门口";
+}
+
+function moveWorldWindowElevator(delta) {
+  if (state.currentPlace !== "shenzhen") {
+    setPlace("shenzhen");
+  }
+  const next = THREE.MathUtils.clamp(state.worldWindowTargetLevel + delta, 1, 4);
+  state.worldWindowTargetLevel = next;
+  state.mode = "shenzhen-elevator";
+  eggy.visible = true;
+  setStatus(next <= 3
+    ? `按下 ${delta > 0 ? "▲ 上" : "▼ 下"} 按钮，斜电梯正在去${worldWindowLevelName(next)}。`
+    : "从三楼进入中间直电梯，再到最上面，最后一小段只能走楼梯。");
+}
+
+function goTowerTop() {
+  if (state.currentPlace !== "shenzhen") {
+    setPlace("shenzhen");
+  }
+  state.worldWindowTargetLevel = 4;
+  state.mode = "shenzhen-elevator";
+  eggy.visible = true;
+  setStatus("中间直电梯往上，到最顶端后走楼梯。上面是有点吓人的富豪公寓门口。");
+}
+
 function toggleCockpit() {
   if (!isPlaneTravelMode()) {
     setStatus("先上飞机，才能进驾驶室。");
@@ -1907,6 +2416,11 @@ function resetGame(resetMessage = true) {
   state.metroPhase = "waiting";
   state.metroDoorsOpen = true;
   state.challengeToolCooldown = 0;
+  state.worldWindowLevel = 1;
+  state.worldWindowTargetLevel = 1;
+  state.insideLandmark = false;
+  state.waterRide = false;
+  state.waterRideT = 0;
   state.amusementAccident = false;
   state.amusementAccidentT = 0;
   state.ridingWheel = false;
@@ -1922,6 +2436,15 @@ function resetGame(resetMessage = true) {
   } else if (state.currentPlace === "challenge" && challengePlatforms.length) {
     const firstPlatform = challengePlatforms[0];
     eggy.position.set(firstPlatform.x, firstPlatform.standY, firstPlatform.z);
+    plane.position.set(-8, PLANE_GROUND_Y, 30);
+  } else if (state.currentPlace === "shenzhen") {
+    eggy.position.set(-65, 1.05, 9);
+    plane.position.set(-8, PLANE_GROUND_Y, 30);
+  } else if (state.currentPlace === "landmarks") {
+    eggy.position.set(-58, 1.05, -37);
+    plane.position.set(-8, PLANE_GROUND_Y, 30);
+  } else if (state.currentPlace === "water") {
+    eggy.position.set(-42, 1.05, 20);
     plane.position.set(-8, PLANE_GROUND_Y, 30);
   } else {
     eggy.position.set(-28, 1.05, 10);
@@ -1972,14 +2495,16 @@ function startInteract() {
   } else if (state.currentPlace === "challenge") {
     setStatus("闯关游戏：走到蓝色喷气背包会自动戴上，跳得更安全；走过白色终点线就赢。");
   } else if (state.currentPlace === "water") {
-    setStatus("水上乐园互动：买票，坐电梯，上大喇叭滑道，冲进水池。");
+    startWaterRide();
   } else if (state.currentPlace === "metro") {
     startMetroRide();
+  } else if (state.currentPlace === "landmarks") {
+    enterNearestLandmark();
   }
 }
 
 function openPark() {
-  const order = ["amusement", "challenge", "water", "metro", "airport"];
+  const order = ["amusement", "challenge", "water", "landmarks", "metro", "airport"];
   const current = order.indexOf(state.currentPlace);
   setPlace(order[(current + 1 + order.length) % order.length]);
 }
@@ -2050,6 +2575,60 @@ function startMetroRide() {
     return;
   }
   setStatus("地铁正在高架路上连续行驶，不会开一半就断掉。");
+}
+
+function startWaterRide() {
+  if (state.currentPlace !== "water") {
+    setPlace("water");
+  }
+  if (!waterRaft || !waterRidePath.length) {
+    setStatus("水上乐园还在准备滑道。");
+    return;
+  }
+  state.waterRide = true;
+  state.waterRideT = 0;
+  state.mode = "water-ride";
+  eggy.visible = true;
+  setStatus("开始坐皮划艇：先坐电梯到入口，再滑进大喇叭，最后冲进水池。");
+}
+
+function enterNearestLandmark() {
+  if (state.currentPlace !== "landmarks") {
+    setPlace("landmarks");
+  }
+  if (!landmarkDoorMarkers.length) return;
+  if (state.insideLandmark) {
+    state.insideLandmark = false;
+    state.landmarkIndex = (state.landmarkIndex + 1) % landmarkDoorMarkers.length;
+    const next = landmarkDoorMarkers[state.landmarkIndex];
+    eggy.position.set(next.x, 1.05, next.z + 1.5);
+    setStatus(`已来到下一个入口：${next.name}。再点“开始/互动”进入里面。`);
+    return;
+  }
+  let nearest = landmarkDoorMarkers[0];
+  let best = Infinity;
+  landmarkDoorMarkers.forEach((door) => {
+    const d = Math.hypot(eggy.position.x - door.x, eggy.position.z - door.z);
+    if (d < best) {
+      best = d;
+      nearest = door;
+    }
+  });
+  state.landmarkIndex = nearest.index;
+  state.insideLandmark = true;
+  eggy.position.set(nearest.x, 1.05, nearest.z - 5.5);
+  const detail = [
+    "长城内部：能沿城墙走，旁边有烽火台。",
+    "故宫内部：红墙黄瓦，中间是大殿广场。",
+    "西湖内部：可以走白色桥，看湖水和亭子。",
+    "兵马俑内部：一排排陶俑站在坑里。",
+    "张家界内部：很多直直的山峰像柱子。",
+    "布达拉宫内部：层层台阶和白红宫墙。",
+    "莫高窟内部：能看到洞窟入口和岩壁。",
+    "黄山内部：山峰、松树和观景点。",
+    "东方明珠内部：能进塔下面的观景厅。"
+  ][nearest.index] || "进入名胜内部。";
+  setStatus(`进入 ${nearest.name}。${detail} 再点“开始/互动”会切到下一个名胜入口。`);
 }
 
 function walkForward() {
@@ -2235,6 +2814,14 @@ function challengeGroundYAt(x, z) {
   return standY;
 }
 
+function shenzhenGroundY() {
+  if (state.currentPlace !== "shenzhen") return 1.05;
+  if (state.worldWindowTargetLevel >= 4) return 39.3;
+  if (state.worldWindowTargetLevel === 3) return 20.5;
+  if (state.worldWindowTargetLevel === 2) return 10.6;
+  return 1.05;
+}
+
 function currentChallengePlatform() {
   if (state.currentPlace !== "challenge") return null;
   return challengePlatforms.find((platform) => (
@@ -2253,11 +2840,11 @@ function updateWalking(dt) {
   } else if (eggy.userData.jetpack) {
     eggy.userData.jetpack.visible = false;
   }
-  const groundY = challengeGroundYAt(eggy.position.x, eggy.position.z);
+  const groundY = state.currentPlace === "shenzhen" ? shenzhenGroundY() : challengeGroundYAt(eggy.position.x, eggy.position.z);
   if (state.jumpVelocity !== 0 || eggy.position.y > groundY) {
     eggy.position.y += state.jumpVelocity * dt;
     state.jumpVelocity -= (state.jetpackTimer > 0 ? 12 : 22) * dt;
-    const landingY = challengeGroundYAt(eggy.position.x, eggy.position.z);
+    const landingY = state.currentPlace === "shenzhen" ? shenzhenGroundY() : challengeGroundYAt(eggy.position.x, eggy.position.z);
     if (eggy.position.y <= landingY) {
       eggy.position.y = landingY;
       state.jumpVelocity = 0;
@@ -2314,6 +2901,14 @@ function updateWalking(dt) {
     } else if (eggy.position.x > 42 && eggy.position.x < 72 && eggy.position.z < -29 && eggy.position.z > -37) {
       setStatus("闯关成功！泰迪熊走过白色终点线。");
     } else {
+      const danger = challengeDangerZones.find((zone) => Math.hypot(eggy.position.x - zone.x, eggy.position.z - zone.z) < zone.radius);
+      if (danger && state.challengeToolCooldown <= 0) {
+        const fallback = currentChallengePlatform() || challengePlatforms[0];
+        eggy.position.set(fallback.x, fallback.standY, fallback.z);
+        state.challengeToolCooldown = 1.2;
+        setStatus(`碰到${danger.name}了，回到最近平台重新跳。`);
+        return;
+      }
       const platform = currentChallengePlatform();
       if (platform && move.lengthSq() > 0.001) setStatus(`踩在${platform.name}上，不会穿过去。`);
     }
@@ -2562,15 +3157,118 @@ function updateMetro(dt) {
   }
 }
 
+function shenzhenSlantPoint(level) {
+  const t = THREE.MathUtils.clamp((level - 1) / 2, 0, 1);
+  const p1 = new THREE.Vector3(18.5, 2.3, -3.5);
+  const p3 = new THREE.Vector3(27.0, 19.7, -3.5);
+  return p1.lerp(p3, t);
+}
+
+function shenzhenCenterPoint(level) {
+  const t = THREE.MathUtils.clamp(level - 3, 0, 1);
+  return new THREE.Vector3(30, THREE.MathUtils.lerp(20.7, 34.4, t), 0);
+}
+
+function updateShenzhenWorldWindow(dt) {
+  if (state.currentPlace !== "shenzhen") return;
+  const levelTarget = state.worldWindowTargetLevel;
+  state.worldWindowLevel = THREE.MathUtils.lerp(state.worldWindowLevel, levelTarget, 1 - Math.pow(0.02, dt));
+  const slantLevel = Math.min(state.worldWindowLevel, 3);
+  const slantPoint = shenzhenSlantPoint(slantLevel);
+  if (shenzhenElevatorCar) {
+    shenzhenElevatorCar.position.copy(slantPoint);
+    shenzhenElevatorCar.rotation.x = -0.36;
+  }
+  if (shenzhenLiftLabel) {
+    shenzhenLiftLabel.position.copy(slantPoint).add(new THREE.Vector3(0, 2.0, -1.6));
+  }
+  if (shenzhenCenterElevatorCar) {
+    const centerPoint = shenzhenCenterPoint(state.worldWindowLevel);
+    shenzhenCenterElevatorCar.position.copy(centerPoint);
+  }
+  if (state.mode === "shenzhen-elevator") {
+    const ridePoint = levelTarget <= 3 ? slantPoint.clone() : shenzhenCenterPoint(state.worldWindowLevel);
+    eggy.position.copy(ridePoint).add(new THREE.Vector3(0, 1.25, 0.25));
+    eggy.rotation.y += dt * 0.45;
+    const closeEnough = Math.abs(state.worldWindowLevel - levelTarget) < 0.035;
+    if (closeEnough) {
+      state.worldWindowLevel = levelTarget;
+      if (levelTarget === 1) {
+        state.mode = "walk";
+        eggy.position.set(18, 1.05, -8);
+        setStatus("电梯回到1楼入口。按“电梯上”可以去二楼餐厅平台。");
+      } else if (levelTarget === 2) {
+        state.mode = "walk";
+        eggy.position.set(41, 10.6, -3);
+        setStatus("到了2楼餐厅平台：这里有餐厅，可以继续按“电梯上”去三楼。");
+      } else if (levelTarget === 3) {
+        state.mode = "walk";
+        eggy.position.set(30, 20.5, -6);
+        setStatus("到了3楼观景台：斜电梯到这里。中间直电梯可以继续往上。");
+      } else {
+        state.mode = "walk";
+        eggy.position.set(30, 39.3, 1.8);
+        setStatus("到达塔顶楼梯口：再往上就是富豪公寓门口，游戏里可以看，但现实里不要乱闯。");
+      }
+    }
+  }
+}
+
+function pointOnWaterRide(t) {
+  if (!waterRidePath.length) return new THREE.Vector3(-42, 0.75, 20);
+  const scaled = THREE.MathUtils.clamp(t, 0, 0.999) * (waterRidePath.length - 1);
+  const index = Math.floor(scaled);
+  const localT = scaled - index;
+  const a = waterRidePath[index];
+  const b = waterRidePath[Math.min(index + 1, waterRidePath.length - 1)];
+  const eased = localT * localT * (3 - 2 * localT);
+  return a.clone().lerp(b, eased);
+}
+
+function updateWaterRide(dt) {
+  if (state.currentPlace !== "water" || !waterRaft) return;
+  if (!state.waterRide) {
+    if (waterRidePath.length) waterRaft.position.lerp(waterRidePath[0], 1 - Math.pow(0.01, dt));
+    return;
+  }
+  state.waterRideT += dt / 8.2;
+  const t = Math.min(1, state.waterRideT);
+  const p = pointOnWaterRide(t);
+  const next = pointOnWaterRide(Math.min(1, t + 0.02));
+  waterRaft.position.copy(p);
+  waterRaft.rotation.y = Math.atan2(next.x - p.x, next.z - p.z);
+  waterRaft.rotation.z = Math.sin(t * Math.PI * 8) * 0.16;
+  eggy.position.copy(p).add(new THREE.Vector3(0, 1.05, 0));
+  eggy.rotation.y = waterRaft.rotation.y;
+  if (t < 0.23) {
+    setStatus("水上乐园：工作人员把你放到皮划艇上，电梯把你送到滑道入口。");
+  } else if (t < 0.62) {
+    setStatus("正在滑大喇叭！不是满地都是水，是滑道里的水在带着皮划艇走。");
+  } else if (t < 0.96) {
+    setStatus("皮划艇冲出大喇叭，朝水池滑下去。");
+  } else {
+    state.waterRide = false;
+    state.mode = "walk";
+    eggy.position.set(18, 1.05, -8);
+    setStatus("水上乐园滑道完成！皮划艇冲进水池，游戏成功。再点“开始/互动”可以重玩。");
+  }
+}
+
 function updateCamera(dt) {
-  const target = state.currentPlace === "metro" && state.mode === "metro" && metroTrainGroup ? metroTrainGroup.position : (state.mode === "walk" || state.mode === "boarding") ? eggy.position : plane.position;
+  const target = state.currentPlace === "metro" && state.mode === "metro" && metroTrainGroup ? metroTrainGroup.position : (state.currentPlace === "water" && state.mode === "water-ride" && waterRaft) ? waterRaft.position : (state.currentPlace === "shenzhen" || state.currentPlace === "landmarks" || state.mode === "walk" || state.mode === "boarding") ? eggy.position : plane.position;
   if (state.ridingWheel) {
     const desiredWheel = new THREE.Vector3(eggy.position.x - 10, eggy.position.y + 3.2, eggy.position.z + 14);
     camera.position.lerp(desiredWheel, 1 - Math.pow(0.001, dt));
     camera.lookAt(eggy.position.x, eggy.position.y + 1.2, eggy.position.z);
     return;
   }
-  const desired = new THREE.Vector3(target.x - 15, target.y + 9.5, target.z + 18);
+  const baseDistance = state.currentPlace === "shenzhen" ? 38 : state.cameraDistance;
+  const baseHeight = state.currentPlace === "shenzhen" ? 14 : 9.5;
+  const desired = new THREE.Vector3(
+    target.x + Math.sin(state.cameraYaw) * baseDistance,
+    target.y + baseHeight + state.cameraPitch * 12,
+    target.z + Math.cos(state.cameraYaw) * baseDistance
+  );
   if (state.inCockpit && ["boarded", "taxi", "takeoff", "flying", "landing", "landed"].includes(state.mode)) {
     const cam = plane.localToWorld(new THREE.Vector3(2.05, 0.58, -0.08));
     const look = plane.localToWorld(new THREE.Vector3(4.8, 0.5, 0));
@@ -2594,7 +3292,13 @@ function updateCamera(dt) {
     camera.lookAt(look);
     return;
   }
-  if (state.mode !== "walk") desired.set(target.x - 18, target.y + 9, target.z + 20);
+  if (state.mode !== "walk" && state.currentPlace !== "shenzhen") {
+    desired.set(
+      target.x + Math.sin(state.cameraYaw) * 31,
+      target.y + 9 + state.cameraPitch * 9,
+      target.z + Math.cos(state.cameraYaw) * 31
+    );
+  }
   camera.position.lerp(desired, 1 - Math.pow(0.001, dt));
   camera.lookAt(target.x, target.y + 2.4, target.z);
 }
@@ -2609,6 +3313,8 @@ function animate() {
   updatePlane(dt);
   updateCabinWalking(dt);
   updateMetro(dt);
+  updateShenzhenWorldWindow(dt);
+  updateWaterRide(dt);
   updateAmusement(dt);
   updateWorldTour(dt);
   updateTemporaryEffects(dt);
@@ -2653,6 +3359,40 @@ function bindStick() {
   moveStick.addEventListener("pointercancel", clear);
 }
 
+function bindCanvasViewDrag() {
+  let pointerId = null;
+  let lastX = 0;
+  let lastY = 0;
+  canvas.addEventListener("pointerdown", (event) => {
+    pointerId = event.pointerId;
+    lastX = event.clientX;
+    lastY = event.clientY;
+    state.cameraDragging = true;
+    canvas.setPointerCapture(pointerId);
+    setStatus("正在拖动视角：左右拖可以绕着看，上下拖可以看高一点或低一点。");
+  });
+  canvas.addEventListener("pointermove", (event) => {
+    if (event.pointerId !== pointerId || !state.cameraDragging) return;
+    const dx = event.clientX - lastX;
+    const dy = event.clientY - lastY;
+    lastX = event.clientX;
+    lastY = event.clientY;
+    state.cameraYaw -= dx * 0.006;
+    state.cameraPitch = THREE.MathUtils.clamp(state.cameraPitch + dy * 0.004, -0.55, 1.05);
+  });
+  const clear = (event) => {
+    if (event && event.pointerId !== pointerId) return;
+    pointerId = null;
+    state.cameraDragging = false;
+  };
+  canvas.addEventListener("pointerup", clear);
+  canvas.addEventListener("pointercancel", clear);
+  canvas.addEventListener("wheel", (event) => {
+    event.preventDefault();
+    state.cameraDistance = THREE.MathUtils.clamp(state.cameraDistance + Math.sign(event.deltaY) * 2.2, 16, 54);
+  }, { passive: false });
+}
+
 window.addEventListener("resize", resize);
 window.addEventListener("keydown", (event) => state.keys.add(event.code));
 window.addEventListener("keyup", (event) => state.keys.delete(event.code));
@@ -2668,6 +3408,13 @@ buttons.start.addEventListener("click", startInteract);
 buttons.park.addEventListener("click", openPark);
 buttons.lobby.addEventListener("click", goLobby);
 buttons.tour.addEventListener("click", startWorldTour);
+buttons.shenzhen.addEventListener("click", goShenzhen);
+buttons.doublePlane.addEventListener("click", chooseDoublePlane);
+buttons.parkPlane.addEventListener("click", chooseParkPlane);
+buttons.worldWindow.addEventListener("click", openWorldWindow);
+buttons.elevatorUp.addEventListener("click", () => moveWorldWindowElevator(1));
+buttons.elevatorDown.addEventListener("click", () => moveWorldWindowElevator(-1));
+buttons.towerTop.addEventListener("click", goTowerTop);
 buttons.ferris.addEventListener("click", toggleFerrisRide);
 buttons.accidentRide.addEventListener("click", startAmusementAccidentRide);
 buttons.selectPlane.addEventListener("click", selectNextPlane);
@@ -2694,6 +3441,7 @@ buttons.meScore.addEventListener("click", addScoreToMe);
 
 populateAirportSelect();
 bindStick();
+bindCanvasViewDrag();
 renderStudentScores();
 resize();
 animate();
