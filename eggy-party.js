@@ -3276,7 +3276,7 @@ function planeDetails(label, model, tailMark, color) {
 
 function drawPlaneShape(x, y, angle, color, showPilot, label = "", model = "波音737", tailMark = "JET", bank = 0) {
   const details = planeDetails(label, model, tailMark, color);
-  const bankAmount = Math.max(-0.66, Math.min(0.66, bank));
+  const bankAmount = 0;
   const bankDepth = Math.abs(bankAmount);
   const foldSide = bankAmount > 0 ? 1 : -1;
   const wingFold = 0;
@@ -3377,6 +3377,8 @@ function drawPlaneShape(x, y, angle, color, showPilot, label = "", model = "波�
   ctx.strokeStyle = accent;
   ctx.lineWidth = 4;
   ctx.beginPath();
+  ctx.moveTo(-118, -9);
+  ctx.bezierCurveTo(-56, -13, 60, -13, 118, -5);
   ctx.moveTo(-118, 9);
   ctx.bezierCurveTo(-56, 13, 60, 13, 118, 5);
   ctx.stroke();
@@ -3386,6 +3388,8 @@ function drawPlaneShape(x, y, angle, color, showPilot, label = "", model = "波�
   ctx.beginPath();
   ctx.moveTo(-126, -22);
   ctx.bezierCurveTo(-60, -32, 64, -30, 128, -10);
+  ctx.moveTo(-126, 22);
+  ctx.bezierCurveTo(-60, 32, 64, 30, 128, 10);
   ctx.stroke();
 
   if (bankDepth > 0.06) {

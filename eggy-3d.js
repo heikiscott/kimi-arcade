@@ -2988,7 +2988,7 @@ function updateWorldTour(dt) {
   plane.position.z = Math.sin(t * 0.52) * radiusZ;
   plane.position.y = 10 + Math.sin(t * 1.1) * 2;
   plane.rotation.y = Math.PI * 1.5 - t * 0.52;
-  plane.rotation.z = Math.sin(t * 1.3) * 0.22;
+  plane.rotation.z = 0;
   if (state.tourTimer > 5.5) {
     state.tourTimer = 0;
     setStatus(`${tourCountries[state.tourIndex].intro} 点“开始/互动”去下一个国家，不会自己乱跑。`);
@@ -3068,7 +3068,7 @@ function updatePlane(dt) {
   if (planeMode === "taxi") {
     const turnInput = state.stick.x;
     plane.rotation.y -= turnInput * dt * 0.85;
-    plane.rotation.z = THREE.MathUtils.lerp(plane.rotation.z, -turnInput * 0.18 + Math.sin(performance.now() * 0.004) * 0.025, dt * 4);
+    plane.rotation.z = THREE.MathUtils.lerp(plane.rotation.z, 0, dt * 4);
     plane.position.y = THREE.MathUtils.lerp(plane.position.y, PLANE_GROUND_Y, dt * 8);
     plane.position.addScaledVector(flightForwardVector(), dt * 14);
     plane.position.x = THREE.MathUtils.clamp(plane.position.x, -60, 60);
@@ -3094,7 +3094,7 @@ function updatePlane(dt) {
       plane.position.addScaledVector(forward, dt * 34);
       plane.position.y = PLANE_GROUND_Y + lift * 8.6 + Math.max(0, climbT - 3.2) * 2.2;
       plane.position.x += Math.sin(climbT * 0.8) * dt * 1.4;
-      plane.rotation.z = THREE.MathUtils.lerp(plane.rotation.z, -0.1, dt * 1.2);
+      plane.rotation.z = THREE.MathUtils.lerp(plane.rotation.z, 0, dt * 1.2);
       setStatus("机头慢慢抬起来，飞机平滑爬升，不会突然掉下去。");
     }
     if (state.planeT > 5.8) {
@@ -3110,7 +3110,7 @@ function updatePlane(dt) {
     const turnInput = state.autoPilot ? Math.sin(state.planeT * 0.45) * 0.12 : state.stick.x;
     const pitchInput = state.autoPilot ? Math.sin(state.planeT * 0.65) * 0.18 : state.stick.y;
     plane.rotation.y -= turnInput * dt * 0.95;
-    plane.rotation.z = THREE.MathUtils.lerp(plane.rotation.z, -turnInput * 0.32, dt * 3);
+    plane.rotation.z = THREE.MathUtils.lerp(plane.rotation.z, 0, dt * 3);
     const forward = flightForwardVector();
     plane.position.addScaledVector(forward, dt * 22);
     plane.position.y = THREE.MathUtils.clamp(plane.position.y + pitchInput * dt * 10, PLANE_AIR_MIN_Y, 34);
@@ -3128,7 +3128,7 @@ function updatePlane(dt) {
       plane.position.z -= dt * 6;
       plane.position.y = THREE.MathUtils.lerp(plane.position.y, 12, dt * 0.75);
       plane.rotation.y = smoothAngle(plane.rotation.y, -Math.PI / 2, dt * 0.8);
-      plane.rotation.z = THREE.MathUtils.lerp(plane.rotation.z, 0.32, dt * 1.2);
+      plane.rotation.z = THREE.MathUtils.lerp(plane.rotation.z, 0, dt * 1.2);
       setStatus("正在空中转弯：机头慢慢转向降落跑道。");
     } else if (state.planeT < 5.4) {
       plane.position.x = THREE.MathUtils.lerp(plane.position.x, 18, dt * 1.0);
