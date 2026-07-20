@@ -285,21 +285,21 @@ const landingRunway = {
 };
 
 const airportPlanes = [
-  { x: 760, y: 580, label: "日本航空", model: "波音737", tailMark: "JL", color: "#d8343f", scale: 1.12 },
-  { x: 760, y: 790, label: "中国航空", model: "空客A320", tailMark: "CA", color: "#2f79c8", scale: 1.12 },
-  { x: 760, y: 1000, label: "美国航空", model: "波音737", tailMark: "AA", color: "#42536b", scale: 1.12 },
-  { x: 760, y: 1210, label: "东方航空", model: "空客A330", tailMark: "MU", color: "#d83258", scale: 1.14 },
-  { x: 760, y: 1420, label: "南方航空", model: "波音737", tailMark: "CZ", color: "#1f8c65", scale: 1.12 },
-  { x: 760, y: 1630, label: "亚洲航空", model: "空客A320", tailMark: "AK", color: "#d51f2a", scale: 1.12 },
-  { x: 760, y: 1840, label: "泰国航空", model: "空客A330", tailMark: "TG", color: "#7b4ab8", scale: 1.12 },
-  { x: 760, y: 2050, label: "大韩航空", model: "波音737", tailMark: "KE", color: "#4aa3df", scale: 1.12 },
-  { x: 760, y: 2260, label: "印度航空", model: "空客A320", tailMark: "AI", color: "#c22d2d", scale: 1.12 },
-  { x: 760, y: 2470, label: "山东航空", model: "波音737", tailMark: "SC", color: "#f28b2f", scale: 1.1 },
-  { x: 760, y: 2680, label: "澳门航空", model: "空客A320", tailMark: "NX", color: "#2270b8", scale: 1.1 },
-  { x: 760, y: 2890, label: "三亚航空", model: "波音737", tailMark: "SY", color: "#32a852", scale: 1.1 },
-  { x: 760, y: 3100, label: "海南航空", model: "空客A330", tailMark: "HU", color: "#8f5fd9", scale: 1.08 },
-  { x: 760, y: 3310, label: "春秋航空", model: "空客A320", tailMark: "9C", color: "#4f6b48", scale: 1.08 },
-  { x: 760, y: 3520, label: "吉祥航空", model: "波音737", tailMark: "HO", color: "#f06aa3", scale: 1.1 }
+  { x: 760, y: 580, label: "日本航空", native: "日本航空", english: "JAPAN AIRLINES", model: "波音787", tailMark: "JAL", color: "#d8343f", accent: "#172632", scale: 1.14 },
+  { x: 760, y: 790, label: "中国国航", native: "中国国际航空", english: "AIR CHINA", model: "波音787", tailMark: "CA", color: "#d8343f", accent: "#ffd15f", scale: 1.14 },
+  { x: 760, y: 1000, label: "美国航空", native: "AMERICAN", english: "AMERICAN AIRLINES", model: "波音777", tailMark: "AA", color: "#42536b", accent: "#d8343f", scale: 1.14 },
+  { x: 760, y: 1210, label: "东方航空", native: "中国东方航空", english: "CHINA EASTERN", model: "空客A330", tailMark: "MU", color: "#d83258", accent: "#2f79c8", scale: 1.16 },
+  { x: 760, y: 1420, label: "南方航空", native: "中国南方航空", english: "CHINA SOUTHERN", model: "波音737", tailMark: "CZ", color: "#1f57b8", accent: "#d8343f", scale: 1.14 },
+  { x: 760, y: 1630, label: "西藏航空", native: "西藏航空  བོད་ལྗོངས་མཁའ་ལམ", english: "TIBET AIRLINES", model: "空客A319", tailMark: "TV", color: "#9b2f2f", accent: "#ffd15f", scale: 1.12 },
+  { x: 760, y: 1840, label: "法国航空", native: "AIR FRANCE  France", english: "AIR FRANCE", model: "空客A350", tailMark: "AF", color: "#2457a6", accent: "#d8343f", scale: 1.12 },
+  { x: 760, y: 2050, label: "全日空", native: "全日本空輸", english: "ALL NIPPON AIRWAYS", model: "波音777", tailMark: "ANA", color: "#2352a1", accent: "#8fdcff", scale: 1.12 },
+  { x: 760, y: 2260, label: "大韩航空", native: "대한항공", english: "KOREAN AIR", model: "波音737", tailMark: "KE", color: "#4aa3df", accent: "#d8343f", scale: 1.12 },
+  { x: 760, y: 2470, label: "泰国航空", native: "การบินไทย", english: "THAI AIRWAYS", model: "空客A330", tailMark: "TG", color: "#7b4ab8", accent: "#ffd15f", scale: 1.12 },
+  { x: 760, y: 2680, label: "印度航空", native: "एयर इंडिया", english: "AIR INDIA", model: "空客A320", tailMark: "AI", color: "#c22d2d", accent: "#ffd15f", scale: 1.12 },
+  { x: 760, y: 2890, label: "新加坡航空", native: "Singapore", english: "SINGAPORE AIRLINES", model: "空客A350", tailMark: "SQ", color: "#1b3f8b", accent: "#ffd15f", scale: 1.12 },
+  { x: 760, y: 3100, label: "澳门航空", native: "澳門航空", english: "AIR MACAU", model: "空客A320", tailMark: "NX", color: "#2270b8", accent: "#ffd15f", scale: 1.1 },
+  { x: 760, y: 3310, label: "海南航空", native: "海南航空", english: "HAINAN AIRLINES", model: "空客A330", tailMark: "HU", color: "#8f5fd9", accent: "#ffd15f", scale: 1.08 },
+  { x: 760, y: 3520, label: "吉祥航空", native: "吉祥航空", english: "JUNEYAO AIR", model: "波音737", tailMark: "HO", color: "#f06aa3", accent: "#8f5fd9", scale: 1.1 }
 ];
 
 function gateY(plane) {
@@ -3262,13 +3262,26 @@ function drawAirplane(x, y, angle) {
   drawPlaneShape(x, y, angle, plane.color, true, plane.label, plane.model, plane.tailMark, vehicle.bank);
 }
 
+function planeDetails(label, model, tailMark, color) {
+  return airportPlanes.find((plane) => plane.label === label || plane.tailMark === tailMark) || {
+    label,
+    native: label,
+    english: label,
+    model,
+    tailMark,
+    color,
+    accent: "#ffd15f"
+  };
+}
+
 function drawPlaneShape(x, y, angle, color, showPilot, label = "", model = "波音737", tailMark = "JET", bank = 0) {
+  const details = planeDetails(label, model, tailMark, color);
   const bankAmount = Math.max(-0.66, Math.min(0.66, bank));
   const bankDepth = Math.abs(bankAmount);
-  const sideScale = 1 - bankDepth * 0.22;
   const foldSide = bankAmount > 0 ? 1 : -1;
-  const wingFold = bankAmount * 28;
+  const wingFold = 0;
   const bodyThickness = bankDepth * 12;
+  const accent = details.accent || "#ffd15f";
   ctx.save();
   ctx.translate(x, y);
   ctx.rotate(angle);
@@ -3278,8 +3291,7 @@ function drawPlaneShape(x, y, angle, color, showPilot, label = "", model = "波�
     ctx.ellipse(foldSide * bodyThickness, 20, 178 - bankDepth * 12, 26, 0, 0, Math.PI * 2);
     ctx.fill();
   }
-  ctx.scale(1.36 * sideScale, 1.36);
-  ctx.transform(1, 0, bankAmount * 0.08, 1, 0, 0);
+  ctx.scale(1.36, 1.36);
 
   ctx.strokeStyle = "#172632";
   ctx.lineWidth = 5;
@@ -3330,6 +3342,20 @@ function drawPlaneShape(x, y, angle, color, showPilot, label = "", model = "波�
   ctx.fill();
   ctx.stroke();
 
+  ctx.fillStyle = accent;
+  ctx.beginPath();
+  ctx.moveTo(-133, -14);
+  ctx.lineTo(-161, -41);
+  ctx.lineTo(-149, -8);
+  ctx.closePath();
+  ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(-133, 14);
+  ctx.lineTo(-161, 41);
+  ctx.lineTo(-149, 8);
+  ctx.closePath();
+  ctx.fill();
+
   ctx.fillStyle = "#ffffff";
   ctx.beginPath();
   ctx.moveTo(-144, -22);
@@ -3346,6 +3372,13 @@ function drawPlaneShape(x, y, angle, color, showPilot, label = "", model = "波�
   ctx.beginPath();
   ctx.moveTo(-120, 0);
   ctx.bezierCurveTo(-66, -6, 58, -5, 116, 0);
+  ctx.stroke();
+
+  ctx.strokeStyle = accent;
+  ctx.lineWidth = 4;
+  ctx.beginPath();
+  ctx.moveTo(-118, 9);
+  ctx.bezierCurveTo(-56, 13, 60, 13, 118, 5);
   ctx.stroke();
 
   ctx.strokeStyle = "rgba(23,38,50,0.28)";
@@ -3399,6 +3432,11 @@ function drawPlaneShape(x, y, angle, color, showPilot, label = "", model = "波�
   ctx.arc(126, 6, 6, 0, Math.PI * 2);
   ctx.fill();
 
+  ctx.fillStyle = accent;
+  ctx.beginPath();
+  ctx.ellipse(146, 0, 12, 5, 0, 0, Math.PI * 2);
+  ctx.fill();
+
   ctx.fillStyle = "rgba(50,167,226,0.82)";
   ctx.beginPath();
   ctx.moveTo(112, -12);
@@ -3419,24 +3457,57 @@ function drawPlaneShape(x, y, angle, color, showPilot, label = "", model = "波�
   }
 
   drawPlaneLandingGear(bankDepth);
-
-  ctx.save();
-  ctx.textAlign = "center";
-  ctx.lineWidth = 5;
-  ctx.strokeStyle = "#fff";
-  ctx.fillStyle = "#172632";
-  ctx.font = "900 18px system-ui";
-  ctx.strokeText(model, -2, -4);
-  ctx.fillText(model, -2, -4);
-  ctx.font = "900 15px system-ui";
-  ctx.strokeText(label, -2, 17);
-  ctx.fillText(label, -2, 17);
-  ctx.fillStyle = "#fff";
-  ctx.font = "900 15px system-ui";
-  ctx.fillText(tailMark, -110, 5);
-  ctx.restore();
+  drawPlaneBodyText(details);
+  drawTailBadge(details, accent);
 
   if (showPilot) drawEggyCharacter(16, -52, 0.66, 0);
+  ctx.restore();
+}
+
+function drawPlaneBodyText(details) {
+  const lines = [
+    details.english || details.label,
+    details.native || details.label,
+    `${details.model || ""}  ${details.tailMark || ""}`.trim()
+  ].filter(Boolean);
+  ctx.save();
+  ctx.textAlign = "center";
+  ctx.lineJoin = "round";
+  ctx.strokeStyle = "#ffffff";
+  ctx.lineWidth = 4.5;
+  ctx.fillStyle = "#172632";
+  ctx.font = "900 11px system-ui";
+  ctx.strokeText(lines[0], -4, -9);
+  ctx.fillText(lines[0], -4, -9);
+  ctx.font = "900 10px system-ui";
+  ctx.strokeText(lines[1] || "", -4, 5);
+  ctx.fillText(lines[1] || "", -4, 5);
+  ctx.font = "900 9px system-ui";
+  ctx.strokeText(lines[2] || "", -4, 18);
+  ctx.fillText(lines[2] || "", -4, 18);
+  ctx.restore();
+}
+
+function drawTailBadge(details, accent) {
+  ctx.save();
+  ctx.translate(-128, 0);
+  ctx.fillStyle = details.color || "#2f79c8";
+  ctx.beginPath();
+  roundedRect(-23, -16, 46, 32, 7);
+  ctx.fill();
+  ctx.strokeStyle = "#172632";
+  ctx.lineWidth = 3;
+  ctx.stroke();
+  ctx.fillStyle = accent || "#ffd15f";
+  ctx.beginPath();
+  ctx.arc(-10, -6, 5, 0, Math.PI * 2);
+  ctx.arc(10, 6, 5, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "900 14px system-ui";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText(details.tailMark || "JET", 0, 1);
   ctx.restore();
 }
 
@@ -3474,19 +3545,37 @@ function drawPlaneEngine(x, y, bankDepth = 0, side = 1) {
 
 function drawPlaneLandingGear(bankDepth = 0) {
   const alpha = 0.55 + bankDepth * 0.18;
-  ctx.fillStyle = `rgba(23,38,50,${alpha})`;
   [
-    [86, -15, 6],
-    [86, 15, 6],
-    [-44, -29, 8],
-    [-44, 29, 8],
-    [-92, -18, 7],
-    [-92, 18, 7]
+    [91, -18, 8],
+    [91, 18, 8],
+    [-32, -34, 10],
+    [-32, 34, 10],
+    [-88, -24, 8],
+    [-88, 24, 8]
   ].forEach(([gx, gy, r]) => {
-    ctx.beginPath();
-    ctx.arc(gx, gy, r, 0, Math.PI * 2);
-    ctx.fill();
+    drawPlaneWheel(gx, gy, r, alpha);
   });
+}
+
+function drawPlaneWheel(x, y, r, alpha) {
+  ctx.save();
+  ctx.fillStyle = `rgba(23,38,50,${alpha})`;
+  ctx.beginPath();
+  ctx.arc(x, y, r, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = "#d9e2ea";
+  ctx.beginPath();
+  ctx.arc(x, y, r * 0.48, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = "#172632";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(x - r * 0.55, y);
+  ctx.lineTo(x + r * 0.55, y);
+  ctx.moveTo(x, y - r * 0.55);
+  ctx.lineTo(x, y + r * 0.55);
+  ctx.stroke();
+  ctx.restore();
 }
 
 function drawWaterScene() {

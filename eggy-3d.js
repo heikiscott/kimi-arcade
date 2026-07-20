@@ -191,18 +191,20 @@ const destinationAirports3d = airportLocations.map((airport) => ({
 }));
 
 const planeOptions = [
-  { model: "B737-800", airlineCn: "中国南方航空", airlineEn: "CHINA SOUTHERN", short: "南航", tailMark: "CZ", reg: "B-5762", color: 0x1f57b8, tailColor: 0x174aa8, accent: 0xd8343f, deck: "单层", position: [-46, 0.55, 20], scale: 1.04 },
-  { model: "A320", airlineCn: "中国东方航空", airlineEn: "CHINA EASTERN", short: "东航", tailMark: "MU", reg: "B-6220", color: 0xd8343f, tailColor: 0xd8343f, accent: 0x2f79c8, deck: "单层", position: [-34, 0.55, 20], scale: 1.0 },
-  { model: "B787", airlineCn: "中国国际航空", airlineEn: "AIR CHINA", short: "国航", tailMark: "CA", reg: "B-2487", color: 0xd8343f, tailColor: 0xb91f2d, accent: 0xffd15f, deck: "单层", position: [-22, 0.55, 20], scale: 1.02 },
-  { model: "B777", airlineCn: "美国航空", airlineEn: "AMERICAN AIRLINES", short: "美国", tailMark: "AA", reg: "N777AA", color: 0x2f79c8, tailColor: 0x245b8f, accent: 0xd8343f, deck: "单层", position: [-10, 0.55, 20], scale: 1.04 },
-  { model: "B787", airlineCn: "日本航空", airlineEn: "JAPAN AIRLINES", short: "日航", tailMark: "JAL", reg: "JA787J", color: 0xd8343f, tailColor: 0xffffff, accent: 0x172632, deck: "单层", position: [2, 0.55, 20], scale: 1.02 },
+  { model: "B737-800", airlineCn: "中国南方航空", airlineEn: "CHINA SOUTHERN", nativeText: "中国南方航空", short: "南航", tailMark: "CZ", reg: "B-5762", color: 0x1f57b8, tailColor: 0x174aa8, accent: 0xd8343f, deck: "单层", position: [-46, 0.55, 20], scale: 1.04 },
+  { model: "A320", airlineCn: "中国东方航空", airlineEn: "CHINA EASTERN", nativeText: "中国东方航空", short: "东航", tailMark: "MU", reg: "B-6220", color: 0xd8343f, tailColor: 0xd8343f, accent: 0x2f79c8, deck: "单层", position: [-34, 0.55, 20], scale: 1.0 },
+  { model: "B787", airlineCn: "中国国际航空", airlineEn: "AIR CHINA", nativeText: "中国国际航空", short: "国航", tailMark: "CA", reg: "B-2487", color: 0xd8343f, tailColor: 0xb91f2d, accent: 0xffd15f, deck: "单层", position: [-22, 0.55, 20], scale: 1.02 },
+  { model: "B777", airlineCn: "美国航空", airlineEn: "AMERICAN AIRLINES", nativeText: "AMERICAN", short: "美国", tailMark: "AA", reg: "N777AA", color: 0x2f79c8, tailColor: 0x245b8f, accent: 0xd8343f, deck: "单层", position: [-10, 0.55, 20], scale: 1.04 },
+  { model: "B787", airlineCn: "日本航空", airlineEn: "JAPAN AIRLINES", nativeText: "日本航空", short: "日航", tailMark: "JAL", reg: "JA787J", color: 0xd8343f, tailColor: 0xffffff, accent: 0x172632, deck: "单层", position: [2, 0.55, 20], scale: 1.02 },
   { model: "A350", airlineCn: "新加坡航空", airlineEn: "SINGAPORE AIRLINES", short: "新航", tailMark: "SQ", reg: "9V-SMA", color: 0x1b3f8b, tailColor: 0x1b3f8b, accent: 0xffd15f, deck: "单层", position: [14, 0.55, 20], scale: 1.02 },
   { model: "A380", airlineCn: "阿联酋航空", airlineEn: "EMIRATES", short: "阿联酋", tailMark: "EK", reg: "A6-EKA", color: 0xd8343f, tailColor: 0x1f8c4d, accent: 0xffd15f, deck: "双层", position: [27, 0.66, 20], scale: 1.15, doubleDeck: true },
-  { model: "B777", airlineCn: "全日空", airlineEn: "ALL NIPPON AIRWAYS", short: "ANA", tailMark: "NH", reg: "JA777A", color: 0x2352a1, tailColor: 0x2352a1, accent: 0x8fdcff, deck: "单层", position: [40, 0.55, 20], scale: 1.03 },
+  { model: "B777", airlineCn: "全日空", airlineEn: "ALL NIPPON AIRWAYS", nativeText: "全日本空輸", short: "ANA", tailMark: "NH", reg: "JA777A", color: 0x2352a1, tailColor: 0x2352a1, accent: 0x8fdcff, deck: "单层", position: [40, 0.55, 20], scale: 1.03 },
   { model: "A350", airlineCn: "国泰航空", airlineEn: "CATHAY PACIFIC", short: "国泰", tailMark: "CX", reg: "B-LRA", color: 0x0f766e, tailColor: 0x0f766e, accent: 0xf5f1df, deck: "单层", position: [52, 0.55, 20], scale: 1.02 },
-  { model: "A330", airlineCn: "泰国航空", airlineEn: "THAI AIRWAYS", short: "泰航", tailMark: "TG", reg: "HS-TGA", color: 0x6a3fad, tailColor: 0x6a3fad, accent: 0xffd15f, deck: "单层", position: [64, 0.55, 20], scale: 1.0 },
-  { model: "A380-SZX", airlineCn: "深圳世界之窗号", airlineEn: "WINDOW OF THE WORLD", short: "世界之窗", tailMark: "WOW", reg: "SZX-336", color: 0x2f79c8, tailColor: 0xd8343f, accent: 0xffd15f, deck: "双层", position: [78, 0.68, 20], scale: 1.18, doubleDeck: true },
-  { model: "A380-FUN", airlineCn: "游乐园飞机", airlineEn: "AMUSEMENT AIR", short: "乐园飞机", tailMark: "FUN", reg: "FUN-777", color: 0xf06aa3, tailColor: 0x8f5fd9, accent: 0xffd15f, deck: "双层+游乐园", position: [94, 0.7, 20], scale: 1.22, doubleDeck: true }
+  { model: "A330", airlineCn: "泰国航空", airlineEn: "THAI AIRWAYS", nativeText: "การบินไทย", short: "泰航", tailMark: "TG", reg: "HS-TGA", color: 0x6a3fad, tailColor: 0x6a3fad, accent: 0xffd15f, deck: "单层", position: [64, 0.55, 20], scale: 1.0 },
+  { model: "A319", airlineCn: "西藏航空", airlineEn: "TIBET AIRLINES", nativeText: "西藏航空  བོད་ལྗོངས་མཁའ་ལམ", short: "西藏", tailMark: "TV", reg: "B-6420", color: 0x9b2f2f, tailColor: 0x9b2f2f, accent: 0xffd15f, deck: "单层", position: [76, 0.55, 20], scale: 1.0 },
+  { model: "A350", airlineCn: "法国航空", airlineEn: "AIR FRANCE", nativeText: "AIR FRANCE  France", short: "法航", tailMark: "AF", reg: "F-HSZX", color: 0x2457a6, tailColor: 0x2457a6, accent: 0xd8343f, deck: "单层", position: [88, 0.55, 20], scale: 1.02 },
+  { model: "A380-SZX", airlineCn: "深圳世界之窗号", airlineEn: "WINDOW OF THE WORLD", nativeText: "深圳世界之窗号", short: "世界之窗", tailMark: "WOW", reg: "SZX-336", color: 0x2f79c8, tailColor: 0xd8343f, accent: 0xffd15f, deck: "双层", position: [101, 0.68, 20], scale: 1.18, doubleDeck: true },
+  { model: "A380-FUN", airlineCn: "游乐园飞机", airlineEn: "AMUSEMENT AIR", nativeText: "游乐园飞机", short: "乐园飞机", tailMark: "FUN", reg: "FUN-777", color: 0xf06aa3, tailColor: 0x8f5fd9, accent: 0xffd15f, deck: "双层+游乐园", position: [115, 0.7, 20], scale: 1.22, doubleDeck: true }
 ];
 
 const PLANE_GROUND_Y = 1.15;
@@ -439,7 +441,7 @@ function createAirliner(color, model, options = {}) {
   const liveryColor = options.color ?? color;
   const tailColor = options.tailColor ?? liveryColor;
   const accent = options.accent ?? liveryColor;
-  const airlineText = `${options.airlineEn || model}  ${options.airlineCn || ""}`;
+  const airlineText = [options.airlineEn || model, options.nativeText || options.airlineCn || ""].filter(Boolean).join("\n");
   const bodyMat = mat(0xffffff);
   const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.78, 5.8, 12, 28), bodyMat);
   body.rotation.z = Math.PI / 2;
@@ -496,6 +498,7 @@ function createAirliner(color, model, options = {}) {
   engineL.rotation.z = Math.PI / 2;
   engineR.rotation.z = Math.PI / 2;
   group.add(engineL, engineR);
+  group.add(createLandingGear());
 
   for (let i = -2.1; i <= 1.8; i += 0.44) {
     const winL = sphere(0.055, 0x64717b, 1, 0.4, 0.08);
@@ -712,6 +715,36 @@ function createEngine(color = 0x2f79c8, accent = 0xffd15f) {
   return group;
 }
 
+function createLandingGear() {
+  const group = new THREE.Group();
+  const wheelMat = mat(0x172632);
+  const hubMat = mat(0xd9e2ea);
+  const strutMat = mat(0x6f7c86);
+  [
+    [2.25, -0.8, -0.28, 0.16],
+    [2.25, -0.8, 0.28, 0.16],
+    [-0.55, -0.78, -0.82, 0.2],
+    [-0.55, -0.78, 0.82, 0.2],
+    [-1.55, -0.78, -0.68, 0.18],
+    [-1.55, -0.78, 0.68, 0.18]
+  ].forEach(([x, y, z, r]) => {
+    const strut = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.42, 10), strutMat);
+    strut.position.set(x, y + 0.2, z);
+    strut.castShadow = true;
+    group.add(strut);
+    const wheel = new THREE.Mesh(new THREE.CylinderGeometry(r, r, 0.12, 24), wheelMat);
+    wheel.rotation.x = Math.PI / 2;
+    wheel.position.set(x, y, z);
+    wheel.castShadow = true;
+    group.add(wheel);
+    const hubA = new THREE.Mesh(new THREE.CylinderGeometry(r * 0.45, r * 0.45, 0.125, 16), hubMat);
+    hubA.rotation.x = Math.PI / 2;
+    hubA.position.set(x, y, z);
+    group.add(hubA);
+  });
+  return group;
+}
+
 function makeLabel(text) {
   const c = document.createElement("canvas");
   c.width = 256;
@@ -735,11 +768,16 @@ function makePlaneText(text, width = 2, height = 0.45, fontSize = 28, color = "#
   const g = c.getContext("2d");
   g.clearRect(0, 0, c.width, c.height);
   g.fillStyle = color;
-  g.font = `900 ${fontSize}px system-ui`;
   g.textAlign = "center";
   g.textBaseline = "middle";
-  const clean = String(text).trim();
-  g.fillText(clean, c.width / 2, c.height / 2);
+  const lines = String(text).trim().split("\n").filter(Boolean).slice(0, 3);
+  const lineHeight = lines.length > 1 ? fontSize * 1.08 : fontSize;
+  const startY = c.height / 2 - ((lines.length - 1) * lineHeight) / 2;
+  lines.forEach((line, index) => {
+    const size = index === 0 ? fontSize : Math.max(18, fontSize - 5);
+    g.font = `900 ${size}px system-ui`;
+    g.fillText(line, c.width / 2, startY + index * lineHeight);
+  });
   const texture = new THREE.CanvasTexture(c);
   texture.anisotropy = 8;
   const material = new THREE.MeshBasicMaterial({ map: texture, transparent: true, side: THREE.DoubleSide });
