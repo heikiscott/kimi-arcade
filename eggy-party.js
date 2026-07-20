@@ -171,6 +171,7 @@ const vehicle = {
   pilotVx: 0,
   pilotVy: 0,
   pilotBall: false,
+  pilotOnGround: false,
   fallStart: 0,
   fallDuration: 38000,
   floatDuration: 9000,
@@ -780,6 +781,7 @@ function resetVehicle() {
   vehicle.pilotVx = 0;
   vehicle.pilotVy = 0;
   vehicle.pilotBall = false;
+  vehicle.pilotOnGround = false;
   vehicle.fallStart = 0;
   vehicle.planeCrashExploded = false;
   vehicle.landedPlaneVisible = false;
@@ -864,6 +866,7 @@ function boardNearestPlane() {
   vehicle.vx = 0;
   vehicle.vy = 0;
   vehicle.landedPlaneVisible = false;
+  vehicle.pilotOnGround = false;
   vehicle.groundRunway = "takeoff";
   vehicle.mode = "boarded";
   statusText.textContent = `从停机位上了${nearest.plane.label}！可以点“去起飞跑道”或“去降落跑道”。`;
@@ -1122,6 +1125,7 @@ function exitPlane() {
     return true;
   }
   vehicle.mode = "walking";
+  vehicle.pilotOnGround = false;
   vehicle.pilotX = vehicle.x - 70;
   vehicle.pilotY = gateY(airportPlanes[vehicle.selectedPlaneIndex] || airportPlanes[0]);
   vehicle.pilotVx = 0;
@@ -1151,17 +1155,29 @@ function jumpFromPlane() {
     statusText.textContent = "要先在飞机里，才能跳下飞机。";
     return true;
   }
-  vehicle.mode = "plane-falling";
+  const targetX = Math.max(
+    landingRunway.targetX,
+    Math.min(landingRunway.rolloutEndX - 1400, vehicle.x + 1200)
+  );
+  vehicle.mode = "auto-landing";
   vehicle.fallStart = performance.now();
   vehicle.planeCrashExploded = false;
   vehicle.pilotX = Math.max(flightWorld.x + 210, Math.min(flightWorld.x + flightWorld.w - 210, vehicle.x - 110));
   vehicle.pilotY = landingGroundY(vehicle.x) + 118;
   vehicle.pilotVy = 0;
   vehicle.pilotBall = false;
+  vehicle.pilotOnGround = true;
+  vehicle.landingTargetX = targetX;
+  vehicle.landingTargetY = landingRunway.centerY;
+  vehicle.heading = 0;
+  vehicle.angle += (0 - vehicle.angle) * 0.35;
+  vehicle.bank = 0;
+  vehicle.landingTurboUntil = 0;
   flightLookOffsetX = 0;
   flightLookOffsetY = -360;
-  crashSong();
-  statusText.textContent = "小蛋仔已经在地面下面了！飞机还在上方，拖屏幕可以往上看、往下看、往左看、往右看。";
+  tone(680, 0, 0.12, 0.025, "triangle");
+  tone(520, 0.12, 0.16, 0.02, "triangle");
+  statusText.textContent = "你跳下飞机到地面了！飞机切换成无人驾驶，会自动飞回降落跑道。";
   return true;
 }
 
@@ -1609,8 +1625,16 @@ function updateActivity() {
         vehicle.heading = 0;
         vehicle.angle = 0;
         vehicle.bank = 0;
-        vehicle.mode = "parked";
-        statusText.textContent = "飞机回到停机位并锁住停好了，真的不会继续跑了。";
+        if (vehicle.pilotOnGround) {
+          vehicle.mode = "walking";
+          vehicle.pilotOnGround = false;
+          vehicle.pilotVx = 0;
+          vehicle.pilotVy = 0;
+          statusText.textContent = "无人驾驶飞机回到停机位并锁住停好了。小蛋仔在地面，可以继续走路。";
+        } else {
+          vehicle.mode = "parked";
+          statusText.textContent = "飞机回到停机位并锁住停好了，真的不会继续跑了。";
+        }
       }
     } else if (vehicle.mode === "auto-landing") {
       if (vehicle.landingTargetX < vehicle.x + 260) {
@@ -1636,9 +1660,9 @@ function updateActivity() {
       vehicle.y += vehicle.vy;
       const speedNow = Math.hypot(vehicle.vx, vehicle.vy);
       statusText.textContent = landingTurboActive
-        ? `回跑道 100 倍加速中：距离 ${Math.round(distance)} 米，速度 ${Math.round(speedNow * 26)}。`
+        ? `无人驾驶回跑道 100 倍加速中：距离 ${Math.round(distance)} 米，速度 ${Math.round(speedNow * 26)}。`
         : distance > 150
-        ? `自动降落中：正在飞往停机坪后方专用降落跑道，距离 ${Math.round(distance)} 米。`
+        ? `${vehicle.pilotOnGround ? "小蛋仔在地面看着，" : ""}无人驾驶自动降落中：正在飞往停机坪后方专用降落跑道，距离 ${Math.round(distance)} 米。`
         : "自动降落中：接近专用降落跑道，准备长距离减速。";
       if (distance < 44 || (landingTurboActive && distance < Math.max(90, speedNow * 1.4)) || (distance < 90 && speedNow < 1.6)) {
         vehicle.x = target.x;
@@ -2532,7 +2556,7 @@ function drawFlightScene() {
     if ((vehicle.mode === "boarded" || vehicle.mode === "taxi-takeoff" || vehicle.mode === "taxi-ready" || vehicle.mode === "takeoff-roll" || vehicle.mode === "flying" || vehicle.mode === "auto-landing" || vehicle.mode === "landing-rollout" || vehicle.mode === "taxi-to-gate" || vehicle.mode === "parked" || vehicle.mode === "plane-falling" || vehicle.mode === "landed") && index === vehicle.selectedPlaneIndex) return;
     drawParkedPlane(plane);
   });
-  if (vehicle.mode === "walking" || vehicle.mode === "plane-falling" || vehicle.mode === "landed") drawWalkingPilot(vehicle.pilotX, vehicle.pilotY);
+  if (vehicle.mode === "walking" || vehicle.mode === "plane-falling" || vehicle.mode === "landed" || vehicle.pilotOnGround) drawWalkingPilot(vehicle.pilotX, vehicle.pilotY);
   if (vehicle.mode === "boarded" || vehicle.mode === "taxi-takeoff" || vehicle.mode === "taxi-ready" || vehicle.mode === "takeoff-roll" || vehicle.mode === "flying" || vehicle.mode === "auto-landing" || vehicle.mode === "landing-rollout" || vehicle.mode === "taxi-to-gate" || vehicle.mode === "parked" || vehicle.mode === "plane-falling" || vehicle.mode === "landed") drawAirplane(vehicle.x, vehicle.y, vehicle.angle);
   if (vehicle.mode === "plane-falling") drawPlaneFallingOverlay();
   ctx.restore();
@@ -2560,7 +2584,7 @@ function drawFlightScene() {
       : vehicle.mode === "takeoff-roll"
         ? "跑道滑行中"
       : vehicle.mode === "auto-landing"
-        ? "自动降落，正在找跑道"
+        ? vehicle.pilotOnGround ? "小蛋仔在地面，无人驾驶回跑道" : "自动降落，正在找跑道"
       : vehicle.mode === "landing-rollout"
         ? "落地后跑道滑行减速"
       : vehicle.mode === "taxi-to-gate"
@@ -2576,8 +2600,8 @@ function drawFlightScene() {
       ? "点“滑行”开始跑"
     : vehicle.mode === "takeoff-roll"
       ? "加速/减速，点起飞才离地"
-    : vehicle.mode === "auto-landing"
-      ? "自动飞向停机坪后方降落跑道"
+      : vehicle.mode === "auto-landing"
+        ? vehicle.pilotOnGround ? "飞机自己飞向降落跑道" : "自动飞向停机坪后方降落跑道"
       : vehicle.mode === "landing-rollout"
         ? "长距离滑跑减速，再回停机位"
       : vehicle.mode === "taxi-to-gate"
