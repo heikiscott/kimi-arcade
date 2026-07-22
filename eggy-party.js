@@ -30,6 +30,7 @@ const locationPicker = document.querySelector("#locationPicker");
 const categoryRow = document.querySelector("#categoryRow");
 const locationList = document.querySelector("#locationList");
 const closePickerBtn = document.querySelector("#closePickerBtn");
+const playCourseMusicBtn = document.querySelector("#playCourseMusicBtn");
 const chooseMusicBtn = document.querySelector("#chooseMusicBtn");
 const localMusicInput = document.querySelector("#localMusicInput");
 const characterSelect = document.querySelector("#characterSelect");
@@ -256,8 +257,8 @@ let audioContext = null;
 let courseMusicTimer = null;
 let courseMusicStep = 0;
 let courseMusicAudio = null;
-let localMusicUrl = "";
-let localMusicName = "";
+let localMusicUrl = "assets/racing-user-music.mp4?v=20260722";
+let localMusicName = "你刚刚发来的超级马里奥音乐";
 let joystickX = 0;
 let joystickY = 0;
 let joystickPointerId = null;
@@ -470,7 +471,7 @@ function playCourseMusic() {
     courseMusicAudio.play().then(() => {
       statusText.textContent = `正在播放你选的音乐：${localMusicName || "本地音乐"}。`;
     }).catch(() => {
-      statusText.textContent = "这首本地音乐暂时播不出来，先用备用闯关音乐。";
+      statusText.textContent = "手机可能拦截了自动播放，请点“播放闯关音乐”；如果还不行就先用备用闯关音乐。";
       playSyntheticCourseMusic();
     });
     return;
@@ -1268,7 +1269,7 @@ function startCourse(locationName = selectedLocation.name) {
   playCourseMusic();
 }
 
-function goLobby(message = "回到人类探险大厅。点“乐园”选择新地点。") {
+function goLobby(message = "回到蛋仔派对大厅。点“乐园”选择新地点。") {
   stopCourseMusic();
   screen = "lobby";
   transfer.active = false;
@@ -2065,7 +2066,7 @@ function drawLobby() {
 
   ctx.fillStyle = "#172632";
   ctx.font = "900 34px system-ui";
-  ctx.fillText("人类探险大厅", 36, 64);
+  ctx.fillText("蛋仔派对大厅", 36, 64);
   ctx.font = "800 19px system-ui";
   ctx.fillText(isNightTime() ? "夜晚来了：僵尸会追你，快躲开！" : "左右走，跳/开始互动：坐摩天轮、爬樱花树、看喷泉。", 38, 96);
   drawDayClock();
@@ -5347,9 +5348,13 @@ localMusicInput.addEventListener("change", () => {
 if (characterSelect) {
   characterSelect.addEventListener("change", () => {
     selectedHumanIndex = Number(characterSelect.value) || 0;
-    statusText.textContent = `角色已切换成：${currentHuman().name}。现在是人类探险模式。`;
+    statusText.textContent = `角色已切换成：${currentHuman().name}。现在是蛋仔派对模式。`;
   });
 }
+playCourseMusicBtn.addEventListener("click", () => {
+  getAudio();
+  playCourseMusic();
+});
 parkBtn.addEventListener("click", () => {
   locationPicker.hidden = !locationPicker.hidden;
 });
