@@ -32,6 +32,7 @@ const locationList = document.querySelector("#locationList");
 const closePickerBtn = document.querySelector("#closePickerBtn");
 const chooseMusicBtn = document.querySelector("#chooseMusicBtn");
 const localMusicInput = document.querySelector("#localMusicInput");
+const characterSelect = document.querySelector("#characterSelect");
 
 const W = canvas.width;
 const H = canvas.height;
@@ -42,6 +43,23 @@ const FLIGHT_METERS_PER_WORLD_UNIT = 42;
 const keys = new Set();
 const controls = new Set();
 const controlPointers = new Map();
+
+const humanCharacters = [
+  { name: "女探险家", skin: "#f1b58f", hair: "#2b1b14", shirt: "#f06aa3", pants: "#2f79c8", hat: "#ffd15f", accessory: "scarf" },
+  { name: "男探险家", skin: "#c98b62", hair: "#172632", shirt: "#38a86a", pants: "#42536b", hat: "#d8b46f", accessory: "backpack" },
+  { name: "飞行员", skin: "#ffd0ac", hair: "#4b2f22", shirt: "#2f79c8", pants: "#172632", hat: "#2f79c8", accessory: "badge" },
+  { name: "工程师", skin: "#d79b70", hair: "#321f18", shirt: "#ff8a3d", pants: "#4f5e68", hat: "#ffd15f", accessory: "wrench" },
+  { name: "医生", skin: "#f0c29f", hair: "#3a241b", shirt: "#f7fbff", pants: "#32a7e2", hat: "#f7fbff", accessory: "cross" },
+  { name: "游客", skin: "#b87954", hair: "#111827", shirt: "#8f5fd9", pants: "#2f79c8", hat: "#f06aa3", accessory: "camera" },
+  { name: "运动员", skin: "#e0a17a", hair: "#22140f", shirt: "#d8343f", pants: "#172632", hat: "#d8343f", accessory: "medal" },
+  { name: "学生", skin: "#ffd6b0", hair: "#5b3524", shirt: "#32a7e2", pants: "#42536b", hat: "#ffffff", accessory: "book" }
+];
+
+let selectedHumanIndex = 0;
+
+function currentHuman() {
+  return humanCharacters[selectedHumanIndex] || humanCharacters[0];
+}
 
 const categories = [
   { key: "flight", title: "开飞机地点", count: 50, prefix: "云端机场", detail: "停机坪、飞机队列、大跑道" },
@@ -125,6 +143,14 @@ function getAirportStyle() {
   if (/南非|约翰内斯堡|JNB/.test(text)) return { key: "south-africa", name: "南非风格", ground: "#b5c66c", field: "#8eb05c", accent: "#f2b44b" };
   if (/中国|北京|上海|香港|PEK|PVG|HKG/.test(text)) return { key: "china", name: "中国风格", ground: "#78bd72", field: "#65aa68", accent: "#d8343f" };
   if (/日本|东京|大阪|HND|KIX/.test(text)) return { key: "japan", name: "日本风格", ground: "#79c17c", field: "#69ad70", accent: "#f06aa3" };
+  if (/法国|巴黎|CDG/.test(text)) return { key: "france", name: "法国风格", ground: "#78b5d8", field: "#6aa6cc", accent: "#d8343f" };
+  if (/韩国|首尔|ICN/.test(text)) return { key: "korea", name: "韩国风格", ground: "#7fc8d8", field: "#6bb9cb", accent: "#d8343f" };
+  if (/泰国|曼谷|BKK/.test(text)) return { key: "thailand", name: "泰国风格", ground: "#8fc46d", field: "#76ad62", accent: "#7b4ab8" };
+  if (/印度|德里|DEL/.test(text)) return { key: "india", name: "印度风格", ground: "#d6b06c", field: "#c89b5a", accent: "#38a86a" };
+  if (/德国|法兰克福|FRA/.test(text)) return { key: "germany", name: "德国风格", ground: "#96b66f", field: "#7fa15f", accent: "#172632" };
+  if (/阿联酋|迪拜|DXB|卡塔尔|多哈|DOH/.test(text)) return { key: "desert", name: "沙漠机场风格", ground: "#d8b46f", field: "#c89f5b", accent: "#ffd15f" };
+  if (/澳大利亚|悉尼|SYD/.test(text)) return { key: "australia", name: "澳大利亚风格", ground: "#82c4a8", field: "#6faf95", accent: "#f7fbff" };
+  if (/加拿大|温哥华|YVR/.test(text)) return { key: "canada", name: "加拿大风格", ground: "#90c8d7", field: "#78b4c5", accent: "#d8343f" };
   return { key: "global", name: "国际机场风格", ground: "#89d06a", field: "#7abf63", accent: "#32a7e2" };
 }
 
@@ -1242,7 +1268,7 @@ function startCourse(locationName = selectedLocation.name) {
   playCourseMusic();
 }
 
-function goLobby(message = "回到蛋仔派对大厅。点“乐园”选择新地点。") {
+function goLobby(message = "回到人类探险大厅。点“乐园”选择新地点。") {
   stopCourseMusic();
   screen = "lobby";
   transfer.active = false;
@@ -2039,7 +2065,7 @@ function drawLobby() {
 
   ctx.fillStyle = "#172632";
   ctx.font = "900 34px system-ui";
-  ctx.fillText("蛋仔派对大厅", 36, 64);
+  ctx.fillText("人类探险大厅", 36, 64);
   ctx.font = "800 19px system-ui";
   ctx.fillText(isNightTime() ? "夜晚来了：僵尸会追你，快躲开！" : "左右走，跳/开始互动：坐摩天轮、爬樱花树、看喷泉。", 38, 96);
   drawDayClock();
@@ -2062,7 +2088,7 @@ function drawTransfer() {
 
   drawTransferPreview(place);
   drawFlyingBarrelMachine(transfer.machineX, transfer.machineY, progress);
-  drawEggyCharacter(transfer.eggX, transfer.eggY, 1, Math.sin(elapsedTransfer * 0.016) * 0.08);
+  drawPlayerCharacter(transfer.eggX, transfer.eggY, 1, Math.sin(elapsedTransfer * 0.016) * 0.08);
   drawTransferSpeech(transfer.eggX, transfer.eggY - 78, elapsedTransfer);
 
   ctx.fillStyle = "#172632";
@@ -2486,8 +2512,162 @@ function drawEggyCharacter(x, y, s = 1, tilt = 0, bodyColor = "#f5c336") {
   ctx.restore();
 }
 
+function drawHumanCharacter(x, y, s = 1, tilt = 0, character = currentHuman()) {
+  const walk = Math.sin(performance.now() * 0.016) * 5 * s;
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(tilt);
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+
+  ctx.strokeStyle = "#172632";
+  ctx.lineWidth = 5 * s;
+  ctx.beginPath();
+  ctx.moveTo(-9 * s, 24 * s);
+  ctx.lineTo(-17 * s - walk, 48 * s);
+  ctx.moveTo(9 * s, 24 * s);
+  ctx.lineTo(17 * s + walk, 48 * s);
+  ctx.stroke();
+
+  ctx.fillStyle = character.pants;
+  ctx.beginPath();
+  ctx.ellipse(-17 * s - walk, 51 * s, 10 * s, 5 * s, 0, 0, Math.PI * 2);
+  ctx.ellipse(17 * s + walk, 51 * s, 10 * s, 5 * s, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = character.shirt;
+  ctx.beginPath();
+  roundedRect(-18 * s, -3 * s, 36 * s, 38 * s, 8 * s);
+  ctx.fill();
+  ctx.strokeStyle = "#172632";
+  ctx.stroke();
+
+  ctx.strokeStyle = "#172632";
+  ctx.lineWidth = 4 * s;
+  ctx.beginPath();
+  ctx.moveTo(-18 * s, 7 * s);
+  ctx.lineTo(-38 * s, 25 * s - walk);
+  ctx.moveTo(18 * s, 7 * s);
+  ctx.lineTo(38 * s, 25 * s + walk);
+  ctx.stroke();
+
+  ctx.fillStyle = character.skin;
+  ctx.beginPath();
+  ctx.arc(-40 * s, 26 * s - walk, 6 * s, 0, Math.PI * 2);
+  ctx.arc(40 * s, 26 * s + walk, 6 * s, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = character.skin;
+  ctx.beginPath();
+  ctx.ellipse(0, -28 * s, 22 * s, 25 * s, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.fillStyle = character.hair;
+  ctx.beginPath();
+  ctx.arc(0, -42 * s, 18 * s, Math.PI, Math.PI * 2);
+  ctx.quadraticCurveTo(20 * s, -32 * s, 12 * s, -18 * s);
+  ctx.lineTo(-12 * s, -18 * s);
+  ctx.quadraticCurveTo(-20 * s, -32 * s, -18 * s, -42 * s);
+  ctx.fill();
+
+  ctx.fillStyle = character.hat;
+  ctx.beginPath();
+  roundedRect(-24 * s, -56 * s, 48 * s, 13 * s, 6 * s);
+  ctx.fill();
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(-12 * s, -56 * s);
+  ctx.quadraticCurveTo(0, -72 * s, 15 * s, -56 * s);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.fillStyle = "#172632";
+  ctx.beginPath();
+  ctx.arc(-8 * s, -29 * s, 3 * s, 0, Math.PI * 2);
+  ctx.arc(8 * s, -29 * s, 3 * s, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = "#172632";
+  ctx.lineWidth = 3 * s;
+  ctx.beginPath();
+  ctx.moveTo(-8 * s, -16 * s);
+  ctx.quadraticCurveTo(0, -11 * s, 8 * s, -16 * s);
+  ctx.stroke();
+
+  drawHumanAccessory(character, s);
+  ctx.restore();
+}
+
+function drawHumanAccessory(character, s) {
+  ctx.save();
+  ctx.strokeStyle = "#172632";
+  ctx.lineWidth = 3 * s;
+  if (character.accessory === "scarf") {
+    ctx.fillStyle = "#ffd15f";
+    ctx.beginPath();
+    roundedRect(-20 * s, -6 * s, 40 * s, 9 * s, 4 * s);
+    ctx.fill();
+    ctx.stroke();
+  } else if (character.accessory === "backpack") {
+    ctx.fillStyle = "#8f5fd9";
+    ctx.beginPath();
+    roundedRect(18 * s, 4 * s, 13 * s, 25 * s, 4 * s);
+    ctx.fill();
+    ctx.stroke();
+  } else if (character.accessory === "badge") {
+    ctx.fillStyle = "#ffd15f";
+    ctx.beginPath();
+    ctx.arc(9 * s, 11 * s, 6 * s, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+  } else if (character.accessory === "wrench") {
+    ctx.strokeStyle = "#d9e2ea";
+    ctx.lineWidth = 5 * s;
+    ctx.beginPath();
+    ctx.moveTo(22 * s, 4 * s);
+    ctx.lineTo(36 * s, -9 * s);
+    ctx.stroke();
+  } else if (character.accessory === "cross") {
+    ctx.strokeStyle = "#d8343f";
+    ctx.lineWidth = 4 * s;
+    ctx.beginPath();
+    ctx.moveTo(0, 7 * s);
+    ctx.lineTo(0, 22 * s);
+    ctx.moveTo(-8 * s, 14 * s);
+    ctx.lineTo(8 * s, 14 * s);
+    ctx.stroke();
+  } else if (character.accessory === "camera") {
+    ctx.fillStyle = "#172632";
+    ctx.beginPath();
+    roundedRect(-10 * s, 8 * s, 20 * s, 14 * s, 4 * s);
+    ctx.fill();
+    ctx.fillStyle = "#32a7e2";
+    ctx.beginPath();
+    ctx.arc(0, 15 * s, 5 * s, 0, Math.PI * 2);
+    ctx.fill();
+  } else if (character.accessory === "medal") {
+    ctx.fillStyle = "#ffd15f";
+    ctx.beginPath();
+    ctx.arc(0, 17 * s, 6 * s, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+  } else if (character.accessory === "book") {
+    ctx.fillStyle = "#f7fbff";
+    ctx.beginPath();
+    roundedRect(-12 * s, 10 * s, 24 * s, 16 * s, 3 * s);
+    ctx.fill();
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function drawPlayerCharacter(x, y, s = 1, tilt = 0) {
+  drawHumanCharacter(x, y, s, tilt, currentHuman());
+}
+
 function drawLobbyEgg(x, y) {
-  drawEggyCharacter(x, y + Math.sin(performance.now() * 0.004) * 5, 1, 0);
+  drawPlayerCharacter(x, y + Math.sin(performance.now() * 0.004) * 5, 1, 0);
 }
 
 function drawLocationPreview() {
@@ -3205,7 +3385,7 @@ function drawWalkingPilot(x, y) {
   ctx.moveTo(10, 26);
   ctx.lineTo(18 + step * 0.25, 58);
   ctx.stroke();
-  drawEggyCharacter(0, -30, 1.72, vehicle.pilotVx * 0.02);
+  drawPlayerCharacter(0, -30, 1.72, vehicle.pilotVx * 0.02);
   ctx.fillStyle = "#172632";
   ctx.font = "900 48px system-ui";
   ctx.fillText("我", -24, 154);
@@ -3488,7 +3668,7 @@ function drawPlaneShape(x, y, angle, color, showPilot, label = "", model = "波�
   drawPlaneBodyText(details);
   drawTailBadge(details, accent);
 
-  if (showPilot) drawEggyCharacter(16, -52, 0.66, 0);
+  if (showPilot) drawPlayerCharacter(16, -52, 0.66, 0);
   ctx.restore();
 }
 
@@ -3624,7 +3804,7 @@ function drawWaterScene() {
   drawWaterGate(260, 326);
   if (vehicle.mode === "raft-ready") drawRoundRaft(vehicle.x, vehicle.y + 38, 1.15);
   else drawLandShadow(vehicle.x, vehicle.y + 32);
-  drawEggyCharacter(vehicle.x, vehicle.y - 5, 0.85, vehicle.angle);
+  drawPlayerCharacter(vehicle.x, vehicle.y - 5, 0.85, vehicle.angle);
   drawWaterStatusSigns();
 }
 
@@ -3861,7 +4041,7 @@ function drawWaterFirstPersonSlide() {
   ctx.ellipse(520, 520, 175, 56, 0, 0, Math.PI * 2);
   ctx.fill();
   drawRoundRaft(520, 512, 1.8);
-  drawEggyCharacter(520, 462, 1.0, Math.sin(performance.now() * 0.009) * 0.08);
+  drawPlayerCharacter(520, 462, 1.0, Math.sin(performance.now() * 0.009) * 0.08);
 
   ctx.fillStyle = "rgba(255,255,255,0.88)";
   ctx.beginPath();
@@ -3993,7 +4173,7 @@ function drawMetroScene() {
   }
   drawMetroTrain(vehicle.x, 452);
   if (vehicle.mode === "in-metro") drawMetroCab();
-  if (vehicle.mode !== "in-metro") drawEggyCharacter(170, 315, 0.75, 0);
+  if (vehicle.mode !== "in-metro") drawPlayerCharacter(170, 315, 0.75, 0);
 }
 
 function drawMetroTrain(x, y) {
@@ -4010,7 +4190,7 @@ function drawMetroTrain(x, y) {
   ctx.fillRect(x - 20, y - 58, 46, 58);
   ctx.fillStyle = "#dce5eb";
   ctx.fillRect(x - 14, y - 52, 34, 46);
-  if (vehicle.mode === "in-metro") drawEggyCharacter(x + 4, y - 35, 0.38, 0);
+  if (vehicle.mode === "in-metro") drawPlayerCharacter(x + 4, y - 35, 0.38, 0);
   ctx.fillStyle = "#172632";
   ctx.font = "900 18px system-ui";
   ctx.fillText("蛋仔地铁", x - 45, y - 15);
@@ -4065,7 +4245,7 @@ function drawFishScene() {
   drawRiverTree(92, 234);
   drawBench(790, 300);
   drawFishingNet(vehicle.x, 350);
-  drawEggyCharacter(vehicle.x - 24, 306, 0.9, 0);
+  drawPlayerCharacter(vehicle.x - 24, 306, 0.9, 0);
   for (let i = 0; i < 9; i += 1) drawFish(110 + i * 105, 500 + Math.sin(performance.now() * 0.004 + i) * 28, i);
   ["锅", "僵尸蛋", "宝箱"].forEach((label, i) => drawLootBubble(450 + i * 110, 420 + Math.sin(performance.now() * 0.004 + i) * 18, label));
 }
@@ -4161,7 +4341,7 @@ function drawFoodScene() {
 
   drawRestaurantTable(520, 448);
   drawFoodPlate(520, 397, 1.12, vehicle.mealStep >= 1 ? food : "餐盘");
-  drawEggyCharacter(vehicle.x, vehicle.y, 0.95, Math.sin(performance.now() * 0.01) * 0.04);
+  drawPlayerCharacter(vehicle.x, vehicle.y, 0.95, Math.sin(performance.now() * 0.01) * 0.04);
   drawWaiterEggy(725, 390, vehicle.mealStep);
   drawEnergyBar(666, 155, vehicle.mealEnergy);
 
@@ -4766,7 +4946,7 @@ function drawPortal() {
 }
 
 function drawEggy() {
-  drawEggyCharacter(egg.x, egg.y, 0.8, egg.vx * 0.035);
+  drawPlayerCharacter(egg.x, egg.y, 0.8, egg.vx * 0.035);
   if (performance.now() < egg.jetpackUntil) {
     ctx.save();
     ctx.translate(egg.x - 32, egg.y - 8);
@@ -5164,6 +5344,12 @@ localMusicInput.addEventListener("change", () => {
   stopCourseMusic();
   statusText.textContent = `已选择本地音乐：${file.name}。开始闯关时会播放它。`;
 });
+if (characterSelect) {
+  characterSelect.addEventListener("change", () => {
+    selectedHumanIndex = Number(characterSelect.value) || 0;
+    statusText.textContent = `角色已切换成：${currentHuman().name}。现在是人类探险模式。`;
+  });
+}
 parkBtn.addEventListener("click", () => {
   locationPicker.hidden = !locationPicker.hidden;
 });

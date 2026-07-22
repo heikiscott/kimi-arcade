@@ -134,6 +134,33 @@ h1 {
   line-height: 1;
 }
 
+.character-control {
+  grid-column: 2;
+  display: grid;
+  gap: 6px;
+  margin-top: 8px;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(23, 38, 50, 0.12);
+  background: #fff;
+  font-weight: 950;
+}
+
+.character-control span {
+  color: #64717b;
+  font-size: 0.75rem;
+}
+
+.character-control select {
+  width: 100%;
+  border: 2px solid #172632;
+  border-radius: 8px;
+  padding: 10px 12px;
+  color: #172632;
+  background: #f7fbff;
+  font: inherit;
+}
+
 .button-row {
   display: grid;
   gap: 10px;
@@ -399,6 +426,7 @@ button:hover {
   .label,
   h1,
   .score-grid,
+  .character-control,
   .button-row,
   .flight-controls,
   .challenge-controls,
