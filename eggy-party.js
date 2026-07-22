@@ -259,8 +259,12 @@ let audioContext = null;
 let courseMusicTimer = null;
 let courseMusicStep = 0;
 let courseMusicAudio = null;
-let localMusicUrl = "assets/racing-user-music.mp4?v=20260722";
+const DEFAULT_COURSE_MUSIC_URL = "assets/racing-user-music.m4a?v=music-lite-20260722";
+const FALLBACK_COURSE_MUSIC_URL = "assets/racing-user-music.mp4?v=20260722";
+let localMusicUrl = DEFAULT_COURSE_MUSIC_URL;
 let localMusicName = "你刚刚发来的超级马里奥音乐";
+let localMusicIsObjectUrl = false;
+let triedCourseMusicFallback = false;
 let joystickX = 0;
 let joystickY = 0;
 let joystickPointerId = null;
@@ -464,12 +468,34 @@ function stopCourseMusic() {
   }
 }
 
-function playCourseMusic() {
-  stopCourseMusic();
-  if (localMusicUrl) {
+function ensureCourseMusicAudio() {
+  if (!courseMusicAudio || courseMusicAudio.src !== new URL(localMusicUrl, window.location.href).href) {
+    if (courseMusicAudio) courseMusicAudio.pause();
     courseMusicAudio = new Audio(localMusicUrl);
     courseMusicAudio.loop = true;
     courseMusicAudio.volume = 0.72;
+    courseMusicAudio.preload = "auto";
+    courseMusicAudio.addEventListener("error", () => {
+      if (!triedCourseMusicFallback && localMusicUrl === DEFAULT_COURSE_MUSIC_URL) {
+        triedCourseMusicFallback = true;
+        localMusicUrl = FALLBACK_COURSE_MUSIC_URL;
+        localMusicName = "你刚刚发来的超级马里奥音乐";
+        courseMusicAudio = null;
+        statusText.textContent = "轻量音乐没加载成功，已切回原视频音乐。";
+        return;
+      }
+      statusText.textContent = "音乐文件没有加载成功，可以点“选择本地音乐”。";
+      playSyntheticCourseMusic();
+    });
+    courseMusicAudio.load();
+  }
+  return courseMusicAudio;
+}
+
+function playCourseMusic() {
+  stopCourseMusic();
+  if (localMusicUrl) {
+    courseMusicAudio = ensureCourseMusicAudio();
     courseMusicAudio.play().then(() => {
       statusText.textContent = `正在播放你选的音乐：${localMusicName || "本地音乐"}。`;
     }).catch(() => {
@@ -5925,9 +5951,12 @@ chooseMusicBtn.addEventListener("click", () => {
 localMusicInput.addEventListener("change", () => {
   const file = localMusicInput.files && localMusicInput.files[0];
   if (!file) return;
-  if (localMusicUrl) URL.revokeObjectURL(localMusicUrl);
+  if (localMusicIsObjectUrl && localMusicUrl) URL.revokeObjectURL(localMusicUrl);
   localMusicUrl = URL.createObjectURL(file);
+  localMusicIsObjectUrl = true;
   localMusicName = file.name;
+  triedCourseMusicFallback = true;
+  courseMusicAudio = null;
   stopCourseMusic();
   statusText.textContent = `已选择本地音乐：${file.name}。开始闯关时会播放它。`;
 });

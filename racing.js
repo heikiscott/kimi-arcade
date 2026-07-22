@@ -136,13 +136,17 @@ let verticalVelocity = 0;
 let flyTimer = 0;
 let lastTime = performance.now();
 let audioContext = null;
-let raceMusic = new Audio("assets/racing-user-music.mp4?v=20260722");
+const DEFAULT_RACE_MUSIC_URL = "assets/racing-user-music.m4a?v=music-lite-20260722";
+const FALLBACK_RACE_MUSIC_URL = "assets/racing-user-music.mp4?v=20260722";
+let raceMusic = new Audio(DEFAULT_RACE_MUSIC_URL);
 let raceMusicName = "你发来的视频音乐";
 let localMusicUrl = null;
+let triedMusicFallback = false;
 
 raceMusic.loop = true;
 raceMusic.volume = 0.66;
-raceMusic.preload = "metadata";
+raceMusic.preload = "auto";
+raceMusic.load();
 
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: !lowPowerMode, powerPreference: "high-performance" });
 renderer.setPixelRatio(lowPowerMode ? 1 : Math.min(window.devicePixelRatio, 1.5));
@@ -844,14 +848,22 @@ function stopRaceMusic() {
 
 function setRaceMusicSource(url, name) {
   stopRaceMusic();
+  triedMusicFallback = url === FALLBACK_RACE_MUSIC_URL;
   raceMusic.src = url;
   raceMusicName = name;
+  raceMusic.preload = "auto";
   raceMusic.load();
   if (musicStatus) musicStatus.textContent = `已选择：${name}`;
 }
 
 raceMusic.addEventListener("error", () => {
-  if (musicStatus) musicStatus.textContent = "没有找到视频音乐文件，可以点“选择本地音乐”。";
+  if (!triedMusicFallback && raceMusic.src.includes("racing-user-music.m4a")) {
+    triedMusicFallback = true;
+    setRaceMusicSource(FALLBACK_RACE_MUSIC_URL, "你发来的视频音乐");
+    if (musicStatus) musicStatus.textContent = "轻量音乐没加载成功，已切回原视频音乐。";
+    return;
+  }
+  if (musicStatus) musicStatus.textContent = "没有找到音乐文件，可以点“选择本地音乐”。";
 });
 
 function playTone(freq, start, duration, gainValue = 0.035, type = "square") {
