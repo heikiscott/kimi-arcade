@@ -68,6 +68,7 @@ const categories = [
   { key: "metro", title: "开地铁地点", count: 10, prefix: "环线地铁", detail: "站台门、驾驶台、下一站" },
   { key: "fish", title: "摸鱼地点", count: 30, prefix: "河边摸鱼", detail: "河岸、树、椅子、捞随机东西" },
   { key: "food", title: "餐厅吃饭地点", count: 12, prefix: "蛋仔餐厅", detail: "点餐、上菜、一餐吃饱" },
+  { key: "landmark", title: "真实地点地图", count: 18, prefix: "真实地点", detail: "真实城市、岛屿、商场和名胜场景" },
   { key: "history", title: "历史纪念馆", count: 1, prefix: "历史纪念馆", detail: "9/11事件回顾、双塔纪念光柱" },
   { key: "challenge", title: "闯关游戏地点", count: 40, prefix: "五条路线", detail: "每条路线机关都不一样" }
 ];
@@ -78,6 +79,7 @@ const namedPlaces = {
   metro: ["港湾控制站", "欧南园驾驶站", "牛车水换乘站", "克拉码头终点站", "滨海湾地下站"],
   fish: ["河边摸鱼树下", "公园长椅河岸", "荷叶浅滩", "小桥摸鱼点", "柳树水湾"],
   food: ["芋头包餐厅", "蛋仔早餐店", "商场美食街", "机场家庭餐厅", "水上乐园小吃店", "超级晚餐屋"],
+  landmark: ["开罗金字塔", "迪拜塔和迪拜商场", "巴黎埃菲尔铁塔", "东京涩谷街口", "巴厘岛海滩", "普吉岛海湾", "济州岛火山海岸", "马尔代夫水屋", "新加坡滨海湾", "香港海港城", "深圳世界之窗", "伦敦塔桥", "纽约时代广场", "悉尼歌剧院", "大阪环球城", "首尔明洞", "曼谷大皇宫", "罗马斗兽场"],
   history: ["9/11历史纪念馆"],
   challenge: ["传送门五路", "弹簧塔五路", "机场风道五路", "地铁轨道五路", "夜晚躲避五路"]
 };
@@ -1355,6 +1357,7 @@ function getActivityHelp(category) {
   if (category === "metro") return `${selectedLocation.name}：站台门在前面，点互动进驾驶台，再控制地铁往下一站开。`;
   if (category === "fish") return `${selectedLocation.name}：站在河边捞东西，可能捞到鱼、锅、僵尸蛋、宝箱或者奇怪玩具。`;
   if (category === "food") return `${selectedLocation.name}：走到餐桌旁边，点开始/互动点餐；一餐里可以吃到好吃的，吃完补满能量。`;
+  if (category === "landmark") return `${selectedLocation.name}：真实地点亮场景已经打开，左右走可以在这个地方逛。`;
   if (category === "history") return `${selectedLocation.name}：这是安静的历史纪念馆，可以看2001年9月11日事件时间线和纪念光柱。`;
   return `${selectedLocation.name}：选择好了。`;
 }
@@ -1907,6 +1910,12 @@ function activityInteract() {
     winSound();
     return true;
   }
+  if (selectedLocation.category === "landmark") {
+    statusText.textContent = `${selectedLocation.name}：亮起来的真实地点场景已经打开，地图选到哪儿，蛋仔就到哪儿。`;
+    tone(784, 0, 0.12, 0.02, "triangle");
+    tone(988, 0.13, 0.12, 0.02, "triangle");
+    return true;
+  }
   if (selectedLocation.category === "history") {
     statusText.textContent = "9/11历史纪念馆：记住历史，纪念遇难者，也学习珍惜和平。";
     tone(392, 0, 0.2, 0.018, "sine");
@@ -2127,7 +2136,7 @@ function drawTransferPreview(place) {
   ctx.beginPath();
   roundedRect(66, 214, 276, 104, 8);
   ctx.clip();
-  drawMiniDestinationScene(66, 214, 276, 104, place.category);
+  drawMiniDestinationScene(66, 214, 276, 104, place.category, place);
   ctx.restore();
   ctx.fillStyle = "#4f5e68";
   ctx.font = "800 14px system-ui";
@@ -2135,7 +2144,7 @@ function drawTransferPreview(place) {
   ctx.restore();
 }
 
-function drawMiniDestinationScene(x, y, w, h, category) {
+function drawMiniDestinationScene(x, y, w, h, category, place = null) {
   ctx.fillStyle = category === "flight" ? "#aee3ff" : category === "water" ? "#b9f1ff" : category === "metro" ? "#dce5eb" : category === "fish" ? "#dff6d8" : category === "food" ? "#fff0d8" : category === "history" ? "#22364f" : "#ffe1ef";
   ctx.fillRect(x, y, w, h);
   ctx.fillStyle = "#6cc07a";
@@ -2184,6 +2193,8 @@ function drawMiniDestinationScene(x, y, w, h, category) {
     ctx.fillRect(x + 156, y + 18, 28, 78);
     ctx.fillStyle = "#fff2b8";
     ctx.fillRect(x + 120, y + 10, 24, 90);
+  } else if (category === "landmark") {
+    drawMiniLandmarkScene(x, y, w, h, place);
   } else {
     ctx.fillStyle = "#ffd15f";
     ctx.fillRect(x + 48, y + 70, 60, 16);
@@ -2193,6 +2204,75 @@ function drawMiniDestinationScene(x, y, w, h, category) {
     ctx.arc(x + 238, y + 72, 18, 0, Math.PI * 2);
     ctx.fill();
   }
+}
+
+function drawMiniLandmarkScene(x, y, w, h, place) {
+  const name = place?.name || "";
+  const sky = ctx.createLinearGradient(x, y, x, y + h);
+  sky.addColorStop(0, /迪拜|纽约|香港|东京|首尔/.test(name) ? "#111f3d" : "#9ed8ff");
+  sky.addColorStop(1, /开罗/.test(name) ? "#f3d2a3" : "#e9fbff");
+  ctx.fillStyle = sky;
+  ctx.fillRect(x, y, w, h);
+  ctx.fillStyle = /巴厘|普吉|济州|马尔代夫/.test(name) ? "#32a7e2" : "#6cc07a";
+  ctx.fillRect(x, y + h - 30, w, 30);
+  if (/开罗|金字塔/.test(name)) {
+    drawTinyPyramid(x + 60, y + 78, 62, 52);
+    drawTinyPyramid(x + 128, y + 72, 78, 64);
+  } else if (/迪拜/.test(name)) {
+    drawTinySkyscraper(x + 142, y + 18, 30, 84, "#dce5eb");
+    drawTinySkyscraper(x + 86, y + 48, 32, 54, "#ffd15f");
+    drawTinySkyscraper(x + 198, y + 42, 34, 60, "#32a7e2");
+  } else if (/巴黎|铁塔/.test(name)) {
+    drawTinyEiffel(x + 138, y + 18, 88, 86);
+  } else if (/巴厘|普吉|济州|马尔代夫/.test(name)) {
+    ctx.fillStyle = "#ffd15f";
+    ctx.beginPath();
+    ctx.ellipse(x + 142, y + 79, 82, 16, -0.08, 0, Math.PI * 2);
+    ctx.fill();
+    drawTree(x + 78, y + 70, 0.34);
+  } else {
+    for (let i = 0; i < 7; i += 1) drawTinySkyscraper(x + 42 + i * 31, y + 38 - (i % 3) * 12, 22, 66 + (i % 3) * 12, ["#f7fbff", "#ffd15f", "#32a7e2"][i % 3]);
+  }
+  ctx.fillStyle = "#172632";
+  ctx.font = "900 14px system-ui";
+  ctx.fillText(name || "真实地点", x + 12, y + 20);
+}
+
+function drawTinyPyramid(x, y, w, h) {
+  ctx.fillStyle = "#c9924a";
+  ctx.beginPath();
+  ctx.moveTo(x, y);
+  ctx.lineTo(x + w / 2, y - h);
+  ctx.lineTo(x + w, y);
+  ctx.closePath();
+  ctx.fill();
+  ctx.strokeStyle = "rgba(23,38,50,0.45)";
+  ctx.lineWidth = 2;
+  ctx.stroke();
+}
+
+function drawTinySkyscraper(x, y, w, h, color) {
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  roundedRect(x, y, w, h, 4);
+  ctx.fill();
+  ctx.fillStyle = "rgba(23,38,50,0.2)";
+  for (let yy = y + 10; yy < y + h - 6; yy += 13) ctx.fillRect(x + 6, yy, w - 12, 3);
+}
+
+function drawTinyEiffel(x, y, w, h) {
+  ctx.strokeStyle = "#172632";
+  ctx.lineWidth = 5;
+  ctx.beginPath();
+  ctx.moveTo(x + w / 2, y);
+  ctx.lineTo(x + 18, y + h);
+  ctx.moveTo(x + w / 2, y);
+  ctx.lineTo(x + w - 18, y + h);
+  ctx.moveTo(x + 30, y + h * 0.56);
+  ctx.lineTo(x + w - 30, y + h * 0.56);
+  ctx.moveTo(x + 24, y + h * 0.78);
+  ctx.lineTo(x + w - 24, y + h * 0.78);
+  ctx.stroke();
 }
 
 function drawFlyingBarrelMachine(x, y, progress) {
@@ -2785,6 +2865,7 @@ function drawActivity() {
   if (selectedLocation.category === "metro") drawMetroScene();
   if (selectedLocation.category === "fish") drawFishScene();
   if (selectedLocation.category === "food") drawFoodScene();
+  if (selectedLocation.category === "landmark") drawLandmarkScene();
   if (selectedLocation.category === "history") drawHistoryMemorialScene();
   drawActivityTitle();
 }
@@ -4550,6 +4631,416 @@ function drawEnergyBar(x, y, value) {
   ctx.fillRect(x + 18, y + 34, 214, 14);
   ctx.fillStyle = value >= 100 ? "#38a86a" : "#f06aa3";
   ctx.fillRect(x + 18, y + 34, 214 * Math.max(0, Math.min(100, value)) / 100, 14);
+}
+
+function drawLandmarkScene() {
+  const name = selectedLocation.name || "真实地点";
+  const night = /迪拜|纽约|香港|东京|首尔|大阪/.test(name);
+  const island = /巴厘|普吉|济州|马尔代夫/.test(name);
+  const desert = /开罗|金字塔/.test(name);
+  const sky = ctx.createLinearGradient(0, 0, 0, H);
+  sky.addColorStop(0, night ? "#10244f" : desert ? "#80cfff" : island ? "#67c9ff" : "#86d7ff");
+  sky.addColorStop(0.54, night ? "#245c93" : desert ? "#ffe1a8" : "#dff8ff");
+  sky.addColorStop(1, night ? "#ffd88e" : "#fff7d8");
+  ctx.fillStyle = sky;
+  ctx.fillRect(0, 0, W, H);
+
+  for (let i = 0; i < 7; i += 1) {
+    drawCloud((i * 170 + performance.now() * 0.012) % (W + 180) - 90, 52 + (i % 3) * 38, 0.55 + (i % 2) * 0.12);
+  }
+  if (night) {
+    ctx.fillStyle = "rgba(255,255,255,0.85)";
+    for (let i = 0; i < 26; i += 1) {
+      ctx.beginPath();
+      ctx.arc(70 + i * 43, 42 + (i * 29) % 150, 1.7, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  if (desert) {
+    drawCairoLandmark(name);
+  } else if (/迪拜/.test(name)) {
+    drawDubaiLandmark(name);
+  } else if (/巴黎|埃菲尔/.test(name)) {
+    drawParisLandmark(name);
+  } else if (island) {
+    drawIslandLandmark(name);
+  } else if (/伦敦/.test(name)) {
+    drawLondonLandmark(name);
+  } else if (/悉尼/.test(name)) {
+    drawSydneyLandmark(name);
+  } else if (/罗马/.test(name)) {
+    drawRomeLandmark(name);
+  } else if (/曼谷/.test(name)) {
+    drawBangkokLandmark(name);
+  } else {
+    drawCityLandmark(name);
+  }
+
+  drawLandmarkTitle(name);
+  drawLandShadow(vehicle.x, 515);
+  drawPlayerCharacter(vehicle.x, 470, 0.96, Math.sin(performance.now() * 0.01) * 0.05);
+}
+
+function drawLandmarkTitle(name) {
+  ctx.fillStyle = "rgba(255,255,255,0.88)";
+  ctx.beginPath();
+  roundedRect(34, 38, 356, 76, 8);
+  ctx.fill();
+  ctx.strokeStyle = "rgba(23,38,50,0.18)";
+  ctx.lineWidth = 3;
+  ctx.stroke();
+  ctx.fillStyle = "#172632";
+  ctx.font = "900 27px system-ui";
+  ctx.fillText(name, 56, 78);
+  ctx.font = "800 15px system-ui";
+  ctx.fillStyle = "#4f5e68";
+  ctx.fillText("真实地点亮场景 - 地图选到哪儿，场景就在哪儿", 56, 101);
+}
+
+function drawCairoLandmark(name) {
+  const sand = ctx.createLinearGradient(0, 388, 0, H);
+  sand.addColorStop(0, "#f5d38a");
+  sand.addColorStop(1, "#c98d46");
+  ctx.fillStyle = sand;
+  ctx.fillRect(0, 370, W, H - 370);
+  ctx.fillStyle = "rgba(255,255,255,0.45)";
+  ctx.beginPath();
+  ctx.ellipse(815, 112, 52, 52, 0, 0, Math.PI * 2);
+  ctx.fill();
+  drawLargePyramid(190, 476, 250, 220, "#d39a4e");
+  drawLargePyramid(420, 474, 330, 270, "#c88942");
+  drawLargePyramid(720, 486, 210, 180, "#e2ae63");
+  drawSphinxScene(118, 508);
+  drawRoadPath("开罗沙漠景区");
+}
+
+function drawDubaiLandmark(name) {
+  ctx.fillStyle = "#5ac8dd";
+  ctx.fillRect(0, 438, W, 78);
+  ctx.fillStyle = "#f7d98c";
+  ctx.fillRect(0, 512, W, 148);
+  drawGlassTower(454, 146, 44, 336, "#dcefff", true);
+  drawGlassTower(286, 245, 76, 240, "#56c4ef", false);
+  drawGlassTower(620, 218, 88, 268, "#f6fbff", false);
+  drawGlassTower(760, 274, 66, 208, "#ffd15f", false);
+  ctx.fillStyle = "rgba(23,38,50,0.78)";
+  ctx.font = "900 24px system-ui";
+  ctx.fillText("Dubai Mall", 650, 536);
+  drawRoadPath("迪拜城市天际线");
+}
+
+function drawParisLandmark(name) {
+  ctx.fillStyle = "#78c86c";
+  ctx.fillRect(0, 430, W, 200);
+  drawBigEiffel(470, 158, 260, 348);
+  drawTree(220, 444, 0.9);
+  drawTree(812, 452, 0.8);
+  drawRoadPath("巴黎埃菲尔铁塔");
+}
+
+function drawIslandLandmark(name) {
+  ctx.fillStyle = "#21a8df";
+  ctx.fillRect(0, 352, W, 308);
+  ctx.fillStyle = "#ffe19b";
+  ctx.beginPath();
+  ctx.ellipse(310, 500, 270, 74, -0.06, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = "#fff0b7";
+  ctx.beginPath();
+  ctx.ellipse(754, 536, 230, 54, 0.05, 0, Math.PI * 2);
+  ctx.fill();
+  drawPalmTree(152, 478, 1.08);
+  drawPalmTree(248, 454, 0.9);
+  drawPoolFloat(468, 482);
+  if (/马尔代夫/.test(name)) {
+    for (let i = 0; i < 4; i += 1) drawWaterVilla(610 + i * 88, 424 + (i % 2) * 18);
+  } else if (/济州/.test(name)) {
+    drawVolcano(700, 430, 210, 120);
+  } else {
+    ctx.fillStyle = "#f06aa3";
+    ctx.font = "900 24px system-ui";
+    ctx.fillText(/巴厘/.test(name) ? "Bali Beach" : "Island Bay", 580, 430);
+  }
+}
+
+function drawLondonLandmark(name) {
+  ctx.fillStyle = "#7bc4df";
+  ctx.fillRect(0, 398, W, 118);
+  ctx.fillStyle = "#6cc07a";
+  ctx.fillRect(0, 516, W, 144);
+  drawBridgeTower(272, 238);
+  drawBridgeTower(642, 238);
+  ctx.strokeStyle = "#f5f8fb";
+  ctx.lineWidth = 10;
+  ctx.beginPath();
+  ctx.moveTo(318, 290);
+  ctx.bezierCurveTo(430, 214, 560, 214, 686, 290);
+  ctx.stroke();
+  drawRoadPath("London Tower Bridge");
+}
+
+function drawSydneyLandmark(name) {
+  ctx.fillStyle = "#38bde6";
+  ctx.fillRect(0, 408, W, 108);
+  ctx.fillStyle = "#ffe59d";
+  ctx.fillRect(0, 516, W, 144);
+  for (let i = 0; i < 5; i += 1) {
+    ctx.fillStyle = "#f7fbff";
+    ctx.beginPath();
+    ctx.moveTo(358 + i * 72, 420);
+    ctx.quadraticCurveTo(390 + i * 72, 250 - i * 18, 440 + i * 72, 420);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = "#9db8c8";
+    ctx.lineWidth = 3;
+    ctx.stroke();
+  }
+  drawRoadPath("Sydney Opera House");
+}
+
+function drawRomeLandmark(name) {
+  ctx.fillStyle = "#b1da93";
+  ctx.fillRect(0, 430, W, 230);
+  ctx.fillStyle = "#c18b5a";
+  ctx.beginPath();
+  roundedRect(300, 240, 424, 220, 16);
+  ctx.fill();
+  ctx.fillStyle = "#7e4e2c";
+  for (let r = 0; r < 3; r += 1) {
+    for (let i = 0; i < 9; i += 1) {
+      ctx.beginPath();
+      roundedRect(328 + i * 42, 274 + r * 54, 24, 34, 12);
+      ctx.fill();
+    }
+  }
+  drawRoadPath("罗马斗兽场");
+}
+
+function drawBangkokLandmark(name) {
+  ctx.fillStyle = "#9bd679";
+  ctx.fillRect(0, 430, W, 230);
+  drawTemple(330, 440, 1.1);
+  drawTemple(590, 450, 0.86);
+  drawRoadPath("Bangkok Palace");
+}
+
+function drawCityLandmark(name) {
+  ctx.fillStyle = "#8fd477";
+  ctx.fillRect(0, 470, W, 190);
+  for (let i = 0; i < 12; i += 1) {
+    const x = 70 + i * 78;
+    const h = 120 + (i % 4) * 36;
+    drawGlassTower(x, 470 - h, 52, h, ["#f7fbff", "#ffd15f", "#6fc6e8", "#f06aa3"][i % 4], false);
+  }
+  if (/深圳|世界之窗/.test(name)) {
+    drawBigEiffel(690, 214, 170, 244);
+    ctx.fillStyle = "#172632";
+    ctx.font = "900 26px system-ui";
+    ctx.fillText("世界之窗", 660, 492);
+  }
+  if (/东京|大阪|首尔/.test(name)) {
+    drawSakuraCluster(238, 384);
+    drawSakuraCluster(808, 402);
+  }
+  drawRoadPath(name);
+}
+
+function drawLargePyramid(x, y, w, h, color) {
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.moveTo(x, y);
+  ctx.lineTo(x + w / 2, y - h);
+  ctx.lineTo(x + w, y);
+  ctx.closePath();
+  ctx.fill();
+  ctx.fillStyle = "rgba(255,255,255,0.18)";
+  ctx.beginPath();
+  ctx.moveTo(x + w / 2, y - h);
+  ctx.lineTo(x + w, y);
+  ctx.lineTo(x + w * 0.58, y);
+  ctx.closePath();
+  ctx.fill();
+  ctx.strokeStyle = "rgba(23,38,50,0.18)";
+  ctx.lineWidth = 3;
+  for (let i = 1; i < 6; i += 1) {
+    const yy = y - h + (h / 6) * i;
+    ctx.beginPath();
+    ctx.moveTo(x + w * 0.5 - i * 20, yy);
+    ctx.lineTo(x + w * 0.5 + i * 20, yy);
+    ctx.stroke();
+  }
+}
+
+function drawSphinxScene(x, y) {
+  ctx.fillStyle = "#b8783f";
+  ctx.beginPath();
+  roundedRect(x, y - 54, 138, 48, 18);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(x + 112, y - 72, 28, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillRect(x + 128, y - 92, 34, 42);
+}
+
+function drawGlassTower(x, y, w, h, color, needle) {
+  const g = ctx.createLinearGradient(x, y, x + w, y + h);
+  g.addColorStop(0, "#ffffff");
+  g.addColorStop(0.48, color);
+  g.addColorStop(1, "#5aa0cc");
+  ctx.fillStyle = g;
+  ctx.beginPath();
+  roundedRect(x, y, w, h, 8);
+  ctx.fill();
+  ctx.strokeStyle = "rgba(23,38,50,0.25)";
+  ctx.lineWidth = 3;
+  ctx.stroke();
+  ctx.strokeStyle = "rgba(255,255,255,0.65)";
+  ctx.lineWidth = 2;
+  for (let yy = y + 22; yy < y + h - 10; yy += 26) {
+    ctx.beginPath();
+    ctx.moveTo(x + 8, yy);
+    ctx.lineTo(x + w - 8, yy);
+    ctx.stroke();
+  }
+  if (needle) {
+    ctx.strokeStyle = "#f7fbff";
+    ctx.lineWidth = 5;
+    ctx.beginPath();
+    ctx.moveTo(x + w / 2, y);
+    ctx.lineTo(x + w / 2, y - 86);
+    ctx.stroke();
+  }
+}
+
+function drawBigEiffel(x, y, w, h) {
+  ctx.strokeStyle = "#3d4b59";
+  ctx.lineWidth = 10;
+  ctx.lineCap = "round";
+  ctx.beginPath();
+  ctx.moveTo(x + w * 0.5, y);
+  ctx.lineTo(x + w * 0.18, y + h);
+  ctx.moveTo(x + w * 0.5, y);
+  ctx.lineTo(x + w * 0.82, y + h);
+  ctx.moveTo(x + w * 0.32, y + h * 0.43);
+  ctx.lineTo(x + w * 0.68, y + h * 0.43);
+  ctx.moveTo(x + w * 0.25, y + h * 0.67);
+  ctx.lineTo(x + w * 0.75, y + h * 0.67);
+  ctx.stroke();
+  ctx.lineWidth = 4;
+  for (let i = 0; i < 7; i += 1) {
+    ctx.beginPath();
+    ctx.moveTo(x + w * (0.25 + i * 0.08), y + h * 0.58);
+    ctx.lineTo(x + w * (0.5 - i * 0.04), y + h * 0.16);
+    ctx.stroke();
+  }
+}
+
+function drawPalmTree(x, y, s) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.scale(s, s);
+  ctx.strokeStyle = "#875a28";
+  ctx.lineWidth = 13;
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  ctx.bezierCurveTo(8, -46, 22, -80, 16, -122);
+  ctx.stroke();
+  ctx.fillStyle = "#2f9b52";
+  for (let i = 0; i < 8; i += 1) {
+    ctx.save();
+    ctx.translate(16, -124);
+    ctx.rotate((Math.PI * 2 * i) / 8);
+    ctx.beginPath();
+    ctx.ellipse(32, 0, 46, 13, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+  ctx.restore();
+}
+
+function drawWaterVilla(x, y) {
+  ctx.fillStyle = "#f7fbff";
+  ctx.beginPath();
+  roundedRect(x, y, 66, 38, 7);
+  ctx.fill();
+  ctx.fillStyle = "#9a6429";
+  ctx.fillRect(x + 8, y + 38, 7, 36);
+  ctx.fillRect(x + 52, y + 38, 7, 36);
+  ctx.strokeStyle = "#f7fbff";
+  ctx.lineWidth = 5;
+  ctx.beginPath();
+  ctx.moveTo(x + 60, y + 54);
+  ctx.lineTo(x + 118, y + 64);
+  ctx.stroke();
+}
+
+function drawVolcano(x, y, w, h) {
+  ctx.fillStyle = "#4d6b55";
+  ctx.beginPath();
+  ctx.moveTo(x - w / 2, y);
+  ctx.lineTo(x, y - h);
+  ctx.lineTo(x + w / 2, y);
+  ctx.closePath();
+  ctx.fill();
+  ctx.fillStyle = "#ff7648";
+  ctx.beginPath();
+  ctx.ellipse(x, y - h + 12, 28, 9, 0, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+function drawBridgeTower(x, y) {
+  ctx.fillStyle = "#d9b06b";
+  ctx.beginPath();
+  roundedRect(x, y, 78, 192, 8);
+  ctx.fill();
+  ctx.fillStyle = "#8c5c34";
+  ctx.fillRect(x + 20, y + 50, 14, 92);
+  ctx.fillRect(x + 44, y + 50, 14, 92);
+  ctx.fillStyle = "#d9b06b";
+  ctx.beginPath();
+  ctx.moveTo(x - 8, y);
+  ctx.lineTo(x + 39, y - 58);
+  ctx.lineTo(x + 86, y);
+  ctx.closePath();
+  ctx.fill();
+}
+
+function drawTemple(x, y, s) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.scale(s, s);
+  ctx.fillStyle = "#ffd15f";
+  ctx.fillRect(-92, -72, 184, 72);
+  ctx.fillStyle = "#c92638";
+  for (let i = 0; i < 3; i += 1) {
+    ctx.beginPath();
+    ctx.moveTo(-110 + i * 76, -72 - i * 22);
+    ctx.lineTo(-18 + i * 76, -148 - i * 22);
+    ctx.lineTo(74 + i * 76, -72 - i * 22);
+    ctx.closePath();
+    ctx.fill();
+  }
+  ctx.fillStyle = "#f7fbff";
+  ctx.fillRect(-70, -44, 28, 44);
+  ctx.fillRect(42, -44, 28, 44);
+  ctx.restore();
+}
+
+function drawRoadPath(label) {
+  ctx.fillStyle = "rgba(23,38,50,0.18)";
+  ctx.beginPath();
+  ctx.ellipse(530, 590, 500, 54, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = "rgba(255,255,255,0.72)";
+  ctx.beginPath();
+  roundedRect(720, 560, 252, 54, 8);
+  ctx.fill();
+  ctx.fillStyle = "#172632";
+  ctx.font = "900 20px system-ui";
+  ctx.textAlign = "center";
+  ctx.fillText(label, 846, 594);
+  ctx.textAlign = "left";
 }
 
 function drawHistoryMemorialScene() {
