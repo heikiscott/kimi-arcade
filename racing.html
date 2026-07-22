@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>3D 天空地下赛车</title>
-    <link rel="stylesheet" href="racing.css?v=stable-mobile-20260722" />
+    <link rel="stylesheet" href="racing.css?v=globe-map-20260722" />
   </head>
   <body>
     <a class="home-link" href="arcade.html">游戏大厅</a>
@@ -36,6 +36,7 @@
 
         <div class="control-block">
           <strong>地图</strong>
+          <button class="globe-open" id="openGlobeBtn" type="button">地图地球仪</button>
           <div class="choice-grid" id="trackChoices"></div>
         </div>
 
@@ -82,6 +83,26 @@
         <p class="hint">手机：按画面下面的按钮控制。键盘：A/D 或左右键转弯，W 加速，S 刹车，空格跳，F 飞起来。悬崖地图每隔一段就有左飞、右飞、上飞、下飞平台，你可以左右控制落点。</p>
       </section>
     </main>
-    <script type="module" src="racing.js?v=stable-mobile-20260722"></script>
+    <section class="globe-overlay" id="globeOverlay" hidden>
+      <div class="globe-dialog" role="dialog" aria-modal="true" aria-label="电子地球仪地图">
+        <div class="globe-head">
+          <div>
+            <p class="label">Electronic Globe</p>
+            <h2>超大电子地球仪</h2>
+          </div>
+          <button id="closeGlobeBtn" type="button" aria-label="关闭地图">关闭</button>
+        </div>
+        <div class="globe-body">
+          <canvas id="globeCanvas" width="920" height="620" aria-label="电子地球仪地点地图"></canvas>
+          <div class="globe-side">
+            <strong>选择地点</strong>
+            <p id="globePickedText">点一个岛屿、城市、商场或国家风格地点，赛车地图会跟着变。</p>
+            <div class="globe-location-list" id="globeLocationList"></div>
+            <button id="useGlobePlaceBtn" type="button">使用这个地点</button>
+          </div>
+        </div>
+      </div>
+    </section>
+    <script type="module" src="racing.js?v=globe-map-20260722"></script>
   </body>
 </html>

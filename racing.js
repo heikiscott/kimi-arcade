@@ -20,6 +20,14 @@ const chooseMusicBtn = document.querySelector("#chooseMusicBtn");
 const musicFileInput = document.querySelector("#musicFileInput");
 const musicStatus = document.querySelector("#musicStatus");
 const touchControls = [...document.querySelectorAll("[data-drive]")];
+const openGlobeBtn = document.querySelector("#openGlobeBtn");
+const globeOverlay = document.querySelector("#globeOverlay");
+const closeGlobeBtn = document.querySelector("#closeGlobeBtn");
+const globeCanvas = document.querySelector("#globeCanvas");
+const globeCtx = globeCanvas ? globeCanvas.getContext("2d") : null;
+const globeLocationList = document.querySelector("#globeLocationList");
+const globePickedText = document.querySelector("#globePickedText");
+const useGlobePlaceBtn = document.querySelector("#useGlobePlaceBtn");
 const lowPowerMode = window.matchMedia("(max-width: 820px)").matches || /MicroMessenger|iPhone|iPad|Android/i.test(navigator.userAgent);
 
 const tracks = [
@@ -30,6 +38,29 @@ const tracks = [
   { id: "station", name: "火车站", road: 0x787f87, ground: 0xc8b08d, sky: 0xd9e5ea, obstacle: "行李" },
   { id: "ghost", name: "鬼屋", road: 0x453854, ground: 0x251d32, sky: 0x171827, obstacle: "幽灵门" },
   { id: "volcano", name: "火山", road: 0x3b3030, ground: 0x6c2d21, sky: 0xc4552f, obstacle: "岩浆石" }
+];
+
+const globePlaces = [
+  { name: "济州岛", region: "韩国 · 火山岛", trackId: "sky", lat: 33.5, lon: 126.5, kind: "island" },
+  { name: "富国岛", region: "越南 · 海岛度假", trackId: "sky", lat: 10.2, lon: 103.9, kind: "island" },
+  { name: "巴厘岛", region: "印度尼西亚 · 热带海岛", trackId: "sky", lat: -8.4, lon: 115.2, kind: "island" },
+  { name: "甲米岛", region: "泰国 · 石灰岩海湾", trackId: "cliff", lat: 8.1, lon: 98.9, kind: "island" },
+  { name: "普吉岛", region: "泰国 · 海边城市", trackId: "airport", lat: 7.9, lon: 98.4, kind: "island" },
+  { name: "马尔代夫", region: "印度洋 · 环礁岛屿", trackId: "sky", lat: 3.2, lon: 73.2, kind: "island" },
+  { name: "新加坡樟宜", region: "新加坡 · 机场城市", trackId: "airport", lat: 1.4, lon: 103.9, kind: "city" },
+  { name: "香港海港城", region: "中国香港 · 超大商场", trackId: "station", lat: 22.3, lon: 114.2, kind: "mall" },
+  { name: "深圳世界之窗", region: "中国深圳 · 城市景点", trackId: "airport", lat: 22.5, lon: 113.9, kind: "city" },
+  { name: "东京涩谷", region: "日本 · 城市街区", trackId: "station", lat: 35.7, lon: 139.7, kind: "city" },
+  { name: "大阪环球城", region: "日本 · 主题乐园", trackId: "cliff", lat: 34.7, lon: 135.4, kind: "city" },
+  { name: "巴黎商场街", region: "法国 · 城市大道", trackId: "station", lat: 48.9, lon: 2.3, kind: "mall" },
+  { name: "纽约时代广场", region: "美国 · 高楼城市", trackId: "airport", lat: 40.8, lon: -74.0, kind: "city" },
+  { name: "洛杉矶机场区", region: "美国 · 跑道城市", trackId: "airport", lat: 34.0, lon: -118.4, kind: "city" },
+  { name: "迪拜购物中心", region: "阿联酋 · 超大商场", trackId: "station", lat: 25.2, lon: 55.3, kind: "mall" },
+  { name: "开罗金字塔区", region: "埃及 · 沙漠城市", trackId: "volcano", lat: 30.0, lon: 31.2, kind: "landmark" },
+  { name: "伦敦城区", region: "英国 · 城市街景", trackId: "ghost", lat: 51.5, lon: -0.1, kind: "city" },
+  { name: "悉尼港湾", region: "澳大利亚 · 海湾城市", trackId: "sky", lat: -33.9, lon: 151.2, kind: "city" },
+  { name: "温哥华商场", region: "加拿大 · 海边城市", trackId: "station", lat: 49.3, lon: -123.1, kind: "mall" },
+  { name: "马尼拉湾", region: "菲律宾 · 城市海湾", trackId: "sky", lat: 14.6, lon: 121.0, kind: "city" }
 ];
 
 const cliffJumps = [
@@ -92,6 +123,8 @@ let selectedDriver = drivers[0];
 let selectedTire = tires[0];
 let selectedWing = wings[0];
 let selectedIcon = icons[0];
+let selectedGlobePlace = globePlaces[0];
+let globeMarkers = [];
 let running = false;
 let won = false;
 let gameOver = false;
@@ -457,6 +490,267 @@ function drawMenu() {
     refreshPlayerCar();
   });
   render();
+}
+
+function trackById(id) {
+  return tracks.find((track) => track.id === id) || tracks[0];
+}
+
+function openGlobeMap() {
+  if (!globeOverlay) return;
+  globeOverlay.hidden = false;
+  resizeGlobeCanvas();
+  renderGlobeLocations();
+  drawGlobeMap(performance.now());
+}
+
+function closeGlobeMap() {
+  if (globeOverlay) globeOverlay.hidden = true;
+}
+
+function applyGlobePlace(place = selectedGlobePlace) {
+  selectedGlobePlace = place;
+  selectedTrack = trackById(place.trackId);
+  statusEl.textContent = `电子地球仪选中了：${place.name}。现在切到 ${selectedTrack.name} 风格赛道。`;
+  rebuildWorld();
+  drawMenu();
+  renderGlobeLocations();
+  drawGlobeMap(performance.now());
+}
+
+function renderGlobeLocations() {
+  if (!globeLocationList) return;
+  globeLocationList.innerHTML = "";
+  globePlaces.forEach((place) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.classList.toggle("active", place === selectedGlobePlace);
+    button.innerHTML = `${place.name}<span>${place.region}</span>`;
+    button.addEventListener("click", () => {
+      selectedGlobePlace = place;
+      applyGlobePlace(place);
+    });
+    globeLocationList.append(button);
+  });
+  if (globePickedText && selectedGlobePlace) {
+    globePickedText.textContent = `${selectedGlobePlace.name} · ${selectedGlobePlace.region} · 对应 ${trackById(selectedGlobePlace.trackId).name} 赛道。`;
+  }
+}
+
+function resizeGlobeCanvas() {
+  if (!globeCanvas) return;
+  const rect = globeCanvas.getBoundingClientRect();
+  const ratio = lowPowerMode ? 1 : Math.min(window.devicePixelRatio, 1.5);
+  const width = Math.max(360, Math.floor(rect.width * ratio));
+  const height = Math.max(300, Math.floor(rect.height * ratio));
+  if (globeCanvas.width !== width || globeCanvas.height !== height) {
+    globeCanvas.width = width;
+    globeCanvas.height = height;
+  }
+}
+
+function projectGlobePoint(place, cx, cy, radius, rotation) {
+  const lat = THREE.MathUtils.degToRad(place.lat);
+  const lon = THREE.MathUtils.degToRad(place.lon) + rotation;
+  const front = Math.cos(lat) * Math.cos(lon);
+  return {
+    x: cx + radius * Math.cos(lat) * Math.sin(lon),
+    y: cy - radius * Math.sin(lat),
+    front
+  };
+}
+
+function drawGlobeMap(now) {
+  if (!globeCtx || !globeOverlay || globeOverlay.hidden) return;
+  resizeGlobeCanvas();
+  const g = globeCtx;
+  const w = globeCanvas.width;
+  const h = globeCanvas.height;
+  const cx = w * 0.36;
+  const cy = h * 0.5;
+  const radius = Math.min(w * 0.28, h * 0.42);
+  const rotation = now * 0.00008;
+  globeMarkers = [];
+
+  g.clearRect(0, 0, w, h);
+  const bg = g.createLinearGradient(0, 0, w, h);
+  bg.addColorStop(0, "#061421");
+  bg.addColorStop(0.55, "#0d2d44");
+  bg.addColorStop(1, "#13263a");
+  g.fillStyle = bg;
+  g.fillRect(0, 0, w, h);
+
+  for (let i = 0; i < 70; i += 1) {
+    const x = (i * 97 + Math.sin(now * 0.0003 + i) * 14) % w;
+    const y = (i * 53) % h;
+    g.fillStyle = i % 5 ? "rgba(255,255,255,0.45)" : "rgba(255,209,95,0.55)";
+    g.beginPath();
+    g.arc(x, y, i % 5 === 0 ? 2.2 : 1.2, 0, Math.PI * 2);
+    g.fill();
+  }
+
+  const glow = g.createRadialGradient(cx, cy, radius * 0.2, cx, cy, radius * 1.25);
+  glow.addColorStop(0, "rgba(95, 209, 255, 0.24)");
+  glow.addColorStop(1, "rgba(95, 209, 255, 0)");
+  g.fillStyle = glow;
+  g.beginPath();
+  g.arc(cx, cy, radius * 1.25, 0, Math.PI * 2);
+  g.fill();
+
+  const globe = g.createRadialGradient(cx - radius * 0.28, cy - radius * 0.34, radius * 0.1, cx, cy, radius);
+  globe.addColorStop(0, "#b7efff");
+  globe.addColorStop(0.42, "#32a7e2");
+  globe.addColorStop(1, "#104e82");
+  g.fillStyle = globe;
+  g.beginPath();
+  g.arc(cx, cy, radius, 0, Math.PI * 2);
+  g.fill();
+
+  g.save();
+  g.beginPath();
+  g.arc(cx, cy, radius, 0, Math.PI * 2);
+  g.clip();
+  g.globalAlpha = 0.42;
+  g.strokeStyle = "#d7f8ff";
+  g.lineWidth = Math.max(1, radius * 0.006);
+  for (let i = -60; i <= 60; i += 30) {
+    const y = cy - Math.sin(THREE.MathUtils.degToRad(i)) * radius;
+    const scale = Math.cos(THREE.MathUtils.degToRad(i));
+    g.beginPath();
+    g.ellipse(cx, y, radius * scale, radius * 0.12 * scale, 0, 0, Math.PI * 2);
+    g.stroke();
+  }
+  for (let i = 0; i < 12; i += 1) {
+    g.beginPath();
+    g.ellipse(cx, cy, radius * Math.abs(Math.cos(i * Math.PI / 12)), radius, 0, 0, Math.PI * 2);
+    g.stroke();
+  }
+  g.globalAlpha = 0.72;
+  drawContinentBlob(g, cx, cy, radius, rotation, [
+    [-125, 50], [-96, 45], [-78, 25], [-63, -8], [-48, -24], [-71, -45], [-90, -18], [-111, 10]
+  ]);
+  drawContinentBlob(g, cx, cy, radius, rotation, [
+    [-10, 58], [30, 54], [74, 36], [108, 16], [123, -8], [96, -32], [48, -24], [28, 2], [-8, 4], [-24, 34]
+  ]);
+  drawContinentBlob(g, cx, cy, radius, rotation, [
+    [112, -10], [153, -17], [150, -39], [118, -43], [105, -27]
+  ]);
+  g.restore();
+
+  g.strokeStyle = "rgba(255,255,255,0.78)";
+  g.lineWidth = Math.max(2, radius * 0.01);
+  g.beginPath();
+  g.arc(cx, cy, radius, 0, Math.PI * 2);
+  g.stroke();
+
+  globePlaces.forEach((place) => {
+    const point = projectGlobePoint(place, cx, cy, radius, rotation);
+    const visible = point.front > -0.18;
+    if (!visible) return;
+    const active = place === selectedGlobePlace;
+    const size = active ? radius * 0.04 : radius * 0.026;
+    g.globalAlpha = THREE.MathUtils.clamp((point.front + 0.18) / 1.18, 0.3, 1);
+    g.fillStyle = active ? "#ffd15f" : place.kind === "mall" ? "#f06aa3" : "#ffffff";
+    g.strokeStyle = "#172632";
+    g.lineWidth = Math.max(2, radius * 0.007);
+    g.beginPath();
+    g.arc(point.x, point.y, size, 0, Math.PI * 2);
+    g.fill();
+    g.stroke();
+    if (active || point.front > 0.65) {
+      g.font = `900 ${Math.max(15, radius * 0.055)}px system-ui`;
+      g.fillStyle = "#ffffff";
+      g.strokeStyle = "rgba(6,18,28,0.78)";
+      g.lineWidth = 4;
+      g.strokeText(place.name, point.x + size + 6, point.y - size);
+      g.fillText(place.name, point.x + size + 6, point.y - size);
+    }
+    globeMarkers.push({ place, x: point.x, y: point.y, r: Math.max(18, size * 1.6) });
+  });
+  g.globalAlpha = 1;
+
+  drawSelectedPlaceScene(g, w, h);
+}
+
+function drawContinentBlob(g, cx, cy, radius, rotation, coords) {
+  g.fillStyle = "#39a657";
+  g.beginPath();
+  coords.forEach(([lon, lat], index) => {
+    const p = projectGlobePoint({ lon, lat }, cx, cy, radius, rotation);
+    if (index === 0) g.moveTo(p.x, p.y);
+    else g.lineTo(p.x, p.y);
+  });
+  g.closePath();
+  g.fill();
+}
+
+function drawSelectedPlaceScene(g, w, h) {
+  const place = selectedGlobePlace || globePlaces[0];
+  const x = w * 0.68;
+  const y = h * 0.18;
+  const sw = w * 0.27;
+  const sh = h * 0.62;
+  g.fillStyle = "rgba(255,255,255,0.1)";
+  g.strokeStyle = "rgba(255,255,255,0.42)";
+  g.lineWidth = 2;
+  roundRect(g, x, y, sw, sh, 18);
+  g.fill();
+  g.stroke();
+
+  const horizon = y + sh * 0.66;
+  g.fillStyle = place.kind === "island" ? "#1fa7c9" : place.kind === "mall" ? "#7c6bd8" : "#245b8f";
+  roundRect(g, x + sw * 0.08, horizon, sw * 0.84, sh * 0.18, 12);
+  g.fill();
+
+  if (place.kind === "island") {
+    g.fillStyle = "#ffd15f";
+    g.beginPath();
+    g.ellipse(x + sw * 0.48, horizon + sh * 0.05, sw * 0.28, sh * 0.06, -0.08, 0, Math.PI * 2);
+    g.fill();
+    g.strokeStyle = "#172632";
+    g.lineWidth = 5;
+    g.beginPath();
+    g.moveTo(x + sw * 0.48, horizon + sh * 0.02);
+    g.quadraticCurveTo(x + sw * 0.55, y + sh * 0.42, x + sw * 0.65, y + sh * 0.34);
+    g.stroke();
+    g.fillStyle = "#39a657";
+    for (let i = 0; i < 5; i += 1) {
+      g.beginPath();
+      g.ellipse(x + sw * 0.65, y + sh * 0.34, sw * 0.12, sh * 0.025, i * 0.7, 0, Math.PI * 2);
+      g.fill();
+    }
+  } else if (place.kind === "mall") {
+    for (let i = 0; i < 4; i += 1) {
+      g.fillStyle = ["#f7fbff", "#ffd15f", "#f06aa3", "#32a7e2"][i];
+      roundRect(g, x + sw * (0.16 + i * 0.17), y + sh * (0.28 + (i % 2) * 0.08), sw * 0.13, sh * 0.35, 8);
+      g.fill();
+    }
+  } else {
+    for (let i = 0; i < 7; i += 1) {
+      const bh = sh * (0.22 + (i % 4) * 0.08);
+      g.fillStyle = ["#f7fbff", "#32a7e2", "#ffd15f", "#d93a32"][i % 4];
+      roundRect(g, x + sw * (0.1 + i * 0.11), horizon - bh, sw * 0.08, bh, 6);
+      g.fill();
+    }
+  }
+
+  g.fillStyle = "#ffffff";
+  g.font = `950 ${Math.max(22, w * 0.024)}px system-ui`;
+  g.fillText(place.name, x + sw * 0.08, y + sh * 0.13);
+  g.font = `850 ${Math.max(14, w * 0.014)}px system-ui`;
+  g.fillStyle = "rgba(255,255,255,0.82)";
+  g.fillText(place.region, x + sw * 0.08, y + sh * 0.21);
+  g.fillText(`赛车风格：${trackById(place.trackId).name}`, x + sw * 0.08, y + sh * 0.91);
+}
+
+function roundRect(g, x, y, w, h, r) {
+  g.beginPath();
+  g.moveTo(x + r, y);
+  g.arcTo(x + w, y, x + w, y + h, r);
+  g.arcTo(x + w, y + h, x, y + h, r);
+  g.arcTo(x, y + h, x, y, r);
+  g.arcTo(x, y, x + w, y, r);
+  g.closePath();
 }
 
 function refreshPlayerCar() {
@@ -1032,6 +1326,7 @@ function resize() {
   renderer.setSize(rect.width, rect.height, false);
   camera.aspect = rect.width / rect.height;
   camera.updateProjectionMatrix();
+  resizeGlobeCanvas();
 }
 
 function render() {
@@ -1044,6 +1339,7 @@ function animate(now = performance.now()) {
   lastTime = now;
   update(dt);
   render();
+  drawGlobeMap(now);
 }
 
 function bindControls() {
@@ -1074,6 +1370,24 @@ function bindControls() {
 }
 
 window.addEventListener("resize", resize);
+openGlobeBtn.addEventListener("click", openGlobeMap);
+closeGlobeBtn.addEventListener("click", closeGlobeMap);
+globeOverlay.addEventListener("click", (event) => {
+  if (event.target === globeOverlay) closeGlobeMap();
+});
+useGlobePlaceBtn.addEventListener("click", () => {
+  applyGlobePlace(selectedGlobePlace);
+  closeGlobeMap();
+});
+globeCanvas.addEventListener("pointerdown", (event) => {
+  const rect = globeCanvas.getBoundingClientRect();
+  const x = (event.clientX - rect.left) * (globeCanvas.width / rect.width);
+  const y = (event.clientY - rect.top) * (globeCanvas.height / rect.height);
+  const marker = globeMarkers.find((item) => Math.hypot(item.x - x, item.y - y) <= item.r);
+  if (!marker) return;
+  selectedGlobePlace = marker.place;
+  applyGlobePlace(marker.place);
+});
 startBtn.addEventListener("click", startRace);
 resetBtn.addEventListener("click", resetRace);
 againBtn.addEventListener("click", startRace);
@@ -1092,4 +1406,5 @@ resize();
 refreshPlayerCar();
 rebuildWorld();
 drawMenu();
+renderGlobeLocations();
 animate();
