@@ -15,6 +15,10 @@ const againBtn = document.querySelector("#againBtn");
 const finishCard = document.querySelector("#finishCard");
 const finishTitle = document.querySelector("#finishTitle");
 const finishText = document.querySelector("#finishText");
+const playMusicBtn = document.querySelector("#playMusicBtn");
+const chooseMusicBtn = document.querySelector("#chooseMusicBtn");
+const musicFileInput = document.querySelector("#musicFileInput");
+const musicStatus = document.querySelector("#musicStatus");
 const touchControls = [...document.querySelectorAll("[data-drive]")];
 
 const tracks = [
@@ -98,6 +102,13 @@ let verticalVelocity = 0;
 let flyTimer = 0;
 let lastTime = performance.now();
 let audioContext = null;
+let raceMusic = new Audio("assets/racing-user-music.mp4?v=20260722");
+let raceMusicName = "你发来的视频音乐";
+let localMusicUrl = null;
+
+raceMusic.loop = true;
+raceMusic.volume = 0.66;
+raceMusic.preload = "auto";
 
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -517,6 +528,37 @@ function getAudio() {
   return audioContext;
 }
 
+function playRaceMusic() {
+  if (!raceMusic) return;
+  raceMusic.loop = true;
+  raceMusic.volume = 0.66;
+  const playPromise = raceMusic.play();
+  if (playPromise && typeof playPromise.then === "function") {
+    playPromise.then(() => {
+      if (musicStatus) musicStatus.textContent = `正在播放：${raceMusicName}`;
+    }).catch(() => {
+      if (musicStatus) musicStatus.textContent = "手机拦截了自动播放，请点“播放视频音乐”。";
+    });
+  }
+}
+
+function stopRaceMusic() {
+  if (!raceMusic) return;
+  raceMusic.pause();
+}
+
+function setRaceMusicSource(url, name) {
+  stopRaceMusic();
+  raceMusic.src = url;
+  raceMusicName = name;
+  raceMusic.load();
+  if (musicStatus) musicStatus.textContent = `已选择：${name}`;
+}
+
+raceMusic.addEventListener("error", () => {
+  if (musicStatus) musicStatus.textContent = "没有找到视频音乐文件，可以点“选择本地音乐”。";
+});
+
 function playTone(freq, start, duration, gainValue = 0.035, type = "square") {
   const audio = getAudio();
   const osc = audio.createOscillator();
@@ -835,6 +877,7 @@ function startRace() {
   statusEl.textContent = `${selectedDriver.name}开着${selectedCar.name}出发！现在是 3D ${selectedTrack.name}赛道，一共 ${totalLaps} 圈。`;
   rebuildWorld();
   playStart();
+  playRaceMusic();
 }
 
 function resetRace() {
@@ -850,6 +893,7 @@ function resetRace() {
   finishCard.classList.remove("show");
   statusEl.textContent = "选好地图和车，点开始赛车。";
   rebuildWorld();
+  stopRaceMusic();
 }
 
 function controlDown(name) {
@@ -970,6 +1014,7 @@ function finishRace() {
   finishText.textContent = `${selectedDriver.name}完成 ${totalLaps} 圈，天空地下赛车变成立体版了。`;
   finishCard.classList.add("show");
   playFinish();
+  stopRaceMusic();
 }
 
 function resize() {
@@ -994,6 +1039,7 @@ function animate(now = performance.now()) {
 function bindControls() {
   window.addEventListener("keydown", (event) => {
     keys.add(event.key.length === 1 ? event.key.toLowerCase() : event.key);
+    playRaceMusic();
   });
   window.addEventListener("keyup", (event) => {
     keys.delete(event.key.length === 1 ? event.key.toLowerCase() : event.key);
@@ -1004,6 +1050,7 @@ function bindControls() {
       event.preventDefault();
       pressed.add(name);
       button.classList.add("is-pressed");
+      playRaceMusic();
     };
     const up = () => {
       pressed.delete(name);
@@ -1020,6 +1067,16 @@ window.addEventListener("resize", resize);
 startBtn.addEventListener("click", startRace);
 resetBtn.addEventListener("click", resetRace);
 againBtn.addEventListener("click", startRace);
+playMusicBtn.addEventListener("click", playRaceMusic);
+chooseMusicBtn.addEventListener("click", () => musicFileInput.click());
+musicFileInput.addEventListener("change", () => {
+  const file = musicFileInput.files && musicFileInput.files[0];
+  if (!file) return;
+  if (localMusicUrl) URL.revokeObjectURL(localMusicUrl);
+  localMusicUrl = URL.createObjectURL(file);
+  setRaceMusicSource(localMusicUrl, file.name);
+  playRaceMusic();
+});
 bindControls();
 resize();
 refreshPlayerCar();

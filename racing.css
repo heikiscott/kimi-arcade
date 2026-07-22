@@ -179,6 +179,30 @@ canvas {
   font-weight: 950;
 }
 
+.music-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.music-row button {
+  min-height: 42px;
+  padding: 8px;
+  border: 2px solid rgba(23, 38, 50, 0.12);
+  border-radius: 8px;
+  color: #172632;
+  background: var(--gold);
+  cursor: pointer;
+  font-weight: 950;
+}
+
+.music-block span {
+  color: #51616c;
+  font-size: 0.86rem;
+  font-weight: 850;
+  line-height: 1.35;
+}
+
 .choice-grid button.option-card {
   display: grid;
   justify-items: center;
@@ -839,6 +863,10 @@ canvas {
 @media (max-width: 560px) {
   .touch-controls {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .music-row {
+    grid-template-columns: 1fr;
   }
 
   .control-btn {
