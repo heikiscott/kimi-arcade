@@ -1,4 +1,4 @@
-import * as THREE from "https://unpkg.com/three@0.165.0/build/three.module.js";
+import * as THREE from "./assets/three.module.js";
 
 const canvas = document.querySelector("#raceCanvas");
 const statusEl = document.querySelector("#status");
@@ -20,6 +20,7 @@ const chooseMusicBtn = document.querySelector("#chooseMusicBtn");
 const musicFileInput = document.querySelector("#musicFileInput");
 const musicStatus = document.querySelector("#musicStatus");
 const touchControls = [...document.querySelectorAll("[data-drive]")];
+const lowPowerMode = window.matchMedia("(max-width: 820px)").matches || /MicroMessenger|iPhone|iPad|Android/i.test(navigator.userAgent);
 
 const tracks = [
   { id: "sky", name: "天上", road: 0xb8d8ff, ground: 0x92d6ff, sky: 0xaee7ff, obstacle: "云墙" },
@@ -108,11 +109,11 @@ let localMusicUrl = null;
 
 raceMusic.loop = true;
 raceMusic.volume = 0.66;
-raceMusic.preload = "auto";
+raceMusic.preload = "metadata";
 
-const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-renderer.shadowMap.enabled = true;
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: !lowPowerMode, powerPreference: "high-performance" });
+renderer.setPixelRatio(lowPowerMode ? 1 : Math.min(window.devicePixelRatio, 1.5));
+renderer.shadowMap.enabled = !lowPowerMode;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
 const scene = new THREE.Scene();
@@ -123,8 +124,8 @@ const hemi = new THREE.HemisphereLight(0xffffff, 0x62735c, 1.2);
 scene.add(hemi);
 const sun = new THREE.DirectionalLight(0xffffff, 2.2);
 sun.position.set(-16, 28, 20);
-sun.castShadow = true;
-sun.shadow.mapSize.set(2048, 2048);
+sun.castShadow = !lowPowerMode;
+sun.shadow.mapSize.set(lowPowerMode ? 512 : 1024, lowPowerMode ? 512 : 1024);
 scene.add(sun);
 
 const world = new THREE.Group();
@@ -151,23 +152,23 @@ function mat(color, roughness = 0.75) {
 
 function box(w, h, d, color) {
   const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat(color));
-  mesh.castShadow = true;
-  mesh.receiveShadow = true;
+  mesh.castShadow = !lowPowerMode;
+  mesh.receiveShadow = !lowPowerMode;
   return mesh;
 }
 
 function cyl(r1, r2, h, color, radial = 28) {
   const mesh = new THREE.Mesh(new THREE.CylinderGeometry(r1, r2, h, radial), mat(color));
-  mesh.castShadow = true;
-  mesh.receiveShadow = true;
+  mesh.castShadow = !lowPowerMode;
+  mesh.receiveShadow = !lowPowerMode;
   return mesh;
 }
 
 function sphere(r, color, sx = 1, sy = 1, sz = 1) {
   const mesh = new THREE.Mesh(new THREE.SphereGeometry(r, 26, 16), mat(color));
   mesh.scale.set(sx, sy, sz);
-  mesh.castShadow = true;
-  mesh.receiveShadow = true;
+  mesh.castShadow = !lowPowerMode;
+  mesh.receiveShadow = !lowPowerMode;
   return mesh;
 }
 
@@ -355,7 +356,7 @@ function makeStarMesh(color) {
   const mesh = new THREE.Mesh(new THREE.ExtrudeGeometry(shape, { depth: 0.18, bevelEnabled: false }), mat(color));
   mesh.rotation.x = Math.PI;
   mesh.rotation.z = Math.PI;
-  mesh.castShadow = true;
+  mesh.castShadow = !lowPowerMode;
   return mesh;
 }
 
@@ -609,7 +610,8 @@ function rebuildWorld() {
   ground.position.set(0, selectedTrack.id === "cliff" ? -7.4 : -0.65, -58);
   sceneGroup.add(ground);
 
-  for (let i = 0; i < 18; i += 1) {
+  const segmentCount = lowPowerMode ? 12 : 18;
+  for (let i = 0; i < segmentCount; i += 1) {
     const segment = createRoadSegment(i);
     roadSegments.push(segment);
     roadGroup.add(segment);
@@ -709,17 +711,21 @@ function buildTrackScenery() {
     addTrain(-20, -48);
     addTrain(21, -100);
   } else if (selectedTrack.id === "ghost") {
-    for (let i = 0; i < 7; i += 1) addGhost(i % 2 ? -16 : 16, -18 - i * 22);
+    const ghostCount = lowPowerMode ? 4 : 7;
+    for (let i = 0; i < ghostCount; i += 1) addGhost(i % 2 ? -16 : 16, -18 - i * 22);
   } else if (selectedTrack.id === "volcano") {
-    for (let i = 0; i < 8; i += 1) addLavaRock(i % 2 ? -16 : 15, -18 - i * 18);
+    const rockCount = lowPowerMode ? 5 : 8;
+    for (let i = 0; i < rockCount; i += 1) addLavaRock(i % 2 ? -16 : 15, -18 - i * 18);
   } else if (selectedTrack.id === "sky" || selectedTrack.id === "cliff") {
-    for (let i = 0; i < 12; i += 1) {
+    const cloudCount = lowPowerMode ? 7 : 12;
+    for (let i = 0; i < cloudCount; i += 1) {
       const cloud = sphere(2.3, 0xffffff, 1.7, 0.55, 1.1);
       cloud.position.set((i % 2 ? -19 : 18) + Math.sin(i) * 5, 5 + Math.sin(i * 1.7) * 2.5, -10 - i * 14);
       sceneGroup.add(cloud);
     }
     if (selectedTrack.id === "cliff") {
-      for (let i = 0; i < 8; i += 1) {
+      const cliffCount = lowPowerMode ? 5 : 8;
+      for (let i = 0; i < cliffCount; i += 1) {
         const cliff = box(7 + (i % 3) * 2, 4.4 + (i % 2) * 1.3, 8, 0x8b5a35);
         cliff.position.set(i % 2 ? -22 : 22, trackHeight() - 3.1, -24 - i * 18);
         const grass = box(cliff.geometry.parameters.width, 0.28, 8.2, 0x39a657);
@@ -728,7 +734,8 @@ function buildTrackScenery() {
       }
     }
   } else {
-    for (let i = 0; i < 10; i += 1) {
+    const sceneryCount = lowPowerMode ? 6 : 10;
+    for (let i = 0; i < sceneryCount; i += 1) {
       const rock = box(4, 3 + (i % 3), 5, 0x574b43);
       rock.position.set(i % 2 ? -18 : 18, 1.3, -15 - i * 15);
       sceneGroup.add(rock);
@@ -788,7 +795,8 @@ function addLavaRock(x, z) {
 }
 
 function buildItems() {
-  for (let i = 0; i < 18 + selectedStars * 3; i += 1) {
+  const coinCount = lowPowerMode ? 10 + selectedStars * 2 : 18 + selectedStars * 3;
+  for (let i = 0; i < coinCount; i += 1) {
     const coin = cyl(0.36, 0.36, 0.08, 0xffd15f, 26);
     coin.rotation.x = Math.PI / 2;
     coin.userData.laneX = -4 + (i % 5) * 2;
@@ -798,7 +806,8 @@ function buildItems() {
     pickupGroup.add(coin);
   }
   const rivalLabels = ["LR", "星", "M", "7", "GO", "闪"];
-  for (let i = 0; i < 10 + selectedStars * 2; i += 1) {
+  const rivalCount = lowPowerMode ? 5 + selectedStars : 10 + selectedStars * 2;
+  for (let i = 0; i < rivalCount; i += 1) {
     const rival = createCar([0xd93a32, 0x245b8f, 0x39a657, 0xffd15f, 0x8f5fd9][i % 5], rivalLabels[i % rivalLabels.length]);
     rival.userData.laneX = [-3.8, 0, 3.8][i % 3];
     rival.position.set(rival.userData.laneX, trackHeight() + 0.45, -34 - i * 17);
@@ -806,7 +815,8 @@ function buildItems() {
     rivalCars.push(rival);
     pickupGroup.add(rival);
   }
-  for (let i = 0; i < 8 + selectedStars; i += 1) {
+  const obstacleCount = lowPowerMode ? 4 + selectedStars : 8 + selectedStars;
+  for (let i = 0; i < obstacleCount; i += 1) {
     const obstacle = createObstacle(i);
     obstacle.userData.laneX = [-4.2, 0, 4.2][(i + 1) % 3];
     obstacle.position.set(obstacle.userData.laneX, trackHeight() + 0.58, -48 - i * 25);
