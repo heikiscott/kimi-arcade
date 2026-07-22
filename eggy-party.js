@@ -46,14 +46,14 @@ const controls = new Set();
 const controlPointers = new Map();
 
 const humanCharacters = [
-  { name: "女探险家", skin: "#f1b58f", hair: "#2b1b14", shirt: "#f06aa3", pants: "#2f79c8", hat: "#ffd15f", accessory: "scarf" },
-  { name: "男探险家", skin: "#c98b62", hair: "#172632", shirt: "#38a86a", pants: "#42536b", hat: "#d8b46f", accessory: "backpack" },
-  { name: "飞行员", skin: "#ffd0ac", hair: "#4b2f22", shirt: "#2f79c8", pants: "#172632", hat: "#2f79c8", accessory: "badge" },
-  { name: "工程师", skin: "#d79b70", hair: "#321f18", shirt: "#ff8a3d", pants: "#4f5e68", hat: "#ffd15f", accessory: "wrench" },
-  { name: "医生", skin: "#f0c29f", hair: "#3a241b", shirt: "#f7fbff", pants: "#32a7e2", hat: "#f7fbff", accessory: "cross" },
-  { name: "游客", skin: "#b87954", hair: "#111827", shirt: "#8f5fd9", pants: "#2f79c8", hat: "#f06aa3", accessory: "camera" },
-  { name: "运动员", skin: "#e0a17a", hair: "#22140f", shirt: "#d8343f", pants: "#172632", hat: "#d8343f", accessory: "medal" },
-  { name: "学生", skin: "#ffd6b0", hair: "#5b3524", shirt: "#32a7e2", pants: "#42536b", hat: "#ffffff", accessory: "book" }
+  { name: "黄色蛋仔", body: "#f5c336", accessory: "sprout" },
+  { name: "粉色蛋仔", body: "#f06aa3", accessory: "bow" },
+  { name: "蓝色蛋仔", body: "#32a7e2", accessory: "cap" },
+  { name: "紫色蛋仔", body: "#8f5fd9", accessory: "headphones" },
+  { name: "绿色蛋仔", body: "#60c878", accessory: "leaf" },
+  { name: "飞行员蛋仔", body: "#ffd15f", accessory: "pilot" },
+  { name: "星星蛋仔", body: "#ffcf3d", accessory: "star" },
+  { name: "小熊蛋仔", body: "#d8a05f", accessory: "bear" }
 ];
 
 let selectedHumanIndex = 0;
@@ -1269,7 +1269,7 @@ function startCourse(locationName = selectedLocation.name) {
   playCourseMusic();
 }
 
-function goLobby(message = "回到蛋仔派对大厅。点“乐园”选择新地点。") {
+function goLobby(message = "回到蛋仔派对大厅。点“地图”选择新地点。") {
   stopCourseMusic();
   screen = "lobby";
   transfer.active = false;
@@ -1380,7 +1380,8 @@ function renderLocations() {
   locations[activeCategory].forEach((place) => {
     const button = document.createElement("button");
     button.type = "button";
-    button.className = place.category === "challenge" ? "challenge-place" : "";
+    button.classList.toggle("challenge-place", place.category === "challenge");
+    button.classList.toggle("active-place", place.name === selectedLocation.name && place.category === selectedLocation.category);
     button.textContent = `${place.name} · ${place.detail}`;
     button.addEventListener("click", () => selectLocation(place));
     locationList.append(button);
@@ -1438,7 +1439,7 @@ function updateLobby() {
       avatar.mode = "walk";
       avatar.x = 230;
       avatar.y = 470;
-      statusText.textContent = "下摩天轮啦，可以继续去樱花树、喷泉或乐园。";
+    statusText.textContent = "下摩天轮啦，可以继续去樱花树、喷泉或打开地图。";
     }
     return;
   }
@@ -2664,7 +2665,101 @@ function drawHumanAccessory(character, s) {
 }
 
 function drawPlayerCharacter(x, y, s = 1, tilt = 0) {
-  drawHumanCharacter(x, y, s, tilt, currentHuman());
+  const eggy = currentHuman();
+  drawEggyCharacter(x, y, s, tilt, eggy.body || "#f5c336");
+  drawEggyAccessory(x, y, s, tilt, eggy);
+}
+
+function drawEggyAccessory(x, y, s = 1, tilt = 0, eggy = currentHuman()) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(tilt);
+  ctx.strokeStyle = "#172632";
+  ctx.lineWidth = 3 * s;
+  ctx.fillStyle = "#ffd15f";
+  if (eggy.accessory === "sprout") {
+    ctx.strokeStyle = "#38a86a";
+    ctx.lineWidth = 4 * s;
+    ctx.beginPath();
+    ctx.moveTo(0, -68 * s);
+    ctx.quadraticCurveTo(-12 * s, -84 * s, -24 * s, -75 * s);
+    ctx.stroke();
+    ctx.fillStyle = "#60c878";
+    ctx.beginPath();
+    ctx.ellipse(-26 * s, -75 * s, 12 * s, 7 * s, -0.4, 0, Math.PI * 2);
+    ctx.fill();
+  } else if (eggy.accessory === "bow") {
+    ctx.fillStyle = "#ffd15f";
+    ctx.beginPath();
+    ctx.ellipse(-12 * s, -52 * s, 12 * s, 8 * s, -0.4, 0, Math.PI * 2);
+    ctx.ellipse(12 * s, -52 * s, 12 * s, 8 * s, 0.4, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = "#f06aa3";
+    ctx.beginPath();
+    ctx.arc(0, -52 * s, 5 * s, 0, Math.PI * 2);
+    ctx.fill();
+  } else if (eggy.accessory === "cap") {
+    ctx.fillStyle = "#172632";
+    ctx.beginPath();
+    roundedRect(-22 * s, -58 * s, 44 * s, 14 * s, 7 * s);
+    ctx.fill();
+    ctx.fillStyle = "#32a7e2";
+    ctx.beginPath();
+    roundedRect(-18 * s, -64 * s, 36 * s, 12 * s, 6 * s);
+    ctx.fill();
+  } else if (eggy.accessory === "headphones") {
+    ctx.strokeStyle = "#172632";
+    ctx.lineWidth = 5 * s;
+    ctx.beginPath();
+    ctx.arc(0, -35 * s, 29 * s, Math.PI * 1.12, Math.PI * 1.88);
+    ctx.stroke();
+    ctx.fillStyle = "#ffd15f";
+    ctx.fillRect(-36 * s, -31 * s, 10 * s, 22 * s);
+    ctx.fillRect(26 * s, -31 * s, 10 * s, 22 * s);
+  } else if (eggy.accessory === "leaf") {
+    ctx.fillStyle = "#38a86a";
+    ctx.beginPath();
+    ctx.ellipse(0, -62 * s, 18 * s, 9 * s, -0.35, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+  } else if (eggy.accessory === "pilot") {
+    ctx.fillStyle = "#245b8f";
+    ctx.beginPath();
+    roundedRect(-24 * s, -59 * s, 48 * s, 15 * s, 8 * s);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = "#dce5eb";
+    ctx.beginPath();
+    ctx.ellipse(0, -43 * s, 22 * s, 7 * s, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+  } else if (eggy.accessory === "star") {
+    drawSmallAccessoryStar(0, -63 * s, 13 * s);
+  } else if (eggy.accessory === "bear") {
+    ctx.fillStyle = "#d8a05f";
+    ctx.beginPath();
+    ctx.arc(-22 * s, -47 * s, 10 * s, 0, Math.PI * 2);
+    ctx.arc(22 * s, -47 * s, 10 * s, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function drawSmallAccessoryStar(x, y, r) {
+  ctx.fillStyle = "#ffd15f";
+  ctx.strokeStyle = "#172632";
+  ctx.lineWidth = Math.max(2, r * 0.18);
+  ctx.beginPath();
+  for (let i = 0; i < 10; i += 1) {
+    const angle = -Math.PI / 2 + i * Math.PI / 5;
+    const radius = i % 2 === 0 ? r : r * 0.45;
+    ctx.lineTo(x + Math.cos(angle) * radius, y + Math.sin(angle) * radius);
+  }
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
 }
 
 function drawLobbyEgg(x, y) {
@@ -2680,7 +2775,7 @@ function drawLocationPreview() {
   ctx.font = "900 21px system-ui";
   ctx.fillText(selectedLocation.name, 56, 522);
   ctx.font = "800 16px system-ui";
-  ctx.fillText(selectedLocation.detail || "点乐园选择地点", 56, 552);
+  ctx.fillText(selectedLocation.detail || "点地图选择地点", 56, 552);
 }
 
 function drawActivity() {
@@ -5242,7 +5337,7 @@ if (destinationAirportSelect) {
 }
 boardFlightBtn.addEventListener("click", () => {
   if (selectedLocation.category !== "flight" || screen !== "activity") {
-    statusText.textContent = "先点乐园，选择开飞机地点。";
+    statusText.textContent = "先点地图，选择开飞机地点。";
     return;
   }
   boardNearestPlane();

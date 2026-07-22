@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>蛋仔派对闯关</title>
-    <link rel="stylesheet" href="eggy-party.css?v=eggy-music-20260722" />
+    <link rel="stylesheet" href="eggy-party.css?v=eggy-map-character-20260722" />
   </head>
   <body>
     <a class="home-link" href="arcade.html">游戏大厅</a>
@@ -17,40 +17,40 @@
           </div>
           <small>飞机操纵杆</small>
         </div>
-        <div class="status-bar" id="statusText">这是蛋仔派对大厅。你可以选角色、选国家风格地点；选机场后镜头会跟着飞机在超大机场地图里移动。</div>
+        <div class="status-bar" id="statusText">这是蛋仔派对大厅。点“地图”选哪里，画面场景就到哪里。</div>
       </section>
 
       <section class="control-panel">
         <p class="label">Eggy Party</p>
         <h1>蛋仔派对</h1>
         <div class="score-grid">
-          <div><span>地点</span><strong id="levelText">探险大厅</strong></div>
+          <div><span>地图</span><strong id="levelText">派对大厅</strong></div>
           <div><span>星星</span><strong id="starText">0</strong></div>
           <div><span>时间</span><strong id="timeText">0.0</strong></div>
         </div>
         <label class="character-control" for="characterSelect">
           <span>选择蛋仔角色</span>
           <select id="characterSelect">
-            <option value="0">女探险家</option>
-            <option value="1">男探险家</option>
-            <option value="2">飞行员</option>
-            <option value="3">工程师</option>
-            <option value="4">医生</option>
-            <option value="5">游客</option>
-            <option value="6">运动员</option>
-            <option value="7">学生</option>
+            <option value="0">黄色蛋仔</option>
+            <option value="1">粉色蛋仔</option>
+            <option value="2">蓝色蛋仔</option>
+            <option value="3">紫色蛋仔</option>
+            <option value="4">绿色蛋仔</option>
+            <option value="5">飞行员蛋仔</option>
+            <option value="6">星星蛋仔</option>
+            <option value="7">小熊蛋仔</option>
           </select>
         </label>
         <div class="button-row">
           <button id="startBtn" type="button">开始/互动</button>
           <button id="restartBtn" type="button">重来</button>
-          <button id="parkBtn" type="button">乐园</button>
+          <button id="parkBtn" type="button">地图</button>
           <button id="lobbyBtn" type="button">回大厅</button>
           <button id="threeDBtn" type="button" onclick="location.href='eggy-3d.html'">3D版</button>
         </div>
         <div class="location-picker" id="locationPicker" hidden>
           <div class="picker-head">
-            <strong>选择乐园地点</strong>
+            <strong>选择地图地点</strong>
             <button id="closePickerBtn" type="button">关闭</button>
           </div>
           <div class="category-row" id="categoryRow"></div>
@@ -87,9 +87,9 @@
           <input id="localMusicInput" type="file" accept="audio/*,video/mp4,video/*" hidden />
           <p>闯关在天空上：按“跳/上键”飞上去，按“冲刺/下键”压下来，点“脚下方块”可以在空中垫路。默认播放你刚刚发来的超级马里奥音乐，也可以选择自己电脑里的音乐。</p>
         </div>
-        <p class="hint">机场里先走到飞机旁边，再点“上飞机”“去起飞跑道”或“去降落跑道”。撞到东西也不会直接失败，可以继续探险。</p>
+        <p class="hint">点“地图”选哪里，场景就切到哪里。机场里先走到飞机旁边，再点“上飞机”“去起飞跑道”或“去降落跑道”。</p>
       </section>
     </main>
-    <script src="eggy-party.js?v=eggy-music-20260722"></script>
+    <script src="eggy-party.js?v=eggy-map-character-20260722"></script>
   </body>
 </html>
