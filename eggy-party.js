@@ -1179,6 +1179,9 @@ function exitPlane() {
     statusText.textContent = "你现在已经在停机坪上了。";
     return true;
   }
+  if (vehicle.mode === "flying" || vehicle.mode === "auto-landing") {
+    return startUnmannedLandingAfterPilotLeaves("下飞机了！小蛋仔到地面，飞机变成无人驾驶，马上自己飞去降落跑道。");
+  }
   vehicle.mode = "walking";
   vehicle.pilotOnGround = false;
   vehicle.pilotX = vehicle.x - 70;
@@ -1190,6 +1193,37 @@ function exitPlane() {
   joystickY = 0;
   updateJoystickVisual();
   statusText.textContent = "下飞机了！你回到停机坪，可以走到别的飞机旁边。";
+  return true;
+}
+
+function startUnmannedLandingAfterPilotLeaves(message) {
+  const targetX = Math.max(
+    landingRunway.targetX,
+    Math.min(landingRunway.rolloutEndX - 1400, vehicle.x + 1200)
+  );
+  vehicle.mode = "auto-landing";
+  vehicle.fallStart = performance.now();
+  vehicle.planeCrashExploded = false;
+  vehicle.pilotX = Math.max(flightWorld.x + 210, Math.min(flightWorld.x + flightWorld.w - 210, vehicle.x - 110));
+  vehicle.pilotY = landingGroundY(vehicle.x) + 118;
+  vehicle.pilotVx = 0;
+  vehicle.pilotVy = 0;
+  vehicle.pilotBall = false;
+  vehicle.pilotOnGround = true;
+  vehicle.landingTargetX = targetX;
+  vehicle.landingTargetY = landingRunway.centerY;
+  vehicle.heading = 0;
+  vehicle.angle += (0 - vehicle.angle) * 0.35;
+  vehicle.bank = 0;
+  vehicle.landingTurboUntil = 0;
+  flightLookOffsetX = 0;
+  flightLookOffsetY = -360;
+  joystickX = 0;
+  joystickY = 0;
+  updateJoystickVisual();
+  tone(680, 0, 0.12, 0.025, "triangle");
+  tone(520, 0.12, 0.16, 0.02, "triangle");
+  statusText.textContent = message;
   return true;
 }
 
@@ -1210,30 +1244,7 @@ function jumpFromPlane() {
     statusText.textContent = "要先在飞机里，才能跳下飞机。";
     return true;
   }
-  const targetX = Math.max(
-    landingRunway.targetX,
-    Math.min(landingRunway.rolloutEndX - 1400, vehicle.x + 1200)
-  );
-  vehicle.mode = "auto-landing";
-  vehicle.fallStart = performance.now();
-  vehicle.planeCrashExploded = false;
-  vehicle.pilotX = Math.max(flightWorld.x + 210, Math.min(flightWorld.x + flightWorld.w - 210, vehicle.x - 110));
-  vehicle.pilotY = landingGroundY(vehicle.x) + 118;
-  vehicle.pilotVy = 0;
-  vehicle.pilotBall = false;
-  vehicle.pilotOnGround = true;
-  vehicle.landingTargetX = targetX;
-  vehicle.landingTargetY = landingRunway.centerY;
-  vehicle.heading = 0;
-  vehicle.angle += (0 - vehicle.angle) * 0.35;
-  vehicle.bank = 0;
-  vehicle.landingTurboUntil = 0;
-  flightLookOffsetX = 0;
-  flightLookOffsetY = -360;
-  tone(680, 0, 0.12, 0.025, "triangle");
-  tone(520, 0.12, 0.16, 0.02, "triangle");
-  statusText.textContent = "你跳下飞机到地面了！飞机切换成无人驾驶，会自动飞回降落跑道。";
-  return true;
+  return startUnmannedLandingAfterPilotLeaves("你跳下飞机到地面了！飞机切换成无人驾驶，会自动飞回降落跑道。");
 }
 
 function isOnAirportLand(x, y) {
@@ -3704,46 +3715,46 @@ function drawPlaneShape(x, y, angle, color, showPilot, label = "", model = "波�
   ctx.lineWidth = 5;
   ctx.fillStyle = color;
   ctx.beginPath();
-  ctx.moveTo(-18, -18);
-  ctx.lineTo(-92 + wingFold, -104);
-  ctx.lineTo(54 + wingFold * 0.4, -36);
-  ctx.lineTo(88 + wingFold * 0.22, -18);
+  ctx.moveTo(-38, -18);
+  ctx.lineTo(-104 + wingFold, -106);
+  ctx.lineTo(60 + wingFold * 0.4, -38);
+  ctx.lineTo(92 + wingFold * 0.22, -18);
   ctx.closePath();
   ctx.fill();
   ctx.stroke();
 
   ctx.beginPath();
-  ctx.moveTo(-18, 18);
-  ctx.lineTo(-92 + wingFold, 104);
-  ctx.lineTo(54 + wingFold * 0.4, 36);
-  ctx.lineTo(88 + wingFold * 0.22, 18);
+  ctx.moveTo(-38, 18);
+  ctx.lineTo(-104 + wingFold, 106);
+  ctx.lineTo(60 + wingFold * 0.4, 38);
+  ctx.lineTo(92 + wingFold * 0.22, 18);
   ctx.closePath();
   ctx.fill();
   ctx.stroke();
 
-  drawPlaneEngine(-24 + wingFold * 0.42, -61, bankDepth, -1);
-  drawPlaneEngine(-24 + wingFold * 0.42, 61, bankDepth, 1);
+  drawPlaneEngine(-28 + wingFold * 0.42, -64, bankDepth, -1);
+  drawPlaneEngine(-28 + wingFold * 0.42, 64, bankDepth, 1);
 
   ctx.strokeStyle = "#172632";
   ctx.lineWidth = 4;
   ctx.beginPath();
-  ctx.moveTo(-38 + wingFold * 0.38, -38);
-  ctx.lineTo(-24 + wingFold * 0.42, -52);
-  ctx.moveTo(-38 + wingFold * 0.38, 38);
-  ctx.lineTo(-24 + wingFold * 0.42, 52);
+  ctx.moveTo(-40 + wingFold * 0.38, -42);
+  ctx.lineTo(-28 + wingFold * 0.42, -54);
+  ctx.moveTo(-40 + wingFold * 0.38, 42);
+  ctx.lineTo(-28 + wingFold * 0.42, 54);
   ctx.stroke();
 
   ctx.beginPath();
-  ctx.moveTo(-108, -15);
-  ctx.lineTo(-168, -58);
+  ctx.moveTo(-110, -16);
+  ctx.lineTo(-170, -60);
   ctx.lineTo(-144, -5);
   ctx.closePath();
   ctx.fill();
   ctx.stroke();
 
   ctx.beginPath();
-  ctx.moveTo(-108, 15);
-  ctx.lineTo(-168, 58);
+  ctx.moveTo(-110, 16);
+  ctx.lineTo(-170, 60);
   ctx.lineTo(-144, 5);
   ctx.closePath();
   ctx.fill();
@@ -3765,11 +3776,11 @@ function drawPlaneShape(x, y, angle, color, showPilot, label = "", model = "波�
 
   ctx.fillStyle = "#ffffff";
   ctx.beginPath();
-  ctx.moveTo(-144, -22);
-  ctx.bezierCurveTo(-76, -39, 66, -36, 132, -10);
-  ctx.quadraticCurveTo(166, 0, 132, 10);
-  ctx.bezierCurveTo(66, 36, -76, 39, -144, 22);
-  ctx.quadraticCurveTo(-172, 0, -144, -22);
+  ctx.moveTo(-146, -23);
+  ctx.bezierCurveTo(-78, -38, 68, -38, 134, -10);
+  ctx.quadraticCurveTo(170, 0, 134, 10);
+  ctx.bezierCurveTo(68, 38, -78, 38, -146, 23);
+  ctx.quadraticCurveTo(-176, 0, -146, -23);
   ctx.closePath();
   ctx.fill();
   ctx.stroke();
@@ -3778,16 +3789,16 @@ function drawPlaneShape(x, y, angle, color, showPilot, label = "", model = "波�
   ctx.lineWidth = 9;
   ctx.beginPath();
   ctx.moveTo(-120, 0);
-  ctx.bezierCurveTo(-66, -6, 58, -5, 116, 0);
+  ctx.bezierCurveTo(-66, -6, 62, -6, 118, 0);
   ctx.stroke();
 
   ctx.strokeStyle = accent;
   ctx.lineWidth = 4;
   ctx.beginPath();
   ctx.moveTo(-118, -9);
-  ctx.bezierCurveTo(-56, -13, 60, -13, 118, -5);
+  ctx.bezierCurveTo(-56, -13, 62, -13, 118, -5);
   ctx.moveTo(-118, 9);
-  ctx.bezierCurveTo(-56, 13, 60, 13, 118, 5);
+  ctx.bezierCurveTo(-56, 13, 62, 13, 118, 5);
   ctx.stroke();
 
   ctx.strokeStyle = "rgba(23,38,50,0.28)";
@@ -3824,13 +3835,13 @@ function drawPlaneShape(x, y, angle, color, showPilot, label = "", model = "波�
 
   ctx.fillStyle = "#172632";
   ctx.beginPath();
-  ctx.arc(-153, -10, 8, 0, Math.PI * 2);
-  ctx.arc(-153, 10, 8, 0, Math.PI * 2);
+  ctx.arc(-153, -11, 7, 0, Math.PI * 2);
+  ctx.arc(-153, 11, 7, 0, Math.PI * 2);
   ctx.fill();
 
   ctx.fillStyle = "#4b5560";
   ctx.beginPath();
-  ctx.ellipse(-170, 0, 13, 20, 0, 0, Math.PI * 2);
+  ctx.ellipse(-170, 0, 10, 17, 0, 0, Math.PI * 2);
   ctx.fill();
   ctx.fillStyle = "#172632";
   ctx.beginPath();
@@ -3839,8 +3850,8 @@ function drawPlaneShape(x, y, angle, color, showPilot, label = "", model = "波�
 
   ctx.fillStyle = "#172632";
   ctx.beginPath();
-  ctx.arc(126, -6, 6, 0, Math.PI * 2);
-  ctx.arc(126, 6, 6, 0, Math.PI * 2);
+  ctx.arc(128, -6, 5, 0, Math.PI * 2);
+  ctx.arc(128, 6, 5, 0, Math.PI * 2);
   ctx.fill();
 
   ctx.fillStyle = accent;
@@ -3925,31 +3936,36 @@ function drawTailBadge(details, accent) {
 function drawPlaneEngine(x, y, bankDepth = 0, side = 1) {
   ctx.save();
   ctx.translate(x, y);
-  ctx.fillStyle = "#172632";
-  ctx.fillRect(-8, side < 0 ? 11 : -17, 18, 8);
-  ctx.fillStyle = "#dce5eb";
+  ctx.rotate(side < 0 ? -0.04 : 0.04);
+  ctx.fillStyle = "rgba(23,38,50,0.35)";
+  ctx.fillRect(-8, side < 0 ? 7 : -13, 18, 6);
+  const nacelle = ctx.createLinearGradient(-18, -8, 18, 8);
+  nacelle.addColorStop(0, "#f7fbff");
+  nacelle.addColorStop(0.52, "#dce5eb");
+  nacelle.addColorStop(1, "#93a7b5");
+  ctx.fillStyle = nacelle;
   ctx.beginPath();
-  ctx.ellipse(0, 0, 30 - bankDepth * 5, 20, 0, 0, Math.PI * 2);
+  roundedRect(-18, -7, 36 - bankDepth * 5, 14, 7);
   ctx.fill();
   ctx.strokeStyle = "#172632";
-  ctx.lineWidth = 5;
+  ctx.lineWidth = 3.2;
   ctx.stroke();
-  ctx.strokeStyle = "rgba(255,255,255,0.75)";
-  ctx.lineWidth = 3;
+  ctx.strokeStyle = "rgba(255,255,255,0.72)";
+  ctx.lineWidth = 1.8;
   ctx.beginPath();
-  ctx.moveTo(-12, -8);
-  ctx.lineTo(12, 8);
-  ctx.moveTo(-12, 8);
-  ctx.lineTo(12, -8);
+  ctx.moveTo(-11, -3);
+  ctx.lineTo(11, -3);
+  ctx.moveTo(-11, 3);
+  ctx.lineTo(11, 3);
   ctx.stroke();
   ctx.fillStyle = "#64717b";
   ctx.beginPath();
-  ctx.ellipse(7, side * 1, 12, 9, 0, 0, Math.PI * 2);
+  ctx.ellipse(9, side * 0.5, 5.5, 4, 0, 0, Math.PI * 2);
   ctx.fill();
   ctx.stroke();
   ctx.fillStyle = "#172632";
   ctx.beginPath();
-  ctx.arc(9, side * 1, 4, 0, Math.PI * 2);
+  ctx.arc(10, side * 0.5, 1.8, 0, Math.PI * 2);
   ctx.fill();
   ctx.restore();
 }
