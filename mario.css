@@ -40,6 +40,7 @@ body {
 
 .canvas-wrap {
   position: relative;
+  touch-action: none;
 }
 
 canvas {
@@ -115,11 +116,13 @@ canvas {
 
 .touch-pad button {
   min-height: 48px;
+  padding: 0 8px;
   border: 3px solid rgba(23, 38, 50, 0.42);
   background: rgba(255, 255, 255, 0.86);
   color: #172632;
   box-shadow: 0 8px 18px rgba(23, 38, 50, 0.16);
   pointer-events: auto;
+  user-select: none;
 }
 
 .hud {
@@ -152,15 +155,77 @@ button:active {
 }
 
 @media (max-width: 780px) {
+  body {
+    min-height: 100dvh;
+  }
+
+  .home-link {
+    top: 8px;
+    left: 8px;
+    padding: 7px 10px;
+    font-size: 0.92rem;
+  }
+
+  .mario-shell {
+    place-items: start center;
+    min-height: 100dvh;
+    padding: 58px 7px 10px;
+  }
+
+  canvas {
+    border-width: 3px;
+    border-radius: 7px;
+    box-shadow: 0 14px 30px rgba(23, 38, 50, 0.18);
+  }
+
+  .intro-overlay {
+    inset: 3px;
+    gap: 8px;
+    padding: 14px;
+  }
+
+  .intro-overlay h1 {
+    font-size: clamp(2rem, 11vw, 3.9rem);
+  }
+
+  .intro-overlay button {
+    min-height: 42px;
+    padding: 0 18px;
+    font-size: 0.98rem;
+  }
+
   .hud {
     grid-template-columns: 1fr;
+    gap: 7px;
+    margin-top: 7px;
+    padding: 9px;
+    font-size: 0.92rem;
+    line-height: 1.35;
   }
 
   .touch-pad {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    position: static;
+    margin-top: 7px;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 5px;
+    pointer-events: auto;
   }
 
   .touch-pad button {
-    min-height: 44px;
+    min-height: 32px;
+    border-width: 2px;
+    border-radius: 7px;
+    background: rgba(255, 255, 255, 0.72);
+    font-size: 0.84rem;
+    box-shadow: 0 5px 12px rgba(23, 38, 50, 0.14);
+    backdrop-filter: blur(3px);
+  }
+
+  button {
+    min-height: 36px;
+  }
+
+  #restartBtn {
+    min-height: 40px;
   }
 }
