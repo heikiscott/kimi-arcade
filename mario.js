@@ -37,6 +37,8 @@ const player = {
   keys: 0,
   lives: 3,
   invincibleUntil: 0,
+  starUntil: 0,
+  power: "small",
   rideElevator: null
 };
 
@@ -58,6 +60,14 @@ const sceneTemplates = {
       { x: 1680, y: 402, w: 170, h: 28, type: "brick" },
       { x: 1920, y: 326, w: 150, h: 28, type: "cloud" }
     ],
+    blocks: [
+      { x: 330, y: 332, w: 42, h: 42, type: "question", content: "mushroom", used: false, revealed: true, bump: 0 },
+      { x: 412, y: 332, w: 42, h: 42, type: "brick", content: "coin", used: false, revealed: true, bump: 0 },
+      { x: 682, y: 284, w: 42, h: 42, type: "hidden", content: "star", used: false, revealed: false, bump: 0 },
+      { x: 1182, y: 280, w: 42, h: 42, type: "question", content: "coin", used: false, revealed: true, bump: 0 },
+      { x: 1768, y: 322, w: 42, h: 42, type: "question", content: "star", used: false, revealed: true, bump: 0 }
+    ],
+    powerups: [],
     elevators: [
       { x: 1540, y: 510, w: 104, h: 22, minY: 326, maxY: 510, speed: 1.15, dir: -1, active: true }
     ],
@@ -91,6 +101,12 @@ const sceneTemplates = {
       { x: 1060, y: 340, w: 180, h: 26, type: "wood" },
       { x: 1380, y: 430, w: 176, h: 26, type: "wood" }
     ],
+    blocks: [
+      { x: 380, y: 304, w: 42, h: 42, type: "hidden", content: "coin", used: false, revealed: false, bump: 0 },
+      { x: 720, y: 300, w: 42, h: 42, type: "question", content: "star", used: false, revealed: true, bump: 0 },
+      { x: 1320, y: 292, w: 42, h: 42, type: "brick", content: "mushroom", used: false, revealed: true, bump: 0 }
+    ],
+    powerups: [],
     elevators: [
       { x: 820, y: 504, w: 104, h: 22, minY: 278, maxY: 504, speed: 1.25, dir: -1, active: true }
     ],
@@ -124,6 +140,12 @@ const sceneTemplates = {
       { x: 1220, y: 336, w: 176, h: 26, type: "castle" },
       { x: 1540, y: 428, w: 184, h: 26, type: "castle" }
     ],
+    blocks: [
+      { x: 420, y: 292, w: 42, h: 42, type: "question", content: "coin", used: false, revealed: true, bump: 0 },
+      { x: 820, y: 250, w: 42, h: 42, type: "hidden", content: "mushroom", used: false, revealed: false, bump: 0 },
+      { x: 1460, y: 292, w: 42, h: 42, type: "question", content: "star", used: false, revealed: true, bump: 0 }
+    ],
+    powerups: [],
     elevators: [
       { x: 760, y: 506, w: 116, h: 22, minY: 296, maxY: 506, speed: 1.35, dir: -1, active: true },
       { x: 1320, y: 506, w: 116, h: 22, minY: 250, maxY: 506, speed: 1.05, dir: -1, active: true }
@@ -163,6 +185,8 @@ function cloneScene(key) {
   return {
     ...template,
     platforms: template.platforms.map((item) => ({ ...item })),
+    blocks: template.blocks.map((item) => ({ ...item })),
+    powerups: template.powerups.map((item) => ({ ...item })),
     elevators: template.elevators.map((item) => ({ ...item })),
     coins: template.coins.map((item) => ({ ...item, got: false })),
     enemies: template.enemies.map((item) => ({ ...item })),
@@ -220,6 +244,10 @@ function reset() {
   player.keys = 0;
   player.lives = 3;
   player.invincibleUntil = 0;
+  player.starUntil = 0;
+  player.power = "small";
+  player.w = 36;
+  player.h = 54;
   player.rideElevator = null;
   cameraX = 0;
   gameStarted = false;
@@ -235,7 +263,8 @@ function reset() {
 function updateScore() {
   const totalCoins = Object.values(progress).reduce((sum, item) => sum + item.coins.length, 0);
   const gotCoins = Object.values(progress).reduce((sum, item) => sum + item.coins.filter((coin) => coin.got).length, 0);
-  scoreEl.textContent = `金币 ${gotCoins} / ${totalCoins} · 钥匙 ${player.keys} · 生命 ${player.lives}${won ? " · 通关!" : ""}`;
+  const powerName = performance.now() < player.starUntil ? "星星无敌" : player.power === "big" ? "变大" : "普通";
+  scoreEl.textContent = `金币 ${gotCoins} / ${totalCoins} · 钥匙 ${player.keys} · ${powerName} · 生命 ${player.lives}${won ? " · 通关!" : ""}`;
 }
 
 function rectsOverlap(a, b) {
@@ -265,8 +294,14 @@ function tick(now = performance.now()) {
 }
 
 function update(dt) {
+  if (player.starUntil && performance.now() > player.starUntil) {
+    player.starUntil = 0;
+    player.invincibleUntil = Math.max(player.invincibleUntil, performance.now() + 500);
+    updateScore();
+  }
   updateElevators(dt);
   updatePlayer(dt);
+  updatePowerups(dt);
   updateEnemies(dt);
   collectItems();
   checkDoors();
@@ -324,11 +359,13 @@ function updatePlayer(dt) {
   }
 
   player.vy += 0.72 * dt;
+  const prevY = player.y;
   player.x += player.vx * dt;
   player.y += player.vy * dt;
   player.grounded = false;
   player.rideElevator = null;
 
+  handleBlockHits(prevY);
   resolvePlatforms();
   player.x = Math.max(0, Math.min(scene.width - player.w, player.x));
   if (player.y > H + 120) hurtPlayer("掉下去了，回到这个场景入口。");
@@ -336,7 +373,8 @@ function updatePlayer(dt) {
 
 function resolvePlatforms() {
   const prevBottom = player.y + player.h - player.vy;
-  [...scene.platforms, ...scene.elevators].forEach((platform) => {
+  const solidBlocks = scene.blocks.filter((block) => block.revealed);
+  [...scene.platforms, ...scene.elevators, ...solidBlocks].forEach((platform) => {
     const r = { x: platform.x, y: platform.y, w: platform.w, h: platform.h };
     if (rectsOverlap(playerRect(), r) && player.vy >= 0 && prevBottom <= platform.y + 10) {
       player.y = platform.y - player.h;
@@ -354,12 +392,104 @@ function resolvePlatforms() {
   });
 }
 
+function handleBlockHits(prevY) {
+  if (player.vy >= 0) return;
+  const headNow = player.y;
+  const headBefore = prevY;
+  scene.blocks.forEach((block) => {
+    const blockBottom = block.y + block.h;
+    const overlapX = player.x + player.w > block.x + 4 && player.x < block.x + block.w - 4;
+    if (!overlapX || headBefore < blockBottom || headNow > blockBottom + 8) return;
+    if (!block.revealed && block.type === "hidden") {
+      block.revealed = true;
+      statusText.textContent = "顶到隐藏机关了！隐藏砖块出现。";
+    }
+    if (!block.revealed) return;
+    player.y = blockBottom + 1;
+    player.vy = 2.8;
+    block.bump = 12;
+    activateBlock(block);
+  });
+}
+
+function activateBlock(block) {
+  if (block.used) {
+    playBlockSound();
+    return;
+  }
+  if (block.type === "brick" && player.power === "big" && block.content === "coin") {
+    block.used = true;
+    block.revealed = false;
+    player.coins += 1;
+    statusText.textContent = "变大后把砖块顶碎了，里面掉出金币。";
+    playCoin();
+    updateScore();
+    return;
+  }
+  block.used = true;
+  block.revealed = true;
+  if (block.content === "coin") {
+    player.coins += 1;
+    statusText.textContent = block.type === "hidden" ? "隐藏砖里冒出金币！" : "问号砖块冒出金币！";
+    playCoin();
+    updateScore();
+  } else {
+    spawnPowerup(block);
+    statusText.textContent = block.content === "star" ? "星星出来了！碰到它会无敌一会儿。" : "变大道具出来了！碰到它会变大。";
+    playKeySound();
+  }
+}
+
+function spawnPowerup(block) {
+  scene.powerups.push({
+    x: block.x + 7,
+    y: block.y - 28,
+    w: 28,
+    h: 28,
+    vx: block.content === "star" ? 2.2 : 1.2,
+    vy: -2,
+    type: block.content,
+    born: performance.now()
+  });
+}
+
+function updatePowerups(dt) {
+  scene.blocks.forEach((block) => {
+    if (block.bump > 0) block.bump = Math.max(0, block.bump - 0.8 * dt);
+  });
+  scene.powerups.forEach((item) => {
+    item.vy += 0.42 * dt;
+    item.x += item.vx * dt;
+    item.y += item.vy * dt;
+    let landed = false;
+    scene.platforms.forEach((platform) => {
+      const box = { x: item.x, y: item.y, w: item.w, h: item.h };
+      if (rectsOverlap(box, platform) && item.vy >= 0 && item.y + item.h - item.vy <= platform.y + 10) {
+        item.y = platform.y - item.h;
+        item.vy = item.type === "star" ? -7.5 : 0;
+        landed = true;
+      }
+    });
+    if (!landed && item.y > H + 80) item.got = true;
+    if (item.x < 0 || item.x > scene.width - item.w) item.vx *= -1;
+  });
+  scene.powerups = scene.powerups.filter((item) => !item.got);
+}
+
 function updateEnemies(dt) {
   scene.enemies.forEach((enemy) => {
     enemy.x += enemy.vx * dt;
     if (enemy.x < enemy.minX || enemy.x > enemy.maxX) enemy.vx *= -1;
     const enemyBox = { x: enemy.x - 18, y: enemy.y - 34, w: 36, h: 34 };
     if (!rectsOverlap(playerRect(), enemyBox)) return;
+    if (performance.now() < player.starUntil) {
+      enemy.x = -9999;
+      player.coins += 1;
+      statusText.textContent = "星星无敌！直接撞飞怪物。";
+      playCoin();
+      updateScore();
+      return;
+    }
     if (player.vy > 1.8 && player.y + player.h - player.vy <= enemyBox.y + 10) {
       enemy.x = -9999;
       player.vy = -8;
@@ -373,6 +503,22 @@ function updateEnemies(dt) {
 }
 
 function collectItems() {
+  scene.powerups.forEach((item) => {
+    if (item.got) return;
+    if (!rectsOverlap(playerRect(), { x: item.x, y: item.y, w: item.w, h: item.h })) return;
+    item.got = true;
+    if (item.type === "star") {
+      player.starUntil = performance.now() + 9000;
+      player.invincibleUntil = player.starUntil;
+      statusText.textContent = "吃到星星了！现在短时间无敌，碰到怪物也不怕。";
+      playStarSound();
+    } else {
+      growPlayer();
+      statusText.textContent = "吃到变大道具了！小人变大，顶砖更厉害。";
+      playKeySound();
+    }
+    updateScore();
+  });
   scene.coins.forEach((coin) => {
     if (coin.got) return;
     if (rectsOverlap(playerRect(), { x: coin.x - 14, y: coin.y - 18, w: 28, h: 36 })) {
@@ -392,6 +538,16 @@ function collectItems() {
       updateScore();
     }
   });
+}
+
+function growPlayer() {
+  if (player.power === "big") return;
+  const foot = player.y + player.h;
+  player.power = "big";
+  player.w = 42;
+  player.h = 66;
+  player.y = foot - player.h;
+  player.invincibleUntil = performance.now() + 900;
 }
 
 function nearestDoor() {
@@ -430,6 +586,18 @@ function checkGoal() {
 
 function hurtPlayer(message) {
   if (performance.now() < player.invincibleUntil) return;
+  if (player.power === "big") {
+    const foot = player.y + player.h;
+    player.power = "small";
+    player.w = 36;
+    player.h = 54;
+    player.y = foot - player.h;
+    player.invincibleUntil = performance.now() + 1200;
+    statusText.textContent = "被碰到了，先从大人变回小人，还没有输。";
+    updateScore();
+    playHurt();
+    return;
+  }
   player.lives -= 1;
   player.invincibleUntil = performance.now() + 1100;
   if (player.lives <= 0) {
@@ -523,12 +691,107 @@ function drawCastleBackground() {
 
 function drawSceneObjects() {
   scene.platforms.forEach(drawPlatform);
+  scene.blocks.forEach(drawBlock);
   scene.elevators.forEach(drawElevator);
   scene.doors.forEach(drawDoor);
+  scene.powerups.forEach(drawPowerup);
   scene.coins.forEach(drawCoin);
   scene.keyItems.forEach(drawKey);
   scene.enemies.forEach(drawEnemy);
   if (scene.goal) drawGoal(scene.goal);
+}
+
+function drawBlock(block) {
+  if (!block.revealed) return;
+  const y = block.y - (block.bump || 0);
+  const used = block.used;
+  ctx.save();
+  ctx.translate(block.x, y);
+  if (used) {
+    ctx.fillStyle = "#9b7b62";
+  } else if (block.type === "question") {
+    ctx.fillStyle = "#ffd15f";
+  } else if (block.type === "hidden") {
+    ctx.fillStyle = "#f7fbff";
+  } else {
+    ctx.fillStyle = "#c06b32";
+  }
+  ctx.beginPath();
+  roundedRect(0, 0, block.w, block.h, 6);
+  ctx.fill();
+  ctx.strokeStyle = "#172632";
+  ctx.lineWidth = 3;
+  ctx.stroke();
+  ctx.fillStyle = used ? "#5e4939" : "#172632";
+  ctx.font = "900 26px system-ui";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  if (block.type === "question" && !used) ctx.fillText("?", block.w / 2, block.h / 2 + 1);
+  if (block.type === "hidden" && !used) ctx.fillText("!", block.w / 2, block.h / 2 + 1);
+  if (block.type === "brick") {
+    ctx.strokeStyle = "rgba(255,255,255,0.28)";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(0, 14);
+    ctx.lineTo(block.w, 14);
+    ctx.moveTo(0, 28);
+    ctx.lineTo(block.w, 28);
+    ctx.moveTo(14, 0);
+    ctx.lineTo(14, block.h);
+    ctx.moveTo(30, 14);
+    ctx.lineTo(30, block.h);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function drawPowerup(item) {
+  ctx.save();
+  ctx.translate(item.x + item.w / 2, item.y + item.h / 2);
+  if (item.type === "star") {
+    const spin = performance.now() * 0.008;
+    ctx.rotate(spin);
+    ctx.fillStyle = "#ffd15f";
+    ctx.strokeStyle = "#172632";
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    for (let i = 0; i < 10; i += 1) {
+      const r = i % 2 === 0 ? 18 : 8;
+      const a = -Math.PI / 2 + (i * Math.PI) / 5;
+      const x = Math.cos(a) * r;
+      const y = Math.sin(a) * r;
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = "#172632";
+    ctx.fillRect(-6, -3, 3, 4);
+    ctx.fillRect(4, -3, 3, 4);
+  } else {
+    ctx.fillStyle = "#d83d35";
+    ctx.beginPath();
+    ctx.arc(0, -4, 16, Math.PI, 0);
+    ctx.lineTo(16, 6);
+    ctx.lineTo(-16, 6);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = "#172632";
+    ctx.lineWidth = 3;
+    ctx.stroke();
+    ctx.fillStyle = "#f0bf8a";
+    ctx.beginPath();
+    roundedRect(-12, 4, 24, 16, 5);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = "#ffffff";
+    ctx.beginPath();
+    ctx.arc(-8, -4, 4, 0, Math.PI * 2);
+    ctx.arc(8, -4, 4, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.restore();
 }
 
 function drawPlatform(platform) {
@@ -698,46 +961,80 @@ function drawPlayer() {
   if (blink) return;
   const x = player.x;
   const y = player.y;
-  const run = Math.sin(t * 0.018) * (Math.abs(player.vx) > 0.3 && player.grounded ? 1 : 0);
+  const star = t < player.starUntil;
+  const big = player.power === "big";
+  const run = Math.sin(t * 0.024) * (Math.abs(player.vx) > 0.3 && player.grounded ? 1 : 0);
+  const squash = player.grounded ? 1 : 0.96;
+  const bodyColor = star ? ["#ffd15f", "#f06aa3", "#32a7e2", "#60c878"][Math.floor(t / 90) % 4] : "#245bb8";
+  const shirtColor = star ? ["#f7fbff", "#ffd15f", "#8f5fd9"][Math.floor(t / 120) % 3] : "#d83d35";
   ctx.save();
   ctx.translate(x + player.w / 2, y + player.h);
   ctx.scale(player.facing, 1);
+  ctx.scale(big ? 1.08 : 1, squash);
+  if (star) {
+    ctx.strokeStyle = "rgba(255,255,255,0.82)";
+    ctx.lineWidth = 3;
+    for (let i = 0; i < 7; i += 1) {
+      const a = t * 0.006 + i * 0.9;
+      ctx.beginPath();
+      ctx.moveTo(Math.cos(a) * 28, -34 + Math.sin(a) * 28);
+      ctx.lineTo(Math.cos(a) * 38, -34 + Math.sin(a) * 38);
+      ctx.stroke();
+    }
+  }
   ctx.fillStyle = "#49301f";
-  ctx.fillRect(-15, -8 + run * 2, 12, 8);
-  ctx.fillRect(5, -8 - run * 2, 12, 8);
+  ctx.fillRect(-17, -8 + run * 4, 14, 8);
+  ctx.fillRect(5, -8 - run * 4, 14, 8);
   ctx.strokeStyle = "#172632";
   ctx.lineWidth = 4;
-  ctx.strokeStyle = "#172632";
   ctx.beginPath();
-  ctx.moveTo(-8, -24);
-  ctx.lineTo(-22, -12 + run * 2);
-  ctx.moveTo(8, -24);
-  ctx.lineTo(22, -12 - run * 2);
+  ctx.moveTo(-10, -28);
+  ctx.lineTo(-26, -15 + run * 3);
+  ctx.moveTo(10, -28);
+  ctx.lineTo(26, -15 - run * 3);
   ctx.stroke();
-  ctx.fillStyle = "#245bb8";
+  ctx.fillStyle = "#f7fbff";
   ctx.beginPath();
-  roundedRect(-14, -32, 28, 28, 6);
+  ctx.arc(-27, -14 + run * 3, 6, 0, Math.PI * 2);
+  ctx.arc(27, -14 - run * 3, 6, 0, Math.PI * 2);
   ctx.fill();
   ctx.stroke();
+  ctx.fillStyle = bodyColor;
+  ctx.beginPath();
+  roundedRect(-16, -36, 32, 34, 7);
+  ctx.fill();
+  ctx.stroke();
+  ctx.fillStyle = shirtColor;
+  ctx.beginPath();
+  roundedRect(-16, -43, 32, 18, 7);
+  ctx.fill();
+  ctx.stroke();
+  ctx.fillStyle = "#ffd15f";
+  ctx.fillRect(-8, -33, 5, 8);
+  ctx.fillRect(4, -33, 5, 8);
   ctx.fillStyle = "#f0bf8a";
   ctx.beginPath();
-  roundedRect(-15, -54, 30, 24, 8);
+  roundedRect(-17, -62, 34, 28, 10);
   ctx.fill();
   ctx.stroke();
-  ctx.fillStyle = "#d83d35";
+  ctx.fillStyle = shirtColor;
   ctx.beginPath();
-  roundedRect(-20, -62, 40, 12, 6);
+  roundedRect(-22, -72, 44, 13, 6);
   ctx.fill();
-  ctx.fillRect(-10, -69, 20, 12);
+  ctx.fillRect(-11, -80, 22, 12);
   ctx.stroke();
   ctx.fillStyle = "#ffffff";
-  ctx.font = "900 10px system-ui";
+  ctx.font = "900 11px system-ui";
   ctx.textAlign = "center";
-  ctx.fillText("M", 0, -57);
+  ctx.fillText("M", 0, -66);
   ctx.fillStyle = "#172632";
-  ctx.fillRect(-8, -45, 4, 4);
-  ctx.fillRect(6, -45, 4, 4);
-  ctx.fillRect(-2, -37, 14, 4);
+  ctx.fillRect(-9, -51, 4, 5);
+  ctx.fillRect(6, -51, 4, 5);
+  ctx.fillStyle = "#2a1d16";
+  ctx.fillRect(-4, -45, 18, 5);
+  ctx.fillRect(6, -41, 10, 4);
+  ctx.fillStyle = "#f0bf8a";
+  ctx.fillRect(12, -49, 5, 7);
   ctx.restore();
 }
 
@@ -857,6 +1154,15 @@ function playDoorSound() {
 
 function playKeySound() {
   [740, 980, 1240].forEach((note, i) => playTone(note, i * 0.08, 0.1, 0.042, "triangle"));
+}
+
+function playBlockSound() {
+  playTone(196, 0, 0.08, 0.035, "square");
+  playTone(330, 0.08, 0.08, 0.035, "square");
+}
+
+function playStarSound() {
+  [784, 988, 1174, 1568, 1174, 988].forEach((note, i) => playTone(note, i * 0.08, 0.08, 0.045, "triangle"));
 }
 
 function playHurt() {
