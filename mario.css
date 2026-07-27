@@ -5,9 +5,12 @@
 body {
   margin: 0;
   min-height: 100vh;
-  color: #18313d;
+  color: #172632;
   font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  background: linear-gradient(180deg, #8ed0f1, #e7f5fb 52%, #77b75a 53%, #3e8738);
+  background:
+    radial-gradient(circle at 16% 12%, rgba(255, 209, 95, 0.22), transparent 22%),
+    radial-gradient(circle at 86% 18%, rgba(80, 190, 230, 0.2), transparent 20%),
+    linear-gradient(180deg, #7ecbf2, #f4fbff 58%, #5eaa58 59%, #356f39);
 }
 
 .home-link {
@@ -16,10 +19,10 @@ body {
   left: 16px;
   z-index: 10;
   padding: 9px 13px;
-  border: 1px solid rgba(24, 49, 61, 0.14);
+  border: 1px solid rgba(23, 38, 50, 0.14);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.88);
-  color: #18313d;
+  background: rgba(255, 255, 255, 0.9);
+  color: #172632;
   font-weight: 900;
   text-decoration: none;
 }
@@ -28,11 +31,11 @@ body {
   display: grid;
   place-items: center;
   min-height: 100vh;
-  padding: 70px 16px 24px;
+  padding: 70px 14px 24px;
 }
 
 .game-wrap {
-  width: min(1100px, 100%);
+  width: min(1180px, 100%);
 }
 
 .canvas-wrap {
@@ -42,11 +45,11 @@ body {
 canvas {
   display: block;
   width: 100%;
-  aspect-ratio: 16 / 9;
-  border: 5px solid #18313d;
+  aspect-ratio: 106 / 62;
+  border: 5px solid #172632;
   border-radius: 8px;
-  background: #8ed0f1;
-  box-shadow: 0 24px 58px rgba(24, 49, 61, 0.18);
+  background: #7ecbf2;
+  box-shadow: 0 24px 60px rgba(23, 38, 50, 0.2);
 }
 
 .intro-overlay {
@@ -62,9 +65,9 @@ canvas {
   color: #fff;
   text-align: center;
   background:
-    radial-gradient(circle at 20% 25%, rgba(255, 209, 95, 0.42), transparent 18%),
-    radial-gradient(circle at 78% 18%, rgba(255, 255, 255, 0.36), transparent 16%),
-    linear-gradient(180deg, rgba(24, 49, 61, 0.68), rgba(20, 37, 48, 0.84));
+    radial-gradient(circle at 23% 24%, rgba(255, 209, 95, 0.42), transparent 18%),
+    radial-gradient(circle at 76% 20%, rgba(255, 255, 255, 0.3), transparent 16%),
+    linear-gradient(180deg, rgba(28, 44, 72, 0.72), rgba(13, 20, 36, 0.9));
 }
 
 .intro-overlay.hidden {
@@ -82,7 +85,7 @@ canvas {
 
 .intro-overlay h1 {
   margin: 0;
-  font-size: clamp(2.4rem, 6vw, 5.8rem);
+  font-size: clamp(2.6rem, 7vw, 6.5rem);
   line-height: 0.94;
 }
 
@@ -93,9 +96,30 @@ canvas {
 .intro-overlay button {
   min-height: 54px;
   padding: 0 24px;
-  border: 3px solid rgba(255, 255, 255, 0.85);
-  background: #d93a32;
+  border: 3px solid rgba(255, 255, 255, 0.86);
+  background: #d83d35;
   font-size: 1.1rem;
+}
+
+.touch-pad {
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  bottom: 16px;
+  z-index: 3;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+  pointer-events: none;
+}
+
+.touch-pad button {
+  min-height: 48px;
+  border: 3px solid rgba(23, 38, 50, 0.42);
+  background: rgba(255, 255, 255, 0.86);
+  color: #172632;
+  box-shadow: 0 8px 18px rgba(23, 38, 50, 0.16);
+  pointer-events: auto;
 }
 
 .hud {
@@ -105,9 +129,9 @@ canvas {
   align-items: center;
   margin-top: 12px;
   padding: 14px;
-  border: 1px solid rgba(24, 49, 61, 0.14);
+  border: 1px solid rgba(23, 38, 50, 0.14);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.86);
+  background: rgba(255, 255, 255, 0.88);
   font-weight: 850;
 }
 
@@ -116,15 +140,27 @@ button {
   padding: 0 14px;
   border: 0;
   border-radius: 8px;
-  background: #d93a32;
+  background: #d83d35;
   color: #fff;
   cursor: pointer;
   font: inherit;
   font-weight: 950;
 }
 
-@media (max-width: 720px) {
+button:active {
+  transform: translateY(1px);
+}
+
+@media (max-width: 780px) {
   .hud {
     grid-template-columns: 1fr;
+  }
+
+  .touch-pad {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .touch-pad button {
+    min-height: 44px;
   }
 }
