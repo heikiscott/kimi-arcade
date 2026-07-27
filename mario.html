@@ -3,8 +3,8 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>马聊冒险 · 鬼屋城堡新版</title>
-    <link rel="stylesheet" href="mario.css?v=mario-mobile-controls-20260727" />
+    <title>马聊冒险 · 多地图新版</title>
+    <link rel="stylesheet" href="mario.css?v=mario-world-select-20260727" />
   </head>
   <body>
     <a class="home-link" href="arcade.html">游戏大厅</a>
@@ -15,7 +15,15 @@
           <div class="intro-overlay" id="introOverlay">
             <p>Original Platform Adventure</p>
             <h1>马聊冒险</h1>
-            <span id="introStatus">新版：隐藏机关、问号砖、星星无敌、变大、鬼屋城堡</span>
+            <span id="introStatus">先选一个地方：丛林、岩浆、宝石矿洞都有机关</span>
+            <div class="map-select" aria-label="选择地图">
+              <button class="active" data-map="sky" type="button">天空</button>
+              <button data-map="ghost" type="button">鬼屋</button>
+              <button data-map="castle" type="button">城堡</button>
+              <button data-map="jungle" type="button">丛林</button>
+              <button data-map="lava" type="button">岩浆</button>
+              <button data-map="mine" type="button">宝石矿洞</button>
+            </div>
             <button id="startIntroBtn" type="button">开始冒险</button>
           </div>
           <div class="touch-pad" aria-label="手机控制按钮">
@@ -33,6 +41,6 @@
         </div>
       </section>
     </main>
-    <script src="mario.js?v=mario-mobile-controls-20260727"></script>
+    <script src="mario.js?v=mario-world-select-20260727"></script>
   </body>
 </html>

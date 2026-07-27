@@ -6,6 +6,7 @@ const restartBtn = document.querySelector("#restartBtn");
 const introOverlay = document.querySelector("#introOverlay");
 const startIntroBtn = document.querySelector("#startIntroBtn");
 const introStatus = document.querySelector("#introStatus");
+const mapButtons = document.querySelectorAll("[data-map]");
 
 const keys = new Set();
 const touchControls = new Set();
@@ -15,6 +16,7 @@ let introTimer = null;
 let gameStarted = false;
 let won = false;
 let sceneKey = "sky";
+let selectedSceneKey = "sky";
 let scene = null;
 let cameraX = 0;
 let lastTime = performance.now();
@@ -162,7 +164,138 @@ const sceneTemplates = {
       { x: 64, y: 456, w: 58, h: 84, label: "出城堡", target: "sky", spawn: "afterCastle" }
     ],
     keyItems: [],
-    goal: { x: 1950, y: 404, w: 44, h: 136 }
+    goal: { x: 1950, y: 404, w: 44, h: 136, requireKeys: 1 }
+  },
+  jungle: {
+    title: "丛林藤蔓",
+    width: 2360,
+    theme: "jungle",
+    spawn: { x: 72, y: 420 },
+    platforms: [
+      { x: 0, y: 540, w: 620, h: 80, type: "jungle" },
+      { x: 700, y: 500, w: 230, h: 34, type: "vine" },
+      { x: 1010, y: 452, w: 260, h: 34, type: "vine" },
+      { x: 1360, y: 540, w: 360, h: 80, type: "jungle" },
+      { x: 1810, y: 476, w: 220, h: 34, type: "vine" },
+      { x: 2100, y: 540, w: 260, h: 80, type: "jungle" },
+      { x: 260, y: 414, w: 150, h: 26, type: "vine" },
+      { x: 560, y: 340, w: 146, h: 26, type: "vine" },
+      { x: 1500, y: 380, w: 160, h: 26, type: "vine" }
+    ],
+    blocks: [
+      { x: 330, y: 314, w: 42, h: 42, type: "question", content: "mushroom", used: false, revealed: true, bump: 0 },
+      { x: 620, y: 250, w: 42, h: 42, type: "hidden", content: "star", used: false, revealed: false, bump: 0 },
+      { x: 1120, y: 350, w: 42, h: 42, type: "brick", content: "coin", used: false, revealed: true, bump: 0 },
+      { x: 1560, y: 286, w: 42, h: 42, type: "question", content: "star", used: false, revealed: true, bump: 0 }
+    ],
+    powerups: [],
+    elevators: [
+      { x: 1710, y: 502, w: 104, h: 22, minY: 330, maxY: 502, speed: 1.18, dir: -1, active: true }
+    ],
+    coins: [
+      { x: 300, y: 370 }, { x: 590, y: 296 }, { x: 760, y: 450 }, { x: 1110, y: 404 },
+      { x: 1480, y: 338 }, { x: 1900, y: 428 }, { x: 2170, y: 492 }
+    ],
+    enemies: [
+      { x: 500, y: 500, vx: 1.0, minX: 390, maxX: 600, type: "mush" },
+      { x: 1220, y: 410, vx: 0.8, minX: 1040, maxX: 1260, type: "monkey" },
+      { x: 1940, y: 434, vx: 1.0, minX: 1820, maxX: 2020, type: "monkey" }
+    ],
+    doors: [
+      { x: 82, y: 456, w: 58, h: 84, label: "回天空", target: "sky", spawn: "entry" }
+    ],
+    keyItems: [
+      { x: 1660, y: 292, got: false }
+    ],
+    hazards: [],
+    goal: { x: 2240, y: 404, w: 44, h: 136, requireKeys: 0 }
+  },
+  lava: {
+    title: "岩浆火山",
+    width: 2380,
+    theme: "lava",
+    spawn: { x: 72, y: 420 },
+    platforms: [
+      { x: 0, y: 540, w: 430, h: 80, type: "lavaRock" },
+      { x: 540, y: 486, w: 210, h: 34, type: "lavaRock" },
+      { x: 870, y: 420, w: 210, h: 34, type: "lavaRock" },
+      { x: 1190, y: 500, w: 220, h: 34, type: "lavaRock" },
+      { x: 1510, y: 432, w: 220, h: 34, type: "lavaRock" },
+      { x: 1840, y: 540, w: 540, h: 80, type: "lavaRock" }
+    ],
+    blocks: [
+      { x: 300, y: 330, w: 42, h: 42, type: "question", content: "star", used: false, revealed: true, bump: 0 },
+      { x: 700, y: 382, w: 42, h: 42, type: "hidden", content: "coin", used: false, revealed: false, bump: 0 },
+      { x: 1260, y: 392, w: 42, h: 42, type: "question", content: "mushroom", used: false, revealed: true, bump: 0 },
+      { x: 1640, y: 326, w: 42, h: 42, type: "question", content: "star", used: false, revealed: true, bump: 0 }
+    ],
+    powerups: [],
+    elevators: [
+      { x: 1740, y: 504, w: 106, h: 22, minY: 348, maxY: 504, speed: 1.45, dir: -1, active: true }
+    ],
+    coins: [
+      { x: 270, y: 492 }, { x: 610, y: 438 }, { x: 940, y: 372 }, { x: 1260, y: 452 },
+      { x: 1580, y: 386 }, { x: 1960, y: 492 }, { x: 2140, y: 492 }
+    ],
+    enemies: [
+      { x: 650, y: 444, vx: 0.8, minX: 560, maxX: 740, type: "fire" },
+      { x: 1310, y: 458, vx: 1.0, minX: 1200, maxX: 1400, type: "fire" },
+      { x: 2020, y: 500, vx: 1.2, minX: 1870, maxX: 2280, type: "shell" }
+    ],
+    doors: [
+      { x: 82, y: 456, w: 58, h: 84, label: "回天空", target: "sky", spawn: "entry" }
+    ],
+    keyItems: [],
+    hazards: [
+      { x: 430, y: 564, w: 110, h: 56, type: "lava" },
+      { x: 760, y: 564, w: 110, h: 56, type: "lava" },
+      { x: 1090, y: 564, w: 100, h: 56, type: "lava" },
+      { x: 1410, y: 564, w: 100, h: 56, type: "lava" },
+      { x: 1730, y: 564, w: 110, h: 56, type: "lava" }
+    ],
+    goal: { x: 2260, y: 404, w: 44, h: 136, requireKeys: 0 }
+  },
+  mine: {
+    title: "宝石矿洞",
+    width: 2320,
+    theme: "mine",
+    spawn: { x: 72, y: 420 },
+    platforms: [
+      { x: 0, y: 540, w: 520, h: 80, type: "mine" },
+      { x: 620, y: 500, w: 210, h: 32, type: "rail" },
+      { x: 930, y: 438, w: 210, h: 32, type: "rail" },
+      { x: 1240, y: 372, w: 220, h: 32, type: "rail" },
+      { x: 1580, y: 468, w: 220, h: 32, type: "rail" },
+      { x: 1900, y: 540, w: 420, h: 80, type: "mine" },
+      { x: 260, y: 396, w: 160, h: 28, type: "crystal" }
+    ],
+    blocks: [
+      { x: 360, y: 296, w: 42, h: 42, type: "question", content: "mushroom", used: false, revealed: true, bump: 0 },
+      { x: 740, y: 392, w: 42, h: 42, type: "hidden", content: "coin", used: false, revealed: false, bump: 0 },
+      { x: 1120, y: 330, w: 42, h: 42, type: "question", content: "star", used: false, revealed: true, bump: 0 },
+      { x: 1660, y: 362, w: 42, h: 42, type: "brick", content: "coin", used: false, revealed: true, bump: 0 }
+    ],
+    powerups: [],
+    elevators: [
+      { x: 1466, y: 508, w: 108, h: 22, minY: 294, maxY: 508, speed: 1.3, dir: -1, active: true }
+    ],
+    coins: [
+      { x: 310, y: 350 }, { x: 690, y: 452 }, { x: 990, y: 390 }, { x: 1320, y: 326 },
+      { x: 1650, y: 420 }, { x: 1960, y: 492 }, { x: 2120, y: 492 }
+    ],
+    enemies: [
+      { x: 720, y: 458, vx: 0.8, minX: 630, maxX: 820, type: "bat" },
+      { x: 1360, y: 330, vx: 0.9, minX: 1250, maxX: 1450, type: "bat" },
+      { x: 2040, y: 500, vx: 1.1, minX: 1910, maxX: 2240, type: "mush" }
+    ],
+    doors: [
+      { x: 82, y: 456, w: 58, h: 84, label: "回天空", target: "sky", spawn: "entry" }
+    ],
+    keyItems: [
+      { x: 1514, y: 246, got: false }
+    ],
+    hazards: [],
+    goal: { x: 2200, y: 404, w: 44, h: 136, requireKeys: 0 }
   }
 };
 
@@ -177,6 +310,15 @@ const spawns = {
   },
   castle: {
     entry: { x: 82, y: 438 }
+  },
+  jungle: {
+    entry: { x: 72, y: 420 }
+  },
+  lava: {
+    entry: { x: 72, y: 420 }
+  },
+  mine: {
+    entry: { x: 72, y: 420 }
   }
 };
 
@@ -192,15 +334,12 @@ function cloneScene(key) {
     enemies: template.enemies.map((item) => ({ ...item })),
     doors: template.doors.map((item) => ({ ...item })),
     keyItems: template.keyItems.map((item) => ({ ...item })),
+    hazards: (template.hazards || []).map((item) => ({ ...item })),
     goal: template.goal ? { ...template.goal } : null
   };
 }
 
-const progress = {
-  sky: cloneScene("sky"),
-  ghost: cloneScene("ghost"),
-  castle: cloneScene("castle")
-};
+const progress = Object.fromEntries(Object.keys(sceneTemplates).map((key) => [key, cloneScene(key)]));
 
 function loadScene(key, spawnName = "entry") {
   sceneKey = key;
@@ -221,7 +360,11 @@ function loadScene(key, spawnName = "entry") {
 function getSceneHelp() {
   if (sceneKey === "sky") return "往右走，门可以进鬼屋，也可以继续去城堡。";
   if (sceneKey === "ghost") return "里面比较暗，躲开幽灵，坐电梯拿钥匙，再从门出去。";
-  return "城堡里有两个升降电梯，拿够钥匙后到最右边旗台通关。";
+  if (sceneKey === "castle") return "城堡里有两个升降电梯，拿够钥匙后到最右边旗台通关。";
+  if (sceneKey === "jungle") return "跳藤蔓和树台，顶隐藏星星，越过丛林缺口。";
+  if (sceneKey === "lava") return "岩浆会烫伤，踩火山石和电梯过去，星星可以救命。";
+  if (sceneKey === "mine") return "矿洞里有宝石、铁轨平台和蝙蝠，往右到出口。";
+  return "往右走，顶机关，拿道具，到终点。";
 }
 
 function reset() {
@@ -232,8 +375,9 @@ function reset() {
   Object.keys(progress).forEach((key) => {
     progress[key] = cloneScene(key);
   });
-  sceneKey = "sky";
-  scene = progress.sky;
+  selectedSceneKey = "sky";
+  sceneKey = selectedSceneKey;
+  scene = progress[selectedSceneKey];
   player.x = 72;
   player.y = 420;
   player.vx = 0;
@@ -255,8 +399,9 @@ function reset() {
   introOverlay.classList.remove("hidden");
   startIntroBtn.disabled = false;
   startIntroBtn.textContent = "开始冒险";
-  introStatus.textContent = "新版：天空、鬼屋、城堡、电梯、进门出门";
-  statusText.textContent = "先点开始冒险。键盘：A/D 移动，空格跳，E 或 ↓ 进门，R 重来。";
+  introStatus.textContent = "先选一个地方：丛林、岩浆、宝石矿洞都有机关";
+  statusText.textContent = "先选地图，再点开始冒险。A/D 移动，空格跳，E 或 ↓ 进门，S 电梯。";
+  updateMapButtons();
   updateScore();
 }
 
@@ -304,6 +449,7 @@ function update(dt) {
   updatePowerups(dt);
   updateEnemies(dt);
   collectItems();
+  checkHazards();
   checkDoors();
   checkGoal();
   cameraX += (Math.max(0, Math.min(scene.width - W, player.x - W * 0.42)) - cameraX) * 0.12;
@@ -573,15 +719,23 @@ function checkDoors() {
 
 function checkGoal() {
   if (!scene.goal || !rectsOverlap(playerRect(), scene.goal)) return;
-  if (player.keys < 1) {
-    statusText.textContent = "城堡终点门需要至少 1 把钥匙，先去鬼屋或天空拿钥匙。";
+  const neededKeys = scene.goal.requireKeys ?? 1;
+  if (player.keys < neededKeys) {
+    statusText.textContent = `这个终点需要至少 ${neededKeys} 把钥匙，先去找钥匙或隐藏机关。`;
     return;
   }
   won = true;
   stopMusic();
   updateScore();
-  statusText.textContent = "通关成功！你从天空进鬼屋，又进城堡坐电梯，最后赢了。";
+  statusText.textContent = `${scene.title}通关成功！你完成了这个地方。`;
   playVictory();
+}
+
+function checkHazards() {
+  if (performance.now() < player.starUntil) return;
+  (scene.hazards || []).forEach((hazard) => {
+    if (rectsOverlap(playerRect(), hazard)) hurtPlayer("碰到岩浆了！先退回来，找石头平台跳过去。");
+  });
 }
 
 function hurtPlayer(message) {
@@ -631,6 +785,9 @@ function drawBackground() {
   if (scene.theme === "sky") drawSkyBackground();
   if (scene.theme === "ghost") drawGhostBackground();
   if (scene.theme === "castle") drawCastleBackground();
+  if (scene.theme === "jungle") drawJungleBackground();
+  if (scene.theme === "lava") drawLavaBackground();
+  if (scene.theme === "mine") drawMineBackground();
 }
 
 function drawSkyBackground() {
@@ -689,7 +846,101 @@ function drawCastleBackground() {
   }
 }
 
+function drawJungleBackground() {
+  const g = ctx.createLinearGradient(0, 0, 0, H);
+  g.addColorStop(0, "#69c7e8");
+  g.addColorStop(0.52, "#bff3d0");
+  g.addColorStop(1, "#2f743f");
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, W, H);
+  drawCloud(160, 96, 0.8);
+  drawCloud(730, 86, 0.9);
+  for (let i = 0; i < 9; i += 1) {
+    const x = i * 150 - (cameraX * 0.22) % 150;
+    ctx.fillStyle = "#7b512e";
+    ctx.fillRect(x + 46, 256, 28, 290);
+    ctx.fillStyle = i % 2 ? "#2f9650" : "#3ebd69";
+    ctx.beginPath();
+    ctx.arc(x + 60, 246, 62, 0, Math.PI * 2);
+    ctx.arc(x + 18, 284, 45, 0, Math.PI * 2);
+    ctx.arc(x + 108, 286, 48, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.strokeStyle = "rgba(20,90,38,0.42)";
+  ctx.lineWidth = 6;
+  for (let i = 0; i < 6; i += 1) {
+    const x = 90 + i * 190 - (cameraX * 0.16) % 190;
+    ctx.beginPath();
+    ctx.moveTo(x, 0);
+    ctx.bezierCurveTo(x + 34, 120, x - 38, 230, x + 18, 360);
+    ctx.stroke();
+  }
+}
+
+function drawLavaBackground() {
+  const g = ctx.createLinearGradient(0, 0, 0, H);
+  g.addColorStop(0, "#2c2030");
+  g.addColorStop(0.52, "#7f2f28");
+  g.addColorStop(1, "#220c13");
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, W, H);
+  for (let i = 0; i < 5; i += 1) {
+    const x = i * 260 - (cameraX * 0.12) % 260;
+    ctx.fillStyle = "rgba(35,24,30,0.86)";
+    ctx.beginPath();
+    ctx.moveTo(x - 20, 540);
+    ctx.lineTo(x + 80, 220);
+    ctx.lineTo(x + 180, 540);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = "rgba(255,118,43,0.66)";
+    ctx.beginPath();
+    ctx.moveTo(x + 68, 252);
+    ctx.lineTo(x + 94, 322);
+    ctx.lineTo(x + 116, 252);
+    ctx.closePath();
+    ctx.fill();
+  }
+  ctx.fillStyle = "rgba(255,94,31,0.35)";
+  for (let i = 0; i < 24; i += 1) {
+    ctx.beginPath();
+    ctx.arc((i * 97 - cameraX * 0.35) % (W + 120), 120 + (i * 53) % 360, 3 + (i % 4), 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
+function drawMineBackground() {
+  const g = ctx.createLinearGradient(0, 0, 0, H);
+  g.addColorStop(0, "#1c2532");
+  g.addColorStop(0.58, "#29364a");
+  g.addColorStop(1, "#151a22");
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, W, H);
+  ctx.strokeStyle = "rgba(255,209,95,0.12)";
+  ctx.lineWidth = 5;
+  for (let i = 0; i < 8; i += 1) {
+    const x = i * 160 - (cameraX * 0.16) % 160;
+    ctx.beginPath();
+    ctx.moveTo(x, 0);
+    ctx.lineTo(x + 80, H);
+    ctx.stroke();
+  }
+  for (let i = 0; i < 14; i += 1) {
+    const x = 54 + i * 86 - (cameraX * 0.23) % 86;
+    const y = 78 + (i * 71) % 360;
+    ctx.fillStyle = ["rgba(95,220,255,0.5)", "rgba(180,115,255,0.42)", "rgba(255,209,95,0.46)"][i % 3];
+    ctx.beginPath();
+    ctx.moveTo(x, y - 18);
+    ctx.lineTo(x + 14, y);
+    ctx.lineTo(x, y + 18);
+    ctx.lineTo(x - 14, y);
+    ctx.closePath();
+    ctx.fill();
+  }
+}
+
 function drawSceneObjects() {
+  (scene.hazards || []).forEach(drawHazard);
   scene.platforms.forEach(drawPlatform);
   scene.blocks.forEach(drawBlock);
   scene.elevators.forEach(drawElevator);
@@ -699,6 +950,30 @@ function drawSceneObjects() {
   scene.keyItems.forEach(drawKey);
   scene.enemies.forEach(drawEnemy);
   if (scene.goal) drawGoal(scene.goal);
+}
+
+function drawHazard(hazard) {
+  if (hazard.type !== "lava") return;
+  const wave = Math.sin(performance.now() * 0.01 + hazard.x) * 4;
+  ctx.save();
+  ctx.translate(hazard.x, hazard.y);
+  ctx.fillStyle = "#ff5a2b";
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  for (let x = 0; x <= hazard.w; x += 16) {
+    ctx.lineTo(x, Math.sin(x * 0.12 + performance.now() * 0.01) * 7 + wave);
+  }
+  ctx.lineTo(hazard.w, hazard.h);
+  ctx.lineTo(0, hazard.h);
+  ctx.closePath();
+  ctx.fill();
+  ctx.fillStyle = "rgba(255,209,95,0.72)";
+  for (let x = 12; x < hazard.w; x += 34) {
+    ctx.beginPath();
+    ctx.arc(x, 18 + Math.sin(x + performance.now() * 0.006) * 6, 9, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.restore();
 }
 
 function drawBlock(block) {
@@ -801,7 +1076,13 @@ function drawPlatform(platform) {
     cloud: ["#f8fdff", "#c8eaf8"],
     stone: ["#5c6172", "#2c3041"],
     wood: ["#9a6429", "#59351c"],
-    castle: ["#888f9c", "#49515e"]
+    castle: ["#888f9c", "#49515e"],
+    jungle: ["#4dc96b", "#2f743f"],
+    vine: ["#65d46e", "#25763d"],
+    lavaRock: ["#4b4650", "#241f29"],
+    mine: ["#5b6573", "#242b35"],
+    rail: ["#9ca7b5", "#343b45"],
+    crystal: ["#7ee7ff", "#7349c6"]
   };
   const [top, side] = colors[platform.type] || colors.grass;
   ctx.fillStyle = side;
@@ -811,13 +1092,44 @@ function drawPlatform(platform) {
   ctx.strokeStyle = "rgba(23,38,50,0.28)";
   ctx.lineWidth = 2;
   ctx.strokeRect(platform.x, platform.y, platform.w, platform.h);
-  if (platform.type === "brick" || platform.type === "castle") {
+  if (platform.type === "brick" || platform.type === "castle" || platform.type === "mine") {
     ctx.strokeStyle = "rgba(255,255,255,0.22)";
     for (let x = platform.x + 18; x < platform.x + platform.w; x += 38) {
       ctx.beginPath();
       ctx.moveTo(x, platform.y + 8);
       ctx.lineTo(x, platform.y + platform.h - 2);
       ctx.stroke();
+    }
+  }
+  if (platform.type === "vine") {
+    ctx.strokeStyle = "rgba(23,96,45,0.5)";
+    ctx.lineWidth = 4;
+    for (let x = platform.x + 16; x < platform.x + platform.w; x += 34) {
+      ctx.beginPath();
+      ctx.arc(x, platform.y + 12, 12, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+  }
+  if (platform.type === "rail") {
+    ctx.strokeStyle = "#172632";
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.moveTo(platform.x + 8, platform.y + 8);
+    ctx.lineTo(platform.x + platform.w - 8, platform.y + 8);
+    ctx.moveTo(platform.x + 8, platform.y + platform.h - 6);
+    ctx.lineTo(platform.x + platform.w - 8, platform.y + platform.h - 6);
+    ctx.stroke();
+  }
+  if (platform.type === "crystal") {
+    ctx.fillStyle = "rgba(255,255,255,0.38)";
+    for (let x = platform.x + 16; x < platform.x + platform.w; x += 34) {
+      ctx.beginPath();
+      ctx.moveTo(x, platform.y + 4);
+      ctx.lineTo(x + 12, platform.y + platform.h / 2);
+      ctx.lineTo(x, platform.y + platform.h - 4);
+      ctx.lineTo(x - 12, platform.y + platform.h / 2);
+      ctx.closePath();
+      ctx.fill();
     }
   }
 }
@@ -863,6 +1175,25 @@ function drawCoin(coin) {
   if (coin.got) return;
   ctx.save();
   ctx.translate(coin.x, coin.y);
+  if (scene.theme === "mine") {
+    ctx.scale(0.9 + Math.sin(performance.now() * 0.006 + coin.x) * 0.08, 0.9);
+    ctx.fillStyle = ["#6ee7ff", "#b678ff", "#ffd15f"][Math.floor(coin.x / 70) % 3];
+    ctx.beginPath();
+    ctx.moveTo(0, -20);
+    ctx.lineTo(16, -4);
+    ctx.lineTo(10, 18);
+    ctx.lineTo(-10, 18);
+    ctx.lineTo(-16, -4);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = "#172632";
+    ctx.lineWidth = 3;
+    ctx.stroke();
+    ctx.fillStyle = "rgba(255,255,255,0.6)";
+    ctx.fillRect(-4, -12, 5, 20);
+    ctx.restore();
+    return;
+  }
   ctx.scale(0.85 + Math.sin(performance.now() * 0.006 + coin.x) * 0.12, 1);
   ctx.fillStyle = "#ffd15f";
   ctx.beginPath();
@@ -912,6 +1243,58 @@ function drawEnemy(enemy) {
     ctx.fillStyle = "#172632";
     ctx.fillRect(-9, -16, 5, 7);
     ctx.fillRect(6, -16, 5, 7);
+  } else if (enemy.type === "fire") {
+    ctx.fillStyle = "#ff5a2b";
+    ctx.beginPath();
+    ctx.moveTo(0, -42);
+    ctx.bezierCurveTo(26, -18, 18, 12, 0, 12);
+    ctx.bezierCurveTo(-24, 12, -22, -18, 0, -42);
+    ctx.fill();
+    ctx.strokeStyle = "#172632";
+    ctx.lineWidth = 3;
+    ctx.stroke();
+    ctx.fillStyle = "#ffd15f";
+    ctx.beginPath();
+    ctx.moveTo(0, -24);
+    ctx.bezierCurveTo(12, -8, 8, 7, 0, 7);
+    ctx.bezierCurveTo(-12, 7, -10, -8, 0, -24);
+    ctx.fill();
+  } else if (enemy.type === "bat") {
+    ctx.fillStyle = "#2a2136";
+    ctx.beginPath();
+    ctx.arc(0, -18, 12, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(-10, -20);
+    ctx.lineTo(-34, -34);
+    ctx.lineTo(-26, -10);
+    ctx.lineTo(-10, -15);
+    ctx.moveTo(10, -20);
+    ctx.lineTo(34, -34);
+    ctx.lineTo(26, -10);
+    ctx.lineTo(10, -15);
+    ctx.fill();
+    ctx.strokeStyle = "#172632";
+    ctx.lineWidth = 3;
+    ctx.stroke();
+    ctx.fillStyle = "#ffd15f";
+    ctx.fillRect(-6, -20, 3, 4);
+    ctx.fillRect(4, -20, 3, 4);
+  } else if (enemy.type === "monkey") {
+    ctx.fillStyle = "#8b572e";
+    ctx.beginPath();
+    ctx.arc(0, -18, 20, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = "#172632";
+    ctx.lineWidth = 3;
+    ctx.stroke();
+    ctx.fillStyle = "#e0a36c";
+    ctx.beginPath();
+    ctx.arc(0, -12, 12, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#172632";
+    ctx.fillRect(-8, -23, 4, 5);
+    ctx.fillRect(5, -23, 4, 5);
   } else if (enemy.type === "shell") {
     ctx.fillStyle = "#48a868";
     ctx.beginPath();
@@ -1185,10 +1568,13 @@ function playMusicBar() {
   const sceneMelodies = {
     sky: [330, 392, 523, 392, 440, 587, 523, 392],
     ghost: [220, 277, 330, 311, 277, 247, 220, 185],
-    castle: [262, 330, 392, 523, 392, 330, 294, 349]
+    castle: [262, 330, 392, 523, 392, 330, 294, 349],
+    jungle: [392, 494, 587, 659, 587, 494, 440, 523],
+    lava: [196, 262, 330, 392, 330, 262, 220, 196],
+    mine: [294, 370, 440, 554, 440, 370, 330, 494]
   };
   const melody = sceneMelodies[sceneKey] || sceneMelodies.sky;
-  melody.forEach((note, i) => playTone(note, i * 0.15, 0.1, 0.018, sceneKey === "ghost" ? "sine" : "square"));
+  melody.forEach((note, i) => playTone(note, i * 0.15, 0.1, 0.018, sceneKey === "ghost" || sceneKey === "mine" ? "sine" : "square"));
 }
 
 function startMusic() {
@@ -1203,10 +1589,25 @@ function stopMusic() {
 }
 
 function beginGame() {
+  loadScene(selectedSceneKey, "entry");
   gameStarted = true;
   introOverlay.classList.add("hidden");
-  statusText.textContent = "开始！往右走，看到门就按 E 或点“进/出”。";
+  statusText.textContent = `${scene.title}开始！往右走，顶问号砖和隐藏机关。`;
   startMusic();
+}
+
+function updateMapButtons() {
+  mapButtons.forEach((button) => {
+    button.classList.toggle("active", button.dataset.map === selectedSceneKey);
+  });
+}
+
+function chooseMap(key) {
+  if (!sceneTemplates[key] || gameStarted) return;
+  selectedSceneKey = key;
+  loadScene(key, "entry");
+  introStatus.textContent = `已选择：${sceneTemplates[key].title}。${getSceneHelp()}`;
+  updateMapButtons();
 }
 
 function startIntro() {
@@ -1232,6 +1633,10 @@ window.addEventListener("keydown", (event) => {
 });
 
 window.addEventListener("keyup", (event) => keys.delete(event.key));
+
+mapButtons.forEach((button) => {
+  button.addEventListener("click", () => chooseMap(button.dataset.map));
+});
 
 document.querySelectorAll("[data-control]").forEach((button) => {
   const control = button.dataset.control;

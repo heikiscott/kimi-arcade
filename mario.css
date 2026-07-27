@@ -94,6 +94,28 @@ canvas {
   font-weight: 900;
 }
 
+.map-select {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  width: min(620px, 100%);
+}
+
+.map-select button {
+  min-height: 42px;
+  padding: 0 12px;
+  border: 2px solid rgba(255, 255, 255, 0.46);
+  background: rgba(255, 255, 255, 0.16);
+  color: #fff;
+  box-shadow: none;
+}
+
+.map-select button.active {
+  border-color: #ffd15f;
+  background: #ffd15f;
+  color: #172632;
+}
+
 .intro-overlay button {
   min-height: 54px;
   padding: 0 24px;
@@ -192,6 +214,17 @@ button:active {
     min-height: 42px;
     padding: 0 18px;
     font-size: 0.98rem;
+  }
+
+  .map-select {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 5px;
+  }
+
+  .map-select button {
+    min-height: 32px;
+    padding: 0 5px;
+    font-size: 0.78rem;
   }
 
   .hud {
