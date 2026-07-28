@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>7月28日 Kimi单词练习日记</title>
+    <link rel="stylesheet" href="kimi-word-checkin.css?v=word-checkin-20260728" />
+  </head>
+  <body>
+    <a class="home-link" href="arcade.html">游戏大厅</a>
+    <main class="checkin-shell">
+      <section class="lesson-hero">
+        <p class="label">2026年7月28日</p>
+        <h1>Kimi单词练习日记</h1>
+        <p>今天是七月二十八日。按 PDF 里的内容练：先看卡片，再做小测，最后点今日打卡。</p>
+      </section>
+
+      <section class="stats-panel" aria-label="练习打卡记录">
+        <div>
+          <span>今日状态</span>
+          <strong id="todayStatus">还没打卡</strong>
+        </div>
+        <div>
+          <span>连续打卡</span>
+          <strong id="streakText">0 天</strong>
+        </div>
+        <div>
+          <span>本课进度</span>
+          <strong id="progressText">0 / 0</strong>
+        </div>
+      </section>
+
+      <section class="practice-layout">
+        <div class="practice-card">
+          <div class="card-top">
+            <p class="label" id="cardType">Word Card</p>
+            <span id="cardIndex">1 / 1</span>
+          </div>
+          <h2 id="wordText">cucumber</h2>
+          <p class="meaning" id="meaningText">n. 黄瓜</p>
+          <p class="detail" id="detailText">食物类名词，无变形。</p>
+          <p class="example" id="exampleText">I eat cucumber every day. 我每天吃黄瓜。</p>
+          <div class="card-actions">
+            <button id="prevBtn" type="button">上一个</button>
+            <button id="knowBtn" type="button">会了</button>
+            <button id="unsureBtn" type="button">不会</button>
+            <button id="nextBtn" type="button">下一个</button>
+          </div>
+        </div>
+
+        <aside class="quiz-panel">
+          <p class="label">Mini Quiz</p>
+          <h2 id="quizQuestion">黄瓜 的英文是？</h2>
+          <div class="answer-grid" id="answerGrid"></div>
+          <p id="quizResult">点一个答案开始练。</p>
+          <button id="newQuizBtn" type="button">换一题</button>
+          <button id="checkinBtn" type="button">今日打卡</button>
+        </aside>
+      </section>
+
+      <section class="diary-panel" aria-label="7月28日练习日记">
+        <div>
+          <p class="label">Practice Diary</p>
+          <h2>7月28日练习日记</h2>
+          <p id="diaryStatus">可以写今天练了什么、哪些单词还不会。</p>
+        </div>
+        <textarea id="diaryText" placeholder="例如：今天我练了 cucumber、spill、split。spill 和 split 还要再复习。"></textarea>
+        <button id="saveDiaryBtn" type="button">保存日记</button>
+      </section>
+
+      <section class="word-list-section">
+        <div>
+          <p class="label">Word List</p>
+          <h2>本课单词表</h2>
+        </div>
+        <div class="word-list" id="wordList"></div>
+      </section>
+    </main>
+    <script src="kimi-word-checkin.js?v=word-checkin-20260728"></script>
+    <script src="arcade-stats.js?v=visitor-table-20260728"></script>
+  </body>
+</html>
