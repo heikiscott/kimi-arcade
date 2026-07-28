@@ -399,6 +399,144 @@ const sceneTemplates = {
   }
 };
 
+function tuneLinkedLevels() {
+  const tuning = {
+    sky: { width: 2500, goalX: 2380 },
+    ghost: { width: 3000, goalX: 2860 },
+    castle: { width: 3600, goalX: 3460 },
+    jungle: { width: 4300, goalX: 4160 },
+    lava: { width: 5000, goalX: 4860 },
+    mine: { width: 5700, goalX: 5560 },
+    metro: { width: 6500, goalX: 6360 }
+  };
+
+  Object.entries(tuning).forEach(([key, item]) => {
+    sceneTemplates[key].width = item.width;
+    sceneTemplates[key].goal.x = item.goalX;
+    sceneTemplates[key].routeDifficulty = levelOrder.indexOf(key) + 1;
+  });
+
+  sceneTemplates.sky.platforms.push(
+    { x: 2260, y: 540, w: 240, h: 80, type: "grass" },
+    { x: 2180, y: 388, w: 156, h: 28, type: "cloud" }
+  );
+  sceneTemplates.sky.coins.push({ x: 2220, y: 342 }, { x: 2340, y: 492 });
+  sceneTemplates.sky.enemies.push({ x: 2290, y: 500, vx: 1.05, minX: 2220, maxX: 2440, type: "goomba" });
+
+  sceneTemplates.ghost.platforms[0].w = sceneTemplates.ghost.width;
+  sceneTemplates.ghost.platforms.push(
+    { x: 1840, y: 370, w: 180, h: 26, type: "wood" },
+    { x: 2140, y: 456, w: 190, h: 26, type: "wood" },
+    { x: 2470, y: 332, w: 180, h: 26, type: "wood" }
+  );
+  sceneTemplates.ghost.blocks.push({ x: 2260, y: 286, w: 42, h: 42, type: "hidden", content: "star", used: false, revealed: false, bump: 0 });
+  sceneTemplates.ghost.coins.push({ x: 1900, y: 322 }, { x: 2200, y: 408 }, { x: 2540, y: 286 });
+  sceneTemplates.ghost.enemies.push(
+    { x: 1980, y: 500, vx: 0.95, minX: 1860, maxX: 2140, type: "ghost" },
+    { x: 2500, y: 500, vx: 1.0, minX: 2350, maxX: 2720, type: "goomba" }
+  );
+
+  sceneTemplates.castle.platforms[0].w = sceneTemplates.castle.width;
+  sceneTemplates.castle.platforms.push(
+    { x: 1960, y: 362, w: 180, h: 26, type: "castle" },
+    { x: 2290, y: 452, w: 180, h: 26, type: "castle" },
+    { x: 2680, y: 334, w: 190, h: 26, type: "castle" },
+    { x: 3100, y: 430, w: 200, h: 26, type: "castle" }
+  );
+  sceneTemplates.castle.elevators.push(
+    { x: 2480, y: 508, w: 116, h: 22, minY: 294, maxY: 508, speed: 1.45, dir: -1, active: true },
+    { x: 3000, y: 506, w: 116, h: 22, minY: 250, maxY: 506, speed: 1.6, dir: -1, active: true }
+  );
+  sceneTemplates.castle.blocks.push({ x: 2860, y: 286, w: 42, h: 42, type: "question", content: "fireflower", used: false, revealed: true, bump: 0 });
+  sceneTemplates.castle.coins.push({ x: 2040, y: 316 }, { x: 2380, y: 404 }, { x: 2760, y: 286 }, { x: 3180, y: 382 });
+  sceneTemplates.castle.enemies.push(
+    { x: 2240, y: 500, vx: 1.25, minX: 2080, maxX: 2460, type: "koopa" },
+    { x: 2920, y: 500, vx: 1.15, minX: 2750, maxX: 3200, type: "goomba" }
+  );
+
+  sceneTemplates.jungle.platforms.push(
+    { x: 2380, y: 492, w: 230, h: 34, type: "vine" },
+    { x: 2720, y: 410, w: 220, h: 34, type: "vine" },
+    { x: 3080, y: 540, w: 360, h: 80, type: "jungle" },
+    { x: 3580, y: 462, w: 240, h: 34, type: "vine" },
+    { x: 3960, y: 540, w: 340, h: 80, type: "jungle" }
+  );
+  sceneTemplates.jungle.blocks.push({ x: 2880, y: 310, w: 42, h: 42, type: "hidden", content: "fireflower", used: false, revealed: false, bump: 0 });
+  sceneTemplates.jungle.coins.push({ x: 2460, y: 444 }, { x: 2800, y: 364 }, { x: 3180, y: 492 }, { x: 3670, y: 414 }, { x: 4040, y: 492 });
+  sceneTemplates.jungle.enemies.push(
+    { x: 2620, y: 450, vx: 1.1, minX: 2400, maxX: 2920, type: "monkey" },
+    { x: 3300, y: 500, vx: 1.25, minX: 3080, maxX: 3420, type: "koopa" },
+    { x: 3740, y: 420, vx: 1.15, minX: 3580, maxX: 3820, type: "goomba" }
+  );
+
+  sceneTemplates.lava.platforms.push(
+    { x: 2400, y: 472, w: 210, h: 34, type: "lavaRock" },
+    { x: 2750, y: 404, w: 210, h: 34, type: "lavaRock" },
+    { x: 3120, y: 492, w: 220, h: 34, type: "lavaRock" },
+    { x: 3520, y: 426, w: 220, h: 34, type: "lavaRock" },
+    { x: 3920, y: 540, w: 430, h: 80, type: "lavaRock" },
+    { x: 4550, y: 540, w: 450, h: 80, type: "lavaRock" }
+  );
+  sceneTemplates.lava.hazards.push(
+    { x: 2260, y: 564, w: 140, h: 56, type: "lava" },
+    { x: 2620, y: 564, w: 130, h: 56, type: "lava" },
+    { x: 2960, y: 564, w: 160, h: 56, type: "lava" },
+    { x: 3340, y: 564, w: 180, h: 56, type: "lava" },
+    { x: 4350, y: 564, w: 200, h: 56, type: "lava" }
+  );
+  sceneTemplates.lava.blocks.push({ x: 3240, y: 354, w: 42, h: 42, type: "question", content: "star", used: false, revealed: true, bump: 0 });
+  sceneTemplates.lava.coins.push({ x: 2480, y: 428 }, { x: 2820, y: 356 }, { x: 3200, y: 444 }, { x: 3600, y: 378 }, { x: 4640, y: 492 });
+  sceneTemplates.lava.enemies.push(
+    { x: 2880, y: 362, vx: 1.15, minX: 2760, maxX: 2960, type: "fire" },
+    { x: 3300, y: 452, vx: 1.25, minX: 3140, maxX: 3500, type: "koopa" },
+    { x: 4100, y: 500, vx: 1.25, minX: 3920, maxX: 4320, type: "fire" }
+  );
+
+  sceneTemplates.mine.platforms.push(
+    { x: 2360, y: 482, w: 210, h: 32, type: "rail" },
+    { x: 2700, y: 408, w: 220, h: 32, type: "rail" },
+    { x: 3060, y: 344, w: 220, h: 32, type: "crystal" },
+    { x: 3440, y: 468, w: 220, h: 32, type: "rail" },
+    { x: 3860, y: 540, w: 520, h: 80, type: "mine" },
+    { x: 4620, y: 458, w: 260, h: 32, type: "rail" },
+    { x: 5200, y: 540, w: 500, h: 80, type: "mine" }
+  );
+  sceneTemplates.mine.elevators.push({ x: 4380, y: 508, w: 108, h: 22, minY: 296, maxY: 508, speed: 1.55, dir: -1, active: true });
+  sceneTemplates.mine.blocks.push({ x: 4080, y: 300, w: 42, h: 42, type: "hidden", content: "star", used: false, revealed: false, bump: 0 });
+  sceneTemplates.mine.coins.push({ x: 2440, y: 434 }, { x: 2790, y: 360 }, { x: 3150, y: 300 }, { x: 3540, y: 420 }, { x: 3980, y: 492 }, { x: 4720, y: 410 }, { x: 5360, y: 492 });
+  sceneTemplates.mine.enemies.push(
+    { x: 2600, y: 440, vx: 1.1, minX: 2380, maxX: 2920, type: "bat" },
+    { x: 3500, y: 426, vx: 1.25, minX: 3300, maxX: 3740, type: "koopa" },
+    { x: 4180, y: 500, vx: 1.35, minX: 3880, maxX: 4380, type: "goomba" },
+    { x: 4860, y: 416, vx: 1.2, minX: 4620, maxX: 5000, type: "bat" }
+  );
+
+  sceneTemplates.metro.platforms[0].w = sceneTemplates.metro.width;
+  sceneTemplates.metro.platforms.push(
+    { x: 3300, y: 410, w: 170, h: 26, type: "sign" },
+    { x: 3820, y: 438, w: 180, h: 26, type: "sign" },
+    { x: 4380, y: 392, w: 180, h: 26, type: "sign" },
+    { x: 5020, y: 430, w: 190, h: 26, type: "sign" },
+    { x: 5880, y: 370, w: 190, h: 26, type: "sign" }
+  );
+  sceneTemplates.metro.trains[0].maxX = 4300;
+  sceneTemplates.metro.hazards.push(
+    { x: 3300, y: 568, w: 160, h: 52, type: "track" },
+    { x: 4560, y: 568, w: 180, h: 52, type: "track" },
+    { x: 5280, y: 568, w: 180, h: 52, type: "track" }
+  );
+  sceneTemplates.metro.blocks.push({ x: 4760, y: 318, w: 42, h: 42, type: "hidden", content: "fireflower", used: false, revealed: false, bump: 0 });
+  sceneTemplates.metro.coins.push({ x: 3420, y: 362 }, { x: 3940, y: 390 }, { x: 4480, y: 346 }, { x: 5120, y: 382 }, { x: 5960, y: 322 });
+  sceneTemplates.metro.enemies.push(
+    { x: 3700, y: 500, vx: 1.2, minX: 3480, maxX: 4040, type: "goomba" },
+    { x: 4940, y: 500, vx: 1.35, minX: 4740, maxX: 5260, type: "koopa" },
+    { x: 5880, y: 500, vx: 1.25, minX: 5600, maxX: 6200, type: "bat" }
+  );
+  sceneTemplates.metro.keyItems[0].x = 6000;
+}
+
+tuneLinkedLevels();
+
 const spawns = {
   sky: {
     entry: { x: 72, y: 420 },
@@ -527,8 +665,8 @@ function reset(clearSave = true) {
   introOverlay.classList.remove("hidden");
   startIntroBtn.disabled = false;
   startIntroBtn.textContent = "开始冒险";
-  introStatus.textContent = "七关连成一条路：天空 -> 鬼屋 -> 城堡 -> 丛林 -> 岩浆 -> 宝石矿洞 -> 坐地铁。";
-  statusText.textContent = "点开始冒险，从第一关天空出发。到旗杆后会自动进入下一关。A/D 移动，空格跳，J 发火球。";
+  introStatus.textContent = "七关连成一条路：天空 -> 鬼屋 -> 城堡 -> 丛林 -> 岩浆 -> 宝石矿洞 -> 坐地铁，一关比一关长。";
+  statusText.textContent = "点开始冒险，从第一关天空出发。越往后越长越难，到旗杆后自动进入下一关。";
   updateMapButtons();
   updateScore();
   updateRecordsPanel();
@@ -2213,14 +2351,14 @@ function drawPlayer() {
 function drawOverlay() {
   ctx.fillStyle = "rgba(255,255,255,0.88)";
   ctx.beginPath();
-  roundedRect(22, 20, 310, 72, 8);
+  roundedRect(22, 20, 430, 72, 8);
   ctx.fill();
   ctx.strokeStyle = "rgba(23,38,50,0.18)";
   ctx.lineWidth = 2;
   ctx.stroke();
   ctx.fillStyle = "#172632";
   ctx.font = "900 25px system-ui";
-  ctx.fillText(scene.title, 42, 53);
+  ctx.fillText(`${levelTitle()} · 难度 ${levelNumber()}/7`, 42, 53);
   ctx.font = "800 14px system-ui";
   ctx.fillText(getSceneHelp(), 42, 78);
 
