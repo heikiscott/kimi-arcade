@@ -526,6 +526,10 @@ function mapTitle(key) {
 }
 
 function updateRecordsPanel() {
+  if (window.KimiArcadeStats?.summaryText) {
+    recordsText.textContent = window.KimiArcadeStats.summaryText();
+    return;
+  }
   const stats = loadStats();
   const favorite = Object.entries(stats.maps).sort((a, b) => b[1] - a[1])[0];
   const favoriteText = favorite ? `${mapTitle(favorite[0])} ${favorite[1]} 次` : "还没有最常玩地图";

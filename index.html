@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>我的小游戏大厅</title>
-    <link rel="stylesheet" href="arcade.css" />
+    <link rel="stylesheet" href="arcade.css?v=global-records-20260727" />
   </head>
   <body>
     <main class="arcade-shell">
@@ -27,6 +27,16 @@
             <a href="https://heikiscott.github.io/kimi-arcade/arcade.html">https://heikiscott.github.io/kimi-arcade/arcade.html</a>
           </div>
         </div>
+      </section>
+
+      <section class="arcade-records" aria-label="小游戏大厅访问记录">
+        <div>
+          <p class="label">Arcade Records</p>
+          <h2>小游戏大厅访问记录</h2>
+          <p id="arcadeGlobalRecordsText">正在读取记录...</p>
+          <p class="recent-games">最近打开：<span id="arcadeRecentGames">还没有打开过游戏</span></p>
+        </div>
+        <button id="arcadeRecordsRefresh" type="button">刷新记录</button>
       </section>
 
       <section class="game-grid">
@@ -191,10 +201,10 @@
           <em>播放对白电影</em>
         </a>
 
-        <a class="game-card mario" href="mario.html?v=mario-reference-music-20260727">
+        <a class="game-card mario" href="mario.html?v=global-records-20260727">
           <span>平台游戏 · 参考音乐新版</span>
           <strong>马聊冒险</strong>
-          <p>原创横版闯关：可选多地图、坐地铁、听更长原创像素音乐，还能记录本机玩了几次。</p>
+          <p>原创横版闯关：可选多地图、坐地铁、听更长原创像素音乐，大厅会记录所有游戏打开情况。</p>
           <em>A/D + 空格 + E</em>
         </a>
 
@@ -386,5 +396,6 @@
         </div>
       </section>
     </main>
+    <script src="arcade-stats.js?v=global-records-20260727"></script>
   </body>
 </html>
