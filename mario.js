@@ -41,7 +41,8 @@ const player = {
   invincibleUntil: 0,
   starUntil: 0,
   power: "small",
-  rideElevator: null
+  rideElevator: null,
+  rideTrain: null
 };
 
 const sceneTemplates = {
@@ -296,6 +297,52 @@ const sceneTemplates = {
     ],
     hazards: [],
     goal: { x: 2200, y: 404, w: 44, h: 136, requireKeys: 0 }
+  },
+  metro: {
+    title: "地铁站台",
+    width: 3300,
+    theme: "metro",
+    spawn: { x: 72, y: 420 },
+    platforms: [
+      { x: 0, y: 540, w: 3300, h: 80, type: "station" },
+      { x: 210, y: 428, w: 160, h: 26, type: "sign" },
+      { x: 820, y: 392, w: 150, h: 26, type: "sign" },
+      { x: 1390, y: 440, w: 180, h: 26, type: "sign" },
+      { x: 2350, y: 420, w: 180, h: 26, type: "sign" },
+      { x: 2760, y: 360, w: 170, h: 26, type: "sign" }
+    ],
+    blocks: [
+      { x: 300, y: 324, w: 42, h: 42, type: "question", content: "mushroom", used: false, revealed: true, bump: 0 },
+      { x: 920, y: 288, w: 42, h: 42, type: "hidden", content: "star", used: false, revealed: false, bump: 0 },
+      { x: 1480, y: 338, w: 42, h: 42, type: "question", content: "coin", used: false, revealed: true, bump: 0 },
+      { x: 2440, y: 318, w: 42, h: 42, type: "question", content: "star", used: false, revealed: true, bump: 0 }
+    ],
+    powerups: [],
+    elevators: [
+      { x: 2940, y: 506, w: 114, h: 22, minY: 322, maxY: 506, speed: 1.2, dir: -1, active: true }
+    ],
+    trains: [
+      { x: 470, y: 476, w: 700, h: 70, minX: 470, maxX: 1940, speed: 0, dir: 1, active: false, arrived: false, label: "港湾线" }
+    ],
+    coins: [
+      { x: 260, y: 384 }, { x: 610, y: 424 }, { x: 840, y: 346 }, { x: 1060, y: 424 },
+      { x: 1460, y: 394 }, { x: 1850, y: 430 }, { x: 2250, y: 492 }, { x: 2860, y: 314 }
+    ],
+    enemies: [
+      { x: 1320, y: 500, vx: 0.85, minX: 1210, maxX: 1510, type: "mush" },
+      { x: 2500, y: 500, vx: 0.95, minX: 2320, maxX: 2690, type: "bat" }
+    ],
+    doors: [
+      { x: 82, y: 456, w: 58, h: 84, label: "回天空", target: "sky", spawn: "entry" }
+    ],
+    keyItems: [
+      { x: 3040, y: 278, got: false }
+    ],
+    hazards: [
+      { x: 1740, y: 568, w: 130, h: 52, type: "track" },
+      { x: 2100, y: 568, w: 130, h: 52, type: "track" }
+    ],
+    goal: { x: 3150, y: 404, w: 44, h: 136, requireKeys: 0 }
   }
 };
 
@@ -319,6 +366,9 @@ const spawns = {
   },
   mine: {
     entry: { x: 72, y: 420 }
+  },
+  metro: {
+    entry: { x: 72, y: 420 }
   }
 };
 
@@ -330,6 +380,7 @@ function cloneScene(key) {
     blocks: template.blocks.map((item) => ({ ...item })),
     powerups: template.powerups.map((item) => ({ ...item })),
     elevators: template.elevators.map((item) => ({ ...item })),
+    trains: (template.trains || []).map((item) => ({ ...item })),
     coins: template.coins.map((item) => ({ ...item, got: false })),
     enemies: template.enemies.map((item) => ({ ...item })),
     doors: template.doors.map((item) => ({ ...item })),
@@ -364,6 +415,7 @@ function getSceneHelp() {
   if (sceneKey === "jungle") return "跳藤蔓和树台，顶隐藏星星，越过丛林缺口。";
   if (sceneKey === "lava") return "岩浆会烫伤，踩火山石和电梯过去，星星可以救命。";
   if (sceneKey === "mine") return "矿洞里有宝石、铁轨平台和蝙蝠，往右到出口。";
+  if (sceneKey === "metro") return "站到地铁车门旁，按 E 或点进/出，列车会开到下一站。";
   return "往右走，顶机关，拿道具，到终点。";
 }
 
@@ -393,14 +445,15 @@ function reset() {
   player.w = 36;
   player.h = 54;
   player.rideElevator = null;
+  player.rideTrain = null;
   cameraX = 0;
   gameStarted = false;
   won = false;
   introOverlay.classList.remove("hidden");
   startIntroBtn.disabled = false;
   startIntroBtn.textContent = "开始冒险";
-  introStatus.textContent = "先选一个地方：丛林、岩浆、宝石矿洞都有机关";
-  statusText.textContent = "先选地图，再点开始冒险。A/D 移动，空格跳，E 或 ↓ 进门，S 电梯。";
+  introStatus.textContent = "先选一个地方：长关卡、机关、星星和地铁都有";
+  statusText.textContent = "先选地图，再点开始冒险。A/D 移动，空格跳，E 或 ↓ 进门/坐地铁，S 电梯。";
   updateMapButtons();
   updateScore();
 }
@@ -445,11 +498,13 @@ function update(dt) {
     updateScore();
   }
   updateElevators(dt);
+  updateTrains(dt);
   updatePlayer(dt);
   updatePowerups(dt);
   updateEnemies(dt);
   collectItems();
   checkHazards();
+  checkMetroRide();
   checkDoors();
   checkGoal();
   cameraX += (Math.max(0, Math.min(scene.width - W, player.x - W * 0.42)) - cameraX) * 0.12;
@@ -469,6 +524,24 @@ function updateElevators(dt) {
       elevator.dir = -1;
     }
     elevator.deltaY = elevator.y - oldY;
+  });
+}
+
+function updateTrains(dt) {
+  (scene.trains || []).forEach((train) => {
+    const oldX = train.x;
+    if (train.active && !train.arrived) {
+      train.speed = Math.min(8.5, (train.speed || 0) + 0.08 * dt);
+      train.x += train.speed * train.dir * dt;
+      if (train.x >= train.maxX) {
+        train.x = train.maxX;
+        train.speed = 0;
+        train.arrived = true;
+        statusText.textContent = "到下一站了！下车继续往右走，到黄色终点线就赢。";
+        playDoorSound();
+      }
+    }
+    train.deltaX = train.x - oldX;
   });
 }
 
@@ -510,6 +583,7 @@ function updatePlayer(dt) {
   player.y += player.vy * dt;
   player.grounded = false;
   player.rideElevator = null;
+  player.rideTrain = null;
 
   handleBlockHits(prevY);
   resolvePlatforms();
@@ -520,7 +594,8 @@ function updatePlayer(dt) {
 function resolvePlatforms() {
   const prevBottom = player.y + player.h - player.vy;
   const solidBlocks = scene.blocks.filter((block) => block.revealed);
-  [...scene.platforms, ...scene.elevators, ...solidBlocks].forEach((platform) => {
+  const trains = scene.trains || [];
+  [...scene.platforms, ...scene.elevators, ...trains, ...solidBlocks].forEach((platform) => {
     const r = { x: platform.x, y: platform.y, w: platform.w, h: platform.h };
     if (rectsOverlap(playerRect(), r) && player.vy >= 0 && prevBottom <= platform.y + 10) {
       player.y = platform.y - player.h;
@@ -532,6 +607,14 @@ function resolvePlatforms() {
         if (performance.now() > elevatorHintTimer) {
           statusText.textContent = "你坐上电梯了，按 S 或点“电梯”可以让它换方向。";
           elevatorHintTimer = performance.now() + 2800;
+        }
+      }
+      if (trains.includes(platform)) {
+        player.rideTrain = platform;
+        player.x += platform.deltaX || 0;
+        if (!platform.active && performance.now() > doorHintTimer) {
+          statusText.textContent = "你站到地铁上了，按 E / ↓ / 点“进/出”让地铁开车。";
+          doorHintTimer = performance.now() + 1800;
         }
       }
     }
@@ -703,6 +786,37 @@ function nearestDoor() {
   });
 }
 
+function nearestTrain() {
+  return (scene.trains || []).find((train) => {
+    const nearBox = { x: train.x - 44, y: train.y - 80, w: train.w + 88, h: train.h + 110 };
+    return rectsOverlap(playerRect(), nearBox);
+  });
+}
+
+function checkMetroRide() {
+  const train = nearestTrain();
+  if (!train) return;
+  if (!train.active && performance.now() > doorHintTimer) {
+    statusText.textContent = "地铁停在站台：按 E / ↓ / 点“进/出”上车开往下一站。";
+    doorHintTimer = performance.now() + 1800;
+  }
+  if (!isPressed("door") || train.active) return;
+  touchControls.delete("door");
+  keys.delete("e");
+  keys.delete("E");
+  keys.delete("ArrowDown");
+  train.active = true;
+  train.speed = 1.8;
+  player.x = train.x + 84;
+  player.y = train.y - player.h;
+  player.vx = 0;
+  player.vy = 0;
+  player.grounded = true;
+  player.rideTrain = train;
+  statusText.textContent = "地铁开车了！站稳，它会载你去下一站。";
+  playMetroSound();
+}
+
 function checkDoors() {
   const door = nearestDoor();
   if (door && performance.now() > doorHintTimer) {
@@ -734,7 +848,9 @@ function checkGoal() {
 function checkHazards() {
   if (performance.now() < player.starUntil) return;
   (scene.hazards || []).forEach((hazard) => {
-    if (rectsOverlap(playerRect(), hazard)) hurtPlayer("碰到岩浆了！先退回来，找石头平台跳过去。");
+    if (!rectsOverlap(playerRect(), hazard)) return;
+    if (hazard.type === "track") hurtPlayer("掉到轨道里了！要站在站台或地铁车顶上。");
+    else hurtPlayer("碰到岩浆了！先退回来，找石头平台跳过去。");
   });
 }
 
@@ -788,6 +904,7 @@ function drawBackground() {
   if (scene.theme === "jungle") drawJungleBackground();
   if (scene.theme === "lava") drawLavaBackground();
   if (scene.theme === "mine") drawMineBackground();
+  if (scene.theme === "metro") drawMetroBackground();
 }
 
 function drawSkyBackground() {
@@ -939,9 +1056,39 @@ function drawMineBackground() {
   }
 }
 
+function drawMetroBackground() {
+  const g = ctx.createLinearGradient(0, 0, 0, H);
+  g.addColorStop(0, "#c8d9e6");
+  g.addColorStop(0.55, "#eef4f7");
+  g.addColorStop(1, "#8494a1");
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = "rgba(255,255,255,0.55)";
+  for (let x = -((cameraX * 0.2) % 130); x < W; x += 130) {
+    ctx.fillRect(x, 88, 88, 36);
+    ctx.fillRect(x + 16, 180, 116, 18);
+  }
+  ctx.fillStyle = "#536576";
+  ctx.fillRect(0, 510, W, 12);
+  ctx.fillStyle = "#2f3a45";
+  ctx.fillRect(0, 566, W, 24);
+  ctx.strokeStyle = "#f2d15b";
+  ctx.lineWidth = 4;
+  ctx.beginPath();
+  ctx.moveTo(0, 540);
+  ctx.lineTo(W, 540);
+  ctx.stroke();
+  ctx.fillStyle = "#172632";
+  ctx.font = "900 22px system-ui";
+  ctx.fillText("地铁站台  Platform", 42, 64);
+  ctx.font = "800 15px system-ui";
+  ctx.fillText("站到车门旁，按进/出开车", 42, 90);
+}
+
 function drawSceneObjects() {
   (scene.hazards || []).forEach(drawHazard);
   scene.platforms.forEach(drawPlatform);
+  (scene.trains || []).forEach(drawTrain);
   scene.blocks.forEach(drawBlock);
   scene.elevators.forEach(drawElevator);
   scene.doors.forEach(drawDoor);
@@ -953,6 +1100,25 @@ function drawSceneObjects() {
 }
 
 function drawHazard(hazard) {
+  if (hazard.type === "track") {
+    ctx.save();
+    ctx.translate(hazard.x, hazard.y);
+    ctx.fillStyle = "#2f3a45";
+    ctx.fillRect(0, 0, hazard.w, hazard.h);
+    ctx.strokeStyle = "#d5dee8";
+    ctx.lineWidth = 5;
+    ctx.beginPath();
+    ctx.moveTo(8, 10);
+    ctx.lineTo(hazard.w - 8, 10);
+    ctx.moveTo(8, 34);
+    ctx.lineTo(hazard.w - 8, 34);
+    ctx.stroke();
+    ctx.fillStyle = "#ffd15f";
+    ctx.font = "900 15px system-ui";
+    ctx.fillText("轨道", 38, -8);
+    ctx.restore();
+    return;
+  }
   if (hazard.type !== "lava") return;
   const wave = Math.sin(performance.now() * 0.01 + hazard.x) * 4;
   ctx.save();
@@ -1020,6 +1186,66 @@ function drawBlock(block) {
   ctx.restore();
 }
 
+function drawTrain(train) {
+  ctx.save();
+  ctx.translate(train.x, train.y);
+  ctx.fillStyle = "#d9edf7";
+  ctx.beginPath();
+  roundedRect(0, 0, train.w, train.h, 18);
+  ctx.fill();
+  ctx.strokeStyle = "#172632";
+  ctx.lineWidth = 4;
+  ctx.stroke();
+  ctx.fillStyle = "#2187c9";
+  ctx.fillRect(18, 14, train.w - 36, 10);
+  ctx.fillStyle = "#172632";
+  ctx.font = "900 17px system-ui";
+  ctx.fillText(train.label, 34, -12);
+  for (let x = 60; x < train.w - 120; x += 86) {
+    ctx.fillStyle = "#9ed7f2";
+    ctx.beginPath();
+    roundedRect(x, 28, 56, 24, 6);
+    ctx.fill();
+    ctx.strokeStyle = "rgba(23,38,50,0.35)";
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  }
+  for (let x = 120; x < train.w - 80; x += 220) {
+    ctx.fillStyle = train.active ? "#ffd15f" : "#f7fbff";
+    ctx.beginPath();
+    roundedRect(x, 34, 52, 34, 6);
+    ctx.fill();
+    ctx.strokeStyle = "#172632";
+    ctx.lineWidth = 3;
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(x + 26, 36);
+    ctx.lineTo(x + 26, 66);
+    ctx.stroke();
+  }
+  ctx.fillStyle = "#172632";
+  ctx.beginPath();
+  ctx.arc(90, train.h + 2, 12, 0, Math.PI * 2);
+  ctx.arc(train.w - 90, train.h + 2, 12, 0, Math.PI * 2);
+  ctx.fill();
+  if (train.active && !train.arrived) {
+    ctx.strokeStyle = "rgba(255,255,255,0.75)";
+    ctx.lineWidth = 3;
+    for (let i = 0; i < 6; i += 1) {
+      ctx.beginPath();
+      ctx.moveTo(-20 - i * 28, 18 + i * 5);
+      ctx.lineTo(-70 - i * 30, 18 + i * 5);
+      ctx.stroke();
+    }
+  }
+  if (train.arrived) {
+    ctx.fillStyle = "#2f9d58";
+    ctx.font = "900 18px system-ui";
+    ctx.fillText("下一站到了", train.w - 150, -12);
+  }
+  ctx.restore();
+}
+
 function drawPowerup(item) {
   ctx.save();
   ctx.translate(item.x + item.w / 2, item.y + item.h / 2);
@@ -1082,7 +1308,9 @@ function drawPlatform(platform) {
     lavaRock: ["#4b4650", "#241f29"],
     mine: ["#5b6573", "#242b35"],
     rail: ["#9ca7b5", "#343b45"],
-    crystal: ["#7ee7ff", "#7349c6"]
+    crystal: ["#7ee7ff", "#7349c6"],
+    station: ["#d6dee7", "#8895a1"],
+    sign: ["#ffd15f", "#3b4a57"]
   };
   const [top, side] = colors[platform.type] || colors.grass;
   ctx.fillStyle = side;
@@ -1558,29 +1786,39 @@ function playVictory() {
   notes.forEach((note, i) => playTone(note, i * 0.13, 0.12, 0.055, "triangle"));
 }
 
+function playMetroSound() {
+  [220, 277, 330, 440, 554, 659].forEach((note, i) => playTone(note, i * 0.08, 0.08, 0.038, "sawtooth"));
+  playTone(92, 0.05, 0.5, 0.035, "triangle");
+}
+
 function playOpeningMusic() {
-  const notes = [392, 523, 659, 784, 659, 523, 440, 587, 698, 880, 698, 587, 523, 659, 784, 1046];
-  notes.forEach((note, index) => playTone(note, index * 0.14, 0.11, 0.04, "triangle"));
+  const notes = [392, 523, 659, 784, 1046, 784, 659, 523, 440, 587, 740, 988, 880, 740, 587, 494, 523, 659, 784, 1046];
+  notes.forEach((note, index) => playTone(note, index * 0.11, 0.095, 0.04, "triangle"));
 }
 
 function playMusicBar() {
   if (won || !gameStarted) return;
   const sceneMelodies = {
-    sky: [330, 392, 523, 392, 440, 587, 523, 392],
-    ghost: [220, 277, 330, 311, 277, 247, 220, 185],
-    castle: [262, 330, 392, 523, 392, 330, 294, 349],
-    jungle: [392, 494, 587, 659, 587, 494, 440, 523],
-    lava: [196, 262, 330, 392, 330, 262, 220, 196],
-    mine: [294, 370, 440, 554, 440, 370, 330, 494]
+    sky: [659, 659, 0, 659, 0, 523, 659, 0, 784, 0, 392, 0, 523, 587, 659, 523],
+    ghost: [220, 277, 330, 311, 277, 247, 220, 185, 220, 262, 311, 349, 311, 262, 220, 196],
+    castle: [262, 330, 392, 523, 392, 330, 294, 349, 392, 523, 659, 784, 659, 523, 392, 330],
+    jungle: [392, 494, 587, 659, 587, 494, 440, 523, 587, 659, 784, 659, 587, 523, 494, 392],
+    lava: [196, 262, 330, 392, 330, 262, 220, 196, 247, 330, 392, 494, 392, 330, 247, 220],
+    mine: [294, 370, 440, 554, 440, 370, 330, 494, 554, 659, 554, 494, 440, 370, 330, 294],
+    metro: [330, 392, 494, 659, 494, 392, 330, 262, 294, 370, 494, 587, 494, 370, 294, 247]
   };
   const melody = sceneMelodies[sceneKey] || sceneMelodies.sky;
-  melody.forEach((note, i) => playTone(note, i * 0.15, 0.1, 0.018, sceneKey === "ghost" || sceneKey === "mine" ? "sine" : "square"));
+  melody.forEach((note, i) => {
+    if (!note) return;
+    playTone(note, i * 0.13, 0.09, 0.019, sceneKey === "ghost" || sceneKey === "mine" ? "sine" : "square");
+    if (i % 4 === 0) playTone(note / 2, i * 0.13, 0.12, 0.012, "triangle");
+  });
 }
 
 function startMusic() {
   if (musicTimer || won) return;
   playMusicBar();
-  musicTimer = window.setInterval(playMusicBar, 1320);
+  musicTimer = window.setInterval(playMusicBar, 2180);
 }
 
 function stopMusic() {
@@ -1615,9 +1853,9 @@ function startIntro() {
   getAudio();
   startIntroBtn.disabled = true;
   startIntroBtn.textContent = "准备中";
-  introStatus.textContent = "片头音乐响一下，马上开始";
+  introStatus.textContent = "片头音乐响起来，准备开始闯关";
   playOpeningMusic();
-  introTimer = window.setTimeout(beginGame, 1800);
+  introTimer = window.setTimeout(beginGame, 2300);
 }
 
 window.addEventListener("keydown", (event) => {
