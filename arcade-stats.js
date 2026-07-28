@@ -1,7 +1,8 @@
 (function () {
   const statsKey = "kimiArcadeGlobalStatsV1";
   const playerKey = "kimiArcadeGlobalPlayerId";
-  const accountKey = "kimiArcadeAccountV1";
+  const accountKey = "kimiArcadeCurrentVisitorV1";
+  const visitorsKey = "kimiArcadeVisitorsV1";
   const pendingKey = "kimiArcadePendingGame";
 
   function getPlayerId() {
@@ -52,8 +53,8 @@
 
   function defaultAccount() {
     return {
-      method: "guest",
-      value: "",
+      method: "visitor",
+      value: "游客试玩",
       displayName: "游客试玩",
       createdAt: "",
       lastLoginAt: ""
@@ -76,46 +77,94 @@
     }
   }
 
-  function maskValue(method, value) {
-    const clean = String(value || "").trim();
-    if (!clean) return "游客试玩";
-    if (method === "phone") {
-      const digits = clean.replace(/\D/g, "");
-      if (digits.length <= 4) return digits;
-      return `${digits.slice(0, 3)}****${digits.slice(-4)}`;
-    }
-    if (method === "email") {
-      const [name, domain] = clean.split("@");
-      if (!domain) return clean;
-      return `${name.slice(0, 2)}***@${domain}`;
-    }
-    return clean;
-  }
-
-  function methodName(method) {
-    if (method === "phone") return "手机";
-    if (method === "email") return "邮箱";
-    if (method === "name") return "自取名";
-    return "游客";
-  }
-
   function accountText(account = loadAccount()) {
-    return `当前：${methodName(account.method)}账号 ${maskValue(account.method, account.value || account.displayName)}`;
+    return `当前访客：${account.displayName || account.value || "游客试玩"}`;
   }
 
-  function normalizeAccount(mode, value) {
+  function normalizeVisitor(value) {
     const clean = String(value || "").trim();
-    if (mode === "phone") {
-      const digits = clean.replace(/\D/g, "");
-      if (digits.length < 5) return { ok: false, message: "手机号太短啦，再检查一下。" };
-      return { ok: true, value: digits, displayName: maskValue("phone", digits) };
-    }
-    if (mode === "email") {
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(clean)) return { ok: false, message: "邮箱格式不对，要像 name@example.com。" };
-      return { ok: true, value: clean, displayName: maskValue("email", clean) };
-    }
-    if (clean.length < 1) return { ok: false, message: "自己注册要先写一个名字。" };
+    if (clean.length < 1) return { ok: false, message: "先输入访客名字。" };
     return { ok: true, value: clean.slice(0, 18), displayName: clean.slice(0, 18) };
+  }
+
+  function visitorId(name) {
+    return String(name || "游客试玩").trim().toLowerCase().replace(/\s+/g, "-").slice(0, 32) || "guest";
+  }
+
+  function defaultVisitors() {
+    return {};
+  }
+
+  function loadVisitors() {
+    try {
+      return { ...defaultVisitors(), ...JSON.parse(localStorage.getItem(visitorsKey) || "{}") };
+    } catch {
+      return defaultVisitors();
+    }
+  }
+
+  function saveVisitors(visitors) {
+    try {
+      localStorage.setItem(visitorsKey, JSON.stringify(visitors));
+    } catch {
+      // Keep playing even if private mode blocks storage.
+    }
+  }
+
+  function ensureVisitor(name = loadAccount().displayName) {
+    const displayName = String(name || "游客试玩").trim().slice(0, 18) || "游客试玩";
+    const id = visitorId(displayName);
+    const visitors = loadVisitors();
+    const now = new Date().toISOString();
+    visitors[id] = {
+      id,
+      name: displayName,
+      hallVisits: visitors[id]?.hallVisits || 0,
+      gameOpens: visitors[id]?.gameOpens || 0,
+      uniqueGames: visitors[id]?.uniqueGames || {},
+      createdAt: visitors[id]?.createdAt || now,
+      lastSeenAt: now
+    };
+    saveVisitors(visitors);
+    return visitors[id];
+  }
+
+  function recordVisitor(kind, game = "") {
+    const account = loadAccount();
+    const visitor = ensureVisitor(account.displayName || account.value);
+    const visitors = loadVisitors();
+    const item = visitors[visitor.id] || visitor;
+    if (kind === "hall") item.hallVisits += 1;
+    if (kind === "game") {
+      item.gameOpens += 1;
+      item.uniqueGames[game] = (item.uniqueGames[game] || 0) + 1;
+    }
+    item.lastSeenAt = new Date().toISOString();
+    visitors[visitor.id] = item;
+    saveVisitors(visitors);
+  }
+
+  function renderVisitorTable() {
+    const body = document.querySelector("#arcadeVisitorTable");
+    if (!body) return;
+    const visitors = Object.values(loadVisitors()).sort((a, b) => (b.gameOpens + b.hallVisits) - (a.gameOpens + a.hallVisits));
+    body.innerHTML = "";
+    if (!visitors.length) {
+      const row = document.createElement("tr");
+      row.innerHTML = '<td colspan="4">还没有访客记录</td>';
+      body.appendChild(row);
+      return;
+    }
+    visitors.forEach((visitor) => {
+      const row = document.createElement("tr");
+      const uniqueCount = Object.keys(visitor.uniqueGames || {}).length;
+      [visitor.name, visitor.hallVisits, visitor.gameOpens, `${uniqueCount} 个`].forEach((cellText) => {
+        const cell = document.createElement("td");
+        cell.textContent = String(cellText);
+        row.appendChild(cell);
+      });
+      body.appendChild(row);
+    });
   }
 
   function pageFile() {
@@ -166,6 +215,7 @@
     const stats = loadStats();
     stats.hallVisits += 1;
     saveStats(stats);
+    recordVisitor("hall");
     sendSharedEvent("hall-visit");
     return stats;
   }
@@ -180,6 +230,7 @@
     if (!stats.firstPlayedAt) stats.firstPlayedAt = stats.lastPlayedAt;
     stats.playLog = [{ game, at: stats.lastPlayedAt }, ...(stats.playLog || [])].slice(0, 12);
     saveStats(stats);
+    recordVisitor("game", game);
     clearPendingGame();
     sendSharedEvent("game-open", { game });
     return stats;
@@ -188,11 +239,12 @@
   function summaryText() {
     const stats = loadStats();
     const account = loadAccount();
+    const visitorCount = Object.keys(loadVisitors()).length;
     const uniqueCount = Object.keys(stats.uniqueGames || {}).length;
     const top = Object.entries(stats.uniqueGames || {}).sort((a, b) => b[1] - a[1])[0];
     const topText = top ? `${top[0]} ${top[1]} 次` : "还没有";
     const played = stats.totalGameOpens > 0 ? "已经至少玩过 1 个游戏" : "还没有点进任何游戏";
-    return `${accountText(account)}。这台设备访问大厅 ${stats.hallVisits} 次，打开游戏 ${stats.totalGameOpens} 次，玩过 ${uniqueCount} 种游戏，${played}。玩家编号：${shortId(stats.playerId)}。最常玩：${topText}。公开总人数需要接 GoatCounter 或 Google Analytics 这类统计服务，GitHub Pages 自己不能保存所有手机的总数据库。`;
+    return `${accountText(account)}。访客表里一共有 ${visitorCount} 个人。这台设备访问大厅 ${stats.hallVisits} 次，打开游戏 ${stats.totalGameOpens} 次，玩过 ${uniqueCount} 种游戏，${played}。玩家编号：${shortId(stats.playerId)}。最常玩：${topText}。公开总人数需要接 GoatCounter 或 Google Analytics 这类统计服务，GitHub Pages 自己不能保存所有手机的总数据库。`;
   }
 
   function renderRecords() {
@@ -206,6 +258,7 @@
       const items = (stats.playLog || []).slice(0, 5);
       list.textContent = items.length ? items.map((item) => item.game).join("、") : "还没有打开过游戏";
     }
+    renderVisitorTable();
   }
 
   function bindArcadeClicks() {
@@ -224,37 +277,16 @@
 
   function bindAccountForm() {
     const form = document.querySelector("#arcadeAccountForm");
-    const mode = document.querySelector("#arcadeAccountMode");
     const value = document.querySelector("#arcadeAccountValue");
     const guest = document.querySelector("#arcadeGuestLogin");
-    if (!form || !mode || !value) return;
-
-    function syncFields(clearValue = true) {
-      const selected = mode.value;
-      if (clearValue) value.value = "";
-      if (selected === "phone") {
-        value.type = "tel";
-        value.autocomplete = "tel";
-        value.placeholder = "输入手机号";
-      } else if (selected === "email") {
-        value.type = "email";
-        value.autocomplete = "email";
-        value.placeholder = "输入邮箱";
-      } else {
-        value.type = "text";
-        value.autocomplete = "nickname";
-        value.placeholder = "输入自己取的名字";
-      }
-    }
+    if (!form || !value) return;
 
     const account = loadAccount();
-    mode.value = account.method === "guest" ? "phone" : account.method;
-    if (account.method !== "guest") value.value = account.value || "";
+    if (account.displayName !== "游客试玩") value.value = account.displayName || "";
 
-    mode.addEventListener("change", () => syncFields(true));
     form.addEventListener("submit", (event) => {
       event.preventDefault();
-      const result = normalizeAccount(mode.value, value.value);
+      const result = normalizeVisitor(value.value);
       if (!result.ok) {
         const accountStatus = document.querySelector("#arcadeAccountStatus");
         if (accountStatus) accountStatus.textContent = result.message;
@@ -264,22 +296,22 @@
       const now = new Date().toISOString();
       const previousAccount = loadAccount();
       saveAccount({
-        method: mode.value,
+        method: "visitor",
         value: result.value,
         displayName: result.displayName,
         createdAt: previousAccount.createdAt || now,
         lastLoginAt: now
       });
+      ensureVisitor(result.displayName);
       renderRecords();
     });
 
     guest?.addEventListener("click", () => {
       saveAccount({ ...defaultAccount(), lastLoginAt: new Date().toISOString() });
       value.value = "";
+      ensureVisitor("游客试玩");
       renderRecords();
     });
-
-    syncFields(false);
   }
 
   function init() {

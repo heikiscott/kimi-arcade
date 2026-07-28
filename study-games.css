@@ -128,8 +128,10 @@ p {
   font-size: clamp(2.6rem, 8vw, 6.5rem);
   line-height: 0.95;
   letter-spacing: 0;
+  overflow-wrap: anywhere;
 }
 
+body[data-game="words"] .big-card h1,
 body[data-game="math"] .big-card h1,
 body[data-game="chinese"] .big-card h1,
 body[data-game="grammar"] .big-card h1,

@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>我的小游戏大厅</title>
-    <link rel="stylesheet" href="arcade.css?v=account-register-20260728" />
+    <link rel="stylesheet" href="arcade.css?v=visitor-table-20260728" />
   </head>
   <body>
     <main class="arcade-shell">
@@ -33,19 +33,31 @@
         <div>
           <p class="label">Arcade Records</p>
           <h2>小游戏大厅访问记录</h2>
-          <p id="arcadeAccountStatus" class="account-status">当前：游客试玩</p>
+          <p id="arcadeAccountStatus" class="account-status">当前访客：游客试玩</p>
           <p id="arcadeGlobalRecordsText">正在读取记录...</p>
           <p class="recent-games">最近打开：<span id="arcadeRecentGames">还没有打开过游戏</span></p>
+          <div class="visitor-table-wrap" aria-label="访客游玩表">
+            <table class="visitor-table">
+              <thead>
+                <tr>
+                  <th>访客</th>
+                  <th>进大厅</th>
+                  <th>打开游戏</th>
+                  <th>玩过</th>
+                </tr>
+              </thead>
+              <tbody id="arcadeVisitorTable">
+                <tr>
+                  <td colspan="4">还没有访客记录</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
         <div class="arcade-record-actions">
           <form class="account-form" id="arcadeAccountForm">
-            <select id="arcadeAccountMode" aria-label="注册方式">
-              <option value="phone">手机注册</option>
-              <option value="email">邮箱注册</option>
-              <option value="name">自己取名注册</option>
-            </select>
-            <input id="arcadeAccountValue" type="tel" autocomplete="tel" placeholder="输入手机号" aria-label="注册账号" />
-            <button type="submit">注册/登录</button>
+            <input id="arcadeAccountValue" type="text" autocomplete="nickname" placeholder="输入访客名字" aria-label="访客名字" />
+            <button type="submit">登记访客</button>
           </form>
           <div class="account-buttons">
             <button id="arcadeGuestLogin" type="button">游客试玩</button>
@@ -268,7 +280,7 @@
         <a class="game-card english" href="english-words.html">
           <span>学习游戏 · 英文</span>
           <strong>英文单词</strong>
-          <p>看中文选英文，练苹果、飞机、地铁、城市这些常用单词。</p>
+          <p>看中文选英文，练 cucumber、spill、split、maintain、mountain、feature、future、break、breath。</p>
           <em>开始背单词</em>
         </a>
 
@@ -411,6 +423,6 @@
         </div>
       </section>
     </main>
-    <script src="arcade-stats.js?v=account-register-20260728"></script>
+    <script src="arcade-stats.js?v=visitor-table-20260728"></script>
   </body>
 </html>

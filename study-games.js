@@ -18,6 +18,69 @@ let mistakes = 0;
 let questionPools = {};
 
 const wordQuestions = [
+  {
+    zh: "黄瓜",
+    answer: "cucumber",
+    options: ["cucumber", "mountain", "feature", "future"],
+    hint: "食物类名词。例句：I eat cucumber every day.",
+    note: "cucumber = 黄瓜。"
+  },
+  {
+    zh: "液体洒出、泼洒",
+    answer: "spill",
+    options: ["spill", "split", "break", "breathe"],
+    hint: "spill 侧重液体或粉末不小心洒出来，过去式 spilled/spilt。",
+    note: "spill = 液体洒；split = 切开、分摊、分裂。"
+  },
+  {
+    zh: "劈开、拆分、分摊",
+    answer: "split",
+    options: ["split", "spill", "break", "maintain"],
+    hint: "split 过去式不变，常用于固体分开、人群分开、金钱分摊。",
+    note: "We split the bill. = 我们分摊账单。"
+  },
+  {
+    zh: "维持、保持、维护",
+    answer: "maintain",
+    options: ["maintain", "mountain", "feature", "future"],
+    hint: "常见搭配：maintain balance，maintain a building。",
+    note: "maintain a healthy lifestyle = 保持健康的生活方式。"
+  },
+  {
+    zh: "大山、山脉",
+    answer: "mountain",
+    options: ["mountain", "maintain", "museum", "machine"],
+    hint: "hill 是小山，mountain 是高山。",
+    note: "There is a lake near the mountain. = 山边有一片湖。"
+  },
+  {
+    zh: "特征、特点；以……为特色",
+    answer: "feature",
+    options: ["feature", "future", "friend", "festival"],
+    hint: "feature 可作名词，也可作动词。main feature = 主要特点。",
+    note: "The phone's best feature is its camera. = 这款手机最大亮点是摄像头。"
+  },
+  {
+    zh: "未来、将来",
+    answer: "future",
+    options: ["future", "feature", "picture", "practice"],
+    hint: "固定短语：in the future = 在将来。",
+    note: "I plan to study abroad in the future. = 我计划将来出国留学。"
+  },
+  {
+    zh: "打破、弄坏、中断；休息",
+    answer: "break",
+    options: ["break", "breath", "brave", "bridge"],
+    hint: "break -> broke -> broken。短语：take a break，break the rule。",
+    note: "break 多指意外打碎、毁坏；split 多指人为切开、均分。"
+  },
+  {
+    zh: "呼吸；一口气（名词）",
+    answer: "breath",
+    options: ["breath", "breathe", "break", "brave"],
+    hint: "breath 是名词；breathe 是动词。take a deep breath = 深呼吸。",
+    note: "Take a breath and calm down. = 深呼吸冷静一下。"
+  },
   { zh: "苹果", answer: "apple", options: ["apple", "train", "cloud", "house"] },
   { zh: "飞机", answer: "airplane", options: ["subway", "airplane", "river", "pencil"] },
   { zh: "地铁", answer: "subway", options: ["subway", "banana", "window", "chair"] },
@@ -179,7 +242,7 @@ function startWords() {
   locked = false;
   current = nextQueuedQuestion("words", wordQuestions);
   questionText.textContent = current.zh;
-  hintText.textContent = "选出这个中文的英文单词。";
+  hintText.textContent = current.hint || "选出这个中文的英文单词。";
   answerGrid.innerHTML = "";
   shuffle(current.options).forEach((option) => {
     const button = document.createElement("button");
@@ -200,7 +263,7 @@ function answerChoice(button, option) {
     score += 10;
     completeQueuedQuestion();
     statusText.textContent = current.zh
-      ? `答对了：${current.zh} = ${current.answer}。这题这一轮不会再重复。`
+      ? `答对了：${current.zh} = ${current.answer}。${current.note || "这题这一轮不会再重复。"}`
       : `答对了，答案是 ${current.answer}。这题这一轮不会再重复。`;
     round += 1;
   } else {
