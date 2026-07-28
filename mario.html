@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>马里奥游戏 · 参考音乐新版</title>
-    <link rel="stylesheet" href="mario.css?v=audio-toggle-20260727" />
+    <link rel="stylesheet" href="mario.css?v=touch-controls-20260727" />
   </head>
   <body>
     <a class="home-link" href="arcade.html">游戏大厅</a>
@@ -33,11 +33,15 @@
             <button id="startIntroBtn" type="button">开始冒险</button>
           </div>
           <div class="touch-pad" aria-label="手机控制按钮">
-            <button data-control="left" type="button">左</button>
-            <button data-control="right" type="button">右</button>
-            <button data-control="jump" type="button">跳</button>
-            <button data-control="door" type="button">进/出</button>
-            <button data-control="elevator" type="button">电梯</button>
+            <div class="touch-stick" aria-label="左右方向虚拟摇杆">
+              <button class="touch-arrow" data-control="left" type="button" aria-label="向左移动">左</button>
+              <button class="touch-arrow" data-control="right" type="button" aria-label="向右移动">右</button>
+            </div>
+            <div class="touch-extra" aria-label="机关按钮">
+              <button data-control="door" type="button">进/出</button>
+              <button data-control="elevator" type="button">电梯</button>
+            </div>
+            <button class="touch-jump" data-control="jump" type="button" aria-label="跳跃">跳</button>
           </div>
         </div>
         <div class="hud">
@@ -53,6 +57,6 @@
       </section>
     </main>
     <script src="arcade-stats.js?v=global-records-20260727"></script>
-    <script src="mario.js?v=mario-game-name-20260727"></script>
+    <script src="mario.js?v=touch-controls-20260727"></script>
   </body>
 </html>

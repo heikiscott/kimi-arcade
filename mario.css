@@ -149,26 +149,80 @@ canvas {
 }
 
 .touch-pad {
-  position: absolute;
-  left: 16px;
-  right: 16px;
-  bottom: 16px;
-  z-index: 3;
-  display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 8px;
+  position: fixed;
+  inset: 0;
+  z-index: 9;
   pointer-events: none;
 }
 
+.touch-stick,
+.touch-extra {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.touch-extra {
+  position: fixed;
+  left: 50%;
+  bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+  transform: translateX(-50%);
+}
+
 .touch-pad button {
-  min-height: 48px;
-  padding: 0 8px;
+  width: clamp(54px, 10vw, 72px);
+  height: clamp(54px, 10vw, 72px);
+  min-height: 0;
+  padding: 0;
   border: 3px solid rgba(23, 38, 50, 0.42);
-  background: rgba(255, 255, 255, 0.86);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.78);
   color: #172632;
-  box-shadow: 0 8px 18px rgba(23, 38, 50, 0.16);
+  box-shadow: 0 10px 24px rgba(23, 38, 50, 0.18);
   pointer-events: auto;
   user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+  backdrop-filter: blur(8px);
+}
+
+.touch-stick {
+  position: fixed;
+  left: calc(14px + env(safe-area-inset-left, 0px));
+  bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+  padding: 8px;
+  border: 1px solid rgba(23, 38, 50, 0.16);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.22);
+  backdrop-filter: blur(8px);
+}
+
+.touch-arrow {
+  font-size: 1.08rem;
+}
+
+.touch-jump {
+  position: fixed;
+  left: calc(100vw - 108px - env(safe-area-inset-right, 0px));
+  right: auto;
+  bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+  width: clamp(70px, 15vw, 96px);
+  height: clamp(70px, 15vw, 96px);
+  border-color: rgba(216, 61, 53, 0.5);
+  background: rgba(216, 61, 53, 0.88);
+  color: #fff;
+  font-size: 1.28rem;
+}
+
+.touch-pad button.is-pressed {
+  transform: translateY(2px) scale(0.96);
+  background: rgba(255, 209, 95, 0.9);
+  color: #172632;
+}
+
+.touch-jump.is-pressed {
+  background: rgba(216, 61, 53, 0.98);
+  color: #fff;
 }
 
 .hud {
@@ -293,29 +347,31 @@ button:active {
     line-height: 1.35;
   }
 
-  .touch-pad {
-    position: static;
-    margin-top: 7px;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-    gap: 5px;
-    pointer-events: auto;
-  }
-
-  .touch-pad button {
-    min-height: 32px;
-    border-width: 2px;
-    border-radius: 7px;
-    background: rgba(255, 255, 255, 0.72);
-    font-size: 0.84rem;
-    box-shadow: 0 5px 12px rgba(23, 38, 50, 0.14);
-    backdrop-filter: blur(3px);
-  }
-
   button {
     min-height: 36px;
   }
 
   #restartBtn {
     min-height: 40px;
+  }
+}
+
+@media (hover: hover) and (pointer: fine) and (min-width: 900px) {
+  .touch-pad {
+    display: none;
+  }
+}
+
+@media (max-width: 520px) {
+  .touch-extra {
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .touch-extra button {
+    width: 58px;
+    height: 38px;
+    border-radius: 999px;
+    font-size: 0.78rem;
   }
 }

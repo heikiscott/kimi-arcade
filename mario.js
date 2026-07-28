@@ -2161,11 +2161,17 @@ document.querySelectorAll("[data-control]").forEach((button) => {
   const control = button.dataset.control;
   button.addEventListener("pointerdown", (event) => {
     event.preventDefault();
+    button.setPointerCapture?.(event.pointerId);
     if (!gameStarted) startIntro();
     touchControls.add(control);
+    button.classList.add("is-pressed");
     startMusic();
   });
-  const release = () => touchControls.delete(control);
+  const release = (event) => {
+    event.preventDefault();
+    touchControls.delete(control);
+    button.classList.remove("is-pressed");
+  };
   button.addEventListener("pointerup", release);
   button.addEventListener("pointercancel", release);
   button.addEventListener("pointerleave", release);
