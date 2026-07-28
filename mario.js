@@ -3,6 +3,9 @@ const ctx = canvas.getContext("2d");
 const scoreEl = document.querySelector("#score");
 const statusText = document.querySelector("#statusText");
 const restartBtn = document.querySelector("#restartBtn");
+const recordsBtn = document.querySelector("#recordsBtn");
+const recordsPanel = document.querySelector("#recordsPanel");
+const recordsText = document.querySelector("#recordsText");
 const introOverlay = document.querySelector("#introOverlay");
 const startIntroBtn = document.querySelector("#startIntroBtn");
 const introStatus = document.querySelector("#introStatus");
@@ -25,6 +28,8 @@ let elevatorHintTimer = 0;
 
 const W = canvas.width;
 const H = canvas.height;
+const statsKey = "marioAdventureStatsV2";
+const playerIdKey = "marioAdventurePlayerId";
 
 const player = {
   x: 72,
@@ -456,6 +461,7 @@ function reset() {
   statusText.textContent = "先选地图，再点开始冒险。A/D 移动，空格跳，E 或 ↓ 进门/坐地铁，S 电梯。";
   updateMapButtons();
   updateScore();
+  updateRecordsPanel();
 }
 
 function updateScore() {
@@ -471,6 +477,87 @@ function rectsOverlap(a, b) {
 
 function playerRect() {
   return { x: player.x, y: player.y, w: player.w, h: player.h };
+}
+
+function getPlayerId() {
+  try {
+    let id = localStorage.getItem(playerIdKey);
+    if (!id) {
+      id = `player-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+      localStorage.setItem(playerIdKey, id);
+    }
+    return id;
+  } catch {
+    return "player-private";
+  }
+}
+
+function defaultStats() {
+  return {
+    playerId: getPlayerId(),
+    visits: 0,
+    starts: 0,
+    wins: 0,
+    metroRides: 0,
+    maps: {},
+    lastMap: "sky",
+    lastPlayed: ""
+  };
+}
+
+function loadStats() {
+  try {
+    return { ...defaultStats(), ...JSON.parse(localStorage.getItem(statsKey) || "{}") };
+  } catch {
+    return defaultStats();
+  }
+}
+
+function saveStats(stats) {
+  try {
+    localStorage.setItem(statsKey, JSON.stringify(stats));
+  } catch {
+    // Some private browsers block localStorage; the game still works without records.
+  }
+}
+
+function mapTitle(key) {
+  return sceneTemplates[key]?.title || key;
+}
+
+function updateRecordsPanel() {
+  const stats = loadStats();
+  const favorite = Object.entries(stats.maps).sort((a, b) => b[1] - a[1])[0];
+  const favoriteText = favorite ? `${mapTitle(favorite[0])} ${favorite[1]} 次` : "还没有最常玩地图";
+  const shortId = stats.playerId.split("-").slice(-1)[0] || "local";
+  recordsText.textContent = `这台设备访问 ${stats.visits} 次，开始玩 ${stats.starts} 次，通关 ${stats.wins} 次，坐地铁 ${stats.metroRides} 次。玩家编号：${shortId}。最常玩：${favoriteText}。公开总人数：GitHub Pages 需要接 GoatCounter 或 Google Analytics 后，才能统计别人手机的总人数和总次数。`;
+}
+
+function sendSharedStat(eventName, details = {}) {
+  if (window.goatcounter?.count) {
+    window.goatcounter.count({
+      path: `/mario/${eventName}/${details.map || sceneKey}`,
+      title: `马聊冒险 ${eventName} ${mapTitle(details.map || sceneKey)}`,
+      event: true
+    });
+  }
+}
+
+function recordEvent(eventName, details = {}) {
+  const stats = loadStats();
+  const map = details.map || sceneKey;
+  if (eventName === "visit") stats.visits += 1;
+  if (eventName === "start") {
+    stats.starts += 1;
+    stats.maps[map] = (stats.maps[map] || 0) + 1;
+    stats.lastMap = map;
+    stats.lastPlayed = new Date().toISOString();
+  }
+  if (eventName === "win") stats.wins += 1;
+  if (eventName === "metro") stats.metroRides += 1;
+  saveStats(stats);
+  updateRecordsPanel();
+  sendSharedStat(eventName, { ...details, map });
 }
 
 function isPressed(name) {
@@ -814,6 +901,7 @@ function checkMetroRide() {
   player.grounded = true;
   player.rideTrain = train;
   statusText.textContent = "地铁开车了！站稳，它会载你去下一站。";
+  recordEvent("metro", { map: sceneKey });
   playMetroSound();
 }
 
@@ -840,6 +928,7 @@ function checkGoal() {
   }
   won = true;
   stopMusic();
+  recordEvent("win", { map: sceneKey });
   updateScore();
   statusText.textContent = `${scene.title}通关成功！你完成了这个地方。`;
   playVictory();
@@ -1792,33 +1881,41 @@ function playMetroSound() {
 }
 
 function playOpeningMusic() {
-  const notes = [392, 523, 659, 784, 1046, 784, 659, 523, 440, 587, 740, 988, 880, 740, 587, 494, 523, 659, 784, 1046];
-  notes.forEach((note, index) => playTone(note, index * 0.11, 0.095, 0.04, "triangle"));
+  const notes = [
+    392, 523, 659, 784, 1046, 784, 659, 523,
+    440, 587, 740, 988, 880, 740, 587, 494,
+    523, 659, 784, 1046, 1174, 1046, 784, 659,
+    587, 740, 988, 1174, 1046, 880, 784, 659
+  ];
+  notes.forEach((note, index) => {
+    playTone(note, index * 0.105, 0.085, 0.04, "triangle");
+    if (index % 8 === 0) playTone(note / 2, index * 0.105, 0.18, 0.018, "square");
+  });
 }
 
 function playMusicBar() {
   if (won || !gameStarted) return;
   const sceneMelodies = {
-    sky: [659, 659, 0, 659, 0, 523, 659, 0, 784, 0, 392, 0, 523, 587, 659, 523],
+    sky: [659, 659, 0, 659, 0, 523, 659, 0, 784, 0, 392, 0, 523, 587, 659, 523, 587, 659, 784, 880, 784, 659, 587, 523, 440, 523, 587, 659, 587, 523, 494, 523],
     ghost: [220, 277, 330, 311, 277, 247, 220, 185, 220, 262, 311, 349, 311, 262, 220, 196],
-    castle: [262, 330, 392, 523, 392, 330, 294, 349, 392, 523, 659, 784, 659, 523, 392, 330],
-    jungle: [392, 494, 587, 659, 587, 494, 440, 523, 587, 659, 784, 659, 587, 523, 494, 392],
-    lava: [196, 262, 330, 392, 330, 262, 220, 196, 247, 330, 392, 494, 392, 330, 247, 220],
-    mine: [294, 370, 440, 554, 440, 370, 330, 494, 554, 659, 554, 494, 440, 370, 330, 294],
-    metro: [330, 392, 494, 659, 494, 392, 330, 262, 294, 370, 494, 587, 494, 370, 294, 247]
+    castle: [262, 330, 392, 523, 392, 330, 294, 349, 392, 523, 659, 784, 659, 523, 392, 330, 349, 440, 523, 698, 784, 698, 523, 440, 392, 349, 330, 294, 330, 392, 523, 392],
+    jungle: [392, 494, 587, 659, 587, 494, 440, 523, 587, 659, 784, 659, 587, 523, 494, 392, 440, 523, 659, 784, 880, 784, 659, 587, 523, 494, 440, 392, 440, 523, 587, 659],
+    lava: [196, 262, 330, 392, 330, 262, 220, 196, 247, 330, 392, 494, 392, 330, 247, 220, 196, 247, 294, 370, 440, 370, 294, 247, 220, 262, 330, 392, 330, 262, 220, 196],
+    mine: [294, 370, 440, 554, 440, 370, 330, 494, 554, 659, 554, 494, 440, 370, 330, 294, 330, 415, 494, 622, 554, 494, 415, 370, 330, 294, 247, 294, 330, 370, 440, 494],
+    metro: [330, 392, 494, 659, 494, 392, 330, 262, 294, 370, 494, 587, 494, 370, 294, 247, 262, 330, 392, 523, 659, 523, 392, 330, 294, 370, 440, 587, 523, 440, 370, 330]
   };
   const melody = sceneMelodies[sceneKey] || sceneMelodies.sky;
   melody.forEach((note, i) => {
     if (!note) return;
-    playTone(note, i * 0.13, 0.09, 0.019, sceneKey === "ghost" || sceneKey === "mine" ? "sine" : "square");
-    if (i % 4 === 0) playTone(note / 2, i * 0.13, 0.12, 0.012, "triangle");
+    playTone(note, i * 0.115, 0.085, 0.018, sceneKey === "ghost" || sceneKey === "mine" ? "sine" : "square");
+    if (i % 4 === 0) playTone(note / 2, i * 0.115, 0.13, 0.012, "triangle");
   });
 }
 
 function startMusic() {
   if (musicTimer || won) return;
   playMusicBar();
-  musicTimer = window.setInterval(playMusicBar, 2180);
+  musicTimer = window.setInterval(playMusicBar, 3800);
 }
 
 function stopMusic() {
@@ -1831,6 +1928,7 @@ function beginGame() {
   gameStarted = true;
   introOverlay.classList.add("hidden");
   statusText.textContent = `${scene.title}开始！往右走，顶问号砖和隐藏机关。`;
+  recordEvent("start", { map: sceneKey });
   startMusic();
 }
 
@@ -1895,8 +1993,14 @@ canvas.addEventListener("pointerdown", () => {
   startMusic();
 });
 
+recordsBtn.addEventListener("click", () => {
+  recordsPanel.hidden = !recordsPanel.hidden;
+  updateRecordsPanel();
+});
+
 startIntroBtn.addEventListener("click", startIntro);
 restartBtn.addEventListener("click", reset);
 
+recordEvent("visit", { map: selectedSceneKey });
 reset();
 tick();

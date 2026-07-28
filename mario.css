@@ -149,7 +149,7 @@ canvas {
 
 .hud {
   display: grid;
-  grid-template-columns: auto 1fr auto;
+  grid-template-columns: auto 1fr auto auto;
   gap: 12px;
   align-items: center;
   margin-top: 12px;
@@ -158,6 +158,26 @@ canvas {
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.88);
   font-weight: 850;
+}
+
+.records-panel {
+  display: grid;
+  gap: 5px;
+  margin-top: 8px;
+  padding: 12px 14px;
+  border: 1px solid rgba(23, 38, 50, 0.14);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.82);
+  font-weight: 820;
+}
+
+.records-panel[hidden] {
+  display: none;
+}
+
+.records-panel span {
+  color: rgba(23, 38, 50, 0.78);
+  line-height: 1.45;
 }
 
 button {
