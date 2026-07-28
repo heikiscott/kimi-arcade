@@ -27,6 +27,24 @@ body {
   text-decoration: none;
 }
 
+.sound-toggle {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 10;
+  min-height: 42px;
+  padding: 0 14px;
+  border: 2px solid rgba(23, 38, 50, 0.28);
+  background: rgba(255, 255, 255, 0.92);
+  color: #172632;
+  box-shadow: 0 10px 22px rgba(23, 38, 50, 0.16);
+}
+
+.sound-toggle.muted {
+  background: #172632;
+  color: #fff;
+}
+
 .mario-shell {
   display: grid;
   place-items: center;
@@ -206,6 +224,14 @@ button:active {
     left: 8px;
     padding: 7px 10px;
     font-size: 0.92rem;
+  }
+
+  .sound-toggle {
+    top: 8px;
+    right: 8px;
+    min-height: 36px;
+    padding: 0 10px;
+    font-size: 0.9rem;
   }
 
   .mario-shell {

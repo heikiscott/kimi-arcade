@@ -6,6 +6,7 @@ const restartBtn = document.querySelector("#restartBtn");
 const recordsBtn = document.querySelector("#recordsBtn");
 const recordsPanel = document.querySelector("#recordsPanel");
 const recordsText = document.querySelector("#recordsText");
+const soundToggleBtn = document.querySelector("#soundToggleBtn");
 const introOverlay = document.querySelector("#introOverlay");
 const startIntroBtn = document.querySelector("#startIntroBtn");
 const introStatus = document.querySelector("#introStatus");
@@ -30,6 +31,30 @@ const W = canvas.width;
 const H = canvas.height;
 const statsKey = "marioAdventureStatsV2";
 const playerIdKey = "marioAdventurePlayerId";
+const audioMuteKey = "marioAdventureAudioMuted";
+const audioFiles = {
+  bgm: "assets/audio/mario-bgm.mp3",
+  coin: "assets/audio/mario-coin.mp3",
+  jump: "assets/audio/mario-jump.mp3",
+  lavaDeath: "assets/audio/mario-lava-death.mp3",
+  clear: "assets/audio/mario-clear.mp3"
+};
+function loadAudioEnabled() {
+  try {
+    return localStorage.getItem(audioMuteKey) !== "1";
+  } catch {
+    return true;
+  }
+}
+
+const audioState = {
+  enabled: loadAudioEnabled(),
+  loading: false,
+  loaded: false,
+  buffers: {},
+  musicSource: null,
+  musicGain: null
+};
 
 const player = {
   x: 72,
@@ -942,12 +967,12 @@ function checkHazards() {
   if (performance.now() < player.starUntil) return;
   (scene.hazards || []).forEach((hazard) => {
     if (!rectsOverlap(playerRect(), hazard)) return;
-    if (hazard.type === "track") hurtPlayer("掉到轨道里了！要站在站台或地铁车顶上。");
-    else hurtPlayer("碰到岩浆了！先退回来，找石头平台跳过去。");
+    if (hazard.type === "track") hurtPlayer("掉到轨道里了！要站在站台或地铁车顶上。", "track");
+    else hurtPlayer("碰到岩浆了！先退回来，找石头平台跳过去。", "lava");
   });
 }
 
-function hurtPlayer(message) {
+function hurtPlayer(message, reason = "hurt") {
   if (performance.now() < player.invincibleUntil) return;
   if (player.power === "big") {
     const foot = player.y + player.h;
@@ -958,7 +983,8 @@ function hurtPlayer(message) {
     player.invincibleUntil = performance.now() + 1200;
     statusText.textContent = "被碰到了，先从大人变回小人，还没有输。";
     updateScore();
-    playHurt();
+    if (reason === "lava") playLavaDeath();
+    else playHurt();
     return;
   }
   player.lives -= 1;
@@ -977,7 +1003,8 @@ function hurtPlayer(message) {
     statusText.textContent = message;
   }
   updateScore();
-  playHurt();
+  if (reason === "lava") playLavaDeath();
+  else playHurt();
 }
 
 function draw() {
@@ -1826,7 +1853,87 @@ function getAudio() {
   return audioContext;
 }
 
+function updateSoundToggle() {
+  if (!soundToggleBtn) return;
+  soundToggleBtn.textContent = audioState.enabled ? "音效开" : "静音";
+  soundToggleBtn.classList.toggle("muted", !audioState.enabled);
+  soundToggleBtn.setAttribute("aria-pressed", String(!audioState.enabled));
+  soundToggleBtn.title = audioState.enabled ? "点击静音" : "点击开启音效";
+}
+
+function setSoundEnabled(nextEnabled) {
+  audioState.enabled = nextEnabled;
+  try {
+    localStorage.setItem(audioMuteKey, nextEnabled ? "0" : "1");
+  } catch {
+    // The mute button still works for the current page if storage is blocked.
+  }
+  if (!nextEnabled) {
+    stopMusic();
+  } else {
+    preloadAudioAssets();
+    if (gameStarted && !won) startMusic();
+  }
+  updateSoundToggle();
+}
+
+function preloadAudioAssets() {
+  if (!audioState.enabled || audioState.loading || audioState.loaded) return;
+  if (location.protocol === "file:") {
+    audioState.loaded = true;
+    return;
+  }
+  let audio;
+  try {
+    audio = getAudio();
+  } catch {
+    return;
+  }
+  audioState.loading = true;
+  Promise.all(
+    Object.entries(audioFiles).map(async ([name, src]) => {
+      try {
+        const response = await fetch(src, { cache: "force-cache" });
+        if (!response.ok) throw new Error(`Missing audio: ${src}`);
+        const bytes = await response.arrayBuffer();
+        audioState.buffers[name] = await audio.decodeAudioData(bytes);
+      } catch {
+        // Missing or blocked files fall back to generated chiptune sounds.
+      }
+    })
+  ).finally(() => {
+    audioState.loading = false;
+    audioState.loaded = true;
+    if (gameStarted && !won && audioState.enabled && audioState.buffers.bgm && !audioState.musicSource) {
+      stopMusic();
+      startMusic();
+    }
+  });
+}
+
+function playBuffer(name, options = {}) {
+  if (!audioState.enabled) return false;
+  const buffer = audioState.buffers[name];
+  if (!buffer) return false;
+  const audio = getAudio();
+  const source = audio.createBufferSource();
+  const gain = audio.createGain();
+  source.buffer = buffer;
+  source.loop = Boolean(options.loop);
+  gain.gain.value = options.volume ?? 0.72;
+  source.connect(gain);
+  gain.connect(audio.destination);
+  if (options.duration) source.start(audio.currentTime, options.offset || 0, options.duration);
+  else source.start(audio.currentTime, options.offset || 0);
+  if (options.loop) {
+    audioState.musicSource = source;
+    audioState.musicGain = gain;
+  }
+  return true;
+}
+
 function playTone(freq, start, duration, gainValue = 0.055, type = "square") {
+  if (!audioState.enabled) return;
   const audio = getAudio();
   const osc = audio.createOscillator();
   const gain = audio.createGain();
@@ -1842,11 +1949,13 @@ function playTone(freq, start, duration, gainValue = 0.055, type = "square") {
 }
 
 function playCoin() {
+  if (playBuffer("coin", { volume: 0.78 })) return;
   playTone(880, 0, 0.08, 0.045);
   playTone(1320, 0.08, 0.1, 0.045);
 }
 
 function playJump() {
+  if (playBuffer("jump", { volume: 0.66 })) return;
   playTone(420, 0, 0.08, 0.035, "triangle");
   playTone(720, 0.08, 0.1, 0.035, "triangle");
 }
@@ -1874,7 +1983,14 @@ function playHurt() {
   playTone(120, 0.16, 0.2, 0.04, "sawtooth");
 }
 
+function playLavaDeath() {
+  if (playBuffer("lavaDeath", { volume: 0.8 })) return;
+  [220, 196, 165, 130, 98].forEach((note, i) => playTone(note, i * 0.08, 0.14, 0.052, "sawtooth"));
+  playTone(62, 0.22, 0.55, 0.042, "triangle");
+}
+
 function playVictory() {
+  if (playBuffer("clear", { volume: 0.78 })) return;
   const notes = [523, 659, 784, 1046, 784, 1046, 1318, 1568, 1318, 1046, 1568];
   notes.forEach((note, i) => playTone(note, i * 0.13, 0.12, 0.055, "triangle"));
 }
@@ -1885,6 +2001,7 @@ function playMetroSound() {
 }
 
 function playOpeningMusic() {
+  if (playBuffer("bgm", { volume: 0.18, duration: 4.2 })) return;
   const notes = [
     523, 659, 784, 1046, 0, 988, 784, 659,
     587, 740, 880, 1174, 0, 1046, 880, 740,
@@ -1900,7 +2017,7 @@ function playOpeningMusic() {
 }
 
 function playMusicBar() {
-  if (won || !gameStarted) return;
+  if (won || !gameStarted || !audioState.enabled) return;
   const sceneMelodies = {
     sky: [659, 659, 0, 659, 0, 523, 659, 0, 784, 0, 392, 0, 523, 587, 659, 523, 587, 659, 784, 880, 784, 659, 587, 523, 440, 523, 587, 659, 587, 523, 494, 523, 659, 784, 988, 1046, 988, 784, 659, 587, 523, 587, 659, 784, 880, 784, 659, 523, 587, 740, 880, 988, 880, 740, 587, 523, 659, 784, 1046, 1174, 1046, 784, 659, 523],
     ghost: [220, 277, 330, 311, 277, 247, 220, 185, 220, 262, 311, 349, 311, 262, 220, 196, 185, 220, 277, 330, 392, 330, 277, 220, 196, 247, 294, 349, 330, 294, 247, 220],
@@ -1921,7 +2038,12 @@ function playMusicBar() {
 }
 
 function startMusic() {
-  if (musicTimer || won) return;
+  if (!audioState.enabled || audioState.musicSource || musicTimer || won) return;
+  preloadAudioAssets();
+  if (audioState.buffers.bgm) {
+    playBuffer("bgm", { loop: true, volume: 0.24 });
+    return;
+  }
   playMusicBar();
   musicTimer = window.setInterval(playMusicBar, 6800);
 }
@@ -1929,6 +2051,15 @@ function startMusic() {
 function stopMusic() {
   if (musicTimer) window.clearInterval(musicTimer);
   musicTimer = null;
+  if (audioState.musicSource) {
+    try {
+      audioState.musicSource.stop();
+    } catch {
+      // Already stopped.
+    }
+  }
+  audioState.musicSource = null;
+  audioState.musicGain = null;
 }
 
 function beginGame() {
@@ -1956,10 +2087,13 @@ function chooseMap(key) {
 
 function startIntro() {
   if (gameStarted) return;
-  getAudio();
+  if (audioState.enabled) {
+    getAudio();
+    preloadAudioAssets();
+  }
   startIntroBtn.disabled = true;
   startIntroBtn.textContent = "准备中";
-  introStatus.textContent = "参考你发的音乐，换成更长的原创轻快闯关旋律";
+  introStatus.textContent = audioState.enabled ? "音效准备中，开始后会播放背景音乐" : "静音模式，开始后不会播放音效";
   playOpeningMusic();
   introTimer = window.setTimeout(beginGame, 4300);
 }
@@ -2006,9 +2140,14 @@ recordsBtn.addEventListener("click", () => {
   updateRecordsPanel();
 });
 
+soundToggleBtn.addEventListener("click", () => {
+  setSoundEnabled(!audioState.enabled);
+});
+
 startIntroBtn.addEventListener("click", startIntro);
 restartBtn.addEventListener("click", reset);
 
+updateSoundToggle();
 recordEvent("visit", { map: selectedSceneKey });
 reset();
 tick();
