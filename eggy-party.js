@@ -259,10 +259,10 @@ let audioContext = null;
 let courseMusicTimer = null;
 let courseMusicStep = 0;
 let courseMusicAudio = null;
-const DEFAULT_COURSE_MUSIC_URL = "assets/racing-user-music.m4a?v=challenge-racing-music-20260727";
-const FALLBACK_COURSE_MUSIC_URL = "assets/racing-user-music.mp4?v=challenge-racing-music-20260727";
+const DEFAULT_COURSE_MUSIC_URL = "assets/racing-user-music.m4a?v=music-lite-20260722";
+const FALLBACK_COURSE_MUSIC_URL = "assets/racing-user-music.mp4?v=20260722";
 let localMusicUrl = DEFAULT_COURSE_MUSIC_URL;
-let localMusicName = "3D天空竞速赛车音乐";
+let localMusicName = "你刚刚发来的超级马里奥音乐";
 let localMusicIsObjectUrl = false;
 let triedCourseMusicFallback = false;
 let joystickX = 0;
@@ -479,7 +479,7 @@ function ensureCourseMusicAudio() {
       if (!triedCourseMusicFallback && localMusicUrl === DEFAULT_COURSE_MUSIC_URL) {
         triedCourseMusicFallback = true;
         localMusicUrl = FALLBACK_COURSE_MUSIC_URL;
-        localMusicName = "3D天空竞速赛车音乐";
+        localMusicName = "你刚刚发来的超级马里奥音乐";
         courseMusicAudio = null;
         statusText.textContent = "轻量音乐没加载成功，已切回原视频音乐。";
         return;

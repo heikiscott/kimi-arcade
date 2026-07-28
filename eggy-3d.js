@@ -9,9 +9,6 @@ const airportSelect = document.querySelector("#airportSelect");
 const moveStick = document.querySelector("#moveStick");
 const moveKnob = document.querySelector("#moveKnob");
 const studentScores = document.querySelector("#studentScores");
-const playChallengeMusicBtn = document.querySelector("#playChallengeMusicBtn");
-const muteChallengeMusicBtn = document.querySelector("#muteChallengeMusicBtn");
-const challengeMusicStatus = document.querySelector("#challengeMusicStatus");
 const buttons = {
   start: document.querySelector("#startBtn"),
   park: document.querySelector("#parkBtn"),
@@ -48,17 +45,6 @@ const buttons = {
   classScore: document.querySelector("#classScoreBtn"),
   meScore: document.querySelector("#meScoreBtn")
 };
-
-const DEFAULT_CHALLENGE_MUSIC_URL = "assets/racing-user-music.m4a?v=challenge-racing-music-20260727";
-const FALLBACK_CHALLENGE_MUSIC_URL = "assets/racing-user-music.mp4?v=challenge-racing-music-20260727";
-let challengeMusic = new Audio(DEFAULT_CHALLENGE_MUSIC_URL);
-let challengeMusicMuted = localStorage.getItem("eggy3dChallengeMusicMuted") === "1";
-let triedChallengeMusicFallback = false;
-
-challengeMusic.loop = true;
-challengeMusic.volume = 0.62;
-challengeMusic.preload = "auto";
-challengeMusic.load();
 
 const styleData = {
   china: { name: "中国风格机场", ground: 0x76bd72, accent: 0xd8343f, second: 0xffd15f },
@@ -1185,7 +1171,6 @@ function buildCurrentPlace() {
     plane.visible = false;
     placeName.textContent = "3D 闯关游戏";
     setStatus("闯关游戏回来了：走到喷气背包会获得保护，踩平台到白色终点线就赢。");
-    playChallengeMusic();
   } else if (state.currentPlace === "water") {
     buildWaterPark();
     plane.visible = false;
@@ -2113,61 +2098,6 @@ function resize() {
 function setStatus(text) {
   flightState.textContent = text;
 }
-
-function updateChallengeMusicStatus(text) {
-  if (challengeMusicStatus && text) challengeMusicStatus.textContent = text;
-  if (muteChallengeMusicBtn) muteChallengeMusicBtn.textContent = challengeMusicMuted ? "开启音乐" : "静音";
-}
-
-function playChallengeMusic() {
-  if (!challengeMusic || challengeMusicMuted) {
-    updateChallengeMusicStatus("音乐已静音，点“开启音乐”可以恢复。");
-    return;
-  }
-  challengeMusic.loop = true;
-  challengeMusic.volume = 0.62;
-  const promise = challengeMusic.play();
-  if (promise && typeof promise.then === "function") {
-    promise.then(() => {
-      updateChallengeMusicStatus("正在播放：3D天空竞速赛车音乐。");
-    }).catch(() => {
-      updateChallengeMusicStatus("手机可能拦截自动播放，请点“播放赛车音乐”。");
-    });
-  }
-}
-
-function stopChallengeMusic() {
-  if (!challengeMusic) return;
-  challengeMusic.pause();
-}
-
-function setChallengeMusicMuted(nextMuted) {
-  challengeMusicMuted = nextMuted;
-  try {
-    localStorage.setItem("eggy3dChallengeMusicMuted", nextMuted ? "1" : "0");
-  } catch {
-    // Keep the current-page mute state even when storage is unavailable.
-  }
-  if (nextMuted) stopChallengeMusic();
-  else playChallengeMusic();
-  updateChallengeMusicStatus(nextMuted ? "3D 闯关音乐已静音。" : "3D 闯关音乐已开启。");
-}
-
-challengeMusic.addEventListener("error", () => {
-  if (!triedChallengeMusicFallback && challengeMusic.src.includes("racing-user-music.m4a")) {
-    triedChallengeMusicFallback = true;
-    challengeMusic = new Audio(FALLBACK_CHALLENGE_MUSIC_URL);
-    challengeMusic.loop = true;
-    challengeMusic.volume = 0.62;
-    challengeMusic.preload = "auto";
-    challengeMusic.addEventListener("error", () => updateChallengeMusicStatus("音乐文件没加载成功，先继续玩游戏。"));
-    updateChallengeMusicStatus("轻量音乐没加载成功，已切回原视频音乐。");
-    challengeMusic.load();
-    if (!challengeMusicMuted) playChallengeMusic();
-    return;
-  }
-  updateChallengeMusicStatus("音乐文件没加载成功，先继续玩游戏。");
-});
 
 function applyTeddyExpression() {
   const expression = teddyExpressions[state.expressionIndex % teddyExpressions.length];
@@ -3546,11 +3476,8 @@ buttons.screenBall.addEventListener("click", toggleBallMode);
 buttons.screenExpression.addEventListener("click", nextExpression);
 buttons.classScore.addEventListener("click", addScoreToClass);
 buttons.meScore.addEventListener("click", addScoreToMe);
-if (playChallengeMusicBtn) playChallengeMusicBtn.addEventListener("click", playChallengeMusic);
-if (muteChallengeMusicBtn) muteChallengeMusicBtn.addEventListener("click", () => setChallengeMusicMuted(!challengeMusicMuted));
 
 populateAirportSelect();
-updateChallengeMusicStatus();
 bindStick();
 bindCanvasViewDrag();
 renderStudentScores();
