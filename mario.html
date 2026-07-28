@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>马里奥游戏 · 参考音乐新版</title>
-    <link rel="stylesheet" href="mario.css?v=powerups-save-20260727" />
+    <link rel="stylesheet" href="mario.css?v=linked-levels-20260727" />
   </head>
   <body>
     <a class="home-link" href="arcade.html">游戏大厅</a>
@@ -20,15 +20,15 @@
           <div class="intro-overlay" id="introOverlay">
             <p>Original Platform Adventure</p>
             <h1>马里奥游戏</h1>
-            <span id="introStatus">先选一个地方：长关卡、机关、星星和地铁都有</span>
-            <div class="map-select" aria-label="选择地图">
-              <button class="active" data-map="sky" type="button">天空</button>
-              <button data-map="ghost" type="button">鬼屋</button>
-              <button data-map="castle" type="button">城堡</button>
-              <button data-map="jungle" type="button">丛林</button>
-              <button data-map="lava" type="button">岩浆</button>
-              <button data-map="mine" type="button">宝石矿洞</button>
-              <button data-map="metro" type="button">坐地铁</button>
+            <span id="introStatus">七关连成一条路：每一关到旗杆，旗子降下来后自动进入下一关。</span>
+            <div class="level-route" aria-label="七关连线">
+              <span>1 天空</span>
+              <span>2 鬼屋</span>
+              <span>3 城堡</span>
+              <span>4 丛林</span>
+              <span>5 岩浆</span>
+              <span>6 宝石矿洞</span>
+              <span>7 坐地铁</span>
             </div>
             <div class="save-actions">
               <button id="continueSaveBtn" type="button" hidden>继续上次游戏</button>
@@ -61,6 +61,6 @@
       </section>
     </main>
     <script src="arcade-stats.js?v=global-records-20260727"></script>
-    <script src="mario.js?v=powerups-save-20260727"></script>
+    <script src="mario.js?v=linked-levels-20260727"></script>
   </body>
 </html>

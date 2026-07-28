@@ -140,6 +140,35 @@ canvas {
   color: #172632;
 }
 
+.level-route {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  width: min(760px, 100%);
+}
+
+.level-route span {
+  min-height: 42px;
+  display: inline-grid;
+  place-items: center;
+  padding: 0 12px;
+  border: 2px solid rgba(255, 255, 255, 0.54);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.16);
+  color: #fff;
+  font-weight: 950;
+}
+
+.level-route span::after {
+  content: " →";
+  color: #ffd15f;
+}
+
+.level-route span:last-child::after {
+  content: "";
+}
+
 .intro-overlay button {
   min-height: 54px;
   padding: 0 24px;
@@ -354,9 +383,19 @@ button:active {
     gap: 5px;
   }
 
+  .level-route {
+    gap: 5px;
+  }
+
   .map-select button {
     min-height: 32px;
     padding: 0 5px;
+    font-size: 0.78rem;
+  }
+
+  .level-route span {
+    min-height: 32px;
+    padding: 0 7px;
     font-size: 0.78rem;
   }
 

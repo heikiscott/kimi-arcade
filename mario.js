@@ -23,6 +23,7 @@ let musicTimer = null;
 let introTimer = null;
 let gameStarted = false;
 let won = false;
+let flagCeremony = null;
 let sceneKey = "sky";
 let selectedSceneKey = "sky";
 let scene = null;
@@ -40,6 +41,7 @@ const statsKey = "marioAdventureStatsV2";
 const saveKey = "marioAdventureSaveV3";
 const playerIdKey = "marioAdventurePlayerId";
 const audioMuteKey = "marioAdventureAudioMuted";
+const levelOrder = ["sky", "ghost", "castle", "jungle", "lava", "mine", "metro"];
 const audioFiles = {
   bgm: "assets/racing-user-music.m4a?v=racing-music-20260727",
   bgmFallback: "assets/racing-user-music.mp4?v=racing-music-20260727",
@@ -130,7 +132,7 @@ const sceneTemplates = {
     keyItems: [
       { x: 1870, y: 282, got: false }
     ],
-    goal: null
+    goal: { x: 2200, y: 404, w: 44, h: 136, requireKeys: 1 }
   },
   ghost: {
     title: "鬼屋里面",
@@ -171,7 +173,7 @@ const sceneTemplates = {
     keyItems: [
       { x: 1200, y: 294, got: false }
     ],
-    goal: null
+    goal: { x: 1780, y: 404, w: 44, h: 136, requireKeys: 1 }
   },
   castle: {
     title: "城堡电梯",
@@ -472,20 +474,20 @@ function loadScene(key, spawnName = "entry") {
   player.grounded = false;
   player.rideElevator = null;
   cameraX = Math.max(0, Math.min(scene.width - W, player.x - 220));
-  statusText.textContent = `${scene.title}：${getSceneHelp()}`;
+  statusText.textContent = `${levelTitle(key)}：${getSceneHelp()}`;
   playDoorSound();
   updateScore();
   saveGame();
 }
 
 function getSceneHelp() {
-  if (sceneKey === "sky") return "往右走，门可以进鬼屋，也可以继续去城堡。";
-  if (sceneKey === "ghost") return "里面比较暗，躲开幽灵，坐电梯拿钥匙，再从门出去。";
-  if (sceneKey === "castle") return "城堡里有两个升降电梯，拿够钥匙后到最右边旗台通关。";
-  if (sceneKey === "jungle") return "跳藤蔓和树台，顶隐藏星星，越过丛林缺口。";
-  if (sceneKey === "lava") return "岩浆会烫伤，踩火山石和电梯过去，星星可以救命。";
-  if (sceneKey === "mine") return "矿洞里有宝石、铁轨平台和蝙蝠，往右到出口。";
-  if (sceneKey === "metro") return "站到地铁车门旁，按 E 或点进/出，列车会开到下一站。";
+  if (sceneKey === "sky") return "第一关比较简单，拿钥匙后一直往右跳到旗杆，进第二关。";
+  if (sceneKey === "ghost") return "第二关变暗了，躲开幽灵和板栗仔，拿钥匙后到旗杆。";
+  if (sceneKey === "castle") return "第三关有两个升降电梯和乌龟，拿够钥匙后到旗杆。";
+  if (sceneKey === "jungle") return "第四关更长，跳藤蔓和树台，顶隐藏星星，越过丛林缺口。";
+  if (sceneKey === "lava") return "第五关岩浆更危险，星星可以救命，火焰花可以打怪。";
+  if (sceneKey === "mine") return "第六关矿洞有宝石、铁轨平台、蝙蝠和乌龟，往右到旗杆。";
+  if (sceneKey === "metro") return "第七关坐地铁，站到车门旁按 E 或点进/出，最后到旗杆通关。";
   return "往右走，顶机关，拿道具，到终点。";
 }
 
@@ -495,6 +497,7 @@ function reset(clearSave = true) {
   keys.clear();
   touchControls.clear();
   fireballs.length = 0;
+  flagCeremony = null;
   Object.keys(progress).forEach((key) => {
     progress[key] = cloneScene(key);
   });
@@ -524,8 +527,8 @@ function reset(clearSave = true) {
   introOverlay.classList.remove("hidden");
   startIntroBtn.disabled = false;
   startIntroBtn.textContent = "开始冒险";
-  introStatus.textContent = "先选一个地方：长关卡、机关、星星和地铁都有";
-  statusText.textContent = "先选地图，再点开始冒险。A/D 移动，空格跳，J 发火球，E 或 ↓ 进门/坐地铁，S 电梯。";
+  introStatus.textContent = "七关连成一条路：天空 -> 鬼屋 -> 城堡 -> 丛林 -> 岩浆 -> 宝石矿洞 -> 坐地铁。";
+  statusText.textContent = "点开始冒险，从第一关天空出发。到旗杆后会自动进入下一关。A/D 移动，空格跳，J 发火球。";
   updateMapButtons();
   updateScore();
   updateRecordsPanel();
@@ -592,6 +595,21 @@ function saveStats(stats) {
 
 function mapTitle(key) {
   return sceneTemplates[key]?.title || key;
+}
+
+function levelNumber(key = sceneKey) {
+  const index = levelOrder.indexOf(key);
+  return index >= 0 ? index + 1 : 1;
+}
+
+function nextLevelKey(key = sceneKey) {
+  const index = levelOrder.indexOf(key);
+  if (index < 0 || index >= levelOrder.length - 1) return "";
+  return levelOrder[index + 1];
+}
+
+function levelTitle(key = sceneKey) {
+  return `第${levelNumber(key)}关：${mapTitle(key)}`;
 }
 
 function updateRecordsPanel() {
@@ -707,6 +725,7 @@ function restoreGameSave() {
   player.rideElevator = null;
   player.rideTrain = null;
   fireballs.length = 0;
+  flagCeremony = null;
   cameraX = Math.max(0, Math.min(scene.width - W, player.x - 220));
   gameStarted = true;
   won = false;
@@ -734,12 +753,17 @@ function isPressed(name) {
 function tick(now = performance.now()) {
   const dt = Math.min(32, now - lastTime) / 16.67;
   lastTime = now;
-  if (gameStarted && !won) update(dt);
+  if (gameStarted && (!won || flagCeremony)) update(dt);
   draw();
   requestAnimationFrame(tick);
 }
 
 function update(dt) {
+  if (flagCeremony) {
+    updateFlagCeremony(dt);
+    cameraX += (Math.max(0, Math.min(scene.width - W, player.x - W * 0.42)) - cameraX) * 0.12;
+    return;
+  }
   if (player.starUntil && performance.now() > player.starUntil) {
     player.starUntil = 0;
     player.invincibleUntil = Math.max(player.invincibleUntil, performance.now() + 500);
@@ -1208,7 +1232,7 @@ function checkMetroRide() {
 function checkDoors() {
   const door = nearestDoor();
   if (door && performance.now() > doorHintTimer) {
-    statusText.textContent = `站在门口：按 E / ↓ / 点“进/出”可以${door.label}。`;
+    statusText.textContent = "现在是七关连线模式：不要从门跳关，继续往右走到旗杆。";
     doorHintTimer = performance.now() + 1600;
   }
   if (!door || !isPressed("door")) return;
@@ -1216,22 +1240,75 @@ function checkDoors() {
   keys.delete("e");
   keys.delete("E");
   keys.delete("ArrowDown");
-  loadScene(door.target, door.spawn || "entry");
+  statusText.textContent = "这次要按顺序闯关：先到旗杆，旗子降下来后会自动进入下一关。";
 }
 
 function checkGoal() {
-  if (!scene.goal || !rectsOverlap(playerRect(), scene.goal)) return;
+  if (!scene.goal || flagCeremony || won || !rectsOverlap(playerRect(), scene.goal)) return;
   const neededKeys = scene.goal.requireKeys ?? 1;
   if (player.keys < neededKeys) {
     statusText.textContent = `这个终点需要至少 ${neededKeys} 把钥匙，先去找钥匙或隐藏机关。`;
     return;
   }
-  won = true;
+  startFlagCeremony(scene.goal);
+}
+
+function startFlagCeremony(goal) {
   stopMusic();
+  keys.clear();
+  touchControls.clear();
+  fireballs.length = 0;
+  flagCeremony = {
+    goal,
+    startedAt: performance.now(),
+    flagY: goal.flagY ?? goal.y + 16,
+    targetY: goal.y + goal.h - 50,
+    finishedAt: 0
+  };
+  goal.flagY = flagCeremony.flagY;
+  player.vx = 0;
+  player.vy = 0;
+  player.grounded = false;
+  player.rideElevator = null;
+  player.rideTrain = null;
+  player.x = goal.x - player.w + 22;
+  player.y = Math.max(goal.y + 8, Math.min(player.y, goal.y + goal.h - player.h));
+  statusText.textContent = "抓到旗杆了！旗子正在慢慢降下来，等它变成你的旗子。";
+}
+
+function updateFlagCeremony(dt) {
+  const goal = flagCeremony.goal;
+  flagCeremony.flagY = Math.min(flagCeremony.targetY, flagCeremony.flagY + 1.25 * dt);
+  goal.flagY = flagCeremony.flagY;
+  player.x = goal.x - player.w + 22;
+  player.y = Math.min(goal.y + goal.h - player.h, player.y + 1.05 * dt);
+  player.facing = 1;
+  if (flagCeremony.flagY >= flagCeremony.targetY && !flagCeremony.finishedAt) {
+    goal.captured = true;
+    flagCeremony.finishedAt = performance.now();
+    statusText.textContent = "旗子降到底了！现在变成你的蓝色 M 旗。";
+    playVictory();
+  }
+  if (flagCeremony.finishedAt && performance.now() - flagCeremony.finishedAt > 1800) {
+    finishGoalCeremony();
+  }
+}
+
+function finishGoalCeremony() {
+  const next = nextLevelKey(sceneKey);
+  flagCeremony = null;
+  if (next) {
+    statusText.textContent = `${levelTitle(sceneKey)}完成！现在进入${levelTitle(next)}。`;
+    loadScene(next, "entry");
+    startMusic();
+    saveGame();
+    return;
+  }
+  won = true;
   recordEvent("win", { map: sceneKey });
   updateScore();
-  statusText.textContent = `${scene.title}通关成功！你完成了这个地方。`;
-  playVictory();
+  statusText.textContent = `七关全部通关！最后的旗子已经变成你的旗子。`;
+  saveGame();
 }
 
 function checkHazards() {
@@ -2011,18 +2088,42 @@ function drawEnemy(enemy) {
 }
 
 function drawGoal(goal) {
+  const flagY = goal.flagY ?? goal.y + 16;
+  const captured = Boolean(goal.captured);
   ctx.fillStyle = "#172632";
   ctx.fillRect(goal.x + 18, goal.y, 8, goal.h);
-  ctx.fillStyle = "#d83d35";
+  ctx.fillStyle = captured ? "#245bb8" : "#d83d35";
   ctx.beginPath();
-  ctx.moveTo(goal.x + 26, goal.y + 16);
-  ctx.lineTo(goal.x + 104, goal.y + 42);
-  ctx.lineTo(goal.x + 26, goal.y + 70);
+  ctx.moveTo(goal.x + 26, flagY);
+  ctx.lineTo(goal.x + 106, flagY + 26);
+  ctx.lineTo(goal.x + 26, flagY + 52);
   ctx.closePath();
   ctx.fill();
+  ctx.strokeStyle = "#172632";
+  ctx.lineWidth = 3;
+  ctx.stroke();
+  if (captured) {
+    ctx.fillStyle = "#fff";
+    ctx.font = "900 22px system-ui";
+    ctx.textAlign = "center";
+    ctx.fillText("M", goal.x + 55, flagY + 34);
+    ctx.fillStyle = "#ffd15f";
+    ctx.font = "900 14px system-ui";
+    ctx.fillText("我的旗", goal.x + 68, flagY + 68);
+    ctx.textAlign = "left";
+  }
+  ctx.fillStyle = "#ffd15f";
+  ctx.beginPath();
+  ctx.arc(goal.x + 22, goal.y - 6, 10, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = "#172632";
+  ctx.lineWidth = 3;
+  ctx.stroke();
+  ctx.fillStyle = "#86552b";
+  ctx.fillRect(goal.x - 4, goal.y + goal.h, 54, 12);
   ctx.fillStyle = "#ffd15f";
   ctx.font = "900 18px system-ui";
-  ctx.fillText("终点", goal.x - 2, goal.y - 8);
+  ctx.fillText(captured ? "已占领" : "终点", goal.x - 2, goal.y - 22);
 }
 
 function drawPlayer() {
@@ -2133,9 +2234,9 @@ function drawOverlay() {
     ctx.stroke();
     ctx.fillStyle = "#172632";
     ctx.font = "900 46px system-ui";
-    ctx.fillText("通关成功!", 404, 240);
+    ctx.fillText("旗子占领!", 404, 240);
     ctx.font = "800 18px system-ui";
-    ctx.fillText("天空 -> 鬼屋 -> 城堡 -> 电梯，全都完成了。", 356, 280);
+    ctx.fillText("旗子已经降下来，变成你的蓝色 M 旗。", 360, 280);
   }
 }
 
@@ -2445,6 +2546,7 @@ function stopMusic() {
 
 function beginGame() {
   clearGameSave();
+  selectedSceneKey = "sky";
   loadScene(selectedSceneKey, "entry");
   gameStarted = true;
   introOverlay.classList.add("hidden");
