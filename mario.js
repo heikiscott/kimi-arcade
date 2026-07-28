@@ -35,7 +35,8 @@ const statsKey = "marioAdventureStatsV2";
 const playerIdKey = "marioAdventurePlayerId";
 const audioMuteKey = "marioAdventureAudioMuted";
 const audioFiles = {
-  bgm: "assets/audio/mario-bgm.mp3",
+  bgm: "assets/racing-user-music.m4a?v=racing-music-20260727",
+  bgmFallback: "assets/racing-user-music.mp4?v=racing-music-20260727",
   coin: "assets/audio/mario-coin.mp3",
   jump: "assets/audio/mario-jump.mp3",
   lavaDeath: "assets/audio/mario-lava-death.mp3",
@@ -1863,8 +1864,8 @@ function updateSoundToggle() {
   soundToggleBtn.setAttribute("aria-pressed", String(!audioState.enabled));
   soundToggleBtn.title = audioState.enabled ? "点击静音" : "点击开启音效";
   if (musicImportBtn) {
-    musicImportBtn.textContent = audioState.customMusicName ? "已导入" : "导入音乐";
-    musicImportBtn.title = audioState.customMusicName ? `当前音乐：${audioState.customMusicName}` : "选择你自己本机里的 MP3";
+    musicImportBtn.textContent = audioState.customMusicName ? "已导入" : "换音乐";
+    musicImportBtn.title = audioState.customMusicName ? `当前音乐：${audioState.customMusicName}` : "默认使用3D天空地下赛车音乐，也可以选择本机音频";
   }
 }
 
@@ -1898,13 +1899,24 @@ function preloadAudioAssets() {
   }
   audioState.loading = true;
   Promise.all(
-    Object.entries(audioFiles).map(async ([name, src]) => {
+    Object.entries(audioFiles).filter(([name]) => name !== "bgmFallback").map(async ([name, src]) => {
       try {
         const response = await fetch(src, { cache: "force-cache" });
         if (!response.ok) throw new Error(`Missing audio: ${src}`);
         const bytes = await response.arrayBuffer();
         audioState.buffers[name] = await audio.decodeAudioData(bytes);
       } catch {
+        if (name === "bgm") {
+          try {
+            const fallbackResponse = await fetch(audioFiles.bgmFallback, { cache: "force-cache" });
+            if (!fallbackResponse.ok) throw new Error("Missing fallback music");
+            const fallbackBytes = await fallbackResponse.arrayBuffer();
+            audioState.buffers.bgm = await audio.decodeAudioData(fallbackBytes);
+            return;
+          } catch {
+            // Continue to generated music below.
+          }
+        }
         // Missing or blocked files fall back to generated chiptune sounds.
       }
     })
@@ -2122,7 +2134,7 @@ function startIntro() {
   }
   startIntroBtn.disabled = true;
   startIntroBtn.textContent = "准备中";
-  introStatus.textContent = audioState.enabled ? "音效准备中，开始后会播放背景音乐" : "静音模式，开始后不会播放音效";
+  introStatus.textContent = audioState.enabled ? "正在准备3D天空地下赛车音乐，开始后会播放" : "静音模式，开始后不会播放音效";
   playOpeningMusic();
   introTimer = window.setTimeout(beginGame, 4300);
 }
