@@ -51,6 +51,24 @@ body {
   color: #fff;
 }
 
+.developer-badge {
+  position: fixed;
+  left: 50%;
+  bottom: calc(18px + env(safe-area-inset-bottom, 0px));
+  z-index: 8;
+  transform: translateX(-50%);
+  padding: 8px 14px;
+  border: 2px solid rgba(23, 38, 50, 0.22);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.86);
+  color: #172632;
+  box-shadow: 0 10px 24px rgba(23, 38, 50, 0.14);
+  font-size: 0.92rem;
+  font-weight: 950;
+  pointer-events: none;
+  backdrop-filter: blur(8px);
+}
+
 .mario-shell {
   display: grid;
   place-items: center;
@@ -348,6 +366,12 @@ button:active {
     min-height: 36px;
     padding: 0 10px;
     font-size: 0.9rem;
+  }
+
+  .developer-badge {
+    bottom: calc(104px + env(safe-area-inset-bottom, 0px));
+    padding: 6px 10px;
+    font-size: 0.78rem;
   }
 
   .mario-shell {
