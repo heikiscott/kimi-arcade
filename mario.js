@@ -7,6 +7,8 @@ const recordsBtn = document.querySelector("#recordsBtn");
 const recordsPanel = document.querySelector("#recordsPanel");
 const recordsText = document.querySelector("#recordsText");
 const soundToggleBtn = document.querySelector("#soundToggleBtn");
+const musicImportBtn = document.querySelector("#musicImportBtn");
+const musicImportInput = document.querySelector("#musicImportInput");
 const introOverlay = document.querySelector("#introOverlay");
 const startIntroBtn = document.querySelector("#startIntroBtn");
 const introStatus = document.querySelector("#introStatus");
@@ -53,7 +55,8 @@ const audioState = {
   loaded: false,
   buffers: {},
   musicSource: null,
-  musicGain: null
+  musicGain: null,
+  customMusicName: ""
 };
 
 const player = {
@@ -1859,6 +1862,10 @@ function updateSoundToggle() {
   soundToggleBtn.classList.toggle("muted", !audioState.enabled);
   soundToggleBtn.setAttribute("aria-pressed", String(!audioState.enabled));
   soundToggleBtn.title = audioState.enabled ? "点击静音" : "点击开启音效";
+  if (musicImportBtn) {
+    musicImportBtn.textContent = audioState.customMusicName ? "已导入" : "导入音乐";
+    musicImportBtn.title = audioState.customMusicName ? `当前音乐：${audioState.customMusicName}` : "选择你自己本机里的 MP3";
+  }
 }
 
 function setSoundEnabled(nextEnabled) {
@@ -1930,6 +1937,28 @@ function playBuffer(name, options = {}) {
     audioState.musicGain = gain;
   }
   return true;
+}
+
+async function importLocalMusic(file) {
+  if (!file) return;
+  try {
+    const audio = getAudio();
+    const bytes = await file.arrayBuffer();
+    const decoded = await audio.decodeAudioData(bytes);
+    audioState.buffers.bgm = decoded;
+    audioState.customMusicName = file.name;
+    audioState.loaded = true;
+    setSoundEnabled(true);
+    stopMusic();
+    if (gameStarted && !won) startMusic();
+    introStatus.textContent = `已导入本机音乐：${file.name}`;
+    statusText.textContent = "本机音乐已经导入。公开网页不会保存这首歌，别人打开时需要自己导入。";
+  } catch {
+    statusText.textContent = "这个音频没导入成功，换一个 mp3 或 wav 再试。";
+  } finally {
+    updateSoundToggle();
+    if (musicImportInput) musicImportInput.value = "";
+  }
 }
 
 function playTone(freq, start, duration, gainValue = 0.055, type = "square") {
@@ -2142,6 +2171,14 @@ recordsBtn.addEventListener("click", () => {
 
 soundToggleBtn.addEventListener("click", () => {
   setSoundEnabled(!audioState.enabled);
+});
+
+musicImportBtn.addEventListener("click", () => {
+  musicImportInput.click();
+});
+
+musicImportInput.addEventListener("change", () => {
+  importLocalMusic(musicImportInput.files?.[0]);
 });
 
 startIntroBtn.addEventListener("click", startIntro);

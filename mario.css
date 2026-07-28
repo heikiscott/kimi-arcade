@@ -27,11 +27,17 @@ body {
   text-decoration: none;
 }
 
-.sound-toggle {
+.sound-controls {
   position: fixed;
   top: 16px;
   right: 16px;
   z-index: 10;
+  display: flex;
+  gap: 8px;
+}
+
+.sound-toggle,
+.music-import {
   min-height: 42px;
   padding: 0 14px;
   border: 2px solid rgba(23, 38, 50, 0.28);
@@ -226,9 +232,14 @@ button:active {
     font-size: 0.92rem;
   }
 
-  .sound-toggle {
+  .sound-controls {
     top: 8px;
     right: 8px;
+    gap: 6px;
+  }
+
+  .sound-toggle,
+  .music-import {
     min-height: 36px;
     padding: 0 10px;
     font-size: 0.9rem;

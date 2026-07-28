@@ -8,7 +8,11 @@
   </head>
   <body>
     <a class="home-link" href="arcade.html">游戏大厅</a>
-    <button class="sound-toggle" id="soundToggleBtn" type="button" aria-pressed="false">音效开</button>
+    <div class="sound-controls">
+      <button class="sound-toggle" id="soundToggleBtn" type="button" aria-pressed="false">音效开</button>
+      <button class="music-import" id="musicImportBtn" type="button">导入音乐</button>
+      <input id="musicImportInput" type="file" accept="audio/*" hidden />
+    </div>
     <main class="mario-shell">
       <section class="game-wrap">
         <div class="canvas-wrap">
@@ -49,6 +53,6 @@
       </section>
     </main>
     <script src="arcade-stats.js?v=global-records-20260727"></script>
-    <script src="mario.js?v=audio-toggle-20260727"></script>
+    <script src="mario.js?v=local-music-20260727"></script>
   </body>
 </html>
