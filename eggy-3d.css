@@ -259,6 +259,30 @@ button {
   font-size: 1.18rem;
 }
 
+.music-board {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: auto auto auto 1fr;
+  gap: 10px;
+  align-items: center;
+  padding: 10px;
+  border: 2px solid rgba(23, 38, 50, 0.12);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.music-board button {
+  min-height: 40px;
+  padding: 0 12px;
+  background: #8f5fd9;
+}
+
+.music-board span {
+  color: #51616c;
+  font-weight: 850;
+  line-height: 1.35;
+}
+
 .hint {
   grid-column: 1 / -1;
   margin: 0;
@@ -283,6 +307,15 @@ button {
 
   .button-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .music-board {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .music-board strong,
+  .music-board span {
+    grid-column: 1 / -1;
   }
 
   .screen-actions {

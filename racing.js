@@ -136,10 +136,10 @@ let verticalVelocity = 0;
 let flyTimer = 0;
 let lastTime = performance.now();
 let audioContext = null;
-const DEFAULT_RACE_MUSIC_URL = "assets/racing-user-music.m4a?v=music-lite-20260722";
-const FALLBACK_RACE_MUSIC_URL = "assets/racing-user-music.mp4?v=20260722";
+const DEFAULT_RACE_MUSIC_URL = "assets/racing-user-music.m4a?v=challenge-racing-music-20260727";
+const FALLBACK_RACE_MUSIC_URL = "assets/racing-user-music.mp4?v=challenge-racing-music-20260727";
 let raceMusic = new Audio(DEFAULT_RACE_MUSIC_URL);
-let raceMusicName = "你发来的视频音乐";
+let raceMusicName = "3D天空竞速赛车音乐";
 let localMusicUrl = null;
 let triedMusicFallback = false;
 
@@ -859,7 +859,7 @@ function setRaceMusicSource(url, name) {
 raceMusic.addEventListener("error", () => {
   if (!triedMusicFallback && raceMusic.src.includes("racing-user-music.m4a")) {
     triedMusicFallback = true;
-    setRaceMusicSource(FALLBACK_RACE_MUSIC_URL, "你发来的视频音乐");
+    setRaceMusicSource(FALLBACK_RACE_MUSIC_URL, "3D天空竞速赛车音乐");
     if (musicStatus) musicStatus.textContent = "轻量音乐没加载成功，已切回原视频音乐。";
     return;
   }
