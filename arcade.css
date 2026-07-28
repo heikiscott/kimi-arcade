@@ -165,6 +165,53 @@ body {
   color: #172632;
 }
 
+.arcade-records .account-status {
+  display: inline-flex;
+  width: fit-content;
+  margin-top: 10px;
+  padding: 7px 10px;
+  border-radius: 8px;
+  background: rgba(255, 209, 95, 0.26);
+  color: #172632;
+}
+
+.arcade-record-actions {
+  display: grid;
+  justify-items: end;
+  gap: 10px;
+  min-width: min(100%, 390px);
+}
+
+.account-form {
+  display: grid;
+  grid-template-columns: 118px minmax(150px, 1fr) auto;
+  gap: 8px;
+  width: min(100%, 390px);
+}
+
+.account-form select,
+.account-form input {
+  min-height: 42px;
+  padding: 0 11px;
+  border: 1px solid rgba(23, 38, 50, 0.18);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.92);
+  color: #172632;
+  font: inherit;
+  font-weight: 850;
+}
+
+.account-form input::placeholder {
+  color: #7b8a93;
+}
+
+.account-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
 .arcade-records button {
   min-height: 42px;
   padding: 0 15px;
@@ -497,6 +544,24 @@ body {
 
   .arcade-records {
     grid-template-columns: 1fr;
+  }
+
+  .arcade-record-actions {
+    justify-items: stretch;
+    min-width: 0;
+  }
+
+  .account-form {
+    grid-template-columns: 1fr;
+    width: 100%;
+  }
+
+  .account-buttons {
+    justify-content: stretch;
+  }
+
+  .account-buttons button {
+    flex: 1;
   }
 
   .game-grid {
