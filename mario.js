@@ -570,7 +570,7 @@ function sendSharedStat(eventName, details = {}) {
   if (window.goatcounter?.count) {
     window.goatcounter.count({
       path: `/mario/${eventName}/${details.map || sceneKey}`,
-      title: `马聊冒险 ${eventName} ${mapTitle(details.map || sceneKey)}`,
+      title: `马里奥游戏 ${eventName} ${mapTitle(details.map || sceneKey)}`,
       event: true
     });
   }
