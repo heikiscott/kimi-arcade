@@ -148,6 +148,21 @@ canvas {
   font-size: 1.1rem;
 }
 
+.save-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+}
+
+.save-actions button[hidden] {
+  display: none;
+}
+
+.save-actions #continueSaveBtn {
+  background: #2f9d58;
+}
+
 .touch-pad {
   position: fixed;
   inset: 0;
@@ -203,7 +218,7 @@ canvas {
 
 .touch-jump {
   position: fixed;
-  left: calc(100vw - 108px - env(safe-area-inset-right, 0px));
+  left: min(calc(100vw - 104px - env(safe-area-inset-right, 0px)), 300px);
   right: auto;
   bottom: calc(14px + env(safe-area-inset-bottom, 0px));
   width: clamp(70px, 15vw, 96px);
@@ -212,6 +227,13 @@ canvas {
   background: rgba(216, 61, 53, 0.88);
   color: #fff;
   font-size: 1.28rem;
+}
+
+@media (min-width: 700px) {
+  .touch-jump {
+    left: auto;
+    right: calc(18px + env(safe-area-inset-right, 0px));
+  }
 }
 
 .touch-pad button.is-pressed {

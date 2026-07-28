@@ -11,11 +11,13 @@ const musicImportBtn = document.querySelector("#musicImportBtn");
 const musicImportInput = document.querySelector("#musicImportInput");
 const introOverlay = document.querySelector("#introOverlay");
 const startIntroBtn = document.querySelector("#startIntroBtn");
+const continueSaveBtn = document.querySelector("#continueSaveBtn");
 const introStatus = document.querySelector("#introStatus");
 const mapButtons = document.querySelectorAll("[data-map]");
 
 const keys = new Set();
 const touchControls = new Set();
+const fireballs = [];
 let audioContext = null;
 let musicTimer = null;
 let introTimer = null;
@@ -24,14 +26,18 @@ let won = false;
 let sceneKey = "sky";
 let selectedSceneKey = "sky";
 let scene = null;
+let unlockedScenes = new Set(["sky"]);
 let cameraX = 0;
 let lastTime = performance.now();
 let doorHintTimer = 0;
 let elevatorHintTimer = 0;
+let lastFireAt = 0;
+let lastSaveAt = 0;
 
 const W = canvas.width;
 const H = canvas.height;
 const statsKey = "marioAdventureStatsV2";
+const saveKey = "marioAdventureSaveV3";
 const playerIdKey = "marioAdventurePlayerId";
 const audioMuteKey = "marioAdventureAudioMuted";
 const audioFiles = {
@@ -101,7 +107,8 @@ const sceneTemplates = {
       { x: 330, y: 332, w: 42, h: 42, type: "question", content: "mushroom", used: false, revealed: true, bump: 0 },
       { x: 412, y: 332, w: 42, h: 42, type: "brick", content: "coin", used: false, revealed: true, bump: 0 },
       { x: 682, y: 284, w: 42, h: 42, type: "hidden", content: "star", used: false, revealed: false, bump: 0 },
-      { x: 1182, y: 280, w: 42, h: 42, type: "question", content: "coin", used: false, revealed: true, bump: 0 },
+      { x: 1182, y: 280, w: 42, h: 42, type: "question", content: "fireflower", used: false, revealed: true, bump: 0 },
+      { x: 1510, y: 346, w: 42, h: 42, type: "hidden", content: "mushroom", used: false, revealed: false, bump: 0 },
       { x: 1768, y: 322, w: 42, h: 42, type: "question", content: "star", used: false, revealed: true, bump: 0 }
     ],
     powerups: [],
@@ -113,8 +120,8 @@ const sceneTemplates = {
       { x: 1420, y: 400 }, { x: 1740, y: 354 }, { x: 1988, y: 282 }
     ],
     enemies: [
-      { x: 630, y: 500, vx: 0.9, minX: 560, maxX: 740, type: "mush" },
-      { x: 1260, y: 500, vx: 1.0, minX: 1120, maxX: 1340, type: "mush" }
+      { x: 630, y: 500, vx: 0.9, minX: 560, maxX: 740, type: "goomba" },
+      { x: 1260, y: 500, vx: 1.0, minX: 1120, maxX: 1340, type: "goomba" }
     ],
     doors: [
       { x: 940, y: 456, w: 58, h: 84, label: "进鬼屋", target: "ghost", spawn: "entry" },
@@ -141,6 +148,7 @@ const sceneTemplates = {
     blocks: [
       { x: 380, y: 304, w: 42, h: 42, type: "hidden", content: "coin", used: false, revealed: false, bump: 0 },
       { x: 720, y: 300, w: 42, h: 42, type: "question", content: "star", used: false, revealed: true, bump: 0 },
+      { x: 1030, y: 258, w: 42, h: 42, type: "hidden", content: "fireflower", used: false, revealed: false, bump: 0 },
       { x: 1320, y: 292, w: 42, h: 42, type: "brick", content: "mushroom", used: false, revealed: true, bump: 0 }
     ],
     powerups: [],
@@ -153,6 +161,7 @@ const sceneTemplates = {
     enemies: [
       { x: 430, y: 482, vx: 0.7, minX: 320, maxX: 560, type: "ghost" },
       { x: 1010, y: 482, vx: 0.8, minX: 900, maxX: 1240, type: "ghost" },
+      { x: 1420, y: 500, vx: 0.85, minX: 1280, maxX: 1540, type: "goomba" },
       { x: 1620, y: 482, vx: 0.9, minX: 1480, maxX: 1760, type: "ghost" }
     ],
     doors: [
@@ -180,6 +189,7 @@ const sceneTemplates = {
     blocks: [
       { x: 420, y: 292, w: 42, h: 42, type: "question", content: "coin", used: false, revealed: true, bump: 0 },
       { x: 820, y: 250, w: 42, h: 42, type: "hidden", content: "mushroom", used: false, revealed: false, bump: 0 },
+      { x: 1120, y: 300, w: 42, h: 42, type: "question", content: "fireflower", used: false, revealed: true, bump: 0 },
       { x: 1460, y: 292, w: 42, h: 42, type: "question", content: "star", used: false, revealed: true, bump: 0 }
     ],
     powerups: [],
@@ -191,9 +201,10 @@ const sceneTemplates = {
       { x: 300, y: 382 }, { x: 620, y: 288 }, { x: 940, y: 382 }, { x: 1280, y: 288 }, { x: 1600, y: 382 }
     ],
     enemies: [
-      { x: 480, y: 500, vx: 0.9, minX: 360, maxX: 650, type: "shell" },
-      { x: 1120, y: 500, vx: 1.1, minX: 1000, maxX: 1300, type: "shell" },
-      { x: 1760, y: 500, vx: 1.0, minX: 1580, maxX: 1940, type: "shell" }
+      { x: 480, y: 500, vx: 0.9, minX: 360, maxX: 650, type: "koopa" },
+      { x: 1120, y: 500, vx: 1.1, minX: 1000, maxX: 1300, type: "koopa" },
+      { x: 1560, y: 388, vx: 0.75, minX: 1450, maxX: 1700, type: "goomba" },
+      { x: 1760, y: 500, vx: 1.0, minX: 1580, maxX: 1940, type: "koopa" }
     ],
     doors: [
       { x: 64, y: 456, w: 58, h: 84, label: "出城堡", target: "sky", spawn: "afterCastle" }
@@ -221,6 +232,7 @@ const sceneTemplates = {
       { x: 330, y: 314, w: 42, h: 42, type: "question", content: "mushroom", used: false, revealed: true, bump: 0 },
       { x: 620, y: 250, w: 42, h: 42, type: "hidden", content: "star", used: false, revealed: false, bump: 0 },
       { x: 1120, y: 350, w: 42, h: 42, type: "brick", content: "coin", used: false, revealed: true, bump: 0 },
+      { x: 1320, y: 306, w: 42, h: 42, type: "hidden", content: "fireflower", used: false, revealed: false, bump: 0 },
       { x: 1560, y: 286, w: 42, h: 42, type: "question", content: "star", used: false, revealed: true, bump: 0 }
     ],
     powerups: [],
@@ -232,7 +244,8 @@ const sceneTemplates = {
       { x: 1480, y: 338 }, { x: 1900, y: 428 }, { x: 2170, y: 492 }
     ],
     enemies: [
-      { x: 500, y: 500, vx: 1.0, minX: 390, maxX: 600, type: "mush" },
+      { x: 500, y: 500, vx: 1.0, minX: 390, maxX: 600, type: "goomba" },
+      { x: 900, y: 460, vx: 0.85, minX: 720, maxX: 930, type: "koopa" },
       { x: 1220, y: 410, vx: 0.8, minX: 1040, maxX: 1260, type: "monkey" },
       { x: 1940, y: 434, vx: 1.0, minX: 1820, maxX: 2020, type: "monkey" }
     ],
@@ -262,6 +275,7 @@ const sceneTemplates = {
       { x: 300, y: 330, w: 42, h: 42, type: "question", content: "star", used: false, revealed: true, bump: 0 },
       { x: 700, y: 382, w: 42, h: 42, type: "hidden", content: "coin", used: false, revealed: false, bump: 0 },
       { x: 1260, y: 392, w: 42, h: 42, type: "question", content: "mushroom", used: false, revealed: true, bump: 0 },
+      { x: 1460, y: 318, w: 42, h: 42, type: "hidden", content: "fireflower", used: false, revealed: false, bump: 0 },
       { x: 1640, y: 326, w: 42, h: 42, type: "question", content: "star", used: false, revealed: true, bump: 0 }
     ],
     powerups: [],
@@ -274,8 +288,9 @@ const sceneTemplates = {
     ],
     enemies: [
       { x: 650, y: 444, vx: 0.8, minX: 560, maxX: 740, type: "fire" },
+      { x: 1020, y: 380, vx: 0.85, minX: 900, maxX: 1080, type: "goomba" },
       { x: 1310, y: 458, vx: 1.0, minX: 1200, maxX: 1400, type: "fire" },
-      { x: 2020, y: 500, vx: 1.2, minX: 1870, maxX: 2280, type: "shell" }
+      { x: 2020, y: 500, vx: 1.2, minX: 1870, maxX: 2280, type: "koopa" }
     ],
     doors: [
       { x: 82, y: 456, w: 58, h: 84, label: "回天空", target: "sky", spawn: "entry" }
@@ -308,6 +323,7 @@ const sceneTemplates = {
       { x: 360, y: 296, w: 42, h: 42, type: "question", content: "mushroom", used: false, revealed: true, bump: 0 },
       { x: 740, y: 392, w: 42, h: 42, type: "hidden", content: "coin", used: false, revealed: false, bump: 0 },
       { x: 1120, y: 330, w: 42, h: 42, type: "question", content: "star", used: false, revealed: true, bump: 0 },
+      { x: 1460, y: 286, w: 42, h: 42, type: "hidden", content: "fireflower", used: false, revealed: false, bump: 0 },
       { x: 1660, y: 362, w: 42, h: 42, type: "brick", content: "coin", used: false, revealed: true, bump: 0 }
     ],
     powerups: [],
@@ -321,7 +337,8 @@ const sceneTemplates = {
     enemies: [
       { x: 720, y: 458, vx: 0.8, minX: 630, maxX: 820, type: "bat" },
       { x: 1360, y: 330, vx: 0.9, minX: 1250, maxX: 1450, type: "bat" },
-      { x: 2040, y: 500, vx: 1.1, minX: 1910, maxX: 2240, type: "mush" }
+      { x: 1760, y: 426, vx: 0.9, minX: 1600, maxX: 1800, type: "koopa" },
+      { x: 2040, y: 500, vx: 1.1, minX: 1910, maxX: 2240, type: "goomba" }
     ],
     doors: [
       { x: 82, y: 456, w: 58, h: 84, label: "回天空", target: "sky", spawn: "entry" }
@@ -348,7 +365,7 @@ const sceneTemplates = {
     blocks: [
       { x: 300, y: 324, w: 42, h: 42, type: "question", content: "mushroom", used: false, revealed: true, bump: 0 },
       { x: 920, y: 288, w: 42, h: 42, type: "hidden", content: "star", used: false, revealed: false, bump: 0 },
-      { x: 1480, y: 338, w: 42, h: 42, type: "question", content: "coin", used: false, revealed: true, bump: 0 },
+      { x: 1480, y: 338, w: 42, h: 42, type: "question", content: "fireflower", used: false, revealed: true, bump: 0 },
       { x: 2440, y: 318, w: 42, h: 42, type: "question", content: "star", used: false, revealed: true, bump: 0 }
     ],
     powerups: [],
@@ -363,7 +380,7 @@ const sceneTemplates = {
       { x: 1460, y: 394 }, { x: 1850, y: 430 }, { x: 2250, y: 492 }, { x: 2860, y: 314 }
     ],
     enemies: [
-      { x: 1320, y: 500, vx: 0.85, minX: 1210, maxX: 1510, type: "mush" },
+      { x: 1320, y: 500, vx: 0.85, minX: 1210, maxX: 1510, type: "goomba" },
       { x: 2500, y: 500, vx: 0.95, minX: 2320, maxX: 2690, type: "bat" }
     ],
     doors: [
@@ -412,7 +429,7 @@ function cloneScene(key) {
     ...template,
     platforms: template.platforms.map((item) => ({ ...item })),
     blocks: template.blocks.map((item) => ({ ...item })),
-    powerups: template.powerups.map((item) => ({ ...item })),
+    powerups: [...template.powerups.map((item) => ({ ...item })), ...createRandomPowerups(template)],
     elevators: template.elevators.map((item) => ({ ...item })),
     trains: (template.trains || []).map((item) => ({ ...item })),
     coins: template.coins.map((item) => ({ ...item, got: false })),
@@ -424,11 +441,29 @@ function cloneScene(key) {
   };
 }
 
+function createRandomPowerups(template) {
+  const platforms = template.platforms.filter((platform) => platform.w >= 150 && platform.y > 320 && platform.type !== "station");
+  if (!platforms.length) return [];
+  const platform = platforms[Math.floor(Math.random() * platforms.length)];
+  const x = platform.x + 46 + Math.random() * Math.max(20, platform.w - 92);
+  return [{
+    x,
+    y: platform.y - 30,
+    w: 28,
+    h: 28,
+    vx: Math.random() > 0.5 ? 1.1 : -1.1,
+    vy: -1,
+    type: "mushroom",
+    born: performance.now()
+  }];
+}
+
 const progress = Object.fromEntries(Object.keys(sceneTemplates).map((key) => [key, cloneScene(key)]));
 
 function loadScene(key, spawnName = "entry") {
   sceneKey = key;
   scene = progress[key];
+  unlockedScenes.add(key);
   const spawn = spawns[key]?.[spawnName] || scene.spawn;
   player.x = spawn.x;
   player.y = spawn.y;
@@ -440,6 +475,7 @@ function loadScene(key, spawnName = "entry") {
   statusText.textContent = `${scene.title}：${getSceneHelp()}`;
   playDoorSound();
   updateScore();
+  saveGame();
 }
 
 function getSceneHelp() {
@@ -453,14 +489,16 @@ function getSceneHelp() {
   return "往右走，顶机关，拿道具，到终点。";
 }
 
-function reset() {
+function reset(clearSave = true) {
   window.clearTimeout(introTimer);
   stopMusic();
   keys.clear();
   touchControls.clear();
+  fireballs.length = 0;
   Object.keys(progress).forEach((key) => {
     progress[key] = cloneScene(key);
   });
+  unlockedScenes = new Set(["sky"]);
   selectedSceneKey = "sky";
   sceneKey = selectedSceneKey;
   scene = progress[selectedSceneKey];
@@ -487,16 +525,18 @@ function reset() {
   startIntroBtn.disabled = false;
   startIntroBtn.textContent = "开始冒险";
   introStatus.textContent = "先选一个地方：长关卡、机关、星星和地铁都有";
-  statusText.textContent = "先选地图，再点开始冒险。A/D 移动，空格跳，E 或 ↓ 进门/坐地铁，S 电梯。";
+  statusText.textContent = "先选地图，再点开始冒险。A/D 移动，空格跳，J 发火球，E 或 ↓ 进门/坐地铁，S 电梯。";
   updateMapButtons();
   updateScore();
   updateRecordsPanel();
+  updateContinueButton();
+  if (clearSave) clearGameSave();
 }
 
 function updateScore() {
   const totalCoins = Object.values(progress).reduce((sum, item) => sum + item.coins.length, 0);
   const gotCoins = Object.values(progress).reduce((sum, item) => sum + item.coins.filter((coin) => coin.got).length, 0);
-  const powerName = performance.now() < player.starUntil ? "星星无敌" : player.power === "big" ? "变大" : "普通";
+  const powerName = performance.now() < player.starUntil ? "星星无敌" : player.power === "fire" ? "火焰花" : player.power === "big" ? "红蘑菇变大" : "普通";
   scoreEl.textContent = `金币 ${gotCoins} / ${totalCoins} · 钥匙 ${player.keys} · ${powerName} · 生命 ${player.lives}${won ? " · 通关!" : ""}`;
 }
 
@@ -593,11 +633,99 @@ function recordEvent(eventName, details = {}) {
   sendSharedStat(eventName, { ...details, map });
 }
 
+function hasGameSave() {
+  try {
+    return Boolean(localStorage.getItem(saveKey));
+  } catch {
+    return false;
+  }
+}
+
+function clearGameSave() {
+  try {
+    localStorage.removeItem(saveKey);
+  } catch {
+    // Saving is optional; the game still runs without browser storage.
+  }
+  updateContinueButton();
+}
+
+function updateContinueButton() {
+  if (!continueSaveBtn) return;
+  continueSaveBtn.hidden = !hasGameSave() || gameStarted;
+}
+
+function saveGame() {
+  if (!gameStarted || won) return;
+  try {
+    const save = {
+      version: 3,
+      savedAt: Date.now(),
+      sceneKey,
+      selectedSceneKey,
+      unlockedScenes: [...unlockedScenes],
+      player: {
+        x: player.x,
+        y: player.y,
+        w: player.w,
+        h: player.h,
+        vx: player.vx,
+        vy: player.vy,
+        facing: player.facing,
+        coins: player.coins,
+        keys: player.keys,
+        lives: player.lives,
+        power: player.power
+      },
+      progress: JSON.parse(JSON.stringify(progress))
+    };
+    localStorage.setItem(saveKey, JSON.stringify(save));
+  } catch {
+    // Some browsers block storage; gameplay continues normally.
+  }
+  updateContinueButton();
+}
+
+function restoreGameSave() {
+  let save;
+  try {
+    save = JSON.parse(localStorage.getItem(saveKey) || "null");
+  } catch {
+    return false;
+  }
+  if (!save?.progress?.[save.sceneKey]) return false;
+  Object.keys(progress).forEach((key) => {
+    progress[key] = save.progress[key] ? { ...cloneScene(key), ...save.progress[key] } : cloneScene(key);
+  });
+  unlockedScenes = new Set(save.unlockedScenes?.length ? save.unlockedScenes : ["sky", save.sceneKey]);
+  selectedSceneKey = save.selectedSceneKey || save.sceneKey;
+  sceneKey = save.sceneKey;
+  scene = progress[sceneKey];
+  Object.assign(player, save.player || {});
+  player.invincibleUntil = performance.now() + 900;
+  player.starUntil = 0;
+  player.rideElevator = null;
+  player.rideTrain = null;
+  fireballs.length = 0;
+  cameraX = Math.max(0, Math.min(scene.width - W, player.x - 220));
+  gameStarted = true;
+  won = false;
+  introOverlay.classList.add("hidden");
+  updateMapButtons();
+  updateScore();
+  updateRecordsPanel();
+  updateContinueButton();
+  statusText.textContent = `继续上次游戏：${scene.title}。道具、金币、生命已经恢复。`;
+  startMusic();
+  return true;
+}
+
 function isPressed(name) {
   if (touchControls.has(name)) return true;
   if (name === "left") return keys.has("ArrowLeft") || keys.has("a") || keys.has("A");
   if (name === "right") return keys.has("ArrowRight") || keys.has("d") || keys.has("D");
   if (name === "jump") return keys.has(" ") || keys.has("ArrowUp") || keys.has("w") || keys.has("W");
+  if (name === "fire") return keys.has("j") || keys.has("J");
   if (name === "door") return keys.has("ArrowDown") || keys.has("e") || keys.has("E");
   if (name === "elevator") return keys.has("s") || keys.has("S");
   return false;
@@ -622,12 +750,17 @@ function update(dt) {
   updatePlayer(dt);
   updatePowerups(dt);
   updateEnemies(dt);
+  updateFireballs(dt);
   collectItems();
   checkHazards();
   checkMetroRide();
   checkDoors();
   checkGoal();
   cameraX += (Math.max(0, Math.min(scene.width - W, player.x - W * 0.42)) - cameraX) * 0.12;
+  if (performance.now() - lastSaveAt > 1200) {
+    lastSaveAt = performance.now();
+    saveGame();
+  }
 }
 
 function updateElevators(dt) {
@@ -687,6 +820,8 @@ function updatePlayer(dt) {
     player.rideElevator = null;
     playJump();
   }
+
+  if (isPressed("fire")) shootFireball();
 
   if (isPressed("elevator") && player.rideElevator) {
     player.rideElevator.dir *= -1;
@@ -766,13 +901,14 @@ function activateBlock(block) {
     playBlockSound();
     return;
   }
-  if (block.type === "brick" && player.power === "big" && block.content === "coin") {
+  if (block.type === "brick" && (player.power === "big" || player.power === "fire") && block.content === "coin") {
     block.used = true;
     block.revealed = false;
     player.coins += 1;
     statusText.textContent = "变大后把砖块顶碎了，里面掉出金币。";
     playCoin();
     updateScore();
+    saveGame();
     return;
   }
   block.used = true;
@@ -782,24 +918,45 @@ function activateBlock(block) {
     statusText.textContent = block.type === "hidden" ? "隐藏砖里冒出金币！" : "问号砖块冒出金币！";
     playCoin();
     updateScore();
+    saveGame();
   } else {
     spawnPowerup(block);
-    statusText.textContent = block.content === "star" ? "星星出来了！碰到它会无敌一会儿。" : "变大道具出来了！碰到它会变大。";
+    statusText.textContent = block.content === "star" ? "星星出来了！碰到它会无敌 5 秒。" : block.content === "fireflower" ? "火焰花出来了！吃到后按 J 发火球。" : "红蘑菇出来了！吃到它会变大并加 1 条生命。";
     playKeySound();
   }
 }
 
 function spawnPowerup(block) {
+  const speed = block.content === "star" ? 2.2 : block.content === "fireflower" ? 0.9 : 1.2;
   scene.powerups.push({
     x: block.x + 7,
     y: block.y - 28,
     w: 28,
     h: 28,
-    vx: block.content === "star" ? 2.2 : 1.2,
+    vx: speed,
     vy: -2,
     type: block.content,
     born: performance.now()
   });
+}
+
+function shootFireball() {
+  if (player.power !== "fire") return;
+  if (performance.now() - lastFireAt < 260) return;
+  lastFireAt = performance.now();
+  fireballs.push({
+    x: player.x + player.w / 2 + player.facing * 22,
+    y: player.y + player.h * 0.48,
+    w: 18,
+    h: 18,
+    vx: player.facing * 9,
+    vy: -2.2,
+    born: performance.now()
+  });
+  touchControls.delete("fire");
+  keys.delete("j");
+  keys.delete("J");
+  playFireSound();
 }
 
 function updatePowerups(dt) {
@@ -825,30 +982,123 @@ function updatePowerups(dt) {
   scene.powerups = scene.powerups.filter((item) => !item.got);
 }
 
-function updateEnemies(dt) {
-  scene.enemies.forEach((enemy) => {
-    enemy.x += enemy.vx * dt;
-    if (enemy.x < enemy.minX || enemy.x > enemy.maxX) enemy.vx *= -1;
-    const enemyBox = { x: enemy.x - 18, y: enemy.y - 34, w: 36, h: 34 };
-    if (!rectsOverlap(playerRect(), enemyBox)) return;
-    if (performance.now() < player.starUntil) {
-      enemy.x = -9999;
-      player.coins += 1;
-      statusText.textContent = "星星无敌！直接撞飞怪物。";
-      playCoin();
-      updateScore();
+function enemyBox(enemy) {
+  if (enemy.dead) return { x: -9999, y: -9999, w: 0, h: 0 };
+  if (enemy.shell) return { x: enemy.x - 22, y: enemy.y - 24, w: 44, h: 24 };
+  if (enemy.type === "koopa" || enemy.type === "shell") return { x: enemy.x - 20, y: enemy.y - 46, w: 40, h: 46 };
+  return { x: enemy.x - 18, y: enemy.y - 34, w: 36, h: 34 };
+}
+
+function defeatEnemy(enemy, message = "消灭怪物！") {
+  enemy.dead = true;
+  enemy.x = -9999;
+  enemy.vx = 0;
+  player.coins += 1;
+  statusText.textContent = message;
+  playCoin();
+  updateScore();
+  saveGame();
+}
+
+function stompEnemy(enemy) {
+  player.vy = -8;
+  if (enemy.type === "koopa" || enemy.type === "shell") {
+    if (!enemy.shell) {
+      enemy.shell = true;
+      enemy.shellMoving = false;
+      enemy.vx = 0;
+      statusText.textContent = "踩到乌龟了！它缩进龟壳，可以从旁边推它。";
+      playBlockSound();
+      saveGame();
       return;
     }
-    if (player.vy > 1.8 && player.y + player.h - player.vy <= enemyBox.y + 10) {
-      enemy.x = -9999;
-      player.vy = -8;
-      player.coins += 1;
-      playCoin();
-      updateScore();
+    enemy.shellMoving = !enemy.shellMoving;
+    enemy.vx = enemy.shellMoving ? player.facing * 7.2 : 0;
+    statusText.textContent = enemy.shellMoving ? "龟壳滑起来了，会撞飞其他怪物！" : "龟壳停住了。";
+    playBlockSound();
+    saveGame();
+    return;
+  }
+  defeatEnemy(enemy, "踩扁板栗仔了！");
+}
+
+function kickShell(enemy) {
+  enemy.shellMoving = true;
+  enemy.vx = (player.x < enemy.x ? 1 : -1) * 7.6;
+  statusText.textContent = "你把龟壳踢出去了！";
+  playBlockSound();
+  saveGame();
+}
+
+function updateEnemies(dt) {
+  scene.enemies.forEach((enemy) => {
+    if (enemy.dead) return;
+    if (enemy.shell && !enemy.shellMoving) {
+      enemy.vx = 0;
     } else {
-      hurtPlayer("碰到怪物了，重新站好继续玩。");
+      enemy.x += enemy.vx * dt;
+      if (enemy.x < enemy.minX || enemy.x > enemy.maxX) {
+        enemy.x = Math.max(enemy.minX, Math.min(enemy.maxX, enemy.x));
+        enemy.vx *= -1;
+      }
+    }
+
+    if (enemy.shellMoving) {
+      scene.enemies.forEach((other) => {
+        if (other === enemy || other.dead) return;
+        if (!rectsOverlap(enemyBox(enemy), enemyBox(other))) return;
+        defeatEnemy(other, "龟壳撞飞了一个怪物！");
+      });
+    }
+
+    const box = enemyBox(enemy);
+    if (!rectsOverlap(playerRect(), box)) return;
+    if (performance.now() < player.starUntil) {
+      defeatEnemy(enemy, "星星无敌！直接撞飞怪物。");
+      return;
+    }
+    const stomped = player.vy > 1.8 && player.y + player.h - player.vy <= box.y + 12;
+    if (stomped) {
+      stompEnemy(enemy);
+      return;
+    }
+    if (enemy.shell && !enemy.shellMoving) {
+      kickShell(enemy);
+      return;
+    }
+    hurtPlayer(enemy.type === "goomba" ? "碰到板栗仔了，扣 1 条生命。" : "碰到怪物了，重新站好继续玩。");
+  });
+}
+
+function updateFireballs(dt) {
+  fireballs.forEach((ball) => {
+    ball.vy += 0.32 * dt;
+    ball.x += ball.vx * dt;
+    ball.y += ball.vy * dt;
+    let bounced = false;
+    scene.platforms.forEach((platform) => {
+      const box = { x: ball.x, y: ball.y, w: ball.w, h: ball.h };
+      if (!rectsOverlap(box, platform) || ball.vy < 0) return;
+      if (ball.y + ball.h - ball.vy <= platform.y + 10) {
+        ball.y = platform.y - ball.h;
+        ball.vy = -5.8;
+        bounced = true;
+      }
+    });
+    if (bounced) playBlockSound();
+    scene.enemies.forEach((enemy) => {
+      if (enemy.dead || ball.dead) return;
+      if (!rectsOverlap({ x: ball.x, y: ball.y, w: ball.w, h: ball.h }, enemyBox(enemy))) return;
+      ball.dead = true;
+      defeatEnemy(enemy, "火球打中了怪物！");
+    });
+    if (ball.x < cameraX - 120 || ball.x > cameraX + W + 160 || ball.y > H + 80 || performance.now() - ball.born > 2400) {
+      ball.dead = true;
     }
   });
+  for (let i = fireballs.length - 1; i >= 0; i -= 1) {
+    if (fireballs[i].dead) fireballs.splice(i, 1);
+  }
 }
 
 function collectItems() {
@@ -857,16 +1107,22 @@ function collectItems() {
     if (!rectsOverlap(playerRect(), { x: item.x, y: item.y, w: item.w, h: item.h })) return;
     item.got = true;
     if (item.type === "star") {
-      player.starUntil = performance.now() + 9000;
+      player.starUntil = performance.now() + 5000;
       player.invincibleUntil = player.starUntil;
-      statusText.textContent = "吃到星星了！现在短时间无敌，碰到怪物也不怕。";
+      statusText.textContent = "吃到无敌星星了！5 秒内碰到岩浆和怪物都不怕。";
       playStarSound();
+    } else if (item.type === "fireflower") {
+      gainFireFlower();
+      statusText.textContent = "吃到火焰花了！按 J 或点“火”发射火球。";
+      playKeySound();
     } else {
       growPlayer();
-      statusText.textContent = "吃到变大道具了！小人变大，顶砖更厉害。";
+      player.lives += 1;
+      statusText.textContent = "吃到红蘑菇了！小人变大，并额外增加 1 条生命。";
       playKeySound();
     }
     updateScore();
+    saveGame();
   });
   scene.coins.forEach((coin) => {
     if (coin.got) return;
@@ -875,6 +1131,7 @@ function collectItems() {
       player.coins += 1;
       playCoin();
       updateScore();
+      saveGame();
     }
   });
   scene.keyItems.forEach((key) => {
@@ -885,14 +1142,24 @@ function collectItems() {
       statusText.textContent = "拿到一把钥匙！城堡终点会更容易打开。";
       playKeySound();
       updateScore();
+      saveGame();
     }
   });
 }
 
 function growPlayer() {
-  if (player.power === "big") return;
+  if (player.power === "big" || player.power === "fire") return;
   const foot = player.y + player.h;
   player.power = "big";
+  player.w = 42;
+  player.h = 66;
+  player.y = foot - player.h;
+  player.invincibleUntil = performance.now() + 900;
+}
+
+function gainFireFlower() {
+  const foot = player.y + player.h;
+  player.power = "fire";
   player.w = 42;
   player.h = 66;
   player.y = foot - player.h;
@@ -978,7 +1245,7 @@ function checkHazards() {
 
 function hurtPlayer(message, reason = "hurt") {
   if (performance.now() < player.invincibleUntil) return;
-  if (player.power === "big") {
+  if (player.power === "big" || player.power === "fire") {
     const foot = player.y + player.h;
     player.power = "small";
     player.w = 36;
@@ -1220,6 +1487,7 @@ function drawSceneObjects() {
   scene.coins.forEach(drawCoin);
   scene.keyItems.forEach(drawKey);
   scene.enemies.forEach(drawEnemy);
+  fireballs.forEach(drawFireball);
   if (scene.goal) drawGoal(scene.goal);
 }
 
@@ -1394,6 +1662,34 @@ function drawPowerup(item) {
     ctx.fillStyle = "#172632";
     ctx.fillRect(-6, -3, 3, 4);
     ctx.fillRect(4, -3, 3, 4);
+  } else if (item.type === "fireflower") {
+    const sway = Math.sin(performance.now() * 0.008 + item.x) * 0.12;
+    ctx.rotate(sway);
+    ctx.fillStyle = "#2f9d58";
+    ctx.fillRect(-4, 6, 8, 16);
+    ctx.fillStyle = "#ff7a2f";
+    ctx.beginPath();
+    for (let i = 0; i < 8; i += 1) {
+      const r = i % 2 === 0 ? 18 : 10;
+      const a = -Math.PI / 2 + (i * Math.PI) / 4;
+      const x = Math.cos(a) * r;
+      const y = Math.sin(a) * r - 4;
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = "#172632";
+    ctx.lineWidth = 3;
+    ctx.stroke();
+    ctx.fillStyle = "#ffd15f";
+    ctx.beginPath();
+    ctx.arc(0, -4, 9, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = "#172632";
+    ctx.fillRect(-5, -7, 3, 4);
+    ctx.fillRect(3, -7, 3, 4);
   } else {
     ctx.fillStyle = "#d83d35";
     ctx.beginPath();
@@ -1416,6 +1712,24 @@ function drawPowerup(item) {
     ctx.arc(8, -4, 4, 0, Math.PI * 2);
     ctx.fill();
   }
+  ctx.restore();
+}
+
+function drawFireball(ball) {
+  ctx.save();
+  ctx.translate(ball.x + ball.w / 2, ball.y + ball.h / 2);
+  ctx.rotate(performance.now() * 0.018);
+  ctx.fillStyle = "#ff5a2b";
+  ctx.beginPath();
+  ctx.arc(0, 0, 10, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = "#ffd15f";
+  ctx.beginPath();
+  ctx.arc(-2, -2, 5, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = "#172632";
+  ctx.lineWidth = 2;
+  ctx.strokeRect(-7, -7, 14, 14);
   ctx.restore();
 }
 
@@ -1647,7 +1961,28 @@ function drawEnemy(enemy) {
     ctx.fillStyle = "#172632";
     ctx.fillRect(-8, -23, 4, 5);
     ctx.fillRect(5, -23, 4, 5);
-  } else if (enemy.type === "shell") {
+  } else if (enemy.type === "koopa" || enemy.type === "shell") {
+    if (!enemy.shell) {
+      ctx.fillStyle = "#48a868";
+      ctx.beginPath();
+      ctx.ellipse(0, -24, 20, 24, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = "#172632";
+      ctx.lineWidth = 3;
+      ctx.stroke();
+      ctx.fillStyle = "#ffd15f";
+      ctx.beginPath();
+      ctx.arc(enemy.vx >= 0 ? 16 : -16, -32, 12, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = "#172632";
+      ctx.fillRect(enemy.vx >= 0 ? 18 : -20, -36, 4, 5);
+      ctx.fillStyle = "#2b6b43";
+      ctx.fillRect(-12, -2, 8, 7);
+      ctx.fillRect(5, -2, 8, 7);
+      ctx.restore();
+      return;
+    }
     ctx.fillStyle = "#48a868";
     ctx.beginPath();
     ctx.ellipse(0, -14, 25, 18, 0, 0, Math.PI * 2);
@@ -1700,8 +2035,9 @@ function drawPlayer() {
   const big = player.power === "big";
   const run = Math.sin(t * 0.024) * (Math.abs(player.vx) > 0.3 && player.grounded ? 1 : 0);
   const squash = player.grounded ? 1 : 0.96;
-  const bodyColor = star ? ["#ffd15f", "#f06aa3", "#32a7e2", "#60c878"][Math.floor(t / 90) % 4] : "#245bb8";
-  const shirtColor = star ? ["#f7fbff", "#ffd15f", "#8f5fd9"][Math.floor(t / 120) % 3] : "#d83d35";
+  const fire = player.power === "fire";
+  const bodyColor = star ? ["#ffd15f", "#f06aa3", "#32a7e2", "#60c878"][Math.floor(t / 90) % 4] : fire ? "#f7fbff" : "#245bb8";
+  const shirtColor = star ? ["#f7fbff", "#ffd15f", "#8f5fd9"][Math.floor(t / 120) % 3] : fire ? "#ff7a2f" : "#d83d35";
   ctx.save();
   ctx.translate(x + player.w / 2, y + player.h);
   ctx.scale(player.facing, 1);
@@ -2030,6 +2366,10 @@ function playLavaDeath() {
   playTone(62, 0.22, 0.55, 0.042, "triangle");
 }
 
+function playFireSound() {
+  [440, 880, 660].forEach((note, i) => playTone(note, i * 0.035, 0.07, 0.032, "sawtooth"));
+}
+
 function playVictory() {
   if (playBuffer("clear", { volume: 0.78 })) return;
   const notes = [523, 659, 784, 1046, 784, 1046, 1318, 1568, 1318, 1046, 1568];
@@ -2104,12 +2444,14 @@ function stopMusic() {
 }
 
 function beginGame() {
+  clearGameSave();
   loadScene(selectedSceneKey, "entry");
   gameStarted = true;
   introOverlay.classList.add("hidden");
   statusText.textContent = `${scene.title}开始！往右走，顶问号砖和隐藏机关。`;
   recordEvent("start", { map: sceneKey });
   startMusic();
+  saveGame();
 }
 
 function updateMapButtons() {
@@ -2187,6 +2529,13 @@ recordsBtn.addEventListener("click", () => {
   updateRecordsPanel();
 });
 
+continueSaveBtn?.addEventListener("click", () => {
+  if (!restoreGameSave()) {
+    statusText.textContent = "没有找到可继续的存档，重新开始一个新游戏吧。";
+    updateContinueButton();
+  }
+});
+
 soundToggleBtn.addEventListener("click", () => {
   setSoundEnabled(!audioState.enabled);
 });
@@ -2204,5 +2553,5 @@ restartBtn.addEventListener("click", reset);
 
 updateSoundToggle();
 recordEvent("visit", { map: selectedSceneKey });
-reset();
+reset(false);
 tick();

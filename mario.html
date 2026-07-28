@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>马里奥游戏 · 参考音乐新版</title>
-    <link rel="stylesheet" href="mario.css?v=touch-controls-20260727" />
+    <link rel="stylesheet" href="mario.css?v=powerups-save-20260727" />
   </head>
   <body>
     <a class="home-link" href="arcade.html">游戏大厅</a>
@@ -30,7 +30,10 @@
               <button data-map="mine" type="button">宝石矿洞</button>
               <button data-map="metro" type="button">坐地铁</button>
             </div>
-            <button id="startIntroBtn" type="button">开始冒险</button>
+            <div class="save-actions">
+              <button id="continueSaveBtn" type="button" hidden>继续上次游戏</button>
+              <button id="startIntroBtn" type="button">开始冒险</button>
+            </div>
           </div>
           <div class="touch-pad" aria-label="手机控制按钮">
             <div class="touch-stick" aria-label="左右方向虚拟摇杆">
@@ -40,13 +43,14 @@
             <div class="touch-extra" aria-label="机关按钮">
               <button data-control="door" type="button">进/出</button>
               <button data-control="elevator" type="button">电梯</button>
+              <button data-control="fire" type="button">火</button>
             </div>
             <button class="touch-jump" data-control="jump" type="button" aria-label="跳跃">跳</button>
           </div>
         </div>
         <div class="hud">
           <strong id="score">金币 0 / 0</strong>
-          <span id="statusText">先点开始冒险。A/D 移动，空格跳，E 或 ↓ 进门，S 电梯，顶砖有隐藏机关。</span>
+          <span id="statusText">先点开始冒险。A/D 移动，空格跳，J 发火球，E 或 ↓ 进门，S 电梯，顶砖有隐藏机关。</span>
           <button id="recordsBtn" type="button">大厅记录</button>
           <button id="restartBtn" type="button">重来</button>
         </div>
@@ -57,6 +61,6 @@
       </section>
     </main>
     <script src="arcade-stats.js?v=global-records-20260727"></script>
-    <script src="mario.js?v=touch-controls-20260727"></script>
+    <script src="mario.js?v=powerups-save-20260727"></script>
   </body>
 </html>
