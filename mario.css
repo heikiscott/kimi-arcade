@@ -68,14 +68,14 @@ body {
 .developer-badge {
   width: fit-content;
   max-width: min(92vw, 420px);
-  margin: 10px auto 0;
+  margin: 12px auto 0;
   padding: 6px 14px 6px 8px;
   border: 2px solid rgba(23, 38, 50, 0.22);
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.86);
   color: #172632;
   box-shadow: 0 10px 24px rgba(23, 38, 50, 0.14);
-  display: inline-flex;
+  display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
