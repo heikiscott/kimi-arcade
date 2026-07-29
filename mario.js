@@ -514,7 +514,7 @@ function tuneLinkedLevels() {
   );
   sceneTemplates.lava.blocks.push({ x: 3240, y: 354, w: 42, h: 42, type: "question", content: "star", used: false, revealed: true, bump: 0 });
   sceneTemplates.lava.powerups.push(
-    { x: 3090, y: 438, w: 30, h: 26, vx: 0, vy: 0, type: "wing", born: 0 },
+    { x: 3142, y: 438, w: 30, h: 26, vx: 0, vy: 0, type: "wing", born: 0 },
     { x: 3180, y: 438, w: 28, h: 28, vx: 0, vy: 0, type: "fireflower", born: 0 },
     { x: 3478, y: 414, w: 34, h: 24, vx: 0, vy: 0, type: "plane", born: 0 }
   );
@@ -619,7 +619,7 @@ function cloneScene(key) {
 function ensureLavaFlightPowerups(targetScene) {
   if (!targetScene?.powerups) return;
   const helpers = [
-    { x: 3090, y: 438, w: 30, h: 26, vx: 0, vy: 0, type: "wing", born: 0, helperId: "lava-wing" },
+    { x: 3142, y: 438, w: 30, h: 26, vx: 0, vy: 0, type: "wing", born: 0, helperId: "lava-wing" },
     { x: 3180, y: 438, w: 28, h: 28, vx: 0, vy: 0, type: "fireflower", born: 0, helperId: "lava-fireflower" },
     { x: 3478, y: 414, w: 34, h: 24, vx: 0, vy: 0, type: "plane", born: 0, helperId: "lava-plane" }
   ];
@@ -1031,7 +1031,14 @@ function updatePlayer(dt) {
     player.vx += 0.72 * dt;
     player.facing = 1;
   }
-  if (!left && !right) player.vx *= player.grounded ? 0.72 : 0.94;
+  if (!left && !right) {
+    if (flying) {
+      player.vx += player.facing * (planeFlight ? 0.22 : 0.16) * dt;
+      player.vx *= 0.995;
+    } else {
+      player.vx *= player.grounded ? 0.72 : 0.94;
+    }
+  }
   player.vx = Math.max(-maxSpeed, Math.min(maxSpeed, player.vx));
 
   if (jump && player.grounded) {
@@ -1371,9 +1378,9 @@ function collectItems() {
       statusText.textContent = "吃到火焰花了！按 J 或点“火”发射火球。";
       playKeySound();
     } else if (item.type === "wing") {
-      activateFlight("wing", 4000, "吃到翅膀了！4 秒内按跳可以往上飞，先飞过乌龟难点。");
+      activateFlight("wing", 4800, "吃到翅膀了！自动往前飞，按跳可以往上，先飞过乌龟难点。");
     } else if (item.type === "plane") {
-      activateFlight("plane", 5000, "坐上小飞机了！5 秒内会更稳地飞，按跳可以拉高。");
+      activateFlight("plane", 5800, "坐上小飞机了！自动往前飞，按跳可以拉高，不用停下来。");
     } else {
       growPlayer();
       player.lives += 1;
