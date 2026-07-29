@@ -46,13 +46,19 @@ const playerIdKey = "marioAdventurePlayerId";
 const audioMuteKey = "marioAdventureAudioMuted";
 const levelOrder = ["sky", "ghost", "castle", "jungle", "lava", "mine", "metro"];
 const audioFiles = {
-  bgm: "assets/racing-user-music.m4a?v=racing-music-restore-20260728",
-  bgmFallback: "assets/racing-user-music.mp4?v=racing-music-restore-20260728",
+  bgm: "assets/racing-user-music.m4a?v=music-lite-20260722",
+  bgmFallback: "assets/racing-user-music.mp4?v=20260722",
   coin: "assets/audio/mario-coin.mp3",
   jump: "assets/audio/mario-jump.mp3",
   lavaDeath: "assets/audio/mario-lava-death.mp3",
   clear: "assets/audio/mario-clear.mp3"
 };
+const raceMusic = new Audio(audioFiles.bgm);
+let triedRaceMusicFallback = false;
+raceMusic.loop = true;
+raceMusic.volume = 0.66;
+raceMusic.preload = "auto";
+raceMusic.load();
 function loadAudioEnabled() {
   try {
     return localStorage.getItem(audioMuteKey) !== "1";
@@ -70,6 +76,16 @@ const audioState = {
   musicGain: null,
   customMusicName: ""
 };
+
+raceMusic.addEventListener("error", () => {
+  if (!triedRaceMusicFallback && raceMusic.src.includes("racing-user-music.m4a")) {
+    triedRaceMusicFallback = true;
+    raceMusic.src = audioFiles.bgmFallback;
+    raceMusic.preload = "auto";
+    raceMusic.load();
+    if (audioState.enabled && !won) raceMusic.play().catch(() => {});
+  }
+});
 
 const player = {
   x: 72,
@@ -2746,31 +2762,20 @@ function preloadAudioAssets() {
   }
   audioState.loading = true;
   Promise.all(
-    Object.entries(audioFiles).filter(([name]) => name !== "bgmFallback").map(async ([name, src]) => {
+    Object.entries(audioFiles).filter(([name]) => name !== "bgm" && name !== "bgmFallback").map(async ([name, src]) => {
       try {
         const response = await fetch(src, { cache: "force-cache" });
         if (!response.ok) throw new Error(`Missing audio: ${src}`);
         const bytes = await response.arrayBuffer();
         audioState.buffers[name] = await audio.decodeAudioData(bytes);
       } catch {
-        if (name === "bgm") {
-          try {
-            const fallbackResponse = await fetch(audioFiles.bgmFallback, { cache: "force-cache" });
-            if (!fallbackResponse.ok) throw new Error("Missing fallback music");
-            const fallbackBytes = await fallbackResponse.arrayBuffer();
-            audioState.buffers.bgm = await audio.decodeAudioData(fallbackBytes);
-            return;
-          } catch {
-            // Continue to generated music below.
-          }
-        }
         // Missing or blocked files fall back to generated chiptune sounds.
       }
     })
   ).finally(() => {
     audioState.loading = false;
     audioState.loaded = true;
-    if (gameStarted && !won && audioState.enabled && audioState.buffers.bgm && !audioState.musicSource) {
+    if (gameStarted && !won && audioState.enabled && raceMusic.paused) {
       stopMusic();
       startMusic();
     }
@@ -2893,19 +2898,7 @@ function playMetroSound() {
 }
 
 function playOpeningMusic() {
-  if (playBuffer("bgm", { volume: 0.18, duration: 4.2 })) return;
-  const notes = [
-    523, 659, 784, 1046, 0, 988, 784, 659,
-    587, 740, 880, 1174, 0, 1046, 880, 740,
-    659, 784, 988, 1318, 1174, 988, 784, 659,
-    587, 659, 784, 988, 1046, 988, 784, 659,
-    523, 659, 784, 1046, 1318, 1174, 1046, 784
-  ];
-  notes.forEach((note, index) => {
-    if (!note) return;
-    playTone(note, index * 0.105, 0.085, 0.04, "triangle");
-    if (index % 8 === 0) playTone(note / 2, index * 0.105, 0.18, 0.018, "square");
-  });
+  startMusic();
 }
 
 function playMusicBar() {
@@ -2932,12 +2925,11 @@ function playMusicBar() {
 function startMusic() {
   if (!audioState.enabled || audioState.musicSource || musicTimer || won) return;
   preloadAudioAssets();
-  if (audioState.buffers.bgm) {
-    playBuffer("bgm", { loop: true, volume: 0.24 });
-    return;
-  }
-  playMusicBar();
-  musicTimer = window.setInterval(playMusicBar, 6800);
+  raceMusic.loop = true;
+  raceMusic.volume = 0.66;
+  raceMusic.play().catch(() => {
+    // Some mobile browsers require another tap before audio can start.
+  });
 }
 
 function stopMusic() {
@@ -2952,6 +2944,7 @@ function stopMusic() {
   }
   audioState.musicSource = null;
   audioState.musicGain = null;
+  raceMusic.pause();
 }
 
 function beginGame() {
