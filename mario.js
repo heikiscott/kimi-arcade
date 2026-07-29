@@ -46,8 +46,8 @@ const playerIdKey = "marioAdventurePlayerId";
 const audioMuteKey = "marioAdventureAudioMuted";
 const levelOrder = ["sky", "ghost", "castle", "jungle", "lava", "mine", "metro"];
 const audioFiles = {
-  bgm: "assets/audio/super-mario-user-bgm.mp3?v=super-mario-user-bgm-20260728",
-  bgmFallback: "assets/audio/super-mario-user-bgm.mp3?v=super-mario-user-bgm-20260728",
+  bgm: "assets/audio/super-mario-current-bgm.mp3?v=super-mario-current-bgm-20260728",
+  bgmFallback: "assets/audio/super-mario-current-bgm.mp3?v=super-mario-current-bgm-20260728",
   coin: "assets/audio/mario-coin.mp3",
   jump: "assets/audio/mario-jump.mp3",
   lavaDeath: "assets/audio/mario-lava-death.mp3",
