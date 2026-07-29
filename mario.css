@@ -90,7 +90,12 @@ canvas {
   border: 5px solid #172632;
   border-radius: 8px;
   background: #7ecbf2;
-  box-shadow: 0 24px 60px rgba(23, 38, 50, 0.2);
+  transform: perspective(1400px) rotateX(2.2deg) rotateY(-1.1deg) translateZ(0);
+  transform-origin: 50% 62%;
+  box-shadow:
+    0 26px 0 rgba(23, 38, 50, 0.12),
+    0 34px 68px rgba(23, 38, 50, 0.26);
+  filter: saturate(1.04) contrast(1.02);
 }
 
 .intro-overlay {
@@ -109,6 +114,9 @@ canvas {
     radial-gradient(circle at 23% 24%, rgba(255, 209, 95, 0.42), transparent 18%),
     radial-gradient(circle at 76% 20%, rgba(255, 255, 255, 0.3), transparent 16%),
     linear-gradient(180deg, rgba(28, 44, 72, 0.72), rgba(13, 20, 36, 0.9));
+  transform: perspective(1400px) rotateX(2.2deg) rotateY(-1.1deg) translateZ(14px);
+  transform-origin: 50% 62%;
+  box-shadow: 0 28px 48px rgba(23, 38, 50, 0.18);
 }
 
 .intro-overlay.hidden {
@@ -381,6 +389,7 @@ button:active {
   canvas {
     border-width: 3px;
     border-radius: 7px;
+    transform: perspective(1200px) rotateX(1.2deg) rotateY(-0.45deg);
     box-shadow: 0 14px 30px rgba(23, 38, 50, 0.18);
   }
 
@@ -388,6 +397,7 @@ button:active {
     inset: 3px;
     gap: 8px;
     padding: 14px;
+    transform: perspective(1200px) rotateX(1.2deg) rotateY(-0.45deg) translateZ(10px);
   }
 
   .intro-overlay h1 {
