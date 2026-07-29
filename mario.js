@@ -1,5 +1,7 @@
 const canvas = document.querySelector("#game");
 const ctx = canvas.getContext("2d");
+const nativeFillText = ctx.fillText.bind(ctx);
+const nativeStrokeText = ctx.strokeText.bind(ctx);
 const scoreEl = document.querySelector("#score");
 const statusText = document.querySelector("#statusText");
 const restartBtn = document.querySelector("#restartBtn");
@@ -83,10 +85,33 @@ const player = {
   lives: 3,
   invincibleUntil: 0,
   starUntil: 0,
+  flightUntil: 0,
+  flightMode: "",
   power: "small",
   rideElevator: null,
   rideTrain: null
 };
+
+function installReadableCanvasText() {
+  ctx.fillText = function fillTextWithLightOutline(text, x, y, maxWidth) {
+    const fill = String(this.fillStyle).toLowerCase();
+    const darkText = fill === "#172632" || fill === "rgb(23, 38, 50)" || fill === "#111827" || fill === "#000000" || fill === "black";
+    if (darkText) {
+      this.save();
+      this.lineJoin = "round";
+      this.miterLimit = 2;
+      this.lineWidth = 5;
+      this.strokeStyle = "rgba(255, 255, 255, 0.88)";
+      if (maxWidth === undefined) nativeStrokeText(text, x, y);
+      else nativeStrokeText(text, x, y, maxWidth);
+      this.restore();
+    }
+    if (maxWidth === undefined) return nativeFillText(text, x, y);
+    return nativeFillText(text, x, y, maxWidth);
+  };
+}
+
+installReadableCanvasText();
 
 const sceneTemplates = {
   sky: {
@@ -488,7 +513,11 @@ function tuneLinkedLevels() {
     { x: 4350, y: 564, w: 200, h: 56, type: "lava" }
   );
   sceneTemplates.lava.blocks.push({ x: 3240, y: 354, w: 42, h: 42, type: "question", content: "star", used: false, revealed: true, bump: 0 });
-  sceneTemplates.lava.powerups.push({ x: 3180, y: 438, w: 28, h: 28, vx: 0, vy: 0, type: "fireflower", born: 0 });
+  sceneTemplates.lava.powerups.push(
+    { x: 3090, y: 438, w: 30, h: 26, vx: 0, vy: 0, type: "wing", born: 0 },
+    { x: 3180, y: 438, w: 28, h: 28, vx: 0, vy: 0, type: "fireflower", born: 0 },
+    { x: 3478, y: 414, w: 34, h: 24, vx: 0, vy: 0, type: "plane", born: 0 }
+  );
   sceneTemplates.lava.coins.push({ x: 2480, y: 428 }, { x: 2820, y: 356 }, { x: 3200, y: 444 }, { x: 3488, y: 420 }, { x: 3650, y: 378 }, { x: 4640, y: 492 });
   sceneTemplates.lava.enemies.push(
     { x: 2880, y: 362, vx: 1.15, minX: 2760, maxX: 2960, type: "fire" },
@@ -658,6 +687,8 @@ function reset(clearSave = true) {
   player.lives = 3;
   player.invincibleUntil = 0;
   player.starUntil = 0;
+  player.flightUntil = 0;
+  player.flightMode = "";
   player.power = "small";
   player.w = 36;
   player.h = 54;
@@ -681,7 +712,8 @@ function reset(clearSave = true) {
 function updateScore() {
   const totalCoins = Object.values(progress).reduce((sum, item) => sum + item.coins.length, 0);
   const gotCoins = Object.values(progress).reduce((sum, item) => sum + item.coins.filter((coin) => coin.got).length, 0);
-  const powerName = performance.now() < player.starUntil ? "星星无敌" : player.power === "fire" ? "火焰花" : player.power === "big" ? "红蘑菇变大" : "普通";
+  const flying = performance.now() < player.flightUntil;
+  const powerName = flying ? (player.flightMode === "plane" ? "小飞机飞行" : "翅膀飞行") : performance.now() < player.starUntil ? "星星无敌" : player.power === "fire" ? "火焰花" : player.power === "big" ? "红蘑菇变大" : "普通";
   scoreEl.textContent = `金币 ${gotCoins} / ${totalCoins} · 钥匙 ${player.keys} · ${powerName} · 生命 ${player.lives}${won ? " · 通关!" : ""}`;
 }
 
@@ -835,7 +867,9 @@ function saveGame() {
         coins: player.coins,
         keys: player.keys,
         lives: player.lives,
-        power: player.power
+        power: player.power,
+        flightUntil: Math.max(0, player.flightUntil - performance.now()),
+        flightMode: player.flightMode
       },
       progress: JSON.parse(JSON.stringify(progress))
     };
@@ -862,6 +896,7 @@ function restoreGameSave() {
   sceneKey = save.sceneKey;
   scene = progress[sceneKey];
   Object.assign(player, save.player || {});
+  if (save.player?.flightUntil) player.flightUntil = performance.now() + save.player.flightUntil;
   player.invincibleUntil = performance.now() + 900;
   player.starUntil = 0;
   player.rideElevator = null;
@@ -968,7 +1003,9 @@ function updatePlayer(dt) {
   const left = isPressed("left");
   const right = isPressed("right");
   const jump = isPressed("jump");
-  const maxSpeed = player.grounded ? 5.1 : 4.6;
+  const flying = performance.now() < player.flightUntil;
+  const planeFlight = flying && player.flightMode === "plane";
+  const maxSpeed = flying ? (planeFlight ? 7.2 : 6.2) : player.grounded ? 5.1 : 4.6;
   if (left) {
     player.vx -= 0.72 * dt;
     player.facing = -1;
@@ -986,6 +1023,15 @@ function updatePlayer(dt) {
     player.rideElevator = null;
     playJump();
   }
+  if (flying) {
+    if (jump) player.vy -= (planeFlight ? 0.92 : 0.74) * dt;
+    else player.vy -= (planeFlight ? 0.28 : 0.18) * dt;
+    player.vy = Math.max(planeFlight ? -8.8 : -7.2, Math.min(4.2, player.vy));
+    if (planeFlight && !left && !right) player.vx += player.facing * 0.12 * dt;
+  } else if (player.flightMode) {
+    player.flightMode = "";
+    updateScore();
+  }
 
   if (isPressed("fire")) shootFireball();
 
@@ -998,7 +1044,7 @@ function updatePlayer(dt) {
     keys.delete("S");
   }
 
-  player.vy += 0.72 * dt;
+  player.vy += (flying ? 0.34 : 0.72) * dt;
   const prevY = player.y;
   player.x += player.vx * dt;
   player.y += player.vy * dt;
@@ -1307,6 +1353,10 @@ function collectItems() {
       gainFireFlower();
       statusText.textContent = "吃到火焰花了！按 J 或点“火”发射火球。";
       playKeySound();
+    } else if (item.type === "wing") {
+      activateFlight("wing", 4000, "吃到翅膀了！4 秒内按跳可以往上飞，先飞过乌龟难点。");
+    } else if (item.type === "plane") {
+      activateFlight("plane", 5000, "坐上小飞机了！5 秒内会更稳地飞，按跳可以拉高。");
     } else {
       growPlayer();
       player.lives += 1;
@@ -1337,6 +1387,16 @@ function collectItems() {
       saveGame();
     }
   });
+}
+
+function activateFlight(mode, duration, message) {
+  player.flightMode = mode;
+  player.flightUntil = performance.now() + duration;
+  player.invincibleUntil = Math.max(player.invincibleUntil, performance.now() + 600);
+  player.vy = Math.min(player.vy, -4.2);
+  player.vx = Math.max(Math.abs(player.vx), mode === "plane" ? 4.8 : 3.6) * player.facing;
+  statusText.textContent = message;
+  playKeySound();
 }
 
 function growPlayer() {
@@ -1982,6 +2042,38 @@ function drawPowerup(item) {
     ctx.fillStyle = "#172632";
     ctx.fillRect(-5, -7, 3, 4);
     ctx.fillRect(3, -7, 3, 4);
+  } else if (item.type === "wing") {
+    const flap = Math.sin(performance.now() * 0.018 + item.x) * 0.22;
+    ctx.rotate(flap);
+    ctx.fillStyle = "#f7fbff";
+    ctx.strokeStyle = "#172632";
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.ellipse(-9, 0, 15, 8, -0.35, 0, Math.PI * 2);
+    ctx.ellipse(9, 0, 15, 8, 0.35, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = "#ffd15f";
+    ctx.beginPath();
+    ctx.arc(0, 0, 5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+  } else if (item.type === "plane") {
+    ctx.fillStyle = "#f7fbff";
+    ctx.strokeStyle = "#172632";
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    roundedRect(-18, -5, 36, 12, 7);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = "#245bb8";
+    ctx.fillRect(-2, -17, 4, 34);
+    ctx.fillRect(-16, 5, 9, 5);
+    ctx.fillRect(7, 5, 9, 5);
+    ctx.fillStyle = "#d83d35";
+    ctx.beginPath();
+    ctx.arc(18, 1, 4, 0, Math.PI * 2);
+    ctx.fill();
   } else {
     ctx.fillStyle = "#d83d35";
     ctx.beginPath();
@@ -2381,6 +2473,8 @@ function drawPlayer() {
   const run = Math.sin(t * 0.024) * (Math.abs(player.vx) > 0.3 && player.grounded ? 1 : 0);
   const squash = player.grounded ? 1 : 0.96;
   const fire = player.power === "fire";
+  const flying = t < player.flightUntil;
+  const planeFlight = flying && player.flightMode === "plane";
   const bodyColor = star ? ["#ffd15f", "#f06aa3", "#32a7e2", "#60c878"][Math.floor(t / 90) % 4] : fire ? "#f7fbff" : "#245bb8";
   const shirtColor = star ? ["#f7fbff", "#ffd15f", "#8f5fd9"][Math.floor(t / 120) % 3] : fire ? "#ff7a2f" : "#d83d35";
   ctx.save();
@@ -2397,6 +2491,34 @@ function drawPlayer() {
   ctx.shadowOffsetY = 6;
   ctx.scale(player.facing, 1);
   ctx.scale(big ? 1.08 : 1, squash);
+  if (flying) {
+    const flap = Math.sin(t * 0.024) * 6;
+    if (planeFlight) {
+      ctx.fillStyle = "#f7fbff";
+      ctx.strokeStyle = "#172632";
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      roundedRect(-42, -48, 84, 18, 10);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = "#245bb8";
+      ctx.fillRect(-7, -70, 14, 48);
+      ctx.fillStyle = "#d83d35";
+      ctx.beginPath();
+      ctx.arc(42, -39, 8, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+    } else {
+      ctx.fillStyle = "rgba(255,255,255,0.92)";
+      ctx.strokeStyle = "#172632";
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.ellipse(-28, -38 + flap * 0.2, 24, 12, -0.42, 0, Math.PI * 2);
+      ctx.ellipse(28, -38 - flap * 0.2, 24, 12, 0.42, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+    }
+  }
   if (star) {
     ctx.strokeStyle = "rgba(255,255,255,0.82)";
     ctx.lineWidth = 3;

@@ -13,6 +13,20 @@ body {
     linear-gradient(180deg, #7ecbf2, #f4fbff 58%, #5eaa58 59%, #356f39);
 }
 
+.home-link,
+.sound-toggle,
+.music-import,
+.developer-badge,
+.hud,
+.records-panel,
+.touch-pad button,
+.map-select button.active {
+  text-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.96),
+    0 0 5px rgba(255, 255, 255, 0.82),
+    0 0 12px rgba(255, 255, 255, 0.56);
+}
+
 .home-link {
   position: fixed;
   top: 16px;
@@ -131,6 +145,7 @@ canvas {
   transform: perspective(1400px) rotateX(2.2deg) rotateY(-1.1deg) translateZ(14px);
   transform-origin: 50% 62%;
   box-shadow: 0 28px 48px rgba(23, 38, 50, 0.18);
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.48);
 }
 
 .intro-overlay.hidden {
@@ -170,6 +185,7 @@ canvas {
   background: rgba(255, 255, 255, 0.16);
   color: #fff;
   box-shadow: none;
+  text-shadow: 0 2px 7px rgba(0, 0, 0, 0.46);
 }
 
 .map-select button.active {
@@ -196,6 +212,7 @@ canvas {
   background: rgba(255, 255, 255, 0.16);
   color: #fff;
   font-weight: 950;
+  text-shadow: 0 2px 7px rgba(0, 0, 0, 0.46);
 }
 
 .level-route span::after {
@@ -357,6 +374,7 @@ button {
   cursor: pointer;
   font: inherit;
   font-weight: 950;
+  text-shadow: 0 2px 7px rgba(0, 0, 0, 0.35);
 }
 
 button:active {
