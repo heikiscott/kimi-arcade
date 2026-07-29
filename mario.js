@@ -46,8 +46,8 @@ const playerIdKey = "marioAdventurePlayerId";
 const audioMuteKey = "marioAdventureAudioMuted";
 const levelOrder = ["sky", "ghost", "castle", "jungle", "lava", "mine", "metro"];
 const audioFiles = {
-  bgm: "assets/racing-user-music.m4a?v=racing-music-20260727",
-  bgmFallback: "assets/racing-user-music.mp4?v=racing-music-20260727",
+  bgm: "assets/audio/super-mario-user-bgm.mp3?v=super-mario-user-bgm-20260728",
+  bgmFallback: "assets/audio/super-mario-user-bgm.mp3?v=super-mario-user-bgm-20260728",
   coin: "assets/audio/mario-coin.mp3",
   jump: "assets/audio/mario-jump.mp3",
   lavaDeath: "assets/audio/mario-lava-death.mp3",
@@ -2712,7 +2712,7 @@ function updateSoundToggle() {
   soundToggleBtn.title = audioState.enabled ? "点击静音" : "点击开启音效";
   if (musicImportBtn) {
     musicImportBtn.textContent = audioState.customMusicName ? "已导入" : "换音乐";
-    musicImportBtn.title = audioState.customMusicName ? `当前音乐：${audioState.customMusicName}` : "默认使用3D天空地下赛车音乐，也可以选择本机音频";
+    musicImportBtn.title = audioState.customMusicName ? `当前音乐：${audioState.customMusicName}` : "默认使用你发来的马里奥背景音乐，也可以选择本机音频";
   }
 }
 
@@ -2988,7 +2988,7 @@ function startIntro() {
   }
   startIntroBtn.disabled = true;
   startIntroBtn.textContent = "准备中";
-  introStatus.textContent = audioState.enabled ? "正在准备3D天空地下赛车音乐，开始后会播放" : "静音模式，开始后不会播放音效";
+  introStatus.textContent = audioState.enabled ? "正在准备你发来的马里奥背景音乐，开始后会播放" : "静音模式，开始后不会播放音效";
   playOpeningMusic();
   introTimer = window.setTimeout(beginGame, 4300);
 }
