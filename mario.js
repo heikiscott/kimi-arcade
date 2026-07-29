@@ -1,4 +1,7 @@
+import * as THREE from "./assets/three.module.js";
+
 const canvas = document.querySelector("#game");
+const webglCanvas = document.querySelector("#game3d");
 const ctx = canvas.getContext("2d");
 const scoreEl = document.querySelector("#score");
 const statusText = document.querySelector("#statusText");
@@ -1493,7 +1496,528 @@ function hurtPlayer(message, reason = "hurt") {
   else playHurt();
 }
 
+const PX = 0.035;
+const WORLD_H = H * PX;
+let renderer3D = null;
+let camera3D = null;
+let threeScene = null;
+let dynamicGroup = null;
+let lightKey = "";
+let use2DFallback = false;
+const materialCache = new Map();
+
+function mat(color, roughness = 0.72, metalness = 0.02) {
+  const key = `${color}-${roughness}-${metalness}`;
+  if (!materialCache.has(key)) {
+    materialCache.set(key, new THREE.MeshStandardMaterial({
+      color,
+      roughness,
+      metalness
+    }));
+  }
+  return materialCache.get(key);
+}
+
+function init3D() {
+  if (renderer3D || use2DFallback) return;
+  try {
+    renderer3D = new THREE.WebGLRenderer({ canvas: webglCanvas, antialias: true, alpha: false });
+  } catch (error) {
+    use2DFallback = true;
+    webglCanvas.style.display = "none";
+    canvas.classList.remove("legacy-canvas");
+    statusText.textContent = "这台浏览器没有打开 WebGL，先用原来的2D画面继续玩。";
+    return;
+  }
+  renderer3D.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer3D.shadowMap.enabled = true;
+  renderer3D.shadowMap.type = THREE.PCFSoftShadowMap;
+  threeScene = new THREE.Scene();
+  threeScene.fog = new THREE.Fog(0x7ecbf2, 26, 74);
+  camera3D = new THREE.PerspectiveCamera(44, W / H, 0.1, 260);
+  dynamicGroup = new THREE.Group();
+  threeScene.add(dynamicGroup);
+  resize3D();
+  window.addEventListener("resize", resize3D);
+}
+
+function resize3D() {
+  if (!renderer3D || !webglCanvas) return;
+  const rect = webglCanvas.getBoundingClientRect();
+  const width = Math.max(320, Math.floor(rect.width || W));
+  const height = Math.max(180, Math.floor(rect.height || H));
+  renderer3D.setSize(width, height, false);
+  camera3D.aspect = width / height;
+  camera3D.updateProjectionMatrix();
+}
+
+function clearGroup(group) {
+  while (group.children.length) {
+    const child = group.children.pop();
+    child.traverse?.((item) => {
+      if (item.geometry) item.geometry.dispose();
+      if (item.material?.map) item.material.map.dispose();
+      if (item.material && !materialCacheHas(item.material)) item.material.dispose();
+    });
+  }
+}
+
+function materialCacheHas(material) {
+  for (const cached of materialCache.values()) {
+    if (cached === material) return true;
+  }
+  return false;
+}
+
+function worldX(x) {
+  return x * PX;
+}
+
+function worldY(y) {
+  return (H - y) * PX;
+}
+
+function rectCenter(rect) {
+  return {
+    x: worldX(rect.x + rect.w / 2),
+    y: worldY(rect.y + rect.h / 2)
+  };
+}
+
+function addMesh(mesh, x, y, z = 0, cast = true, receive = true) {
+  mesh.position.set(x, y, z);
+  mesh.castShadow = cast;
+  mesh.receiveShadow = receive;
+  dynamicGroup.add(mesh);
+  return mesh;
+}
+
+function addBox(rect, color, depth = 1.6, z = 0, yOffset = 0) {
+  const center = rectCenter(rect);
+  const mesh = new THREE.Mesh(
+    new THREE.BoxGeometry(Math.max(0.08, rect.w * PX), Math.max(0.08, rect.h * PX), depth),
+    mat(color)
+  );
+  addMesh(mesh, center.x, center.y + yOffset, z);
+  const edge = new THREE.LineSegments(
+    new THREE.EdgesGeometry(mesh.geometry),
+    new THREE.LineBasicMaterial({ color: 0x172632, transparent: true, opacity: 0.22 })
+  );
+  mesh.add(edge);
+  return mesh;
+}
+
+function addCylinder(radius, height, color, x, y, z, radial = 24) {
+  const mesh = new THREE.Mesh(new THREE.CylinderGeometry(radius, radius, height, radial), mat(color));
+  return addMesh(mesh, x, y, z);
+}
+
+function addSphere(radius, color, x, y, z, widthSegments = 24, heightSegments = 16) {
+  const mesh = new THREE.Mesh(new THREE.SphereGeometry(radius, widthSegments, heightSegments), mat(color));
+  return addMesh(mesh, x, y, z);
+}
+
+function addTextSprite(text, x, y, z, size = 1, color = "#172632") {
+  const canvasText = document.createElement("canvas");
+  canvasText.width = 256;
+  canvasText.height = 128;
+  const textCtx = canvasText.getContext("2d");
+  textCtx.clearRect(0, 0, canvasText.width, canvasText.height);
+  textCtx.fillStyle = "rgba(255,255,255,0.86)";
+  textCtx.roundRect?.(10, 22, 236, 84, 18);
+  if (textCtx.roundRect) textCtx.fill();
+  textCtx.fillStyle = color;
+  textCtx.font = "900 40px system-ui";
+  textCtx.textAlign = "center";
+  textCtx.textBaseline = "middle";
+  textCtx.fillText(text, 128, 64);
+  const texture = new THREE.CanvasTexture(canvasText);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: texture, transparent: true }));
+  sprite.scale.set(size * 2.0, size, 1);
+  sprite.position.set(x, y, z);
+  dynamicGroup.add(sprite);
+  return sprite;
+}
+
+function setTheme3D() {
+  const themes = {
+    sky: { bg: 0x81d2f4, fog: 0x9fe4ff, hemi: 0xffffff, ground: 0x4f9a4c },
+    ghost: { bg: 0x17182a, fog: 0x282846, hemi: 0xbfc6ff, ground: 0x262738 },
+    castle: { bg: 0x879bb6, fog: 0xc2c8d0, hemi: 0xffffff, ground: 0x786757 },
+    jungle: { bg: 0x75d1e8, fog: 0xa9efc4, hemi: 0xf5ffe2, ground: 0x2f743f },
+    lava: { bg: 0x2c2030, fog: 0x7f2f28, hemi: 0xffb06a, ground: 0x221018 },
+    mine: { bg: 0x1c2532, fog: 0x253348, hemi: 0xbfe7ff, ground: 0x151a22 },
+    metro: { bg: 0xc8d9e6, fog: 0xeef4f7, hemi: 0xffffff, ground: 0x8494a1 }
+  };
+  const theme = themes[scene.theme] || themes.sky;
+  if (lightKey === scene.theme) {
+    threeScene.background = new THREE.Color(theme.bg);
+    threeScene.fog.color.setHex(theme.fog);
+    return;
+  }
+  lightKey = scene.theme;
+  threeScene.clear();
+  dynamicGroup = new THREE.Group();
+  threeScene.add(dynamicGroup);
+  threeScene.background = new THREE.Color(theme.bg);
+  threeScene.fog = new THREE.Fog(theme.fog, 26, 74);
+  const hemi = new THREE.HemisphereLight(theme.hemi, theme.ground, scene.theme === "ghost" || scene.theme === "mine" ? 1.85 : 2.2);
+  threeScene.add(hemi);
+  const sun = new THREE.DirectionalLight(0xffffff, scene.theme === "lava" ? 1.8 : 2.5);
+  sun.position.set(10, 24, 18);
+  sun.castShadow = true;
+  sun.shadow.mapSize.set(1024, 1024);
+  sun.shadow.camera.left = -30;
+  sun.shadow.camera.right = 30;
+  sun.shadow.camera.top = 30;
+  sun.shadow.camera.bottom = -30;
+  threeScene.add(sun);
+  const rim = new THREE.DirectionalLight(scene.theme === "lava" ? 0xff8a42 : 0x9fdcff, 0.85);
+  rim.position.set(-18, 9, -12);
+  threeScene.add(rim);
+}
+
+function colorForPlatform(type) {
+  return {
+    grass: 0x61b85d,
+    brick: 0xc06b32,
+    cloud: 0xf8fdff,
+    stone: 0x5c6172,
+    wood: 0x9a6429,
+    castle: 0x888f9c,
+    jungle: 0x4dc96b,
+    vine: 0x65d46e,
+    lavaRock: 0x4b4650,
+    mine: 0x5b6573,
+    rail: 0x9ca7b5,
+    crystal: 0x7ee7ff,
+    station: 0xd6dee7,
+    sign: 0xffd15f
+  }[type] || 0x61b85d;
+}
+
+function drawBackground3D() {
+  const left = Math.max(0, cameraX - 260);
+  const right = Math.min(scene.width, cameraX + W + 360);
+  const floor = new THREE.Mesh(
+    new THREE.BoxGeometry((right - left + 500) * PX, 0.28, 8),
+    mat(scene.theme === "lava" ? 0x221018 : scene.theme === "mine" ? 0x151a22 : scene.theme === "metro" ? 0x8494a1 : 0x3f944e)
+  );
+  addMesh(floor, worldX((left + right) / 2), -0.18, -1.7, false, true);
+
+  if (scene.theme === "sky" || scene.theme === "jungle") {
+    for (let i = 0; i < 5; i += 1) {
+      const x = worldX(left + 120 + i * 260);
+      addCloud3D(x, WORLD_H - 3.4 - (i % 2) * 1.1, -5.5, 0.8 + (i % 2) * 0.18);
+    }
+    for (let i = 0; i < 6; i += 1) {
+      const hill = new THREE.Mesh(new THREE.SphereGeometry(2.2 + (i % 2) * 0.6, 24, 10), mat(0x56ac5c));
+      hill.scale.set(1.65, 0.45, 0.45);
+      addMesh(hill, worldX(left + i * 210 + 120), 1.2, -4.8, false, true);
+    }
+  }
+
+  if (scene.theme === "ghost" || scene.theme === "castle") {
+    for (let i = 0; i < 7; i += 1) {
+      const tower = new THREE.Mesh(new THREE.BoxGeometry(2.4, 6 + (i % 2), 1), mat(scene.theme === "ghost" ? 0x2f3047 : 0x6d7480));
+      addMesh(tower, worldX(left + i * 210 + 80), 4.3, -5.2, false, true);
+      addBox({ x: left + i * 210 + 44, y: 230, w: 70, h: 24 }, 0x172632, 0.25, -4.55);
+    }
+  }
+
+  if (scene.theme === "lava") {
+    for (let i = 0; i < 6; i += 1) {
+      const cone = new THREE.Mesh(new THREE.ConeGeometry(1.8, 6.2, 4), mat(0x2a1822));
+      cone.rotation.y = Math.PI / 4;
+      addMesh(cone, worldX(left + i * 245 + 130), 3.1, -5.1, false, true);
+      addSphere(0.42, 0xff6b2f, cone.position.x, 5.85, -4.6, 16, 8);
+    }
+  }
+
+  if (scene.theme === "mine") {
+    for (let i = 0; i < 10; i += 1) {
+      const gem = new THREE.Mesh(new THREE.OctahedronGeometry(0.34 + (i % 3) * 0.08), mat([0x6ee7ff, 0xb678ff, 0xffd15f][i % 3], 0.32, 0.08));
+      addMesh(gem, worldX(left + i * 120 + 40), 4 + (i % 4) * 1.1, -4.8, false, false);
+      gem.rotation.y = performance.now() * 0.001 + i;
+    }
+  }
+
+  if (scene.theme === "metro") {
+    for (let i = 0; i < 8; i += 1) {
+      addBox({ x: left + i * 160 + 20, y: 100, w: 104, h: 34 }, 0xf7fbff, 0.22, -4.8);
+      addBox({ x: left + i * 160 + 52, y: 178, w: 116, h: 18 }, 0x536576, 0.22, -4.8);
+    }
+  }
+}
+
+function addCloud3D(x, y, z, s = 1) {
+  addSphere(0.62 * s, 0xffffff, x - 0.7 * s, y, z, 18, 10);
+  addSphere(0.78 * s, 0xffffff, x, y + 0.16 * s, z, 18, 10);
+  addSphere(0.58 * s, 0xffffff, x + 0.78 * s, y - 0.03 * s, z, 18, 10);
+}
+
+function drawObjects3D() {
+  (scene.hazards || []).forEach(drawHazard3D);
+  scene.platforms.forEach(drawPlatform3D);
+  (scene.trains || []).forEach(drawTrain3D);
+  scene.blocks.forEach(drawBlock3D);
+  scene.elevators.forEach(drawElevator3D);
+  scene.doors.forEach(drawDoor3D);
+  scene.powerups.forEach(drawPowerup3D);
+  scene.coins.forEach(drawCoin3D);
+  scene.keyItems.forEach(drawKey3D);
+  scene.enemies.forEach(drawEnemy3D);
+  fireballs.forEach(drawFireball3D);
+  if (scene.goal) drawGoal3D(scene.goal);
+  drawPlayer3D();
+}
+
+function drawPlatform3D(platform) {
+  addBox(platform, colorForPlatform(platform.type), platform.type === "cloud" ? 1.15 : 1.8, 0);
+  if (platform.type === "grass" || platform.type === "jungle") {
+    addBox({ x: platform.x, y: platform.y, w: platform.w, h: Math.min(12, platform.h) }, 0x74d46a, 1.92, 0.02);
+  }
+  if (platform.type === "rail" || platform.type === "station") {
+    const y = worldY(platform.y + 8);
+    const x1 = worldX(platform.x + platform.w / 2);
+    const rail = new THREE.Mesh(new THREE.BoxGeometry(platform.w * PX * 0.92, 0.06, 0.08), mat(0x172632));
+    addMesh(rail, x1, y, 0.95);
+  }
+  if (platform.type === "crystal") {
+    for (let x = platform.x + 20; x < platform.x + platform.w; x += 42) {
+      const gem = new THREE.Mesh(new THREE.OctahedronGeometry(0.22), mat(0x7ee7ff, 0.28, 0.08));
+      addMesh(gem, worldX(x), worldY(platform.y - 8), 0.98);
+    }
+  }
+}
+
+function drawHazard3D(hazard) {
+  if (hazard.type === "track") {
+    addBox(hazard, 0x2f3a45, 1.6, 0.08);
+    addBox({ x: hazard.x + 8, y: hazard.y + 8, w: hazard.w - 16, h: 5 }, 0xd5dee8, 1.7, 0.18);
+    addBox({ x: hazard.x + 8, y: hazard.y + 32, w: hazard.w - 16, h: 5 }, 0xd5dee8, 1.7, 0.18);
+    return;
+  }
+  const lava = addBox(hazard, 0xff5a2b, 1.7, 0.14);
+  lava.material = mat(0xff5a2b, 0.5, 0.04);
+  for (let x = hazard.x + 18; x < hazard.x + hazard.w; x += 38) {
+    addSphere(0.22, 0xffd15f, worldX(x), worldY(hazard.y + 18 + Math.sin(performance.now() * 0.005 + x) * 5), 1.06, 12, 8);
+  }
+}
+
+function drawBlock3D(block) {
+  if (!block.revealed) return;
+  const y = block.y - (block.bump || 0);
+  const color = block.used ? 0x9b7b62 : block.type === "question" ? 0xffd15f : block.type === "hidden" ? 0xf7fbff : 0xc06b32;
+  addBox({ ...block, y }, color, 1.15, 0.65);
+  if (!block.used && block.type === "question") addTextSprite("?", worldX(block.x + block.w / 2), worldY(y + block.h / 2), 1.28, 0.55);
+  if (!block.used && block.type === "hidden") addTextSprite("!", worldX(block.x + block.w / 2), worldY(y + block.h / 2), 1.28, 0.55);
+}
+
+function drawElevator3D(elevator) {
+  addBox(elevator, 0xffd15f, 1.8, 0.22);
+  addBox({ x: elevator.x - 8, y: elevator.minY - 8, w: 5, h: elevator.maxY - elevator.minY + 54 }, 0x172632, 0.12, -0.25);
+  addBox({ x: elevator.x + elevator.w + 3, y: elevator.minY - 8, w: 5, h: elevator.maxY - elevator.minY + 54 }, 0x172632, 0.12, -0.25);
+}
+
+function drawDoor3D(door) {
+  const open = nearestDoor() === door;
+  const mesh = addBox(door, open ? 0xffd15f : 0x6e3c2a, 0.55, 0.85);
+  if (open) mesh.rotation.y = -0.28;
+  addSphere(0.08, 0x172632, worldX(door.x + door.w - 12), worldY(door.y + door.h / 2), 1.18, 12, 8);
+}
+
+function drawTrain3D(train) {
+  const body = addBox(train, 0xd9edf7, 1.8, 0.45);
+  body.scale.z = 1.18;
+  addBox({ x: train.x + 18, y: train.y + 14, w: train.w - 36, h: 10 }, 0x2187c9, 1.92, 1.15);
+  for (let x = train.x + 60; x < train.x + train.w - 120; x += 86) {
+    addBox({ x, y: train.y + 28, w: 56, h: 24 }, 0x9ed7f2, 1.96, 1.16);
+  }
+  for (const wheelX of [train.x + 90, train.x + train.w - 90]) {
+    const wheel = addCylinder(0.18, 0.2, 0x172632, worldX(wheelX), worldY(train.y + train.h + 2), 1.38, 18);
+    wheel.rotation.x = Math.PI / 2;
+  }
+}
+
+function drawCoin3D(coin) {
+  if (coin.got) return;
+  const color = scene.theme === "mine" ? [0x6ee7ff, 0xb678ff, 0xffd15f][Math.floor(coin.x / 70) % 3] : 0xffd15f;
+  const coinMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.28, 0.08, 32), mat(color, 0.36, 0.18));
+  coinMesh.rotation.x = Math.PI / 2;
+  coinMesh.rotation.z = performance.now() * 0.004 + coin.x;
+  addMesh(coinMesh, worldX(coin.x), worldY(coin.y), 1.2);
+}
+
+function drawKey3D(key) {
+  if (key.got) return;
+  const y = worldY(key.y + Math.sin(performance.now() * 0.006) * 4);
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(0.23, 0.055, 10, 20), mat(0xffd15f, 0.34, 0.16));
+  ring.rotation.y = Math.PI / 2;
+  addMesh(ring, worldX(key.x), y, 1.18);
+  addBox({ x: key.x + 10, y: key.y - 4, w: 34, h: 8 }, 0xffd15f, 0.18, 1.18);
+}
+
+function drawPowerup3D(item) {
+  const x = worldX(item.x + item.w / 2);
+  const y = worldY(item.y + item.h / 2);
+  if (item.type === "star") {
+    const star = new THREE.Mesh(new THREE.OctahedronGeometry(0.35), mat(0xffd15f, 0.42, 0.08));
+    star.rotation.y = performance.now() * 0.005;
+    addMesh(star, x, y, 1.28);
+    return;
+  }
+  if (item.type === "fireflower") {
+    addCylinder(0.07, 0.42, 0x2f9d58, x, y - 0.18, 1.2, 10);
+    addSphere(0.26, 0xff7a2f, x, y + 0.16, 1.24, 16, 10);
+    addSphere(0.12, 0xffd15f, x, y + 0.16, 1.44, 12, 8);
+    return;
+  }
+  addSphere(0.32, 0xd83d35, x, y + 0.06, 1.22, 20, 10);
+  addBox({ x: item.x + 4, y: item.y + 14, w: item.w - 8, h: 12 }, 0xf0bf8a, 0.48, 1.22);
+}
+
+function drawFireball3D(ball) {
+  addSphere(0.2, 0xff5a2b, worldX(ball.x + ball.w / 2), worldY(ball.y + ball.h / 2), 1.25, 16, 10);
+  addSphere(0.1, 0xffd15f, worldX(ball.x + ball.w / 2) - 0.04, worldY(ball.y + ball.h / 2) + 0.04, 1.38, 10, 8);
+}
+
+function drawEnemy3D(enemy) {
+  if (enemy.x < -9000) return;
+  const x = worldX(enemy.x);
+  const y = worldY(enemy.y);
+  if (enemy.type === "ghost") {
+    addSphere(0.42, 0xf3f4ff, x, y + 0.5, 1.05, 20, 12);
+    addBox({ x: enemy.x - 20, y: enemy.y - 16, w: 40, h: 28 }, 0xf3f4ff, 0.72, 1.05);
+    return;
+  }
+  if (enemy.type === "fire") {
+    const fire = new THREE.Mesh(new THREE.ConeGeometry(0.34, 0.8, 18), mat(0xff5a2b));
+    addMesh(fire, x, y + 0.48, 1.05);
+    addSphere(0.18, 0xffd15f, x, y + 0.38, 1.16, 12, 8);
+    return;
+  }
+  if (enemy.type === "bat") {
+    addSphere(0.22, 0x2a2136, x, y + 0.4, 1.08, 14, 8);
+    const wingL = addBox({ x: enemy.x - 34, y: enemy.y - 34, w: 24, h: 14 }, 0x2a2136, 0.12, 1.1);
+    const wingR = addBox({ x: enemy.x + 10, y: enemy.y - 34, w: 24, h: 14 }, 0x2a2136, 0.12, 1.1);
+    wingL.rotation.z = 0.45;
+    wingR.rotation.z = -0.45;
+    return;
+  }
+  if (enemy.type === "koopa" || enemy.type === "shell") {
+    addSphere(enemy.shell ? 0.36 : 0.34, 0x48a868, x, y + (enemy.shell ? 0.28 : 0.48), 1.08, 20, 12);
+    if (!enemy.shell) addSphere(0.22, 0xffd15f, x + (enemy.vx >= 0 ? 0.3 : -0.3), y + 0.74, 1.1, 14, 10);
+    return;
+  }
+  addSphere(0.36, 0xb86a3b, x, y + 0.28, 1.08, 18, 10);
+  addSphere(0.18, 0xe0a36c, x, y + 0.36, 1.22, 12, 8);
+}
+
+function drawGoal3D(goal) {
+  const flagY = goal.flagY ?? goal.y + 16;
+  const pole = addBox({ x: goal.x + 18, y: goal.y, w: 8, h: goal.h }, 0x172632, 0.15, 1.0);
+  pole.castShadow = false;
+  addBox({ x: goal.x + 26, y: flagY, w: 82, h: 48 }, goal.captured ? 0x245bb8 : 0xd83d35, 0.12, 1.08);
+  addSphere(0.18, 0xffd15f, worldX(goal.x + 22), worldY(goal.y - 6), 1.05, 16, 8);
+  if (goal.captured) addTextSprite("M", worldX(goal.x + 64), worldY(flagY + 24), 1.32, 0.58, "#245bb8");
+}
+
+function drawPlayer3D() {
+  const t = performance.now();
+  const blink = t < player.invincibleUntil && Math.floor(t / 80) % 2 === 0;
+  if (blink) return;
+  const star = t < player.starUntil;
+  const fire = player.power === "fire";
+  const big = player.power === "big" || fire;
+  const x = worldX(player.x + player.w / 2);
+  const footY = worldY(player.y + player.h);
+  const z = 1.25;
+  const run = Math.sin(t * 0.024) * (Math.abs(player.vx) > 0.3 && player.grounded ? 1 : 0);
+  const overalls = star ? [0xffd15f, 0xf06aa3, 0x32a7e2, 0x60c878][Math.floor(t / 90) % 4] : fire ? 0xf7fbff : 0x245bb8;
+  const shirt = star ? [0xf7fbff, 0xffd15f, 0x8f5fd9][Math.floor(t / 120) % 3] : fire ? 0xff7a2f : 0xd83d35;
+  const scale = big ? 1.1 : 1;
+  const group = new THREE.Group();
+  group.position.set(x, footY, z);
+  group.rotation.y = player.facing < 0 ? -0.25 : 0.25;
+  dynamicGroup.add(group);
+
+  const shoeGeo = new THREE.BoxGeometry(0.36 * scale, 0.14 * scale, 0.45 * scale);
+  const shoeMat = mat(0x49301f);
+  const leftShoe = new THREE.Mesh(shoeGeo, shoeMat);
+  leftShoe.position.set(-0.18 * scale, 0.08 + run * 0.08, 0.06);
+  const rightShoe = new THREE.Mesh(shoeGeo.clone(), shoeMat);
+  rightShoe.position.set(0.18 * scale, 0.08 - run * 0.08, 0.06);
+  group.add(leftShoe, rightShoe);
+
+  const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.38 * scale, 0.34 * scale, 8, 16), mat(overalls));
+  body.position.set(0, 0.66 * scale, 0);
+  group.add(body);
+  const shirtMesh = new THREE.Mesh(new THREE.SphereGeometry(0.4 * scale, 18, 10), mat(shirt));
+  shirtMesh.scale.set(1, 0.45, 0.9);
+  shirtMesh.position.set(0, 0.88 * scale, 0.02);
+  group.add(shirtMesh);
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.34 * scale, 24, 16), mat(0xf0bf8a));
+  head.position.set(0, 1.34 * scale, 0.03);
+  group.add(head);
+  const nose = new THREE.Mesh(new THREE.SphereGeometry(0.1 * scale, 12, 8), mat(0xf0bf8a));
+  nose.position.set(0.1 * player.facing * scale, 1.32 * scale, 0.32);
+  group.add(nose);
+  const cap = new THREE.Mesh(new THREE.SphereGeometry(0.37 * scale, 24, 10, 0, Math.PI * 2, 0, Math.PI / 2), mat(shirt));
+  cap.position.set(0, 1.5 * scale, 0.03);
+  group.add(cap);
+  const brim = new THREE.Mesh(new THREE.BoxGeometry(0.34 * scale, 0.08 * scale, 0.2 * scale), mat(shirt));
+  brim.position.set(0.08 * player.facing * scale, 1.43 * scale, 0.29);
+  group.add(brim);
+  const badge = new THREE.Mesh(new THREE.CylinderGeometry(0.105 * scale, 0.105 * scale, 0.018, 20), mat(0xffffff));
+  badge.rotation.x = Math.PI / 2;
+  badge.position.set(0, 1.52 * scale, 0.36);
+  group.add(badge);
+  const mustache = new THREE.Mesh(new THREE.BoxGeometry(0.32 * scale, 0.06 * scale, 0.055 * scale), mat(0x2a1d16));
+  mustache.position.set(0.07 * player.facing * scale, 1.22 * scale, 0.36);
+  group.add(mustache);
+  for (const side of [-1, 1]) {
+    const arm = new THREE.Mesh(new THREE.CapsuleGeometry(0.07 * scale, 0.44 * scale, 6, 10), mat(shirt));
+    arm.position.set(side * 0.44 * scale, 0.84 * scale + side * run * 0.05, 0.02);
+    arm.rotation.z = side * (0.42 + run * 0.14);
+    group.add(arm);
+    const glove = new THREE.Mesh(new THREE.SphereGeometry(0.11 * scale, 12, 8), mat(0xffffff));
+    glove.position.set(side * 0.62 * scale, 0.68 * scale + side * run * 0.08, 0.07);
+    group.add(glove);
+  }
+  if (star) {
+    for (let i = 0; i < 7; i += 1) {
+      const a = t * 0.006 + i * 0.9;
+      addSphere(0.06, 0xffffff, x + Math.cos(a) * 0.85, footY + 0.9 + Math.sin(a) * 0.65, z + 0.25, 8, 6);
+    }
+  }
+}
+
+function render3D() {
+  init3D();
+  if (use2DFallback) {
+    draw2DFallback();
+    return;
+  }
+  resize3D();
+  setTheme3D();
+  clearGroup(dynamicGroup);
+  drawBackground3D();
+  drawObjects3D();
+  const targetX = worldX(cameraX + W * 0.54);
+  const targetY = WORLD_H * 0.54;
+  const target = new THREE.Vector3(targetX + 2.2, targetY - 0.7, 0.35);
+  camera3D.position.set(targetX - 4.8, targetY + 4.7, 25.2);
+  camera3D.lookAt(target);
+  renderer3D.render(threeScene, camera3D);
+}
+
 function draw() {
+  render3D();
+}
+
+function draw2DFallback() {
   drawBackground();
   ctx.save();
   ctx.translate(-cameraX, 0);
@@ -2760,6 +3284,11 @@ document.querySelectorAll("[data-control]").forEach((button) => {
 });
 
 canvas.addEventListener("pointerdown", () => {
+  if (!gameStarted) startIntro();
+  startMusic();
+});
+
+webglCanvas.addEventListener("pointerdown", () => {
   if (!gameStarted) startIntro();
   startMusic();
 });
