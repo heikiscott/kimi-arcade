@@ -154,6 +154,7 @@ p {
 .example {
   margin-top: 12px;
   font-size: 1.06rem;
+  overflow-wrap: anywhere;
 }
 
 .card-actions,
@@ -203,6 +204,7 @@ button:active {
 .quiz-panel h2 {
   font-size: 1.65rem;
   line-height: 1.15;
+  overflow-wrap: anywhere;
 }
 
 .answer-grid button.correct {

@@ -2,80 +2,73 @@ const words = [
   {
     word: "cucumber",
     meaning: "n. 黄瓜",
-    detail: "食物类名词，无变形。",
-    example: "I eat cucumber every day. 我每天吃黄瓜。"
+    detail: "词性：名词。食物类名词，无变形。",
+    example: "In Weihai, I put cucumber in my lunch box before the math thinking contest. 在威海参加数学思维竞赛前，我把黄瓜放进午餐盒。"
   },
   {
     word: "spill",
     meaning: "v./n. 液体洒出、泼洒",
-    detail: "过去式 spilled/spilt，侧重液体、粉末不小心洒出来。",
-    example: "Don't spill milk on the table. 别把牛奶洒桌上。"
+    detail: "词性：动词/名词。过去式 spilled/spilt，侧重液体、粉末不小心洒出来。",
+    example: "Do not spill the magic ink while coding the mini game. 编小游戏时，别把魔术墨水洒出来。"
   },
   {
     word: "split",
     meaning: "v./n. 劈开、拆分、分裂、分摊",
-    detail: "过去式 split 不变。spill 是液体洒；split 是切开、分摊、分裂。",
-    example: "We split the bill. 我们分摊账单。"
+    detail: "词性：动词/名词。过去式 split 不变。spill 是液体洒；split 是切开、分摊、分裂。",
+    example: "We split the hard math problem into three small steps. 我们把难数学题拆成三个小步骤。"
   },
   {
     word: "maintain",
     meaning: "v. 维持；保持；维护；坚持观点",
-    detail: "搭配：maintain balance，maintain a building。",
-    example: "He maintains a healthy lifestyle. 他保持健康的生活。"
+    detail: "词性：动词。搭配：maintain balance，maintain a building。",
+    example: "I maintain my study plan and fix bugs in my arcade every day. 我每天坚持学习计划，也维护自己的小游戏大厅。"
   },
   {
     word: "mountain",
     meaning: "n. 大山，山脉",
-    detail: "hill 是小山；mountain 是高山。",
-    example: "There is a lake near the mountain. 山边有一片湖。"
+    detail: "词性：名词。hill 是小山；mountain 是高山。",
+    example: "From the Weihai beach, the green mountain looks like a giant magic prop. 从威海海边看，那座青山像一个巨大的魔术道具。"
   },
   {
     word: "feature",
     meaning: "n. 特征，特点；v. 以...为特色",
-    detail: "搭配：main feature 主要特点。",
-    example: "The phone's best feature is its camera. 这款手机最大亮点是摄像头。"
+    detail: "词性：名词/动词。搭配：main feature 主要特点。",
+    example: "The best feature of my mini game is the magic door. 我做的小游戏最大特点是魔法门。"
   },
   {
     word: "future",
     meaning: "n./adj. 未来，将来；未来的",
-    detail: "固定：in the future 在将来。",
-    example: "I plan to study abroad in the future. 我计划将来出国留学。"
+    detail: "词性：名词/形容词。固定：in the future 在将来。",
+    example: "In the future, I want to build smarter games with code. 将来我想用代码做出更聪明的游戏。"
   },
   {
     word: "break",
     meaning: "v. 打破、弄坏、中断；n. 休息",
-    detail: "break -> broke -> broken。短语：break down，break the rule，take a break。",
-    example: "Don't break the glass. 别打碎玻璃杯。"
+    detail: "词性：动词/名词。break -> broke -> broken。短语：break down，break the rule，take a break。",
+    example: "Take a break after you solve five math puzzles. 解完五道数学题后休息一下。"
   },
   {
     word: "breath",
     meaning: "n. 呼吸；一口气",
-    detail: "breath 是名词；breathe 是动词。take a deep breath = 深呼吸。",
-    example: "Take a breath and calm down. 深呼吸冷静一下。"
-  },
-  { word: "abandon", meaning: "v. 放弃，抛弃", detail: "常用于放弃计划、地方或人。", example: "Do not abandon your plan too quickly." },
-  { word: "ruin", meaning: "n. 废墟；v. 毁坏，毁灭", detail: "可指建筑废墟，也可指把事情毁掉。", example: "The storm ruined the road." },
-  { word: "destroy", meaning: "v. 破坏，摧毁", detail: "比 damage 程度更重，常指彻底摧毁。", example: "The fire destroyed the old house." },
-  { word: "damage", meaning: "v./n. 损坏", detail: "损坏但不一定完全毁掉。", example: "The rain damaged the book." },
-  { word: "crumble", meaning: "v. 崩溃，崩裂，瓦解", detail: "可指墙体碎裂，也可指计划瓦解。", example: "The old wall began to crumble." },
-  { word: "complete", meaning: "v./adj. 完成；完整的", detail: "complete the homework = 完成作业。", example: "I will complete the task today." },
-  { word: "mansion", meaning: "n. 公馆，豪宅", detail: "比普通 house 更大、更豪华。", example: "They live in a big mansion." },
-  { word: "release", meaning: "v./n. 释放，发布，发行", detail: "可指释放人、发布消息、发行电影。", example: "The company will release a new game." },
-  { word: "explore", meaning: "v. 探索，考察，探险", detail: "explore a city/forest/cave。", example: "We explore the forest together." },
-  { word: "scatter", meaning: "v. 撒，四散，驱散", detail: "表示散开或把东西撒开。", example: "The wind scattered the leaves." },
-  { word: "display", meaning: "v./n. 陈列，展示", detail: "display pictures/products。", example: "The museum displays old tools." },
-  { word: "abolish", meaning: "v. 废除，除去", detail: "常用于废除制度、规则。", example: "The rule was abolished." },
-  { word: "get rid of", meaning: "phr. 去除，去掉，免除", detail: "常用于摆脱不需要的东西。", example: "We should get rid of bad habits." },
-  { word: "remove", meaning: "v. 去除，移开，免除", detail: "remove 可用于移走物体或删除内容。", example: "Please remove the box from the door." },
-  { word: "establish", meaning: "v. 建立，确立，设立", detail: "establish a school/company/rule。", example: "They established a new school." },
-  { word: "exist", meaning: "v. 存在", detail: "表示真实存在。", example: "Does this animal still exist?" },
-  { word: "survive", meaning: "v. 生存，存活，继续存在", detail: "survive a storm/accident。", example: "The plant survived the winter." },
-  { word: "disappear", meaning: "v. 消失，灭绝", detail: "appear 出现；disappear 消失。", example: "The sun disappeared behind the clouds." },
-  { word: "prohibit", meaning: "v. 阻止，禁止", detail: "尤指以规则或法令禁止。", example: "The sign prohibits parking here." },
-  { word: "prevent", meaning: "v. 阻止，防止", detail: "prevent accidents/disease。", example: "Careful driving can prevent accidents." }
+    detail: "词性：名词。breath 是名词；breathe 是动词。take a deep breath = 深呼吸。",
+    example: "Before the magic show, I take a deep breath and check my cards. 魔术表演前，我深呼吸并检查扑克牌。"
+  }
 ];
 
-const storageKey = "kimiWordCheckin0728";
+const quizQuestions = [
+  { word: "cucumber", question: "威海旅行时，午餐盒里放了一根黄瓜。这个“黄瓜”选哪个词？" },
+  { word: "spill", question: "魔术墨水不小心洒在桌上，“洒出”选哪个词？" },
+  { word: "split", question: "数学思维竞赛里，把难题拆成三步，“拆分”选哪个词？" },
+  { word: "maintain", question: "每天维护自己的小游戏网页，“维护、保持”选哪个词？" },
+  { word: "mountain", question: "在威海看到一座高山，“高山”选哪个词？" },
+  { word: "feature", question: "你的小游戏最大特点是魔法门，“特点”选哪个词？" },
+  { word: "future", question: "将来想用编程做更厉害的游戏，“未来”选哪个词？" },
+  { word: "break", question: "做完五道数学题后休息一下，“休息”选哪个词？" },
+  { word: "breath", question: "魔术表演前深呼吸，“一口气、呼吸”这个名词选哪个词？" }
+];
+
+const storageKey = "kimiWordCheckinCore9V1";
+const diaryTemplate = "今日完成单词单选练习，错题记录：______，学习总结：______。";
 const today = new Date().toISOString().slice(0, 10);
 
 const wordText = document.querySelector("#wordText");
@@ -95,6 +88,7 @@ const diaryStatus = document.querySelector("#diaryStatus");
 
 let index = 0;
 let quizWord = null;
+let currentQuiz = null;
 let quizLocked = false;
 
 function loadState() {
@@ -105,11 +99,12 @@ function loadState() {
       checkins: [],
       quizCorrect: 0,
       quizTotal: 0,
-      diary: "",
+      quizCursor: 0,
+      diary: diaryTemplate,
       ...JSON.parse(localStorage.getItem(storageKey) || "{}")
     };
   } catch {
-    return { known: {}, unsure: {}, checkins: [], quizCorrect: 0, quizTotal: 0, diary: "" };
+    return { known: {}, unsure: {}, checkins: [], quizCorrect: 0, quizTotal: 0, quizCursor: 0, diary: diaryTemplate };
   }
 }
 
@@ -176,14 +171,12 @@ function shuffle(items) {
 
 function newQuiz() {
   quizLocked = false;
-  quizWord = words[Math.floor(Math.random() * words.length)];
-  const askEnglish = Math.random() > 0.5;
-  quizQuestion.textContent = askEnglish ? `${quizWord.meaning} 的英文是？` : `${quizWord.word} 的中文意思是？`;
-  const correct = askEnglish ? quizWord.word : quizWord.meaning;
-  const options = shuffle([
-    correct,
-    ...shuffle(words.filter((item) => item.word !== quizWord.word)).slice(0, 3).map((item) => (askEnglish ? item.word : item.meaning))
-  ]);
+  const data = state();
+  currentQuiz = quizQuestions[(data.quizCursor || 0) % quizQuestions.length];
+  quizWord = words.find((item) => item.word === currentQuiz.word);
+  quizQuestion.textContent = currentQuiz.question;
+  const correct = currentQuiz.word;
+  const options = shuffle([correct, ...shuffle(words.filter((item) => item.word !== correct)).slice(0, 3).map((item) => item.word)]);
   answerGrid.innerHTML = "";
   options.forEach((option) => {
     const button = document.createElement("button");
@@ -192,7 +185,7 @@ function newQuiz() {
     button.addEventListener("click", () => answerQuiz(button, option, correct));
     answerGrid.appendChild(button);
   });
-  quizResult.textContent = "点一个答案。";
+  quizResult.textContent = `第 ${((data.quizCursor || 0) % quizQuestions.length) + 1} / 9 题，点一个答案。`;
 }
 
 function answerQuiz(button, option, correct) {
@@ -205,15 +198,16 @@ function answerQuiz(button, option, correct) {
     data.known[quizWord.word] = true;
     delete data.unsure[quizWord.word];
     button.classList.add("correct");
-    quizResult.textContent = `答对了：${quizWord.word}。`;
+    quizResult.textContent = `答对了，标准答案：${quizWord.word}。`;
   } else {
     data.unsure[quizWord.word] = true;
     button.classList.add("wrong");
-    quizResult.textContent = `正确答案：${correct}`;
+    quizResult.textContent = `答错了，标准答案：${correct}`;
     [...answerGrid.children].forEach((child) => {
       if (child.textContent === correct) child.classList.add("correct");
     });
   }
+  data.quizCursor = (data.quizCursor + 1) % quizQuestions.length;
   saveState(data);
   renderStats();
   renderList();
