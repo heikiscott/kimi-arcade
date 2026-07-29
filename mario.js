@@ -472,8 +472,9 @@ function tuneLinkedLevels() {
   sceneTemplates.lava.platforms.push(
     { x: 2400, y: 472, w: 210, h: 34, type: "lavaRock" },
     { x: 2750, y: 404, w: 210, h: 34, type: "lavaRock" },
-    { x: 3120, y: 492, w: 220, h: 34, type: "lavaRock" },
-    { x: 3520, y: 426, w: 220, h: 34, type: "lavaRock" },
+    { x: 3120, y: 492, w: 300, h: 34, type: "lavaRock" },
+    { x: 3446, y: 468, w: 118, h: 30, type: "lavaRock" },
+    { x: 3588, y: 426, w: 220, h: 34, type: "lavaRock" },
     { x: 3920, y: 540, w: 430, h: 80, type: "lavaRock" },
     { x: 4550, y: 540, w: 450, h: 80, type: "lavaRock" }
   );
@@ -481,14 +482,15 @@ function tuneLinkedLevels() {
     { x: 2260, y: 564, w: 140, h: 56, type: "lava" },
     { x: 2620, y: 564, w: 130, h: 56, type: "lava" },
     { x: 2960, y: 564, w: 160, h: 56, type: "lava" },
-    { x: 3340, y: 564, w: 180, h: 56, type: "lava" },
+    { x: 3420, y: 564, w: 26, h: 56, type: "lava" },
+    { x: 3564, y: 564, w: 24, h: 56, type: "lava" },
     { x: 4350, y: 564, w: 200, h: 56, type: "lava" }
   );
   sceneTemplates.lava.blocks.push({ x: 3240, y: 354, w: 42, h: 42, type: "question", content: "star", used: false, revealed: true, bump: 0 });
-  sceneTemplates.lava.coins.push({ x: 2480, y: 428 }, { x: 2820, y: 356 }, { x: 3200, y: 444 }, { x: 3600, y: 378 }, { x: 4640, y: 492 });
+  sceneTemplates.lava.coins.push({ x: 2480, y: 428 }, { x: 2820, y: 356 }, { x: 3200, y: 444 }, { x: 3488, y: 420 }, { x: 3650, y: 378 }, { x: 4640, y: 492 });
   sceneTemplates.lava.enemies.push(
     { x: 2880, y: 362, vx: 1.15, minX: 2760, maxX: 2960, type: "fire" },
-    { x: 3300, y: 452, vx: 1.25, minX: 3140, maxX: 3500, type: "koopa" },
+    { x: 3280, y: 452, vx: 0.82, minX: 3188, maxX: 3372, type: "koopa" },
     { x: 4100, y: 500, vx: 1.25, minX: 3920, maxX: 4320, type: "fire" }
   );
 
