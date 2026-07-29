@@ -3,7 +3,7 @@ const words = [
     word: "cucumber",
     meaning: "n. 黄瓜",
     detail: "词性：名词。食物类名词，无变形。",
-    example: "In Weihai, I put cucumber in my lunch box before the math thinking contest. 在威海参加数学思维竞赛前，我把黄瓜放进午餐盒。"
+    example: "In Weihai, I put cucumber in my lunch box before the Olympiad math contest. 在威海参加奥数竞赛前，我把黄瓜放进午餐盒。"
   },
   {
     word: "spill",
@@ -58,7 +58,7 @@ const words = [
 const quizQuestions = [
   { word: "cucumber", question: "威海旅行时，午餐盒里放了一根黄瓜。这个“黄瓜”选哪个词？" },
   { word: "spill", question: "魔术墨水不小心洒在桌上，“洒出”选哪个词？" },
-  { word: "split", question: "数学思维竞赛里，把难题拆成三步，“拆分”选哪个词？" },
+  { word: "split", question: "奥数竞赛里，把难题拆成三步，“拆分”选哪个词？" },
   { word: "maintain", question: "每天维护自己的小游戏网页，“维护、保持”选哪个词？" },
   { word: "mountain", question: "在威海看到一座高山，“高山”选哪个词？" },
   { word: "feature", question: "你的小游戏最大特点是魔法门，“特点”选哪个词？" },
