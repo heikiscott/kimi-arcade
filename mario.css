@@ -93,14 +93,6 @@ canvas {
   box-shadow: 0 24px 60px rgba(23, 38, 50, 0.2);
 }
 
-.legacy-canvas {
-  display: none;
-}
-
-#game3d {
-  background: #7ecbf2;
-}
-
 .intro-overlay {
   position: absolute;
   inset: 5px;
