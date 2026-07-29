@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>马里奥游戏 · 参考音乐新版</title>
-    <link rel="stylesheet" href="mario.css?v=exact-racing-audio-20260728" />
+    <link rel="stylesheet" href="mario.css?v=riddle-blocks-20260729" />
   </head>
   <body>
     <a class="home-link" href="arcade.html">游戏大厅</a>
@@ -33,6 +33,15 @@
             <div class="save-actions">
               <button id="continueSaveBtn" type="button" hidden>继续上次游戏</button>
               <button id="startIntroBtn" type="button">开始冒险</button>
+            </div>
+          </div>
+          <div class="riddle-overlay" id="riddleOverlay" hidden>
+            <div class="riddle-card">
+              <p>白色问号谜语砖</p>
+              <h2 id="riddleQuestion">破解谜语，就能飞到终点。</h2>
+              <div class="riddle-choices" id="riddleChoices"></div>
+              <span id="riddleFeedback">选一个答案。</span>
+              <button id="riddleCloseBtn" type="button">先不答</button>
             </div>
           </div>
           <div class="touch-pad" aria-label="手机控制按钮">
@@ -65,6 +74,6 @@
       </section>
     </main>
     <script src="arcade-stats.js?v=visitor-table-20260728"></script>
-    <script src="mario.js?v=exact-racing-audio-20260728"></script>
+    <script src="mario.js?v=riddle-blocks-20260729"></script>
   </body>
 </html>

@@ -16,6 +16,11 @@ const startIntroBtn = document.querySelector("#startIntroBtn");
 const continueSaveBtn = document.querySelector("#continueSaveBtn");
 const introStatus = document.querySelector("#introStatus");
 const mapButtons = document.querySelectorAll("[data-map]");
+const riddleOverlay = document.querySelector("#riddleOverlay");
+const riddleQuestion = document.querySelector("#riddleQuestion");
+const riddleChoices = document.querySelector("#riddleChoices");
+const riddleFeedback = document.querySelector("#riddleFeedback");
+const riddleCloseBtn = document.querySelector("#riddleCloseBtn");
 
 const keys = new Set();
 const touchControls = new Set();
@@ -37,6 +42,8 @@ let elevatorHintTimer = 0;
 let lastFireAt = 0;
 let lastFireHintAt = 0;
 let lastSaveAt = 0;
+let activeRiddleBlock = null;
+let autoGoalFlight = null;
 
 const W = canvas.width;
 const H = canvas.height;
@@ -45,6 +52,37 @@ const saveKey = "marioAdventureSaveV3";
 const playerIdKey = "marioAdventurePlayerId";
 const audioMuteKey = "marioAdventureAudioMuted";
 const levelOrder = ["sky", "ghost", "castle", "jungle", "lava", "mine", "metro"];
+const riddleList = [
+  {
+    question: "什么东西越顶越有惊喜，答对后还能飞到旗杆？",
+    choices: ["白色问号砖", "岩浆", "乌龟壳", "普通金币"],
+    answer: "白色问号砖"
+  },
+  {
+    question: "遇到很多敌人时，最聪明的办法是什么？",
+    choices: ["先看题再飞", "站着不动", "跳进岩浆", "把钥匙丢掉"],
+    answer: "先看题再飞"
+  },
+  {
+    question: "天空、鬼屋、城堡、丛林、岩浆都要到哪里才算过关？",
+    choices: ["旗杆终点", "起点门口", "背景云朵", "按钮旁边"],
+    answer: "旗杆终点"
+  },
+  {
+    question: "答对谜语后，小人会做什么？",
+    choices: ["飞到终点", "退回起点", "少一条命", "关掉音乐"],
+    answer: "飞到终点"
+  }
+];
+const riddleBlockHelpers = {
+  sky: { x: 536, y: 332, helperId: "sky-riddle" },
+  ghost: { x: 2440, y: 292, helperId: "ghost-riddle" },
+  castle: { x: 3050, y: 300, helperId: "castle-riddle" },
+  jungle: { x: 3240, y: 386, helperId: "jungle-riddle" },
+  lava: { x: 3186, y: 354, helperId: "lava-riddle" },
+  mine: { x: 4680, y: 320, helperId: "mine-riddle" },
+  metro: { x: 5600, y: 338, helperId: "metro-riddle" }
+};
 const audioFiles = {
   bgm: "assets/racing-user-music.m4a?v=music-lite-20260722",
   bgmFallback: "assets/racing-user-music.mp4?v=20260722",
@@ -463,6 +501,7 @@ function tuneLinkedLevels() {
     { x: 2180, y: 388, w: 156, h: 28, type: "cloud" }
   );
   sceneTemplates.sky.coins.push({ x: 2220, y: 342 }, { x: 2340, y: 492 });
+  sceneTemplates.sky.blocks.push({ x: 536, y: 332, w: 42, h: 42, type: "riddle", content: "riddle", used: false, revealed: true, bump: 0, helperId: "sky-riddle" });
   sceneTemplates.sky.enemies.push({ x: 2290, y: 500, vx: 1.05, minX: 2220, maxX: 2440, type: "goomba" });
 
   sceneTemplates.ghost.platforms[0].w = sceneTemplates.ghost.width;
@@ -471,7 +510,10 @@ function tuneLinkedLevels() {
     { x: 2140, y: 456, w: 190, h: 26, type: "wood" },
     { x: 2470, y: 332, w: 180, h: 26, type: "wood" }
   );
-  sceneTemplates.ghost.blocks.push({ x: 2260, y: 286, w: 42, h: 42, type: "hidden", content: "star", used: false, revealed: false, bump: 0 });
+  sceneTemplates.ghost.blocks.push(
+    { x: 2260, y: 286, w: 42, h: 42, type: "hidden", content: "star", used: false, revealed: false, bump: 0 },
+    { x: 2440, y: 292, w: 42, h: 42, type: "riddle", content: "riddle", used: false, revealed: true, bump: 0, helperId: "ghost-riddle" }
+  );
   sceneTemplates.ghost.coins.push({ x: 1900, y: 322 }, { x: 2200, y: 408 }, { x: 2540, y: 286 });
   sceneTemplates.ghost.enemies.push(
     { x: 1980, y: 500, vx: 0.95, minX: 1860, maxX: 2140, type: "ghost" },
@@ -489,7 +531,10 @@ function tuneLinkedLevels() {
     { x: 2480, y: 508, w: 116, h: 22, minY: 294, maxY: 508, speed: 1.45, dir: -1, active: true },
     { x: 3000, y: 506, w: 116, h: 22, minY: 250, maxY: 506, speed: 1.6, dir: -1, active: true }
   );
-  sceneTemplates.castle.blocks.push({ x: 2860, y: 286, w: 42, h: 42, type: "question", content: "fireflower", used: false, revealed: true, bump: 0 });
+  sceneTemplates.castle.blocks.push(
+    { x: 2860, y: 286, w: 42, h: 42, type: "question", content: "fireflower", used: false, revealed: true, bump: 0 },
+    { x: 3050, y: 300, w: 42, h: 42, type: "riddle", content: "riddle", used: false, revealed: true, bump: 0, helperId: "castle-riddle" }
+  );
   sceneTemplates.castle.coins.push({ x: 2040, y: 316 }, { x: 2380, y: 404 }, { x: 2760, y: 286 }, { x: 3180, y: 382 });
   sceneTemplates.castle.enemies.push(
     { x: 2240, y: 500, vx: 1.25, minX: 2080, maxX: 2460, type: "koopa" },
@@ -503,7 +548,10 @@ function tuneLinkedLevels() {
     { x: 3580, y: 462, w: 240, h: 34, type: "vine" },
     { x: 3960, y: 540, w: 340, h: 80, type: "jungle" }
   );
-  sceneTemplates.jungle.blocks.push({ x: 2880, y: 310, w: 42, h: 42, type: "hidden", content: "fireflower", used: false, revealed: false, bump: 0 });
+  sceneTemplates.jungle.blocks.push(
+    { x: 2880, y: 310, w: 42, h: 42, type: "hidden", content: "fireflower", used: false, revealed: false, bump: 0 },
+    { x: 3240, y: 386, w: 42, h: 42, type: "riddle", content: "riddle", used: false, revealed: true, bump: 0, helperId: "jungle-riddle" }
+  );
   sceneTemplates.jungle.coins.push({ x: 2460, y: 444 }, { x: 2800, y: 364 }, { x: 3180, y: 492 }, { x: 3670, y: 414 }, { x: 4040, y: 492 });
   sceneTemplates.jungle.enemies.push(
     { x: 2620, y: 450, vx: 1.1, minX: 2400, maxX: 2920, type: "monkey" },
@@ -528,7 +576,10 @@ function tuneLinkedLevels() {
     { x: 3564, y: 564, w: 24, h: 56, type: "lava" },
     { x: 4350, y: 564, w: 200, h: 56, type: "lava" }
   );
-  sceneTemplates.lava.blocks.push({ x: 3240, y: 354, w: 42, h: 42, type: "question", content: "star", used: false, revealed: true, bump: 0 });
+  sceneTemplates.lava.blocks.push(
+    { x: 3186, y: 354, w: 42, h: 42, type: "riddle", content: "riddle", used: false, revealed: true, bump: 0, helperId: "lava-riddle" },
+    { x: 3240, y: 354, w: 42, h: 42, type: "question", content: "star", used: false, revealed: true, bump: 0 }
+  );
   sceneTemplates.lava.powerups.push(
     { x: 3142, y: 438, w: 30, h: 26, vx: 0, vy: 0, type: "wing", born: 0 },
     { x: 3180, y: 438, w: 28, h: 28, vx: 0, vy: 0, type: "fireflower", born: 0 },
@@ -551,7 +602,10 @@ function tuneLinkedLevels() {
     { x: 5200, y: 540, w: 500, h: 80, type: "mine" }
   );
   sceneTemplates.mine.elevators.push({ x: 4380, y: 508, w: 108, h: 22, minY: 296, maxY: 508, speed: 1.55, dir: -1, active: true });
-  sceneTemplates.mine.blocks.push({ x: 4080, y: 300, w: 42, h: 42, type: "hidden", content: "star", used: false, revealed: false, bump: 0 });
+  sceneTemplates.mine.blocks.push(
+    { x: 4080, y: 300, w: 42, h: 42, type: "hidden", content: "star", used: false, revealed: false, bump: 0 },
+    { x: 4680, y: 320, w: 42, h: 42, type: "riddle", content: "riddle", used: false, revealed: true, bump: 0, helperId: "mine-riddle" }
+  );
   sceneTemplates.mine.coins.push({ x: 2440, y: 434 }, { x: 2790, y: 360 }, { x: 3150, y: 300 }, { x: 3540, y: 420 }, { x: 3980, y: 492 }, { x: 4720, y: 410 }, { x: 5360, y: 492 });
   sceneTemplates.mine.enemies.push(
     { x: 2600, y: 440, vx: 1.1, minX: 2380, maxX: 2920, type: "bat" },
@@ -574,7 +628,10 @@ function tuneLinkedLevels() {
     { x: 4560, y: 568, w: 180, h: 52, type: "track" },
     { x: 5280, y: 568, w: 180, h: 52, type: "track" }
   );
-  sceneTemplates.metro.blocks.push({ x: 4760, y: 318, w: 42, h: 42, type: "hidden", content: "fireflower", used: false, revealed: false, bump: 0 });
+  sceneTemplates.metro.blocks.push(
+    { x: 4760, y: 318, w: 42, h: 42, type: "hidden", content: "fireflower", used: false, revealed: false, bump: 0 },
+    { x: 5600, y: 338, w: 42, h: 42, type: "riddle", content: "riddle", used: false, revealed: true, bump: 0, helperId: "metro-riddle" }
+  );
   sceneTemplates.metro.coins.push({ x: 3420, y: 362 }, { x: 3940, y: 390 }, { x: 4480, y: 346 }, { x: 5120, y: 382 }, { x: 5960, y: 322 });
   sceneTemplates.metro.enemies.push(
     { x: 3700, y: 500, vx: 1.2, minX: 3480, maxX: 4040, type: "goomba" },
@@ -628,8 +685,29 @@ function cloneScene(key) {
     hazards: (template.hazards || []).map((item) => ({ ...item })),
     goal: template.goal ? { ...template.goal } : null
   };
+  ensureRiddleBlock(key, cloned);
   if (key === "lava") ensureLavaFlightPowerups(cloned);
   return cloned;
+}
+
+function ensureRiddleBlock(key, targetScene) {
+  const helper = riddleBlockHelpers[key];
+  if (!helper || !targetScene?.blocks) return;
+  const exists = targetScene.blocks.some((block) => block.helperId === helper.helperId || (block.type === "riddle" && Math.abs(block.x - helper.x) < 12 && Math.abs(block.y - helper.y) < 12));
+  if (!exists) {
+    targetScene.blocks.push({
+      x: helper.x,
+      y: helper.y,
+      w: 42,
+      h: 42,
+      type: "riddle",
+      content: "riddle",
+      used: false,
+      revealed: true,
+      bump: 0,
+      helperId: helper.helperId
+    });
+  }
 }
 
 function ensureLavaFlightPowerups(targetScene) {
@@ -667,6 +745,7 @@ const progress = Object.fromEntries(Object.keys(sceneTemplates).map((key) => [ke
 function loadScene(key, spawnName = "entry") {
   sceneKey = key;
   scene = progress[key];
+  ensureRiddleBlock(key, scene);
   if (key === "lava") ensureLavaFlightPowerups(scene);
   unlockedScenes.add(key);
   const spawn = spawns[key]?.[spawnName] || scene.spawn;
@@ -701,6 +780,9 @@ function reset(clearSave = true) {
   touchControls.clear();
   fireballs.length = 0;
   flagCeremony = null;
+  activeRiddleBlock = null;
+  autoGoalFlight = null;
+  if (riddleOverlay) riddleOverlay.hidden = true;
   Object.keys(progress).forEach((key) => {
     progress[key] = cloneScene(key);
   });
@@ -922,6 +1004,7 @@ function restoreGameSave() {
   if (!save?.progress?.[save.sceneKey]) return false;
   Object.keys(progress).forEach((key) => {
     progress[key] = save.progress[key] ? { ...cloneScene(key), ...save.progress[key] } : cloneScene(key);
+    ensureRiddleBlock(key, progress[key]);
     if (key === "lava") ensureLavaFlightPowerups(progress[key]);
   });
   unlockedScenes = new Set(save.unlockedScenes?.length ? save.unlockedScenes : ["sky", save.sceneKey]);
@@ -936,6 +1019,9 @@ function restoreGameSave() {
   player.rideTrain = null;
   fireballs.length = 0;
   flagCeremony = null;
+  activeRiddleBlock = null;
+  autoGoalFlight = null;
+  if (riddleOverlay) riddleOverlay.hidden = true;
   cameraX = Math.max(0, Math.min(scene.width - W, player.x - 220));
   gameStarted = true;
   won = false;
@@ -963,12 +1049,17 @@ function isPressed(name) {
 function tick(now = performance.now()) {
   const dt = Math.min(32, now - lastTime) / 16.67;
   lastTime = now;
-  if (gameStarted && (!won || flagCeremony)) update(dt);
+  if (gameStarted && !activeRiddleBlock && (!won || flagCeremony)) update(dt);
   draw();
   requestAnimationFrame(tick);
 }
 
 function update(dt) {
+  if (autoGoalFlight) {
+    updateAutoGoalFlight(dt);
+    cameraX += (Math.max(0, Math.min(scene.width - W, player.x - W * 0.42)) - cameraX) * 0.14;
+    return;
+  }
   if (flagCeremony) {
     updateFlagCeremony(dt);
     cameraX += (Math.max(0, Math.min(scene.width - W, player.x - W * 0.42)) - cameraX) * 0.12;
@@ -1149,6 +1240,14 @@ function handleBlockHits(prevY) {
 }
 
 function activateBlock(block) {
+  if (block.type === "riddle") {
+    if (block.used) {
+      playBlockSound();
+      return;
+    }
+    openRiddle(block);
+    return;
+  }
   if (block.used) {
     playBlockSound();
     return;
@@ -1175,6 +1274,92 @@ function activateBlock(block) {
     spawnPowerup(block);
     statusText.textContent = block.content === "star" ? "星星出来了！碰到它会无敌 5 秒。" : block.content === "fireflower" ? "火焰花出来了！吃到后按 J 发火球。" : "红蘑菇出来了！吃到它会变大并加 1 条生命。";
     playKeySound();
+  }
+}
+
+function pickRiddle() {
+  const index = Math.abs((levelOrder.indexOf(sceneKey) + player.coins + player.keys) % riddleList.length);
+  return riddleList[index];
+}
+
+function openRiddle(block) {
+  if (!riddleOverlay || !riddleQuestion || !riddleChoices || !riddleFeedback) return;
+  activeRiddleBlock = block;
+  const riddle = pickRiddle();
+  block.activeRiddleAnswer = riddle.answer;
+  riddleQuestion.textContent = riddle.question;
+  riddleFeedback.textContent = "答对就会飞到本关终点。";
+  riddleChoices.innerHTML = "";
+  riddle.choices.forEach((choice) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.textContent = choice;
+    button.addEventListener("click", () => answerRiddle(choice));
+    riddleChoices.appendChild(button);
+  });
+  keys.clear();
+  touchControls.clear();
+  riddleOverlay.hidden = false;
+  statusText.textContent = "白色问号谜语砖打开了！答对就飞到旗杆。";
+  playKeySound();
+}
+
+function answerRiddle(choice) {
+  if (!activeRiddleBlock) return;
+  if (choice !== activeRiddleBlock.activeRiddleAnswer) {
+    riddleFeedback.textContent = "不对，再猜一次。";
+    playBlockSound();
+    return;
+  }
+  activeRiddleBlock.used = true;
+  activeRiddleBlock.revealed = true;
+  activeRiddleBlock = null;
+  if (riddleOverlay) riddleOverlay.hidden = true;
+  beginAutoGoalFlight();
+}
+
+function closeRiddle() {
+  activeRiddleBlock = null;
+  if (riddleOverlay) riddleOverlay.hidden = true;
+  statusText.textContent = "先不答谜语也可以，继续自己闯关。";
+}
+
+function beginAutoGoalFlight() {
+  if (!scene.goal) return;
+  keys.clear();
+  touchControls.clear();
+  fireballs.length = 0;
+  player.flightMode = "riddle";
+  player.flightUntil = performance.now() + 3200;
+  player.invincibleUntil = player.flightUntil;
+  player.grounded = false;
+  autoGoalFlight = {
+    startX: player.x,
+    startY: player.y,
+    targetX: scene.goal.x - player.w + 18,
+    targetY: Math.max(80, scene.goal.y + scene.goal.h - player.h - 20),
+    startedAt: performance.now(),
+    duration: 2200
+  };
+  statusText.textContent = "答对了！谜语砖启动飞行，直接飞到本关终点。";
+  playStarSound();
+}
+
+function updateAutoGoalFlight(dt) {
+  if (!autoGoalFlight) return;
+  const p = Math.min(1, (performance.now() - autoGoalFlight.startedAt) / autoGoalFlight.duration);
+  const ease = 1 - Math.pow(1 - p, 3);
+  const arc = Math.sin(p * Math.PI) * 120;
+  player.x = autoGoalFlight.startX + (autoGoalFlight.targetX - autoGoalFlight.startX) * ease;
+  player.y = autoGoalFlight.startY + (autoGoalFlight.targetY - autoGoalFlight.startY) * ease - arc;
+  player.vx = 0;
+  player.vy = 0;
+  player.facing = 1;
+  if (p >= 1) {
+    autoGoalFlight = null;
+    player.flightMode = "";
+    player.flightUntil = 0;
+    startFlagCeremony(scene.goal);
   }
 }
 
@@ -1918,6 +2103,8 @@ function drawBlock(block) {
     ctx.fillStyle = "#9b7b62";
   } else if (block.type === "question") {
     ctx.fillStyle = "#ffd15f";
+  } else if (block.type === "riddle") {
+    ctx.fillStyle = "#f7fbff";
   } else if (block.type === "hidden") {
     ctx.fillStyle = "#f7fbff";
   } else {
@@ -1951,7 +2138,8 @@ function drawBlock(block) {
   ctx.font = "900 26px system-ui";
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
-  if (block.type === "question" && !used) ctx.fillText("?", block.w / 2, block.h / 2 + 1);
+  if ((block.type === "question" || block.type === "riddle") && !used) ctx.fillText("?", block.w / 2, block.h / 2 + 1);
+  if (block.type === "riddle" && used) ctx.fillText("飞", block.w / 2, block.h / 2 + 1);
   if (block.type === "hidden" && !used) ctx.fillText("!", block.w / 2, block.h / 2 + 1);
   if (block.type === "brick") {
     ctx.strokeStyle = "rgba(255,255,255,0.28)";
@@ -3053,6 +3241,7 @@ musicImportInput.addEventListener("change", () => {
   importLocalMusic(musicImportInput.files?.[0]);
 });
 
+riddleCloseBtn?.addEventListener("click", closeRiddle);
 startIntroBtn.addEventListener("click", startIntro);
 restartBtn.addEventListener("click", reset);
 

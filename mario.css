@@ -152,6 +152,78 @@ canvas {
   display: none;
 }
 
+.riddle-overlay {
+  position: absolute;
+  inset: 5px;
+  z-index: 6;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  border-radius: 4px;
+  background: rgba(13, 20, 36, 0.78);
+  text-align: center;
+  transform: perspective(1400px) rotateX(2.2deg) rotateY(-1.1deg) translateZ(20px);
+  transform-origin: 50% 62%;
+}
+
+.riddle-overlay[hidden] {
+  display: none;
+}
+
+.riddle-card {
+  width: min(560px, 100%);
+  display: grid;
+  gap: 12px;
+  padding: 22px;
+  border: 4px solid #172632;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.96);
+  color: #172632;
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.28);
+  text-shadow:
+    0 1px 0 #fff,
+    0 0 8px rgba(255, 255, 255, 0.75);
+}
+
+.riddle-card p,
+.riddle-card h2,
+.riddle-card span {
+  margin: 0;
+}
+
+.riddle-card p {
+  color: #d83d35;
+  font-size: 0.85rem;
+  font-weight: 950;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.riddle-card h2 {
+  font-size: clamp(1.35rem, 4vw, 2.2rem);
+  line-height: 1.2;
+}
+
+.riddle-choices {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.riddle-choices button {
+  min-height: 48px;
+  background: #f7fbff;
+  color: #172632;
+  border: 2px solid rgba(23, 38, 50, 0.22);
+  text-shadow:
+    0 1px 0 #fff,
+    0 0 8px rgba(255, 255, 255, 0.76);
+}
+
+.riddle-choices button:active {
+  background: #ffd15f;
+}
+
 .intro-overlay p {
   margin: 0;
   color: #ffd15f;
@@ -435,6 +507,27 @@ button:active {
     gap: 8px;
     padding: 14px;
     transform: perspective(1200px) rotateX(1.2deg) rotateY(-0.45deg) translateZ(10px);
+  }
+
+  .riddle-overlay {
+    inset: 3px;
+    padding: 10px;
+    transform: perspective(1200px) rotateX(1.2deg) rotateY(-0.45deg) translateZ(14px);
+  }
+
+  .riddle-card {
+    gap: 9px;
+    padding: 14px;
+  }
+
+  .riddle-choices {
+    grid-template-columns: 1fr;
+    gap: 7px;
+  }
+
+  .riddle-choices button {
+    min-height: 40px;
+    font-size: 0.92rem;
   }
 
   .intro-overlay h1 {
