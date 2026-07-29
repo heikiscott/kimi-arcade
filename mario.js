@@ -33,6 +33,7 @@ let lastTime = performance.now();
 let doorHintTimer = 0;
 let elevatorHintTimer = 0;
 let lastFireAt = 0;
+let lastFireHintAt = 0;
 let lastSaveAt = 0;
 
 const W = canvas.width;
@@ -487,6 +488,7 @@ function tuneLinkedLevels() {
     { x: 4350, y: 564, w: 200, h: 56, type: "lava" }
   );
   sceneTemplates.lava.blocks.push({ x: 3240, y: 354, w: 42, h: 42, type: "question", content: "star", used: false, revealed: true, bump: 0 });
+  sceneTemplates.lava.powerups.push({ x: 3180, y: 438, w: 28, h: 28, vx: 0, vy: 0, type: "fireflower", born: 0 });
   sceneTemplates.lava.coins.push({ x: 2480, y: 428 }, { x: 2820, y: 356 }, { x: 3200, y: 444 }, { x: 3488, y: 420 }, { x: 3650, y: 378 }, { x: 4640, y: 492 });
   sceneTemplates.lava.enemies.push(
     { x: 2880, y: 362, vx: 1.15, minX: 2760, maxX: 2960, type: "fire" },
@@ -1105,7 +1107,13 @@ function spawnPowerup(block) {
 }
 
 function shootFireball() {
-  if (player.power !== "fire") return;
+  if (player.power !== "fire") {
+    offerHelperFireFlower();
+    touchControls.delete("fire");
+    keys.delete("j");
+    keys.delete("J");
+    return;
+  }
   if (performance.now() - lastFireAt < 260) return;
   lastFireAt = performance.now();
   fireballs.push({
@@ -1121,6 +1129,26 @@ function shootFireball() {
   keys.delete("j");
   keys.delete("J");
   playFireSound();
+}
+
+function offerHelperFireFlower() {
+  if (performance.now() - lastFireHintAt < 700) return;
+  lastFireHintAt = performance.now();
+  const helperNearPlayer = scene.powerups.some((item) => item.type === "fireflower" && !item.got && Math.abs(item.x - player.x) < 280);
+  if (!helperNearPlayer) {
+    scene.powerups.push({
+      x: player.x + player.facing * 46,
+      y: Math.max(80, player.y - 22),
+      w: 28,
+      h: 28,
+      vx: player.facing * 0.7,
+      vy: -1.6,
+      type: "fireflower",
+      born: performance.now()
+    });
+  }
+  statusText.textContent = "先吃火焰花才能发火球。我已经把救急火焰花放在你旁边了！";
+  playKeySound();
 }
 
 function updatePowerups(dt) {
