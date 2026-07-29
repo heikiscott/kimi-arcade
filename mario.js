@@ -598,7 +598,7 @@ const spawns = {
 
 function cloneScene(key) {
   const template = sceneTemplates[key];
-  return {
+  const cloned = {
     ...template,
     platforms: template.platforms.map((item) => ({ ...item })),
     blocks: template.blocks.map((item) => ({ ...item })),
@@ -612,6 +612,21 @@ function cloneScene(key) {
     hazards: (template.hazards || []).map((item) => ({ ...item })),
     goal: template.goal ? { ...template.goal } : null
   };
+  if (key === "lava") ensureLavaFlightPowerups(cloned);
+  return cloned;
+}
+
+function ensureLavaFlightPowerups(targetScene) {
+  if (!targetScene?.powerups) return;
+  const helpers = [
+    { x: 3090, y: 438, w: 30, h: 26, vx: 0, vy: 0, type: "wing", born: 0, helperId: "lava-wing" },
+    { x: 3180, y: 438, w: 28, h: 28, vx: 0, vy: 0, type: "fireflower", born: 0, helperId: "lava-fireflower" },
+    { x: 3478, y: 414, w: 34, h: 24, vx: 0, vy: 0, type: "plane", born: 0, helperId: "lava-plane" }
+  ];
+  helpers.forEach((helper) => {
+    const exists = targetScene.powerups.some((item) => item.helperId === helper.helperId || (item.type === helper.type && Math.abs(item.x - helper.x) < 12));
+    if (!exists) targetScene.powerups.push({ ...helper });
+  });
 }
 
 function createRandomPowerups(template) {
@@ -636,6 +651,7 @@ const progress = Object.fromEntries(Object.keys(sceneTemplates).map((key) => [ke
 function loadScene(key, spawnName = "entry") {
   sceneKey = key;
   scene = progress[key];
+  if (key === "lava") ensureLavaFlightPowerups(scene);
   unlockedScenes.add(key);
   const spawn = spawns[key]?.[spawnName] || scene.spawn;
   player.x = spawn.x;
@@ -890,6 +906,7 @@ function restoreGameSave() {
   if (!save?.progress?.[save.sceneKey]) return false;
   Object.keys(progress).forEach((key) => {
     progress[key] = save.progress[key] ? { ...cloneScene(key), ...save.progress[key] } : cloneScene(key);
+    if (key === "lava") ensureLavaFlightPowerups(progress[key]);
   });
   unlockedScenes = new Set(save.unlockedScenes?.length ? save.unlockedScenes : ["sky", save.sceneKey]);
   selectedSceneKey = save.selectedSceneKey || save.sceneKey;
