@@ -636,6 +636,261 @@ button {
   line-height: 1.45;
 }
 
+/* Realistic 2D Eiffel scene override */
+.tower-stage {
+  background:
+    radial-gradient(circle at 78% 12%, rgba(255, 226, 126, 0.72) 0 5%, transparent 6%),
+    linear-gradient(180deg, #8fc9ee 0%, #d9eef7 42%, #e3dbc7 42%, #b6c59f 100%);
+}
+
+.paris-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.river {
+  position: absolute;
+  left: -4%;
+  right: -4%;
+  bottom: 12%;
+  height: 15%;
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.28) 0 14%, transparent 14% 20%, rgba(255, 255, 255, 0.22) 20% 38%, transparent 38% 100%),
+    linear-gradient(180deg, #78b5c9, #4d8aa3);
+  transform: skewY(-2deg);
+}
+
+.city-block {
+  position: absolute;
+  bottom: 25%;
+  height: 54px;
+  border: 2px solid rgba(95, 75, 62, 0.26);
+  background:
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.58) 0 12px, transparent 12px 24px),
+    linear-gradient(#efe3cf, #b89d80);
+  opacity: 0.86;
+}
+
+.block-a { left: 4%; width: 22%; }
+.block-b { left: 69%; width: 26%; height: 62px; }
+.block-c { left: 32%; width: 12%; height: 44px; }
+
+.tree {
+  position: absolute;
+  bottom: 21%;
+  width: 46px;
+  height: 52px;
+  border-radius: 50% 50% 42% 42%;
+  background: #477844;
+  box-shadow: 0 20px 0 -12px #6f4c30;
+}
+
+.tree-a { left: 10%; }
+.tree-b { right: 12%; transform: scale(1.25); }
+.tree-c { left: 25%; transform: scale(0.9); }
+
+.eiffel-frame {
+  left: 50%;
+  bottom: 9%;
+  z-index: 3;
+  width: min(78%, 860px);
+  height: 88%;
+}
+
+.eiffel-svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  filter: drop-shadow(0 18px 24px rgba(23, 38, 50, 0.22));
+}
+
+.svg-antenna {
+  fill: none;
+  stroke: #4f4037;
+  stroke-width: 10;
+  stroke-linecap: round;
+}
+
+.svg-spire {
+  fill: url(#ironGradient);
+  stroke: #3e332d;
+  stroke-width: 7;
+}
+
+.svg-tower-fill path {
+  fill: none;
+  stroke: rgba(51, 42, 36, 0.78);
+  stroke-width: 8;
+  stroke-linecap: round;
+}
+
+.svg-heavy path {
+  fill: none;
+  stroke: #4f4037;
+  stroke-width: 18;
+  stroke-linecap: round;
+}
+
+.svg-decks rect {
+  fill: #6d5749;
+  stroke: #2f2824;
+  stroke-width: 7;
+}
+
+.svg-arch {
+  fill: none;
+  stroke: #4b3d34;
+  stroke-width: 28;
+  stroke-linecap: round;
+}
+
+.svg-wheels circle {
+  fill: #d7a249;
+  stroke: #5f4b3e;
+  stroke-width: 10;
+}
+
+.svg-wheels path {
+  fill: none;
+  stroke: #5f4b3e;
+  stroke-width: 7;
+  stroke-linecap: round;
+}
+
+.vertical-shaft {
+  bottom: 33%;
+  height: 48%;
+}
+
+.shaft-1 { left: 43%; height: 46%; }
+.shaft-2 { left: 47.5%; height: 55%; }
+.shaft-3 { left: 52.5%; height: 55%; }
+.shaft-4 { left: 57%; height: 46%; }
+
+.shaft-line {
+  inset: 0 16px;
+  border-left: 3px solid rgba(35, 29, 25, 0.72);
+  border-right: 3px solid rgba(35, 29, 25, 0.72);
+  background: repeating-linear-gradient(180deg, transparent 0 18px, rgba(255, 255, 255, 0.38) 18px 21px);
+}
+
+.vertical-car {
+  width: 54px;
+  height: 44px;
+  border-color: #f6ead6;
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.5) 0 23%, transparent 23% 27%, rgba(255, 255, 255, 0.5) 27% 50%, transparent 50% 54%, rgba(255, 255, 255, 0.5) 54% 77%, transparent 77%),
+    linear-gradient(180deg, #b68b2d, #6d4b80);
+  color: #fffaf0;
+  text-shadow: 0 2px 3px rgba(23, 38, 50, 0.55);
+}
+
+.vertical-car.blue,
+.vertical-car.green,
+.vertical-car.violet {
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.52) 0 23%, transparent 23% 27%, rgba(255, 255, 255, 0.52) 27% 50%, transparent 50% 54%, rgba(255, 255, 255, 0.52) 54% 77%, transparent 77%),
+    linear-gradient(180deg, #d7a249, #6d4b80);
+}
+
+.incline-rail {
+  height: 16px;
+  border: 2px solid rgba(47, 40, 36, 0.55);
+  border-radius: 6px;
+  background:
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.32) 0 8px, transparent 8px 18px),
+    #5f4b3e;
+}
+
+.incline-rail::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 34px;
+  background: repeating-linear-gradient(90deg, transparent 0 22px, rgba(35, 29, 25, 0.55) 22px 25px);
+  transform: translateY(-50%);
+}
+
+.rail-a {
+  left: 12%;
+  top: 74%;
+  width: 42%;
+  transform: rotate(-37deg);
+}
+
+.rail-b {
+  left: 47%;
+  top: 42%;
+  width: 42%;
+  transform: rotate(34deg);
+}
+
+.rail-c {
+  left: 20%;
+  top: 86%;
+  width: 58%;
+  transform: rotate(-22deg);
+}
+
+.passenger-car {
+  width: 118px;
+  height: 92px;
+  gap: 4px;
+  padding: 6px;
+  border-color: #2f2824;
+  background:
+    linear-gradient(90deg, #d7a249 0 28%, #6d4b80 28% 72%, #d7a249 72%),
+    linear-gradient(135deg, #d7a249, #6d4b80);
+}
+
+.passenger-car.gold {
+  background:
+    linear-gradient(90deg, #d7a249 0 28%, #6d4b80 28% 72%, #d7a249 72%),
+    linear-gradient(135deg, #d7a249, #6d4b80);
+}
+
+.passenger-car span {
+  position: relative;
+  border: 2px solid rgba(47, 40, 36, 0.55);
+  color: #2f2824;
+  background:
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.85) 0 12px, rgba(215, 234, 244, 0.82) 12px 24px),
+    #f6ead6;
+}
+
+.cargo-car {
+  width: 114px;
+  height: 66px;
+  border-color: #2f2824;
+  background:
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.16) 0 10px, transparent 10px 20px),
+    linear-gradient(135deg, #8c6c54, #4d392c);
+}
+
+.station {
+  border-color: #4f4037;
+  background: rgba(246, 234, 214, 0.94);
+}
+
+.station-left {
+  left: 10%;
+  bottom: 22%;
+}
+
+.station-mid {
+  left: 42%;
+  bottom: 49%;
+}
+
+.station-right {
+  right: 9%;
+  bottom: 38%;
+}
+
 @media (max-width: 840px) {
   .page-shell {
     width: min(100vw - 16px, 720px);

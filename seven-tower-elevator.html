@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>埃菲尔铁塔七部电梯</title>
-    <link rel="stylesheet" href="seven-tower-elevator.css?v=eiffel-realistic-20260730" />
+    <link rel="stylesheet" href="seven-tower-elevator.css?v=eiffel-svg-real-20260730" />
   </head>
   <body>
     <a class="home-link" href="arcade.html">游戏大厅</a>
@@ -22,20 +22,62 @@
         <div class="sun"></div>
         <div class="cloud cloud-a"></div>
         <div class="cloud cloud-b"></div>
+        <div class="paris-backdrop" aria-hidden="true">
+          <span class="river"></span>
+          <span class="city-block block-a"></span>
+          <span class="city-block block-b"></span>
+          <span class="city-block block-c"></span>
+          <span class="tree tree-a"></span>
+          <span class="tree tree-b"></span>
+          <span class="tree tree-c"></span>
+        </div>
 
         <div class="eiffel-frame" aria-hidden="true">
-          <div class="antenna"></div>
-          <div class="lattice"></div>
-          <div class="beam beam-left"></div>
-          <div class="beam beam-right"></div>
-          <div class="beam beam-center-left"></div>
-          <div class="beam beam-center-right"></div>
-          <div class="wheel wheel-left"></div>
-          <div class="wheel wheel-right"></div>
-          <div class="platform platform-top"></div>
-          <div class="platform platform-middle"></div>
-          <div class="platform platform-bottom"></div>
-          <div class="arch"></div>
+          <svg class="eiffel-svg" viewBox="0 0 1000 700" role="img" aria-label="埃菲尔铁塔二维钢架">
+            <defs>
+              <linearGradient id="ironGradient" x1="0" x2="0" y1="0" y2="1">
+                <stop offset="0" stop-color="#d7c7b6" />
+                <stop offset="0.52" stop-color="#8e7562" />
+                <stop offset="1" stop-color="#463930" />
+              </linearGradient>
+              <clipPath id="towerClip">
+                <path d="M486 34 L514 34 L610 248 L772 670 L628 670 L545 372 L455 372 L372 670 L228 670 L390 248 Z" />
+              </clipPath>
+            </defs>
+
+            <path class="svg-antenna" d="M500 0 L500 44" />
+            <path class="svg-spire" d="M486 34 L514 34 L534 115 L466 115 Z" />
+            <g class="svg-tower-fill" clip-path="url(#towerClip)">
+              <rect x="190" y="32" width="620" height="642" fill="url(#ironGradient)" opacity="0.32" />
+              <path d="M230 670 L500 34 L770 670" />
+              <path d="M360 670 L500 34 L640 670" />
+              <path d="M230 670 L770 670" />
+              <path d="M285 525 L715 525 M330 410 L670 410 M390 248 L610 248 M455 115 L545 115" />
+              <path d="M240 650 L720 530 L318 420 L620 248 L468 116" />
+              <path d="M760 650 L280 530 L682 420 L380 248 L532 116" />
+              <path d="M270 610 L707 462 M730 610 L293 462 M330 500 L648 330 M670 500 L352 330" />
+              <path d="M393 246 L230 670 M607 246 L770 670" />
+            </g>
+            <g class="svg-heavy">
+              <path d="M228 670 C322 466 386 250 486 34" />
+              <path d="M772 670 C678 466 614 250 514 34" />
+              <path d="M372 670 C424 466 456 250 486 34" />
+              <path d="M628 670 C576 466 544 250 514 34" />
+            </g>
+            <g class="svg-decks">
+              <rect x="424" y="104" width="152" height="22" rx="6" />
+              <rect x="350" y="236" width="300" height="28" rx="8" />
+              <rect x="286" y="398" width="428" height="34" rx="9" />
+              <rect x="172" y="642" width="656" height="36" rx="10" />
+            </g>
+            <path class="svg-arch" d="M363 670 C380 540 620 540 637 670" />
+            <g class="svg-wheels">
+              <circle cx="296" cy="523" r="44" />
+              <circle cx="704" cy="430" r="42" />
+              <path d="M296 479 L296 567 M252 523 L340 523 M265 492 L327 554 M327 492 L265 554" />
+              <path d="M704 388 L704 472 M662 430 L746 430 M674 400 L734 460 M734 400 L674 460" />
+            </g>
+          </svg>
         </div>
 
         <div class="vertical-shaft shaft-1">
@@ -95,7 +137,7 @@
       </section>
     </main>
 
-    <script src="seven-tower-elevator.js?v=eiffel-realistic-20260730"></script>
+    <script src="seven-tower-elevator.js?v=eiffel-svg-real-20260730"></script>
     <script src="arcade-stats.js?v=visitor-table-20260728"></script>
   </body>
 </html>
