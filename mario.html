@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>马里奥游戏 · 参考音乐新版</title>
-    <link rel="stylesheet" href="mario.css?v=riddle-blocks-20260729" />
+    <link rel="stylesheet" href="mario.css?v=mario-racing-stat-20260729" />
   </head>
   <body>
     <a class="home-link" href="arcade.html">游戏大厅</a>
@@ -35,6 +35,11 @@
               <button id="startIntroBtn" type="button">开始冒险</button>
             </div>
           </div>
+          <div class="records-panel" id="recordsPanel" hidden>
+            <strong>马里奥竞速闯关专属数据</strong>
+            <span id="recordsText">还没有记录。</span>
+            <button id="resetStatsBtn" type="button">只清空本游戏数据</button>
+          </div>
           <div class="riddle-overlay" id="riddleOverlay" hidden>
             <div class="riddle-card">
               <p>白色问号谜语砖</p>
@@ -63,10 +68,6 @@
           <button id="recordsBtn" type="button">大厅记录</button>
           <button id="restartBtn" type="button">重来</button>
         </div>
-        <div class="records-panel" id="recordsPanel" hidden>
-          <strong>小游戏大厅访问记录</strong>
-          <span id="recordsText">还没有记录。</span>
-        </div>
         <div class="developer-badge" aria-label="开发者">
           <img src="assets/developer-kimi-avatar.jpg" alt="kimi王佑奇头像" class="developer-avatar" />
           <span>开发者：kimi王佑奇</span>
@@ -74,6 +75,6 @@
       </section>
     </main>
     <script src="arcade-stats.js?v=visitor-table-20260728"></script>
-    <script src="mario.js?v=riddle-blocks-20260729"></script>
+    <script src="mario.js?v=mario-racing-stat-20260729"></script>
   </body>
 </html>

@@ -8,6 +8,7 @@ const restartBtn = document.querySelector("#restartBtn");
 const recordsBtn = document.querySelector("#recordsBtn");
 const recordsPanel = document.querySelector("#recordsPanel");
 const recordsText = document.querySelector("#recordsText");
+const resetStatsBtn = document.querySelector("#resetStatsBtn");
 const soundToggleBtn = document.querySelector("#soundToggleBtn");
 const musicImportBtn = document.querySelector("#musicImportBtn");
 const musicImportInput = document.querySelector("#musicImportInput");
@@ -44,12 +45,14 @@ let lastFireHintAt = 0;
 let lastSaveAt = 0;
 let activeRiddleBlock = null;
 let autoGoalFlight = null;
+let recordsPanelOpen = true;
+let runStartedAt = 0;
 
 const W = canvas.width;
 const H = canvas.height;
-const statsKey = "marioAdventureStatsV2";
+const statsKey = "mario_racing_stat";
 const saveKey = "marioAdventureSaveV3";
-const playerIdKey = "marioAdventurePlayerId";
+const playerIdKey = `${statsKey}_player_id`;
 const audioMuteKey = "marioAdventureAudioMuted";
 const levelOrder = ["sky", "ghost", "castle", "jungle", "lava", "mine", "metro"];
 const riddleList = [
@@ -811,6 +814,7 @@ function reset(clearSave = true) {
   cameraX = 0;
   gameStarted = false;
   won = false;
+  runStartedAt = 0;
   introOverlay.classList.remove("hidden");
   startIntroBtn.disabled = false;
   startIntroBtn.textContent = "开始冒险";
@@ -853,21 +857,46 @@ function getPlayerId() {
 }
 
 function defaultStats() {
+  const playerId = getPlayerId();
   return {
-    playerId: getPlayerId(),
-    visits: 0,
-    starts: 0,
-    wins: 0,
-    metroRides: 0,
+    storageKey: statsKey,
+    playerId,
+    global: {
+      opens: 0,
+      starts: 0,
+      players: {}
+    },
+    personal: {
+      clears: 0,
+      totalCoins: 0,
+      deaths: 0,
+      fastestMs: null
+    },
     maps: {},
     lastMap: "sky",
     lastPlayed: ""
   };
 }
 
+function normalizeStats(raw = {}) {
+  const base = defaultStats();
+  const stats = {
+    ...base,
+    ...raw,
+    storageKey: statsKey,
+    playerId: raw.playerId || base.playerId,
+    global: { ...base.global, ...(raw.global || {}) },
+    personal: { ...base.personal, ...(raw.personal || {}) },
+    maps: { ...base.maps, ...(raw.maps || {}) }
+  };
+  stats.global.players = { ...(stats.global.players || {}) };
+  stats.global.players[stats.playerId] = true;
+  return stats;
+}
+
 function loadStats() {
   try {
-    return { ...defaultStats(), ...JSON.parse(localStorage.getItem(statsKey) || "{}") };
+    return normalizeStats(JSON.parse(localStorage.getItem(statsKey) || "{}"));
   } catch {
     return defaultStats();
   }
@@ -901,15 +930,49 @@ function levelTitle(key = sceneKey) {
 }
 
 function updateRecordsPanel() {
-  if (window.KimiArcadeStats?.summaryText) {
-    recordsText.textContent = window.KimiArcadeStats.summaryText();
-    return;
-  }
   const stats = loadStats();
   const favorite = Object.entries(stats.maps).sort((a, b) => b[1] - a[1])[0];
   const favoriteText = favorite ? `${mapTitle(favorite[0])} ${favorite[1]} 次` : "还没有最常玩地图";
   const shortId = stats.playerId.split("-").slice(-1)[0] || "local";
-  recordsText.textContent = `这台设备访问 ${stats.visits} 次，开始玩 ${stats.starts} 次，通关 ${stats.wins} 次，坐地铁 ${stats.metroRides} 次。玩家编号：${shortId}。最常玩：${favoriteText}。公开总人数：GitHub Pages 需要接 GoatCounter 或 Google Analytics 后，才能统计别人手机的总人数和总次数。`;
+  const uv = Object.keys(stats.global.players || {}).length;
+  const fastest = stats.personal.fastestMs ? formatDuration(stats.personal.fastestMs) : "还没有全关卡纪录";
+  recordsText.textContent = `数据Key：${stats.storageKey}
+总打开游玩次数：${stats.global.opens}
+独立玩家人数：${uv}
+开始冒险次数：${stats.global.starts}
+玩家编号：${shortId}
+个人通关次数：${stats.personal.clears}
+累计收集金币：${stats.personal.totalCoins}
+死亡次数：${stats.personal.deaths}
+最快通关全关卡：${fastest}
+最常玩关卡：${favoriteText}`;
+  updateStatsVisibility();
+}
+
+function updateStatsVisibility() {
+  const inHall = !gameStarted;
+  recordsBtn.hidden = !inHall;
+  recordsPanel.hidden = !inHall || !recordsPanelOpen;
+}
+
+function formatDuration(ms) {
+  const totalSeconds = Math.max(0, Math.round(ms / 1000));
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${minutes}分${seconds.toString().padStart(2, "0")}秒`;
+}
+
+function resetMarioStats() {
+  if (!confirm("确定只清空马里奥竞速闯关专属数据吗？其他游戏数据不会被清掉。")) return;
+  try {
+    localStorage.removeItem(statsKey);
+    localStorage.removeItem(playerIdKey);
+  } catch {
+    // Some private browsers block localStorage; ignore the reset failure.
+  }
+  recordsPanelOpen = true;
+  updateRecordsPanel();
+  statusText.textContent = "马里奥竞速闯关专属数据已经清空。";
 }
 
 function sendSharedStat(eventName, details = {}) {
@@ -925,15 +988,21 @@ function sendSharedStat(eventName, details = {}) {
 function recordEvent(eventName, details = {}) {
   const stats = loadStats();
   const map = details.map || sceneKey;
-  if (eventName === "visit") stats.visits += 1;
+  stats.global.players[stats.playerId] = true;
+  if (eventName === "visit") stats.global.opens += 1;
   if (eventName === "start") {
-    stats.starts += 1;
+    stats.global.starts += 1;
     stats.maps[map] = (stats.maps[map] || 0) + 1;
     stats.lastMap = map;
     stats.lastPlayed = new Date().toISOString();
   }
-  if (eventName === "win") stats.wins += 1;
-  if (eventName === "metro") stats.metroRides += 1;
+  if (eventName === "coin") stats.personal.totalCoins += details.amount || 1;
+  if (eventName === "death") stats.personal.deaths += 1;
+  if (eventName === "clear") {
+    const duration = details.duration || 0;
+    stats.personal.clears += 1;
+    if (duration && (!stats.personal.fastestMs || duration < stats.personal.fastestMs)) stats.personal.fastestMs = duration;
+  }
   saveStats(stats);
   updateRecordsPanel();
   sendSharedStat(eventName, { ...details, map });
@@ -985,7 +1054,8 @@ function saveGame() {
         flightUntil: Math.max(0, player.flightUntil - performance.now()),
         flightMode: player.flightMode
       },
-      progress: JSON.parse(JSON.stringify(progress))
+      progress: JSON.parse(JSON.stringify(progress)),
+      runStartedAt
     };
     localStorage.setItem(saveKey, JSON.stringify(save));
   } catch {
@@ -1012,6 +1082,7 @@ function restoreGameSave() {
   sceneKey = save.sceneKey;
   scene = progress[sceneKey];
   Object.assign(player, save.player || {});
+  runStartedAt = save.runStartedAt || Date.now();
   if (save.player?.flightUntil) player.flightUntil = performance.now() + save.player.flightUntil;
   player.invincibleUntil = performance.now() + 900;
   player.starUntil = 0;
@@ -1256,6 +1327,7 @@ function activateBlock(block) {
     block.used = true;
     block.revealed = false;
     player.coins += 1;
+    recordEvent("coin", { map: sceneKey, amount: 1 });
     statusText.textContent = "变大后把砖块顶碎了，里面掉出金币。";
     playCoin();
     updateScore();
@@ -1266,6 +1338,7 @@ function activateBlock(block) {
   block.revealed = true;
   if (block.content === "coin") {
     player.coins += 1;
+    recordEvent("coin", { map: sceneKey, amount: 1 });
     statusText.textContent = block.type === "hidden" ? "隐藏砖里冒出金币！" : "问号砖块冒出金币！";
     playCoin();
     updateScore();
@@ -1457,6 +1530,7 @@ function defeatEnemy(enemy, message = "消灭怪物！") {
   enemy.x = -9999;
   enemy.vx = 0;
   player.coins += 1;
+  recordEvent("coin", { map: sceneKey, amount: 1 });
   statusText.textContent = message;
   playCoin();
   updateScore();
@@ -1596,6 +1670,7 @@ function collectItems() {
     if (rectsOverlap(playerRect(), { x: coin.x - 14, y: coin.y - 18, w: 28, h: 36 })) {
       coin.got = true;
       player.coins += 1;
+      recordEvent("coin", { map: sceneKey, amount: 1 });
       playCoin();
       updateScore();
       saveGame();
@@ -1758,7 +1833,7 @@ function finishGoalCeremony() {
     return;
   }
   won = true;
-  recordEvent("win", { map: sceneKey });
+  recordEvent("clear", { map: sceneKey, duration: runStartedAt ? Date.now() - runStartedAt : 0 });
   updateScore();
   statusText.textContent = `七关全部通关！最后的旗子已经变成你的旗子。`;
   saveGame();
@@ -1789,6 +1864,7 @@ function hurtPlayer(message, reason = "hurt") {
     return;
   }
   player.lives -= 1;
+  recordEvent("death", { map: sceneKey, reason });
   player.invincibleUntil = performance.now() + 1100;
   if (player.lives <= 0) {
     player.lives = 3;
@@ -3140,9 +3216,11 @@ function beginGame() {
   selectedSceneKey = "sky";
   loadScene(selectedSceneKey, "entry");
   gameStarted = true;
+  runStartedAt = Date.now();
   introOverlay.classList.add("hidden");
   statusText.textContent = `${scene.title}开始！往右走，顶问号砖和隐藏机关。`;
   recordEvent("start", { map: sceneKey });
+  updateStatsVisibility();
   startMusic();
   saveGame();
 }
@@ -3218,9 +3296,11 @@ canvas.addEventListener("pointerdown", () => {
 });
 
 recordsBtn.addEventListener("click", () => {
-  recordsPanel.hidden = !recordsPanel.hidden;
+  recordsPanelOpen = recordsPanel.hidden;
   updateRecordsPanel();
 });
+
+resetStatsBtn?.addEventListener("click", resetMarioStats);
 
 continueSaveBtn?.addEventListener("click", () => {
   if (!restoreGameSave()) {
