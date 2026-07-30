@@ -117,7 +117,7 @@ button {
   border: 5px solid var(--ink);
   border-radius: 8px;
   background:
-    linear-gradient(180deg, #8ed0f1 0%, #dff6ff 47%, #e7f7ed 47%, #c9dfbe 100%);
+    linear-gradient(180deg, #8ed0f1 0%, #dff6ff 46%, #d2e6d8 46%, #a8c496 100%);
   box-shadow: 0 24px 58px rgba(23, 38, 50, 0.16);
 }
 
@@ -131,8 +131,9 @@ button {
   height: 16%;
   background:
     linear-gradient(90deg, rgba(23, 38, 50, 0.16) 1px, transparent 1px),
+    linear-gradient(90deg, #607786 0 8%, transparent 8% 10%, #4c6371 10% 21%, transparent 21% 28%, #718b9a 28% 42%, transparent 42% 48%, #506979 48% 60%, transparent 60% 68%, #607786 68% 100%),
     linear-gradient(#587f49, #3f713c);
-  background-size: 32px 32px, auto;
+  background-size: 32px 32px, auto, auto;
 }
 
 .sun {
@@ -196,6 +197,36 @@ button {
   transform: translateX(-50%);
 }
 
+.eiffel-frame::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  width: 78%;
+  height: 96%;
+  background:
+    repeating-linear-gradient(56deg, rgba(23, 38, 50, 0.48) 0 4px, transparent 4px 34px),
+    repeating-linear-gradient(-56deg, rgba(23, 38, 50, 0.46) 0 4px, transparent 4px 34px),
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.28) 0 3px, transparent 3px 44px);
+  clip-path: polygon(48% 0, 53% 0, 92% 100%, 72% 100%, 58% 61%, 42% 61%, 28% 100%, 8% 100%);
+  opacity: 0.9;
+  transform: translateX(-50%);
+}
+
+.lattice {
+  position: absolute;
+  left: 50%;
+  bottom: 18%;
+  width: 88%;
+  height: 76%;
+  background:
+    repeating-linear-gradient(36deg, transparent 0 22px, rgba(255, 255, 255, 0.28) 22px 25px),
+    repeating-linear-gradient(-36deg, transparent 0 22px, rgba(23, 38, 50, 0.26) 22px 25px);
+  clip-path: polygon(28% 0, 72% 0, 100% 100%, 75% 100%, 58% 28%, 42% 28%, 25% 100%, 0 100%);
+  opacity: 0.72;
+  transform: translateX(-50%);
+}
+
 .antenna {
   position: absolute;
   left: 50%;
@@ -215,7 +246,7 @@ button {
   border-radius: 999px;
   background:
     repeating-linear-gradient(180deg, rgba(255, 255, 255, 0.32) 0 12px, transparent 12px 24px),
-    linear-gradient(180deg, #eef5f7, #718b9a 60%, #314b5a);
+    linear-gradient(180deg, #efe5d5, #8e7562 58%, #4e3f37);
   box-shadow: 0 0 0 2px rgba(23, 38, 50, 0.26);
   transform-origin: bottom center;
 }
@@ -248,7 +279,9 @@ button {
   height: 18px;
   border: 3px solid rgba(23, 38, 50, 0.46);
   border-radius: 999px;
-  background: linear-gradient(180deg, #f4fafc, #6e8796);
+  background:
+    repeating-linear-gradient(90deg, rgba(23, 38, 50, 0.32) 0 4px, transparent 4px 24px),
+    linear-gradient(180deg, #efe5d5, #7f6656);
   box-shadow: 0 8px 18px rgba(23, 38, 50, 0.14);
   transform: translateX(-50%);
 }
@@ -274,10 +307,34 @@ button {
   bottom: 0;
   width: 38%;
   height: 24%;
-  border: 18px solid rgba(49, 75, 90, 0.82);
+  border: 18px solid rgba(95, 75, 62, 0.88);
   border-bottom: 0;
   border-radius: 50% 50% 0 0;
   transform: translateX(-50%);
+}
+
+.wheel {
+  position: absolute;
+  z-index: 4;
+  width: 76px;
+  height: 76px;
+  border: 8px solid #d7a249;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle, #172632 0 9%, transparent 10%),
+    repeating-conic-gradient(from 8deg, rgba(23, 38, 50, 0.58) 0 8deg, transparent 8deg 18deg),
+    #ffd15f;
+  box-shadow: 0 0 0 4px rgba(95, 75, 62, 0.82), 0 12px 26px rgba(23, 38, 50, 0.24);
+}
+
+.wheel-left {
+  left: 19%;
+  bottom: 24%;
+}
+
+.wheel-right {
+  right: 18%;
+  bottom: 42%;
 }
 
 .tower {
@@ -335,22 +392,22 @@ button {
 
 .vertical-shaft {
   position: absolute;
-  bottom: 10%;
+  bottom: 27%;
   z-index: 6;
   width: 44px;
-  height: 55%;
+  height: 54%;
 }
 
-.shaft-1 { left: 6.3%; height: 43%; }
-.shaft-2 { left: 34.3%; height: 65%; }
-.shaft-3 { left: 62.3%; height: 72%; }
-.shaft-4 { left: 90.3%; height: 63%; }
+.shaft-1 { left: 42%; height: 52%; }
+.shaft-2 { left: 47%; height: 60%; }
+.shaft-3 { left: 52%; height: 60%; }
+.shaft-4 { left: 57%; height: 52%; }
 
 .shaft-line {
   position: absolute;
   inset: 0 18px;
-  border-left: 4px solid rgba(23, 38, 50, 0.74);
-  border-right: 4px solid rgba(23, 38, 50, 0.74);
+  border-left: 4px solid rgba(95, 75, 62, 0.88);
+  border-right: 4px solid rgba(95, 75, 62, 0.88);
 }
 
 .vertical-car {
@@ -359,8 +416,8 @@ button {
   top: 50%;
   display: grid;
   place-items: center;
-  width: 64px;
-  height: 48px;
+  width: 58px;
+  height: 46px;
   border: 3px solid #fff;
   border-radius: 8px;
   color: #fff;
@@ -371,6 +428,20 @@ button {
   box-shadow: 0 8px 18px rgba(23, 38, 50, 0.24);
   cursor: pointer;
   transform: translate(-50%, -50%);
+}
+
+.vertical-car::before,
+.inclined-car::before {
+  content: "";
+  position: absolute;
+  inset: 8px;
+  border-radius: 4px;
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.72) 1px, transparent 1px),
+    linear-gradient(rgba(255, 255, 255, 0.72) 1px, transparent 1px);
+  background-size: 14px 12px;
+  pointer-events: none;
+  opacity: 0.46;
 }
 
 .vertical-car.blue {
@@ -388,9 +459,9 @@ button {
 .incline-rail {
   position: absolute;
   z-index: 5;
-  height: 12px;
+  height: 14px;
   border-radius: 999px;
-  background: #172632;
+  background: #5f4b3e;
   box-shadow: 0 4px 0 rgba(255, 255, 255, 0.52), 0 8px 18px rgba(23, 38, 50, 0.16);
   transform-origin: left center;
 }
@@ -401,8 +472,8 @@ button {
   left: 0;
   right: 0;
   top: 50%;
-  height: 3px;
-  background: #ffd15f;
+  height: 4px;
+  background: #d7a249;
   transform: translateY(-50%);
 }
 
@@ -430,23 +501,23 @@ button {
 
 .rail-a {
   left: 12%;
-  top: 57%;
-  width: 36%;
-  transform: rotate(-22deg);
+  top: 71%;
+  width: 41%;
+  transform: rotate(-34deg);
 }
 
 .rail-b {
-  left: 49%;
-  top: 40%;
-  width: 38%;
-  transform: rotate(20deg);
+  left: 48%;
+  top: 44%;
+  width: 41%;
+  transform: rotate(31deg);
 }
 
 .rail-c {
-  left: 25%;
-  top: 78%;
-  width: 52%;
-  transform: rotate(-12deg);
+  left: 21%;
+  top: 85%;
+  width: 58%;
+  transform: rotate(-20deg);
 }
 
 .inclined-car {
@@ -477,8 +548,8 @@ button {
 .passenger-car {
   display: grid;
   gap: 3px;
-  width: 104px;
-  height: 78px;
+  width: 112px;
+  height: 84px;
   padding: 5px;
   background: linear-gradient(135deg, #2475ba, #9dd8ff);
 }
@@ -500,8 +571,8 @@ button {
 .cargo-car {
   display: grid;
   place-items: center;
-  width: 104px;
-  height: 58px;
+  width: 112px;
+  height: 62px;
   padding: 5px;
   color: #fff;
   background: linear-gradient(135deg, #9b6a3c, #5b371c);
@@ -529,18 +600,18 @@ button {
 }
 
 .station-left {
-  left: 5%;
-  bottom: 21%;
+  left: 8%;
+  bottom: 19%;
 }
 
 .station-mid {
-  left: 43%;
-  bottom: 43%;
+  left: 41%;
+  bottom: 47%;
 }
 
 .station-right {
-  right: 5%;
-  bottom: 36%;
+  right: 8%;
+  bottom: 34%;
 }
 
 .info-bar {
