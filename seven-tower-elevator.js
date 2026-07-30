@@ -1,5 +1,9 @@
 const stage = document.querySelector("#towerStage");
-const pauseToggle = document.querySelector("#pauseToggle");
+const selectedElevatorLabel = document.querySelector("#selectedElevator");
+const runToggle = document.querySelector("#runToggle");
+const reverseElevator = document.querySelector("#reverseElevator");
+const sendLow = document.querySelector("#sendLow");
+const sendHigh = document.querySelector("#sendHigh");
 const speedButtons = {
   slow: document.querySelector("#slowSpeed"),
   normal: document.querySelector("#normalSpeed"),
@@ -8,53 +12,114 @@ const speedButtons = {
 const resetScene = document.querySelector("#resetScene");
 const statusText = document.querySelector("#statusText");
 
-const verticalElevators = [
-  { el: document.querySelector("#verticalCar1"), min: 0.12, max: 0.88, t: 0.05, speed: 0.00023, direction: 1 },
-  { el: document.querySelector("#verticalCar2"), min: 0.08, max: 0.86, t: 0.62, speed: 0.00019, direction: -1 },
-  { el: document.querySelector("#verticalCar3"), min: 0.1, max: 0.84, t: 0.36, speed: 0.00021, direction: 1 },
-  { el: document.querySelector("#verticalCar4"), min: 0.1, max: 0.86, t: 0.8, speed: 0.00017, direction: -1 },
-];
-
-const inclinedPassengerElevators = [
+const elevators = [
   {
+    id: "v1",
+    name: "竖直观光电梯 1",
+    type: "vertical",
+    el: document.querySelector("#verticalCar1"),
+    min: 0.12,
+    max: 0.88,
+    initialT: 0.05,
+    speed: 0.00023,
+    direction: 1,
+  },
+  {
+    id: "v2",
+    name: "竖直观光电梯 2",
+    type: "vertical",
+    el: document.querySelector("#verticalCar2"),
+    min: 0.08,
+    max: 0.86,
+    initialT: 0.62,
+    speed: 0.00019,
+    direction: -1,
+  },
+  {
+    id: "v3",
+    name: "竖直观光电梯 3",
+    type: "vertical",
+    el: document.querySelector("#verticalCar3"),
+    min: 0.1,
+    max: 0.84,
+    initialT: 0.36,
+    speed: 0.00021,
+    direction: 1,
+  },
+  {
+    id: "v4",
+    name: "竖直观光电梯 4",
+    type: "vertical",
+    el: document.querySelector("#verticalCar4"),
+    min: 0.1,
+    max: 0.86,
+    initialT: 0.8,
+    speed: 0.00017,
+    direction: -1,
+  },
+  {
+    id: "p1",
+    name: "双层斜行客梯 A",
+    type: "inclined",
     el: document.querySelector("#passengerCarA"),
     start: { x: 0.14, y: 0.58 },
     end: { x: 0.48, y: 0.43 },
-    t: 0.08,
+    initialT: 0.08,
     speed: 0.00016,
     direction: 1,
     angle: -22,
   },
   {
+    id: "p2",
+    name: "双层斜行客梯 B",
+    type: "inclined",
     el: document.querySelector("#passengerCarB"),
     start: { x: 0.51, y: 0.41 },
     end: { x: 0.87, y: 0.55 },
-    t: 0.78,
+    initialT: 0.78,
     speed: 0.00014,
     direction: -1,
     angle: 20,
   },
+  {
+    id: "c1",
+    name: "单层斜行货梯",
+    type: "inclined",
+    el: document.querySelector("#cargoCar"),
+    start: { x: 0.27, y: 0.78 },
+    end: { x: 0.78, y: 0.68 },
+    initialT: 0.3,
+    speed: 0.00009,
+    direction: 1,
+    angle: -12,
+  },
 ];
 
-const cargoElevator = {
-  el: document.querySelector("#cargoCar"),
-  start: { x: 0.27, y: 0.78 },
-  end: { x: 0.78, y: 0.68 },
-  t: 0.3,
-  speed: 0.00009,
-  direction: 1,
-  angle: -12,
-};
-
-let speedMultiplier = 1;
-let paused = false;
+let selectedId = "p1";
 let previousTime = performance.now();
 
+function selectedElevator() {
+  return elevators.find((elevator) => elevator.id === selectedId);
+}
+
+function speedName(elevator) {
+  if (elevator.speedMultiplier === 0.55) return "慢速";
+  if (elevator.speedMultiplier === 1.75) return "快速";
+  return "正常";
+}
+
 function setStatus() {
-  const speedName = speedMultiplier === 0.55 ? "慢速" : speedMultiplier === 1.75 ? "快速" : "正常";
-  statusText.textContent = paused
-    ? `已暂停：七塔电梯停在当前楼层，速度档位是${speedName}。`
-    : `自动运行中：四部垂直电梯回动，两部双层斜行客梯和一部单层货梯正在${speedName}往返。`;
+  const elevator = selectedElevator();
+  selectedElevatorLabel.textContent = `当前：${elevator.name}`;
+  runToggle.textContent = elevator.running ? "停下这部" : "启动这部";
+  statusText.textContent = `已选中：${elevator.name}。它现在${elevator.running ? "正在运行" : "停住了"}，速度是${speedName(elevator)}。`;
+  Object.values(speedButtons).forEach((button) => button.classList.remove("active"));
+  const activeKey = elevator.speedMultiplier === 0.55 ? "slow" : elevator.speedMultiplier === 1.75 ? "fast" : "normal";
+  speedButtons[activeKey].classList.add("active");
+  elevators.forEach((item) => {
+    item.el.classList.toggle("selected", item.id === selectedId);
+    item.el.classList.toggle("paused", !item.running);
+  });
 }
 
 function clampBounce(item) {
@@ -82,63 +147,94 @@ function updateInclinedElevator(item) {
   item.el.style.transform = `translate(-50%, -50%) rotate(${item.angle}deg)${flip}`;
 }
 
+function updateElevator(item) {
+  if (item.type === "vertical") {
+    updateVerticalElevator(item);
+  } else {
+    updateInclinedElevator(item);
+  }
+}
+
 function step(time) {
   const delta = Math.min(time - previousTime, 48);
   previousTime = time;
 
-  if (!paused) {
-    verticalElevators.forEach((item) => {
-      item.t += item.speed * delta * speedMultiplier * item.direction;
+  elevators.forEach((item) => {
+    if (item.running) {
+      item.t += item.speed * delta * item.speedMultiplier * item.direction;
       clampBounce(item);
-      updateVerticalElevator(item);
-    });
-
-    inclinedPassengerElevators.forEach((item) => {
-      item.t += item.speed * delta * speedMultiplier * item.direction;
-      clampBounce(item);
-      updateInclinedElevator(item);
-    });
-
-    cargoElevator.t += cargoElevator.speed * delta * speedMultiplier * cargoElevator.direction;
-    clampBounce(cargoElevator);
-    updateInclinedElevator(cargoElevator);
-  }
+    }
+    updateElevator(item);
+  });
 
   requestAnimationFrame(step);
 }
 
-function setSpeed(nextSpeed, buttonKey) {
-  speedMultiplier = nextSpeed;
-  Object.values(speedButtons).forEach((button) => button.classList.remove("active"));
-  speedButtons[buttonKey].classList.add("active");
+function selectElevator(id) {
+  selectedId = id;
+  const elevator = selectedElevator();
+  elevator.running = true;
+  setStatus();
+}
+
+function setSelectedSpeed(nextSpeed) {
+  const elevator = selectedElevator();
+  elevator.speedMultiplier = nextSpeed;
+  elevator.running = true;
   setStatus();
 }
 
 function resetAllElevators() {
-  verticalElevators[0].t = 0.05;
-  verticalElevators[1].t = 0.62;
-  verticalElevators[2].t = 0.36;
-  verticalElevators[3].t = 0.8;
-  inclinedPassengerElevators[0].t = 0.08;
-  inclinedPassengerElevators[1].t = 0.78;
-  cargoElevator.t = 0.3;
-  verticalElevators.forEach(updateVerticalElevator);
-  inclinedPassengerElevators.forEach(updateInclinedElevator);
-  updateInclinedElevator(cargoElevator);
+  elevators.forEach((item) => {
+    item.t = item.initialT;
+    item.running = true;
+    item.speedMultiplier = 1;
+    updateElevator(item);
+  });
+  selectedId = "p1";
   setStatus();
 }
 
-pauseToggle.addEventListener("click", () => {
-  paused = !paused;
-  pauseToggle.textContent = paused ? "继续" : "暂停";
+elevators.forEach((item) => {
+  item.el.addEventListener("click", () => selectElevator(item.id));
+});
+
+runToggle.addEventListener("click", () => {
+  const elevator = selectedElevator();
+  elevator.running = !elevator.running;
   setStatus();
 });
 
-speedButtons.slow.addEventListener("click", () => setSpeed(0.55, "slow"));
-speedButtons.normal.addEventListener("click", () => setSpeed(1, "normal"));
-speedButtons.fast.addEventListener("click", () => setSpeed(1.75, "fast"));
+reverseElevator.addEventListener("click", () => {
+  const elevator = selectedElevator();
+  elevator.direction *= -1;
+  elevator.running = true;
+  setStatus();
+});
+
+sendLow.addEventListener("click", () => {
+  const elevator = selectedElevator();
+  elevator.t = 0;
+  elevator.direction = 1;
+  elevator.running = false;
+  updateElevator(elevator);
+  setStatus();
+});
+
+sendHigh.addEventListener("click", () => {
+  const elevator = selectedElevator();
+  elevator.t = 1;
+  elevator.direction = -1;
+  elevator.running = false;
+  updateElevator(elevator);
+  setStatus();
+});
+
+speedButtons.slow.addEventListener("click", () => setSelectedSpeed(0.55));
+speedButtons.normal.addEventListener("click", () => setSelectedSpeed(1));
+speedButtons.fast.addEventListener("click", () => setSelectedSpeed(1.75));
 resetScene.addEventListener("click", resetAllElevators);
-window.addEventListener("resize", resetAllElevators);
+window.addEventListener("resize", () => elevators.forEach(updateElevator));
 
 resetAllElevators();
 requestAnimationFrame(step);

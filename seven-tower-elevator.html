@@ -3,8 +3,8 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>七塔斜行电梯</title>
-    <link rel="stylesheet" href="seven-tower-elevator.css?v=seven-tower-20260730" />
+    <title>埃菲尔铁塔七部电梯</title>
+    <link rel="stylesheet" href="seven-tower-elevator.css?v=eiffel-control-20260730" />
   </head>
   <body>
     <a class="home-link" href="arcade.html">游戏大厅</a>
@@ -13,77 +13,86 @@
       <header class="hero">
         <div>
           <p class="label">2D Elevator Simulator</p>
-          <h1>七塔斜行电梯</h1>
-          <p>七座高塔连成一组，四部竖直电梯自动上下回动，两部双层客梯斜着走，一部单层货梯斜着运货。</p>
-        </div>
-        <div class="control-panel" aria-label="电梯控制台">
-          <button id="pauseToggle" type="button">暂停</button>
-          <button id="slowSpeed" type="button">慢速</button>
-          <button id="normalSpeed" class="active" type="button">正常</button>
-          <button id="fastSpeed" type="button">快速</button>
-          <button id="resetScene" type="button">重置</button>
+          <h1>埃菲尔铁塔七部电梯</h1>
+          <p>点一下任意电梯就能选中它；下面控制台只控制被选中的那部电梯。四部垂直观光电梯、两部双层斜行客梯、一部单层斜行货梯。</p>
         </div>
       </header>
 
-      <section class="tower-stage" id="towerStage" aria-label="七塔斜行电梯运行画面">
+      <section class="tower-stage" id="towerStage" aria-label="埃菲尔铁塔七部电梯运行画面">
         <div class="sun"></div>
         <div class="cloud cloud-a"></div>
         <div class="cloud cloud-b"></div>
 
-        <div class="tower tower-1"><span>1 塔</span></div>
-        <div class="tower tower-2"><span>2 塔</span></div>
-        <div class="tower tower-3"><span>3 塔</span></div>
-        <div class="tower tower-4"><span>4 塔</span></div>
-        <div class="tower tower-5"><span>5 塔</span></div>
-        <div class="tower tower-6"><span>6 塔</span></div>
-        <div class="tower tower-7"><span>7 塔</span></div>
+        <div class="eiffel-frame" aria-hidden="true">
+          <div class="antenna"></div>
+          <div class="beam beam-left"></div>
+          <div class="beam beam-right"></div>
+          <div class="beam beam-center-left"></div>
+          <div class="beam beam-center-right"></div>
+          <div class="platform platform-top"></div>
+          <div class="platform platform-middle"></div>
+          <div class="platform platform-bottom"></div>
+          <div class="arch"></div>
+        </div>
 
         <div class="vertical-shaft shaft-1">
           <div class="shaft-line"></div>
-          <div class="vertical-car" id="verticalCar1">竖直 1</div>
+          <button class="vertical-car" id="verticalCar1" data-elevator="v1" type="button">竖直 1</button>
         </div>
         <div class="vertical-shaft shaft-2">
           <div class="shaft-line"></div>
-          <div class="vertical-car blue" id="verticalCar2">竖直 2</div>
+          <button class="vertical-car blue" id="verticalCar2" data-elevator="v2" type="button">竖直 2</button>
         </div>
         <div class="vertical-shaft shaft-3">
           <div class="shaft-line"></div>
-          <div class="vertical-car green" id="verticalCar3">竖直 3</div>
+          <button class="vertical-car green" id="verticalCar3" data-elevator="v3" type="button">竖直 3</button>
         </div>
         <div class="vertical-shaft shaft-4">
           <div class="shaft-line"></div>
-          <div class="vertical-car violet" id="verticalCar4">竖直 4</div>
+          <button class="vertical-car violet" id="verticalCar4" data-elevator="v4" type="button">竖直 4</button>
         </div>
 
         <div class="incline-rail passenger-rail rail-a"><span>双层客梯 A</span></div>
         <div class="incline-rail passenger-rail rail-b"><span>双层客梯 B</span></div>
         <div class="incline-rail cargo-rail rail-c"><span>单层货梯</span></div>
 
-        <div class="inclined-car passenger-car double-deck" id="passengerCarA">
+        <button class="inclined-car passenger-car double-deck" id="passengerCarA" data-elevator="p1" type="button">
           <span>上层客舱</span>
           <span>下层客舱</span>
-        </div>
-        <div class="inclined-car passenger-car double-deck gold" id="passengerCarB">
+        </button>
+        <button class="inclined-car passenger-car double-deck gold" id="passengerCarB" data-elevator="p2" type="button">
           <span>上层客舱</span>
           <span>下层客舱</span>
-        </div>
-        <div class="inclined-car cargo-car" id="cargoCar">
+        </button>
+        <button class="inclined-car cargo-car" id="cargoCar" data-elevator="c1" type="button">
           <span>货梯</span>
           <strong>BOX</strong>
-        </div>
+        </button>
 
         <div class="station station-left">低区换乘站</div>
         <div class="station station-mid">中央观景站</div>
         <div class="station station-right">高区观光站</div>
       </section>
 
+      <section class="control-panel" aria-label="选中电梯控制台">
+        <strong id="selectedElevator">当前：双层斜行客梯 A</strong>
+        <button id="runToggle" type="button">停下这部</button>
+        <button id="reverseElevator" type="button">反向</button>
+        <button id="sendLow" type="button">去低站</button>
+        <button id="sendHigh" type="button">去高站</button>
+        <button id="slowSpeed" type="button">慢速</button>
+        <button id="normalSpeed" class="active" type="button">正常</button>
+        <button id="fastSpeed" type="button">快速</button>
+        <button id="resetScene" type="button">全部重置</button>
+      </section>
+
       <section class="info-bar" aria-label="电梯运行说明">
-        <strong id="statusText">自动运行中：四部垂直电梯回动，双层客梯和货梯沿斜轨道往返。</strong>
-        <p>不是 3D，就是一张 2D 示意图；电梯会自己动，你也可以暂停、调速度、重置。</p>
+        <strong id="statusText">已选中：双层斜行客梯 A。下面控制台正在控制这一部。</strong>
+        <p>这是 2D 埃菲尔铁塔电梯示意：点哪一部，控制台就换成哪一部。</p>
       </section>
     </main>
 
-    <script src="seven-tower-elevator.js?v=seven-tower-20260730"></script>
+    <script src="seven-tower-elevator.js?v=eiffel-control-20260730"></script>
     <script src="arcade-stats.js?v=visitor-table-20260728"></script>
   </body>
 </html>
