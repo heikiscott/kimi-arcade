@@ -48,6 +48,7 @@ let elevatorHintTimer = 0;
 let lastFireAt = 0;
 let lastFireHintAt = 0;
 let lastSaveAt = 0;
+let jumpHeld = false;
 let activeRiddleBlock = null;
 let autoGoalFlight = null;
 let easyMode = false;
@@ -834,6 +835,7 @@ function reset(clearSave = true) {
   stopMusic();
   keys.clear();
   touchControls.clear();
+  jumpHeld = false;
   fireballs.length = 0;
   flagCeremony = null;
   activeRiddleBlock = null;
@@ -1314,10 +1316,11 @@ function updatePlayer(dt) {
   const left = isPressed("left");
   const right = isPressed("right");
   const jump = isPressed("jump");
+  const jumpJustPressed = jump && !jumpHeld;
   const flying = performance.now() < player.flightUntil;
   const planeFlight = flying && player.flightMode === "plane";
-  const maxSpeed = flying ? (planeFlight ? 7.2 : 6.2) : player.grounded ? 5.8 : 5.25;
-  const acceleration = player.grounded ? 0.94 : 0.68;
+  const maxSpeed = flying ? (planeFlight ? 7.2 : 6.2) : player.grounded ? 5.7 : 4.92;
+  const acceleration = player.grounded ? 0.94 : 0.54;
   if (left) {
     player.vx -= acceleration * dt;
     player.facing = -1;
@@ -1336,9 +1339,10 @@ function updatePlayer(dt) {
   }
   player.vx = Math.max(-maxSpeed, Math.min(maxSpeed, player.vx));
 
-  if (jump && player.grounded) {
+  if (jumpJustPressed && player.grounded) {
     const jumpBoost = sceneKey === "lava" ? 1.15 : sceneKey === "mine" ? 0.9 : player.rideElevator ? 1 : 0.35;
     player.vy = -14.6 - jumpBoost;
+    if (left || right) player.vx += player.facing * 1.1;
     player.grounded = false;
     player.rideElevator = null;
     playJump();
@@ -1366,7 +1370,8 @@ function updatePlayer(dt) {
     keys.delete("S");
   }
 
-  player.vy += (flying ? 0.34 : 0.68) * dt;
+  jumpHeld = jump;
+  player.vy += (flying ? 0.34 : 0.72) * dt;
   const prevY = player.y;
   player.x += player.vx * dt;
   player.y += player.vy * dt;
