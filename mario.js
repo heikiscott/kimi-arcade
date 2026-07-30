@@ -5,6 +5,11 @@ const nativeStrokeText = ctx.strokeText.bind(ctx);
 const scoreEl = document.querySelector("#score");
 const statusText = document.querySelector("#statusText");
 const restartBtn = document.querySelector("#restartBtn");
+const easyModeBtn = document.querySelector("#easyModeBtn");
+const buyLifeBtn = document.querySelector("#buyLifeBtn");
+const buyShieldBtn = document.querySelector("#buyShieldBtn");
+const buySkipBtn = document.querySelector("#buySkipBtn");
+const easterBtn = document.querySelector("#easterBtn");
 // 新增统计JS DOM：右上角PV/UV窄条和悬浮重置按钮
 const marioMiniStat = document.querySelector("#marioMiniStat");
 const marioMiniStatText = document.querySelector("#marioMiniStatText");
@@ -45,6 +50,8 @@ let lastFireHintAt = 0;
 let lastSaveAt = 0;
 let activeRiddleBlock = null;
 let autoGoalFlight = null;
+let easyMode = false;
+let skipTickets = 0;
 
 const W = canvas.width;
 const H = canvas.height;
@@ -52,7 +59,10 @@ const H = canvas.height;
 const statsKey = "mario_racing_stat";
 const saveKey = "marioAdventureSaveV3";
 const audioMuteKey = "marioAdventureAudioMuted";
+const easyModeKey = "marioAdventureEasyMode";
 const levelOrder = ["sky", "ghost", "castle", "jungle", "lava", "mine", "metro"];
+const elevatorSpeedLabels = ["慢", "中", "快"];
+const elevatorSpeedMultipliers = [0.78, 1, 1.28];
 const riddleList = [
   {
     question: "什么东西越顶越有惊喜，答对后还能飞到旗杆？",
@@ -139,6 +149,7 @@ const player = {
   keys: 0,
   lives: 3,
   invincibleUntil: 0,
+  shieldUntil: 0,
   starUntil: 0,
   flightUntil: 0,
   flightMode: "",
@@ -677,18 +688,45 @@ function cloneScene(key) {
     platforms: template.platforms.map((item) => ({ ...item })),
     blocks: template.blocks.map((item) => ({ ...item })),
     powerups: [...template.powerups.map((item) => ({ ...item })), ...createRandomPowerups(template)],
-    elevators: template.elevators.map((item) => ({ ...item })),
+    elevators: template.elevators.map((item) => ({ ...item, baseSpeed: item.baseSpeed || item.speed, speedLevel: item.speedLevel ?? 1 })),
     trains: (template.trains || []).map((item) => ({ ...item })),
     coins: template.coins.map((item) => ({ ...item, got: false })),
-    enemies: template.enemies.map((item) => ({ ...item })),
+    enemies: filteredEnemiesForDifficulty(key, template.enemies).map((item) => ({ ...item })),
     doors: template.doors.map((item) => ({ ...item })),
     keyItems: template.keyItems.map((item) => ({ ...item })),
     hazards: (template.hazards || []).map((item) => ({ ...item })),
+    checkpoints: createCheckpoints(template),
+    activeCheckpoint: null,
     goal: template.goal ? { ...template.goal } : null
   };
   ensureRiddleBlock(key, cloned);
   if (key === "lava") ensureLavaFlightPowerups(cloned);
+  if (easyMode) applyEasyModeSceneAdjustments(key, cloned);
   return cloned;
+}
+
+function filteredEnemiesForDifficulty(key, enemies) {
+  if (!easyMode) return enemies;
+  if (key !== "lava" && key !== "metro") return enemies;
+  return enemies.filter((_, index) => index % 2 === 0);
+}
+
+function createCheckpoints(template) {
+  const goalX = template.goal?.x || template.width - 160;
+  const one = Math.round(goalX * 0.36);
+  const two = Math.round(goalX * 0.68);
+  return [
+    { x: one, y: 472, w: 34, h: 68, active: false, label: "中途存档" },
+    { x: two, y: 472, w: 34, h: 68, active: false, label: "后半存档" }
+  ];
+}
+
+function applyEasyModeSceneAdjustments(key, targetScene) {
+  if (key !== "lava" && key !== "metro") return;
+  targetScene.platforms.push(
+    { x: key === "lava" ? 2260 : 3300, y: key === "lava" ? 520 : 526, w: 260, h: key === "lava" ? 30 : 24, type: key === "lava" ? "lavaRock" : "sign", easyHelper: true },
+    { x: key === "lava" ? 2940 : 4560, y: key === "lava" ? 520 : 526, w: 280, h: key === "lava" ? 30 : 24, type: key === "lava" ? "lavaRock" : "sign", easyHelper: true }
+  );
 }
 
 function ensureRiddleBlock(key, targetScene) {
@@ -741,6 +779,23 @@ function createRandomPowerups(template) {
   }];
 }
 
+function loadEasyMode() {
+  try {
+    easyMode = localStorage.getItem(easyModeKey) === "1";
+  } catch {
+    easyMode = false;
+  }
+}
+
+function saveEasyMode() {
+  try {
+    localStorage.setItem(easyModeKey, easyMode ? "1" : "0");
+  } catch {
+    // Difficulty still works for this session if storage is blocked.
+  }
+}
+
+loadEasyMode();
 const progress = Object.fromEntries(Object.keys(sceneTemplates).map((key) => [key, cloneScene(key)]));
 
 function loadScene(key, spawnName = "entry") {
@@ -801,6 +856,7 @@ function reset(clearSave = true) {
   player.keys = 0;
   player.lives = 3;
   player.invincibleUntil = 0;
+  player.shieldUntil = 0;
   player.starUntil = 0;
   player.flightUntil = 0;
   player.flightMode = "";
@@ -809,6 +865,7 @@ function reset(clearSave = true) {
   player.h = 54;
   player.rideElevator = null;
   player.rideTrain = null;
+  skipTickets = 0;
   cameraX = 0;
   gameStarted = false;
   won = false;
@@ -820,6 +877,7 @@ function reset(clearSave = true) {
   updateMapButtons();
   updateScore();
   updateRecordsPanel();
+  updateAssistButtons();
   updateContinueButton();
   if (clearSave) clearGameSave();
 }
@@ -828,8 +886,10 @@ function updateScore() {
   const totalCoins = Object.values(progress).reduce((sum, item) => sum + item.coins.length, 0);
   const gotCoins = Object.values(progress).reduce((sum, item) => sum + item.coins.filter((coin) => coin.got).length, 0);
   const flying = performance.now() < player.flightUntil;
-  const powerName = flying ? (player.flightMode === "plane" ? "小飞机飞行" : "翅膀飞行") : performance.now() < player.starUntil ? "星星无敌" : player.power === "fire" ? "火焰花" : player.power === "big" ? "红蘑菇变大" : "普通";
-  scoreEl.textContent = `金币 ${gotCoins} / ${totalCoins} · 钥匙 ${player.keys} · ${powerName} · 生命 ${player.lives}${won ? " · 通关!" : ""}`;
+  const shielded = performance.now() < player.shieldUntil;
+  const powerName = flying ? (player.flightMode === "plane" ? "小飞机飞行" : "翅膀飞行") : shielded ? "护盾" : performance.now() < player.starUntil ? "星星无敌" : player.power === "fire" ? "火焰花" : player.power === "big" ? "红蘑菇变大" : "普通";
+  scoreEl.textContent = `金币 ${gotCoins} / ${totalCoins} · 可用 ${player.coins} · 钥匙 ${player.keys} · 跳关券 ${skipTickets} · ${powerName} · 生命 ${player.lives}${won ? " · 通关!" : ""}`;
+  updateAssistButtons();
 }
 
 function rectsOverlap(a, b) {
@@ -907,6 +967,109 @@ function levelTitle(key = sceneKey) {
 
 function updateRecordsPanel() {
   updateMiniStatsPanel();
+}
+
+function updateAssistButtons() {
+  easyModeBtn?.classList.toggle("is-on", easyMode);
+  if (easyModeBtn) easyModeBtn.textContent = easyMode ? "新手开" : "新手关";
+  buyLifeBtn.disabled = gameStarted && player.coins < 8;
+  buyShieldBtn.disabled = gameStarted && player.coins < 10;
+  buySkipBtn.disabled = gameStarted && player.coins < 15;
+  const easterReady = player.keys >= 3;
+  easterBtn?.classList.toggle("is-ready", easterReady);
+  if (easterBtn) easterBtn.disabled = gameStarted && !easterReady;
+}
+
+function rebuildProgressForDifficulty() {
+  Object.keys(progress).forEach((key) => {
+    progress[key] = cloneScene(key);
+  });
+  loadScene(sceneKey, "entry");
+}
+
+function toggleEasyMode() {
+  easyMode = !easyMode;
+  saveEasyMode();
+  if (gameStarted) {
+    rebuildProgressForDifficulty();
+    statusText.textContent = easyMode ? "新手模式已开启：第5关和第7关怪物更少，安全平台更长。" : "新手模式已关闭：恢复原本难度。";
+  } else {
+    Object.keys(progress).forEach((key) => {
+      progress[key] = cloneScene(key);
+    });
+    scene = progress[selectedSceneKey];
+    statusText.textContent = easyMode ? "新手模式已开启，开始后第5关和第7关会更容易。" : "新手模式已关闭。";
+  }
+  updateAssistButtons();
+  saveGame();
+}
+
+function spendCoins(cost, failText) {
+  if (player.coins < cost) {
+    statusText.textContent = failText;
+    playBlockSound();
+    return false;
+  }
+  player.coins -= cost;
+  return true;
+}
+
+function buyLife() {
+  if (!spendCoins(8, "金币不够：8 个金币可以换 1 条额外生命。")) return;
+  player.lives += 1;
+  statusText.textContent = "兑换成功：用 8 个金币换了 1 条额外生命。";
+  playKeySound();
+  updateScore();
+  saveGame();
+}
+
+function buyShield() {
+  if (!spendCoins(10, "金币不够：10 个金币可以换 8 秒临时无敌护盾。")) return;
+  player.shieldUntil = performance.now() + 8000;
+  player.invincibleUntil = Math.max(player.invincibleUntil, player.shieldUntil);
+  statusText.textContent = "兑换成功：8 秒护盾开启，岩浆和怪物先不怕。";
+  playStarSound();
+  updateScore();
+  saveGame();
+}
+
+function buySkipTicket() {
+  if (!spendCoins(15, "金币不够：15 个金币可以换 1 张跳关券。")) return;
+  skipTickets += 1;
+  statusText.textContent = "兑换成功：得到 1 张跳关券，按“跳关”可飞到本关旗杆。";
+  playKeySound();
+  updateScore();
+  saveGame();
+}
+
+function useSkipTicket() {
+  if (skipTickets <= 0) {
+    buySkipTicket();
+    return;
+  }
+  if (!scene.goal || flagCeremony || won) return;
+  skipTickets -= 1;
+  beginAutoGoalFlight();
+  statusText.textContent = "使用跳关券：自动飞到本关旗杆。";
+  updateScore();
+  saveGame();
+}
+
+function unlockEasterReward() {
+  if (player.keys < 3) {
+    statusText.textContent = "钥匙还不够：攒到 3 把钥匙可以开启隐藏彩蛋奖励。";
+    playBlockSound();
+    return;
+  }
+  player.keys -= 3;
+  player.coins += 12;
+  player.lives += 1;
+  player.starUntil = performance.now() + 5000;
+  player.invincibleUntil = player.starUntil;
+  statusText.textContent = "隐藏彩蛋关开启！奖励 12 金币、1 条生命和 5 秒星星无敌。";
+  playVictory();
+  updateScore();
+  saveGame();
 }
 
 // 新增统计JS：仅在初始大厅显示右上角窄条，进入关卡后隐藏
@@ -997,9 +1160,12 @@ function saveGame() {
         keys: player.keys,
         lives: player.lives,
         power: player.power,
+        shieldUntil: Math.max(0, player.shieldUntil - performance.now()),
         flightUntil: Math.max(0, player.flightUntil - performance.now()),
         flightMode: player.flightMode
       },
+      skipTickets,
+      easyMode,
       progress: JSON.parse(JSON.stringify(progress))
     };
     localStorage.setItem(saveKey, JSON.stringify(save));
@@ -1027,7 +1193,10 @@ function restoreGameSave() {
   sceneKey = save.sceneKey;
   scene = progress[sceneKey];
   Object.assign(player, save.player || {});
+  skipTickets = save.skipTickets || 0;
+  if (typeof save.easyMode === "boolean") easyMode = save.easyMode;
   if (save.player?.flightUntil) player.flightUntil = performance.now() + save.player.flightUntil;
+  if (save.player?.shieldUntil) player.shieldUntil = performance.now() + save.player.shieldUntil;
   player.invincibleUntil = performance.now() + 900;
   player.starUntil = 0;
   player.rideElevator = null;
@@ -1044,6 +1213,7 @@ function restoreGameSave() {
   updateMapButtons();
   updateScore();
   updateRecordsPanel();
+  updateAssistButtons();
   updateContinueButton();
   statusText.textContent = `继续上次游戏：${scene.title}。道具、金币、生命已经恢复。`;
   startMusic();
@@ -1092,7 +1262,9 @@ function update(dt) {
   updateEnemies(dt);
   updateFireballs(dt);
   collectItems();
+  checkCheckpoints();
   checkHazards();
+  checkElevatorHint();
   checkMetroRide();
   checkDoors();
   checkGoal();
@@ -1144,13 +1316,14 @@ function updatePlayer(dt) {
   const jump = isPressed("jump");
   const flying = performance.now() < player.flightUntil;
   const planeFlight = flying && player.flightMode === "plane";
-  const maxSpeed = flying ? (planeFlight ? 7.2 : 6.2) : player.grounded ? 5.1 : 4.6;
+  const maxSpeed = flying ? (planeFlight ? 7.2 : 6.2) : player.grounded ? 5.45 : 4.85;
+  const acceleration = player.grounded ? 0.86 : 0.58;
   if (left) {
-    player.vx -= 0.72 * dt;
+    player.vx -= acceleration * dt;
     player.facing = -1;
   }
   if (right) {
-    player.vx += 0.72 * dt;
+    player.vx += acceleration * dt;
     player.facing = 1;
   }
   if (!left && !right) {
@@ -1158,13 +1331,14 @@ function updatePlayer(dt) {
       player.vx += player.facing * (planeFlight ? 0.22 : 0.16) * dt;
       player.vx *= 0.995;
     } else {
-      player.vx *= player.grounded ? 0.72 : 0.94;
+      player.vx *= player.grounded ? 0.82 : 0.955;
     }
   }
   player.vx = Math.max(-maxSpeed, Math.min(maxSpeed, player.vx));
 
   if (jump && player.grounded) {
-    player.vy = -13.5;
+    const jumpBoost = sceneKey === "lava" ? 0.8 : sceneKey === "mine" ? 0.55 : player.rideElevator ? 0.65 : 0;
+    player.vy = -13.7 - jumpBoost;
     player.grounded = false;
     player.rideElevator = null;
     playJump();
@@ -1182,9 +1356,11 @@ function updatePlayer(dt) {
   if (isPressed("fire")) shootFireball();
 
   if (isPressed("elevator") && player.rideElevator) {
+    player.rideElevator.speedLevel = ((player.rideElevator.speedLevel ?? 1) + 1) % elevatorSpeedMultipliers.length;
+    player.rideElevator.speed = (player.rideElevator.baseSpeed || player.rideElevator.speed || 1.2) * elevatorSpeedMultipliers[player.rideElevator.speedLevel];
     player.rideElevator.dir *= -1;
     elevatorHintTimer = performance.now() + 900;
-    statusText.textContent = "电梯换方向了：可以上去，也可以下来。";
+    statusText.textContent = `电梯换方向了，速度档位：${elevatorSpeedLabels[player.rideElevator.speedLevel]}。`;
     touchControls.delete("elevator");
     keys.delete("s");
     keys.delete("S");
@@ -1629,6 +1805,24 @@ function collectItems() {
   });
 }
 
+function checkCheckpoints() {
+  (scene.checkpoints || []).forEach((checkpoint) => {
+    if (checkpoint.active) return;
+    const box = { x: checkpoint.x - 12, y: checkpoint.y - 28, w: checkpoint.w + 24, h: checkpoint.h + 32 };
+    if (!rectsOverlap(playerRect(), box)) return;
+    checkpoint.active = true;
+    scene.activeCheckpoint = { x: checkpoint.x, y: checkpoint.y };
+    statusText.textContent = "到达中途存档点！下次受伤会从这里继续。";
+    playKeySound();
+    saveGame();
+  });
+}
+
+function respawnPoint() {
+  if (scene.activeCheckpoint) return { x: Math.max(40, scene.activeCheckpoint.x - 36), y: 420 };
+  return { ...scene.spawn };
+}
+
 function activateFlight(mode, duration, message) {
   player.flightMode = mode;
   player.flightUntil = performance.now() + duration;
@@ -1670,6 +1864,21 @@ function nearestTrain() {
     const nearBox = { x: train.x - 44, y: train.y - 80, w: train.w + 88, h: train.h + 110 };
     return rectsOverlap(playerRect(), nearBox);
   });
+}
+
+function nearestElevator() {
+  return scene.elevators.find((elevator) => {
+    const nearBox = { x: elevator.x - 52, y: elevator.minY - 46, w: elevator.w + 104, h: elevator.maxY - elevator.minY + 108 };
+    return rectsOverlap(playerRect(), nearBox);
+  });
+}
+
+function checkElevatorHint() {
+  if (player.rideElevator || performance.now() < elevatorHintTimer) return;
+  const elevator = nearestElevator();
+  if (!elevator) return;
+  statusText.textContent = "前面是电梯：站到平台上，按 S 或点“电梯”可以换方向和调速度。";
+  elevatorHintTimer = performance.now() + 2600;
 }
 
 function checkMetroRide() {
@@ -1808,12 +2017,16 @@ function hurtPlayer(message, reason = "hurt") {
   if (player.lives <= 0) {
     player.lives = 3;
     player.coins = Math.max(0, player.coins - 3);
-    loadScene(sceneKey, "entry");
-    statusText.textContent = "生命用完了，回到这个场景入口重新来。";
+    const point = respawnPoint();
+    player.x = point.x;
+    player.y = point.y;
+    player.vx = 0;
+    player.vy = 0;
+    statusText.textContent = scene.activeCheckpoint ? "生命用完了，从最近的中途存档点重新来。" : "生命用完了，回到这个场景入口重新来。";
   } else {
-    const spawn = scene.spawn;
-    player.x = Math.max(40, player.x - 80);
-    player.y = spawn.y;
+    const point = respawnPoint();
+    player.x = scene.activeCheckpoint ? point.x : Math.max(40, player.x - 80);
+    player.y = point.y;
     player.vx = 0;
     player.vy = 0;
     statusText.textContent = message;
@@ -2055,6 +2268,7 @@ function drawSceneObjects() {
   scene.powerups.forEach(drawPowerup);
   scene.coins.forEach(drawCoin);
   scene.keyItems.forEach(drawKey);
+  (scene.checkpoints || []).forEach(drawCheckpoint);
   scene.enemies.forEach(drawEnemy);
   fireballs.forEach(drawFireball);
   if (scene.goal) drawGoal(scene.goal);
@@ -2542,6 +2756,28 @@ function drawKey(key) {
   ctx.stroke();
   ctx.fillRect(10, -4, 34, 8);
   ctx.fillRect(32, 4, 8, 12);
+  ctx.restore();
+}
+
+function drawCheckpoint(checkpoint) {
+  ctx.save();
+  ctx.translate(checkpoint.x, checkpoint.y);
+  ctx.fillStyle = "#172632";
+  ctx.fillRect(0, 0, 5, checkpoint.h);
+  ctx.fillStyle = checkpoint.active ? "#2f9d58" : "#e8fff0";
+  ctx.strokeStyle = "#172632";
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(5, 6);
+  ctx.lineTo(46, 16);
+  ctx.lineTo(5, 30);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+  ctx.fillStyle = checkpoint.active ? "#fff" : "#172632";
+  ctx.font = "900 13px system-ui";
+  ctx.textAlign = "center";
+  ctx.fillText(checkpoint.active ? "已存" : "存档", 26, -8);
   ctx.restore();
 }
 
@@ -3234,6 +3470,11 @@ canvas.addEventListener("pointerdown", () => {
 });
 
 marioMiniStatReset?.addEventListener("click", resetMiniStats);
+easyModeBtn?.addEventListener("click", toggleEasyMode);
+buyLifeBtn?.addEventListener("click", buyLife);
+buyShieldBtn?.addEventListener("click", buyShield);
+buySkipBtn?.addEventListener("click", useSkipTicket);
+easterBtn?.addEventListener("click", unlockEasterReward);
 
 continueSaveBtn?.addEventListener("click", () => {
   if (!restoreGameSave()) {

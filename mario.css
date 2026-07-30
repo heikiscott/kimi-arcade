@@ -444,7 +444,7 @@ canvas {
 
 .hud {
   display: grid;
-  grid-template-columns: auto 1fr auto auto;
+  grid-template-columns: auto 1fr repeat(6, auto);
   gap: 12px;
   align-items: center;
   margin-top: 12px;
@@ -453,6 +453,17 @@ canvas {
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.88);
   font-weight: 850;
+}
+
+.hud button {
+  min-height: 36px;
+  padding: 0 11px;
+  font-size: 0.88rem;
+}
+
+#easyModeBtn.is-on,
+#easterBtn.is-ready {
+  background: #2f9d58;
 }
 
 button {
