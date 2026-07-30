@@ -24,6 +24,13 @@ const viewButtons = {
 };
 const resetScene = document.querySelector("#resetScene");
 const statusText = document.querySelector("#statusText");
+const touristAvatar = document.querySelector("#touristAvatar");
+const touristButtons = {
+  left: document.querySelector("#touristLeft"),
+  right: document.querySelector("#touristRight"),
+  up: document.querySelector("#touristUp"),
+  down: document.querySelector("#touristDown"),
+};
 
 const elevators = [
   {
@@ -131,6 +138,17 @@ const elevators = [
 
 let selectedId = "p1";
 let previousTime = performance.now();
+const touristLevels = [
+  { name: "地面入口", y: 0.82, minX: 0.1, maxX: 0.9 },
+  { name: "一层平台", y: 0.66, minX: 0.24, maxX: 0.76 },
+  { name: "二层平台", y: 0.5, minX: 0.3, maxX: 0.7 },
+  { name: "三层平台", y: 0.34, minX: 0.39, maxX: 0.61 },
+  { name: "四层平台/顶端换乘", y: 0.2, minX: 0.44, maxX: 0.56 },
+];
+const tourist = {
+  x: 0.18,
+  level: 0,
+};
 
 function selectedElevator() {
   return elevators.find((elevator) => elevator.id === selectedId);
@@ -256,7 +274,36 @@ function resetAllElevators() {
     updateElevator(item);
   });
   selectedId = "p1";
+  tourist.x = 0.18;
+  tourist.level = 0;
+  updateTourist();
   setStatus();
+}
+
+function updateTourist() {
+  const currentLevel = touristLevels[tourist.level];
+  tourist.x = Math.max(currentLevel.minX, Math.min(currentLevel.maxX, tourist.x));
+  touristAvatar.style.left = `${tourist.x * stage.clientWidth}px`;
+  touristAvatar.style.top = `${currentLevel.y * stage.clientHeight}px`;
+}
+
+function moveTourist(direction) {
+  const currentLevel = touristLevels[tourist.level];
+  tourist.x = Math.max(currentLevel.minX, Math.min(currentLevel.maxX, tourist.x + direction * 0.08));
+  touristAvatar.classList.add("walking");
+  window.setTimeout(() => touristAvatar.classList.remove("walking"), 190);
+  updateTourist();
+  statusText.textContent = `小游客在${currentLevel.name}移动。也可以先点电梯，再用下面控制台让电梯到对应平台。`;
+}
+
+function changeTouristLevel(direction) {
+  tourist.level = Math.max(0, Math.min(touristLevels.length - 1, tourist.level + direction));
+  const currentLevel = touristLevels[tourist.level];
+  tourist.x = (currentLevel.minX + currentLevel.maxX) / 2;
+  touristAvatar.classList.add("walking");
+  window.setTimeout(() => touristAvatar.classList.remove("walking"), 190);
+  updateTourist();
+  statusText.textContent = `小游客到了${currentLevel.name}。真实玩法里可以想成他坐电梯/走楼梯换到这一层。`;
 }
 
 elevators.forEach((item) => {
@@ -316,8 +363,15 @@ Object.entries(viewButtons).forEach(([view, button]) => {
 speedButtons.slow.addEventListener("click", () => setSelectedSpeed(0.55));
 speedButtons.normal.addEventListener("click", () => setSelectedSpeed(1));
 speedButtons.fast.addEventListener("click", () => setSelectedSpeed(1.75));
+touristButtons.left.addEventListener("click", () => moveTourist(-1));
+touristButtons.right.addEventListener("click", () => moveTourist(1));
+touristButtons.up.addEventListener("click", () => changeTouristLevel(1));
+touristButtons.down.addEventListener("click", () => changeTouristLevel(-1));
 resetScene.addEventListener("click", resetAllElevators);
-window.addEventListener("resize", () => elevators.forEach(updateElevator));
+window.addEventListener("resize", () => {
+  elevators.forEach(updateElevator);
+  updateTourist();
+});
 
 resetAllElevators();
 requestAnimationFrame(step);

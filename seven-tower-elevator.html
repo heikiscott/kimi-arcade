@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>埃菲尔铁塔七部电梯</title>
-    <link rel="stylesheet" href="seven-tower-elevator.css?v=eiffel-platform-model-20260730" />
+    <link rel="stylesheet" href="seven-tower-elevator.css?v=eiffel-person-platform-20260730" />
   </head>
   <body>
     <a class="home-link" href="arcade.html">游戏大厅</a>
@@ -264,6 +264,10 @@
         <div class="station station-left">斜柱入口</div>
         <div class="station station-mid">三层换乘</div>
         <div class="station station-right">楼梯角</div>
+        <div class="tourist-avatar" id="touristAvatar" aria-hidden="true">
+          <span></span>
+          <b>游客</b>
+        </div>
       </section>
 
       <section class="control-panel" aria-label="选中电梯控制台">
@@ -281,6 +285,10 @@
         <button id="normalSpeed" class="active" type="button">正常</button>
         <button id="fastSpeed" type="button">快速</button>
         <button id="resetScene" type="button">全部重置</button>
+        <button id="touristLeft" type="button">小人左</button>
+        <button id="touristRight" type="button">小人右</button>
+        <button id="touristUp" type="button">小人上平台</button>
+        <button id="touristDown" type="button">小人下平台</button>
       </section>
 
       <section class="info-bar" aria-label="电梯运行说明">
@@ -289,7 +297,7 @@
       </section>
     </main>
 
-    <script src="seven-tower-elevator.js?v=eiffel-platform-model-20260730"></script>
+    <script src="seven-tower-elevator.js?v=eiffel-person-platform-20260730"></script>
     <script src="arcade-stats.js?v=visitor-table-20260728"></script>
   </body>
 </html>

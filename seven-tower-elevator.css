@@ -988,6 +988,57 @@ button {
   bottom: 23%;
 }
 
+.tourist-avatar {
+  position: absolute;
+  left: 18%;
+  top: 82%;
+  z-index: 16;
+  display: grid;
+  justify-items: center;
+  width: 42px;
+  height: 68px;
+  pointer-events: none;
+  transition: left 260ms ease, top 260ms ease, transform 180ms ease;
+  filter: drop-shadow(0 8px 8px rgba(23, 38, 50, 0.28));
+}
+
+.tourist-avatar span {
+  width: 28px;
+  height: 44px;
+  border: 3px solid #172632;
+  border-radius: 14px 14px 9px 9px;
+  background:
+    radial-gradient(circle at 50% 16%, #f1c49a 0 24%, transparent 25%),
+    linear-gradient(90deg, transparent 0 16%, #172632 16% 24%, transparent 24% 76%, #172632 76% 84%, transparent 84%),
+    linear-gradient(180deg, #5eb1f0 0 48%, #2f5f9b 48%);
+}
+
+.tourist-avatar span::before {
+  content: "";
+  position: absolute;
+  left: 9px;
+  top: 4px;
+  width: 24px;
+  height: 12px;
+  border-radius: 999px 999px 4px 4px;
+  background: #3b2418;
+}
+
+.tourist-avatar b {
+  margin-top: 2px;
+  padding: 2px 5px;
+  border-radius: 5px;
+  color: #172632;
+  background: rgba(255, 255, 255, 0.86);
+  font-size: 0.58rem;
+  font-weight: 950;
+  white-space: nowrap;
+}
+
+.tourist-avatar.walking {
+  transform: translateY(-4px) scaleX(1.04);
+}
+
 .inside-camera,
 .platform-model,
 .structure-notes {
@@ -1884,6 +1935,16 @@ button {
     width: auto;
     font-size: 0.64rem;
     transform: none;
+  }
+
+  .tourist-avatar {
+    width: 34px;
+    height: 56px;
+  }
+
+  .tourist-avatar span {
+    width: 24px;
+    height: 36px;
   }
 
   .inside-cabin i {
