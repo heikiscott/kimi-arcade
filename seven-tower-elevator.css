@@ -7,6 +7,197 @@
   --green: #2f9b66;
 }
 
+/* Photo-reference interior: denser steel lattice and yellow cabin, based on real tower elevator photos. */
+.view-interior .inside-camera {
+  background:
+    radial-gradient(circle at 54% 14%, rgba(255, 255, 255, 0.38), transparent 15%),
+    repeating-linear-gradient(52deg, transparent 0 28px, rgba(73, 62, 54, 0.82) 28px 34px, transparent 34px 58px),
+    repeating-linear-gradient(-52deg, transparent 0 30px, rgba(93, 78, 66, 0.78) 30px 36px, transparent 36px 62px),
+    repeating-linear-gradient(90deg, transparent 0 48px, rgba(255, 255, 255, 0.18) 48px 53px),
+    linear-gradient(180deg, rgba(48, 42, 38, 0.82), rgba(142, 124, 104, 0.34) 45%, rgba(45, 38, 34, 0.76));
+}
+
+.view-interior .inside-camera::before,
+.view-interior .inside-camera::after {
+  content: "";
+  position: absolute;
+  top: 2%;
+  bottom: 4%;
+  z-index: 4;
+  width: 88px;
+  border-left: 8px solid rgba(236, 226, 210, 0.92);
+  border-right: 8px solid rgba(85, 70, 59, 0.78);
+  background:
+    repeating-linear-gradient(180deg, transparent 0 19px, rgba(238, 232, 220, 0.85) 19px 25px),
+    repeating-linear-gradient(48deg, transparent 0 28px, rgba(65, 54, 47, 0.72) 28px 33px),
+    rgba(159, 144, 125, 0.36);
+  box-shadow: 0 18px 28px rgba(23, 38, 50, 0.28);
+}
+
+.view-interior .inside-camera::before {
+  left: 27%;
+  transform: rotate(-16deg);
+}
+
+.view-interior .inside-camera::after {
+  right: 23%;
+  transform: rotate(18deg);
+}
+
+.view-interior .eiffel-frame {
+  opacity: 0.08;
+}
+
+.view-interior .platform-label,
+.view-interior .station {
+  opacity: 0.28;
+}
+
+.view-interior .vertical-shaft,
+.view-interior .incline-rail,
+.view-interior .inclined-car {
+  opacity: 0.2;
+}
+
+.view-interior .tourist-avatar {
+  opacity: 1;
+}
+
+.view-interior .inside-camera .yellow-cabin {
+  left: 38%;
+  bottom: 42%;
+  z-index: 15;
+  width: 310px;
+  min-height: 158px;
+  transform: rotate(-4deg);
+  background:
+    linear-gradient(90deg, #f0c75c 0 18%, #1c2e39 18% 20%, #f0c75c 20% 38%, #1c2e39 38% 40%, #f0c75c 40% 58%, #1c2e39 58% 60%, #f0c75c 60% 78%, #1c2e39 78% 80%, #f0c75c 80%),
+    linear-gradient(180deg, #ffd96c, #c38122);
+}
+
+.view-interior .inside-camera .yellow-cabin::before {
+  content: "";
+  position: absolute;
+  left: -20px;
+  right: -20px;
+  bottom: -34px;
+  height: 34px;
+  border: 4px solid rgba(54, 42, 36, 0.78);
+  border-radius: 0 0 9px 9px;
+  background:
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.34) 0 10px, transparent 10px 20px),
+    #604238;
+}
+
+.view-interior .inside-camera .yellow-cabin::after {
+  content: "";
+  position: absolute;
+  left: 6%;
+  right: 6%;
+  top: 48%;
+  height: 5px;
+  background: rgba(47, 40, 36, 0.78);
+}
+
+.view-interior .inside-camera .yellow-cabin i {
+  min-height: 44px;
+  border-color: rgba(23, 38, 50, 0.68);
+  background: linear-gradient(180deg, rgba(218, 240, 250, 0.95), rgba(98, 131, 147, 0.82));
+}
+
+.view-interior .inside-camera .red-cabin {
+  left: 45%;
+  top: 59%;
+  z-index: 14;
+  width: 250px;
+  min-height: 82px;
+  grid-template-columns: repeat(4, 1fr);
+  transform: rotate(-4deg);
+  background:
+    linear-gradient(90deg, rgba(38, 28, 24, 0.52) 0 19%, transparent 19% 25%, rgba(38, 28, 24, 0.52) 25% 44%, transparent 44% 50%, rgba(38, 28, 24, 0.52) 50% 69%, transparent 69% 75%, rgba(38, 28, 24, 0.52) 75%),
+    linear-gradient(180deg, #8b463e, #4e2926);
+}
+
+.view-interior .inside-camera .red-cabin b {
+  color: #ffe7b5;
+}
+
+.view-interior .inside-camera .inside-deck {
+  z-index: 13;
+  left: 18%;
+  right: 18%;
+  height: 46px;
+  background:
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.24) 0 18px, transparent 18px 36px),
+    linear-gradient(180deg, #8a6a55, #35251f);
+}
+
+.view-interior .inside-camera .deck-top {
+  top: 16%;
+}
+
+.view-interior .inside-camera .deck-bottom {
+  bottom: 24%;
+}
+
+.view-interior .inside-camera .person-a,
+.view-interior .inside-camera .person-b {
+  bottom: 32%;
+}
+
+.view-interior .inside-camera .person-a { left: 48%; }
+.view-interior .inside-camera .person-b { left: 51%; }
+
+.view-interior .inside-camera .stairs-left {
+  left: 12%;
+  top: 9%;
+  height: 82%;
+  transform: rotate(-21deg);
+}
+
+.view-interior .inside-camera .stairs-right {
+  right: 10%;
+  top: 8%;
+  height: 82%;
+  transform: rotate(23deg);
+}
+
+.view-interior .inside-camera .rail-window-left {
+  left: 58%;
+}
+
+.view-interior .inside-camera .rail-window-right {
+  right: 18%;
+}
+
+@media (max-width: 840px) {
+  .view-interior .inside-camera .yellow-cabin {
+    left: 22%;
+    bottom: 43%;
+    width: 220px;
+    min-height: 122px;
+  }
+
+  .view-interior .inside-camera .red-cabin {
+    left: 36%;
+    top: 61%;
+    width: 170px;
+  }
+
+  .view-interior .inside-camera::before,
+  .view-interior .inside-camera::after {
+    width: 56px;
+  }
+
+  .view-interior .inside-camera::before {
+    left: 16%;
+  }
+
+  .view-interior .inside-camera::after {
+    right: 9%;
+  }
+}
+
 * {
   box-sizing: border-box;
 }
