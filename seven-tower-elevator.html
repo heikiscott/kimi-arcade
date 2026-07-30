@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>埃菲尔铁塔七部电梯</title>
-    <link rel="stylesheet" href="seven-tower-elevator.css?v=eiffel-infographic-20260730" />
+    <link rel="stylesheet" href="seven-tower-elevator.css?v=eiffel-platform-model-20260730" />
   </head>
   <body>
     <a class="home-link" href="arcade.html">游戏大厅</a>
@@ -116,16 +116,31 @@
         </div>
 
         <div class="platform-model" aria-hidden="true">
+          <span class="model-sky"></span>
           <span class="model-deck"></span>
-          <span class="model-core"></span>
+          <span class="model-edge model-edge-front"></span>
+          <span class="model-edge model-edge-left"></span>
+          <span class="model-edge model-edge-right"></span>
+          <span class="model-core">
+            <i></i><i></i><i></i><i></i>
+          </span>
+          <span class="model-pillar pillar-a"></span>
+          <span class="model-pillar pillar-b"></span>
+          <span class="model-pillar pillar-c"></span>
+          <span class="model-pillar pillar-d"></span>
           <span class="model-leg leg-a"></span>
           <span class="model-leg leg-b"></span>
           <span class="model-leg leg-c"></span>
           <span class="model-leg leg-d"></span>
-          <span class="model-car model-yellow-a">客梯</span>
-          <span class="model-car model-yellow-b">客梯</span>
+          <span class="model-lattice lattice-a"></span>
+          <span class="model-lattice lattice-b"></span>
+          <span class="model-crane crane-a"></span>
+          <span class="model-crane crane-b"></span>
+          <span class="model-car model-yellow-a">斜行客梯</span>
+          <span class="model-car model-yellow-b">斜行客梯</span>
           <span class="model-car model-red">塔内电梯</span>
-          <span class="model-stairs"></span>
+          <span class="model-stairs">楼梯</span>
+          <span class="model-caption">二层平台模型：黄色斜行客梯、红色塔内电梯、中央钢架竖井</span>
         </div>
 
         <div class="structure-notes" aria-hidden="true">
@@ -274,7 +289,7 @@
       </section>
     </main>
 
-    <script src="seven-tower-elevator.js?v=eiffel-infographic-20260730"></script>
+    <script src="seven-tower-elevator.js?v=eiffel-platform-model-20260730"></script>
     <script src="arcade-stats.js?v=visitor-table-20260728"></script>
   </body>
 </html>
