@@ -18,7 +18,6 @@ body {
 .music-import,
 .developer-badge,
 .hud,
-.records-panel,
 .touch-pad button,
 .map-select button.active {
   text-shadow:
@@ -124,6 +123,46 @@ canvas {
     0 26px 0 rgba(23, 38, 50, 0.12),
     0 34px 68px rgba(23, 38, 50, 0.26);
   filter: saturate(1.04) contrast(1.02);
+}
+
+/* // 新增统计CSS：马里奥PV/UV右上角半透明窄行小字 */
+.mario-mini-stat {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  z-index: 8;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  max-width: calc(100% - 28px);
+  padding: 4px 7px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.4);
+  color: #172632;
+  font-size: 14px;
+  font-weight: 850;
+  line-height: 1.2;
+  white-space: nowrap;
+  backdrop-filter: blur(4px);
+}
+
+.mario-mini-stat[hidden] {
+  display: none;
+}
+
+.mario-mini-stat button {
+  display: none;
+  min-height: 0;
+  padding: 0;
+  background: transparent;
+  color: #d83d35;
+  font-size: 12px;
+  font-weight: 900;
+  text-shadow: none;
+}
+
+.mario-mini-stat:hover button {
+  display: inline;
 }
 
 .intro-overlay {
@@ -416,26 +455,6 @@ canvas {
   font-weight: 850;
 }
 
-.records-panel {
-  display: grid;
-  gap: 5px;
-  margin-top: 8px;
-  padding: 12px 14px;
-  border: 1px solid rgba(23, 38, 50, 0.14);
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.82);
-  font-weight: 820;
-}
-
-.records-panel[hidden] {
-  display: none;
-}
-
-.records-panel span {
-  color: rgba(23, 38, 50, 0.78);
-  line-height: 1.45;
-}
-
 button {
   min-height: 40px;
   padding: 0 14px;
@@ -528,6 +547,13 @@ button:active {
   .riddle-choices button {
     min-height: 40px;
     font-size: 0.92rem;
+  }
+
+  .mario-mini-stat {
+    top: 9px;
+    right: 9px;
+    max-width: calc(100% - 18px);
+    font-size: 12px;
   }
 
   .intro-overlay h1 {

@@ -5,9 +5,10 @@ const nativeStrokeText = ctx.strokeText.bind(ctx);
 const scoreEl = document.querySelector("#score");
 const statusText = document.querySelector("#statusText");
 const restartBtn = document.querySelector("#restartBtn");
-const recordsBtn = document.querySelector("#recordsBtn");
-const recordsPanel = document.querySelector("#recordsPanel");
-const recordsText = document.querySelector("#recordsText");
+// 新增统计JS DOM：右上角PV/UV窄条和悬浮重置按钮
+const marioMiniStat = document.querySelector("#marioMiniStat");
+const marioMiniStatText = document.querySelector("#marioMiniStatText");
+const marioMiniStatReset = document.querySelector("#marioMiniStatReset");
 const soundToggleBtn = document.querySelector("#soundToggleBtn");
 const musicImportBtn = document.querySelector("#musicImportBtn");
 const musicImportInput = document.querySelector("#musicImportInput");
@@ -47,9 +48,9 @@ let autoGoalFlight = null;
 
 const W = canvas.width;
 const H = canvas.height;
-const statsKey = "marioAdventureStatsV2";
+// 新增统计JS存储key：只给当前马里奥游戏使用，和其他小游戏隔离
+const statsKey = "mario_racing_stat";
 const saveKey = "marioAdventureSaveV3";
-const playerIdKey = "marioAdventurePlayerId";
 const audioMuteKey = "marioAdventureAudioMuted";
 const levelOrder = ["sky", "ghost", "castle", "jungle", "lava", "mine", "metro"];
 const riddleList = [
@@ -839,45 +840,49 @@ function playerRect() {
   return { x: player.x, y: player.y, w: player.w, h: player.h };
 }
 
-function getPlayerId() {
-  try {
-    let id = localStorage.getItem(playerIdKey);
-    if (!id) {
-      id = `player-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
-      localStorage.setItem(playerIdKey, id);
-    }
-    return id;
-  } catch {
-    return "player-private";
-  }
+// 新增统计JS：生成8位访客ID，同一浏览器/设备只算一个UV
+function createMiniVisitorId() {
+  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  const bytes = new Uint8Array(8);
+  if (globalThis.crypto?.getRandomValues) globalThis.crypto.getRandomValues(bytes);
+  else bytes.forEach((_, index) => { bytes[index] = Math.floor(Math.random() * alphabet.length); });
+  return [...bytes].map((byte) => alphabet[byte % alphabet.length]).join("");
 }
 
+// 新增统计JS：只保存PV、UV和本游戏访客ID，不保存玩家编号/战绩/金币/死亡等内容
 function defaultStats() {
   return {
-    playerId: getPlayerId(),
-    visits: 0,
-    starts: 0,
-    wins: 0,
-    metroRides: 0,
-    maps: {},
-    lastMap: "sky",
-    lastPlayed: ""
+    pv: 0,
+    uv: 0,
+    visitorId: ""
   };
 }
 
+// 新增统计JS：读取并归一化专属key mario_racing_stat
 function loadStats() {
   try {
-    return { ...defaultStats(), ...JSON.parse(localStorage.getItem(statsKey) || "{}") };
+    const raw = JSON.parse(localStorage.getItem(statsKey) || "{}");
+    return {
+      ...defaultStats(),
+      pv: Number(raw.pv) || 0,
+      uv: Number(raw.uv) || 0,
+      visitorId: typeof raw.visitorId === "string" ? raw.visitorId : ""
+    };
   } catch {
     return defaultStats();
   }
 }
 
+// 新增统计JS：保存当前游戏PV/UV，其他游戏不会被覆盖
 function saveStats(stats) {
   try {
-    localStorage.setItem(statsKey, JSON.stringify(stats));
+    localStorage.setItem(statsKey, JSON.stringify({
+      pv: stats.pv,
+      uv: stats.uv,
+      visitorId: stats.visitorId
+    }));
   } catch {
-    // Some private browsers block localStorage; the game still works without records.
+    // Some private browsers block localStorage; the game still works without stats.
   }
 }
 
@@ -901,15 +906,14 @@ function levelTitle(key = sceneKey) {
 }
 
 function updateRecordsPanel() {
-  if (window.KimiArcadeStats?.summaryText) {
-    recordsText.textContent = window.KimiArcadeStats.summaryText();
-    return;
-  }
+  updateMiniStatsPanel();
+}
+
+// 新增统计JS：仅在初始大厅显示右上角窄条，进入关卡后隐藏
+function updateMiniStatsPanel() {
   const stats = loadStats();
-  const favorite = Object.entries(stats.maps).sort((a, b) => b[1] - a[1])[0];
-  const favoriteText = favorite ? `${mapTitle(favorite[0])} ${favorite[1]} 次` : "还没有最常玩地图";
-  const shortId = stats.playerId.split("-").slice(-1)[0] || "local";
-  recordsText.textContent = `这台设备访问 ${stats.visits} 次，开始玩 ${stats.starts} 次，通关 ${stats.wins} 次，坐地铁 ${stats.metroRides} 次。玩家编号：${shortId}。最常玩：${favoriteText}。公开总人数：GitHub Pages 需要接 GoatCounter 或 Google Analytics 后，才能统计别人手机的总人数和总次数。`;
+  if (marioMiniStatText) marioMiniStatText.textContent = `【本游戏：浏览${stats.pv}次 | 独立玩家${stats.uv}人】`;
+  if (marioMiniStat) marioMiniStat.hidden = gameStarted;
 }
 
 function sendSharedStat(eventName, details = {}) {
@@ -923,20 +927,31 @@ function sendSharedStat(eventName, details = {}) {
 }
 
 function recordEvent(eventName, details = {}) {
-  const stats = loadStats();
   const map = details.map || sceneKey;
-  if (eventName === "visit") stats.visits += 1;
-  if (eventName === "start") {
-    stats.starts += 1;
-    stats.maps[map] = (stats.maps[map] || 0) + 1;
-    stats.lastMap = map;
-    stats.lastPlayed = new Date().toISOString();
+  // 新增统计JS：只有页面加载visit会写PV/UV，其他事件不写本地统计
+  if (eventName === "visit") {
+    const stats = loadStats();
+    stats.pv += 1;
+    if (!stats.visitorId) {
+      stats.visitorId = createMiniVisitorId();
+      stats.uv += 1;
+    }
+    saveStats(stats);
+    updateMiniStatsPanel();
   }
-  if (eventName === "win") stats.wins += 1;
-  if (eventName === "metro") stats.metroRides += 1;
-  saveStats(stats);
-  updateRecordsPanel();
   sendSharedStat(eventName, { ...details, map });
+}
+
+// 新增统计JS：悬浮出现的重置按钮，只清空本游戏PV/UV
+function resetMiniStats() {
+  if (!confirm("确定只清空本游戏PV/UV数据吗？其他游戏和网站缓存不会被影响。")) return;
+  try {
+    localStorage.removeItem(statsKey);
+  } catch {
+    // Some private browsers block localStorage; ignore.
+  }
+  updateMiniStatsPanel();
+  statusText.textContent = "本游戏PV/UV统计已经重置。";
 }
 
 function hasGameSave() {
@@ -3141,6 +3156,7 @@ function beginGame() {
   loadScene(selectedSceneKey, "entry");
   gameStarted = true;
   introOverlay.classList.add("hidden");
+  updateMiniStatsPanel();
   statusText.textContent = `${scene.title}开始！往右走，顶问号砖和隐藏机关。`;
   recordEvent("start", { map: sceneKey });
   startMusic();
@@ -3217,10 +3233,7 @@ canvas.addEventListener("pointerdown", () => {
   startMusic();
 });
 
-recordsBtn.addEventListener("click", () => {
-  recordsPanel.hidden = !recordsPanel.hidden;
-  updateRecordsPanel();
-});
+marioMiniStatReset?.addEventListener("click", resetMiniStats);
 
 continueSaveBtn?.addEventListener("click", () => {
   if (!restoreGameSave()) {

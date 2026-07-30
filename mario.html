@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>马里奥游戏 · 参考音乐新版</title>
-    <link rel="stylesheet" href="mario.css?v=riddle-blocks-20260729" />
+    <link rel="stylesheet" href="mario.css?v=mario-pvuv-20260729" />
   </head>
   <body>
     <a class="home-link" href="arcade.html">游戏大厅</a>
@@ -17,6 +17,11 @@
       <section class="game-wrap">
         <div class="canvas-wrap">
           <canvas id="game" width="1060" height="620" aria-label="原创马里奥横版跳跃游戏"></canvas>
+          <!-- // 新增统计HTML面板：只显示本马里奥游戏PV/UV，初始大厅显示，开始冒险后隐藏 -->
+          <div class="mario-mini-stat" id="marioMiniStat" hidden>
+            <span id="marioMiniStatText">【本游戏：浏览0次 | 独立玩家0人】</span>
+            <button id="marioMiniStatReset" type="button">重置数据</button>
+          </div>
           <div class="intro-overlay" id="introOverlay">
             <p>Original Platform Adventure</p>
             <h1>马里奥游戏</h1>
@@ -60,12 +65,7 @@
         <div class="hud">
           <strong id="score">金币 0 / 0</strong>
           <span id="statusText">先点开始冒险。A/D 移动，空格跳，J 发火球，E 或 ↓ 进门，S 电梯，顶砖有隐藏机关。</span>
-          <button id="recordsBtn" type="button">大厅记录</button>
           <button id="restartBtn" type="button">重来</button>
-        </div>
-        <div class="records-panel" id="recordsPanel" hidden>
-          <strong>小游戏大厅访问记录</strong>
-          <span id="recordsText">还没有记录。</span>
         </div>
         <div class="developer-badge" aria-label="开发者">
           <img src="assets/developer-kimi-avatar.jpg" alt="kimi王佑奇头像" class="developer-avatar" />
@@ -73,7 +73,6 @@
         </div>
       </section>
     </main>
-    <script src="arcade-stats.js?v=visitor-table-20260728"></script>
-    <script src="mario.js?v=riddle-blocks-20260729"></script>
+    <script src="mario.js?v=mario-pvuv-20260729"></script>
   </body>
 </html>
