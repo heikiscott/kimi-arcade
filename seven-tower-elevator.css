@@ -44,7 +44,7 @@ button {
 }
 
 .page-shell {
-  width: min(1180px, calc(100vw - 28px));
+  width: min(1360px, calc(100vw - 20px));
   margin: 0 auto;
   padding: 76px 0 42px;
 }
@@ -80,7 +80,7 @@ button {
 
 .control-panel {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 8px;
   margin-top: 14px;
   padding: 12px;
@@ -109,10 +109,16 @@ button {
   background: var(--red);
 }
 
+.control-panel button:disabled {
+  cursor: not-allowed;
+  background: #8d9aa2;
+  opacity: 0.55;
+}
+
 .tower-stage {
   position: relative;
-  height: min(68vh, 720px);
-  min-height: 520px;
+  height: min(92vh, 1040px);
+  min-height: 760px;
   overflow: hidden;
   border: 5px solid var(--ink);
   border-radius: 8px;
@@ -492,11 +498,21 @@ button {
 }
 
 .passenger-rail {
-  background: #245b8f;
+  background:
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.3) 0 8px, transparent 8px 18px),
+    #d7a249;
 }
 
 .cargo-rail {
-  background: #6e4d2d;
+  background:
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.24) 0 8px, transparent 8px 18px),
+    #b3312f;
+}
+
+.stairs-rail {
+  background:
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.44) 0 8px, transparent 8px 18px),
+    #6d5749;
 }
 
 .rail-a {
@@ -759,15 +775,23 @@ button {
   stroke-linecap: round;
 }
 
-.vertical-shaft {
-  bottom: 33%;
-  height: 48%;
+.svg-stairs path {
+  fill: none;
+  stroke: #efe5d5;
+  stroke-width: 7;
+  stroke-linecap: round;
+  opacity: 0.95;
 }
 
-.shaft-1 { left: 43%; height: 46%; }
-.shaft-2 { left: 47.5%; height: 55%; }
-.shaft-3 { left: 52.5%; height: 55%; }
-.shaft-4 { left: 57%; height: 46%; }
+.vertical-shaft {
+  bottom: 39%;
+  height: 45%;
+}
+
+.shaft-1 { left: 44%; height: 42%; }
+.shaft-2 { left: 48%; height: 50%; }
+.shaft-3 { left: 52%; height: 50%; }
+.shaft-4 { left: 56%; height: 42%; }
 
 .shaft-line {
   inset: 0 16px;
@@ -777,8 +801,8 @@ button {
 }
 
 .vertical-car {
-  width: 54px;
-  height: 44px;
+  width: 58px;
+  height: 46px;
   border-color: #f6ead6;
   background:
     linear-gradient(90deg, rgba(255, 255, 255, 0.5) 0 23%, transparent 23% 27%, rgba(255, 255, 255, 0.5) 27% 50%, transparent 50% 54%, rgba(255, 255, 255, 0.5) 54% 77%, transparent 77%),
@@ -816,29 +840,36 @@ button {
 }
 
 .rail-a {
-  left: 12%;
-  top: 74%;
-  width: 42%;
-  transform: rotate(-37deg);
+  left: 11%;
+  top: 76%;
+  width: 43%;
+  transform: rotate(-38deg);
 }
 
 .rail-b {
-  left: 47%;
-  top: 42%;
-  width: 42%;
-  transform: rotate(34deg);
+  left: 50%;
+  top: 41%;
+  width: 39%;
+  transform: rotate(37deg);
 }
 
 .rail-c {
-  left: 20%;
+  left: 18%;
   top: 86%;
-  width: 58%;
-  transform: rotate(-22deg);
+  width: 40%;
+  transform: rotate(-36deg);
+}
+
+.rail-d {
+  right: 11%;
+  top: 74%;
+  width: 42%;
+  transform: rotate(38deg);
 }
 
 .passenger-car {
-  width: 118px;
-  height: 92px;
+  width: 124px;
+  height: 96px;
   gap: 4px;
   padding: 6px;
   border-color: #2f2824;
@@ -863,12 +894,56 @@ button {
 }
 
 .cargo-car {
-  width: 114px;
-  height: 66px;
+  width: 116px;
+  height: 68px;
   border-color: #2f2824;
   background:
     repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.16) 0 10px, transparent 10px 20px),
-    linear-gradient(135deg, #8c6c54, #4d392c);
+    linear-gradient(135deg, #d93a32, #8b1e2d);
+}
+
+.platform-label {
+  position: absolute;
+  z-index: 12;
+  padding: 7px 9px;
+  border: 2px solid rgba(47, 40, 36, 0.65);
+  border-radius: 8px;
+  color: #2f2824;
+  background: rgba(255, 250, 240, 0.9);
+  font-size: 0.78rem;
+  font-weight: 950;
+  box-shadow: 0 6px 0 rgba(23, 38, 50, 0.1);
+}
+
+.label-ground {
+  left: 10%;
+  bottom: 13%;
+}
+
+.label-one {
+  left: 27%;
+  bottom: 36%;
+}
+
+.label-two {
+  left: 30%;
+  bottom: 53%;
+}
+
+.label-three {
+  left: 39%;
+  bottom: 69%;
+}
+
+.label-four {
+  right: 35%;
+  bottom: 81%;
+}
+
+.label-top {
+  left: 50%;
+  top: 3%;
+  transform: translateX(-50%);
 }
 
 .station {
@@ -877,18 +952,18 @@ button {
 }
 
 .station-left {
-  left: 10%;
+  left: 8%;
   bottom: 22%;
 }
 
 .station-mid {
-  left: 42%;
-  bottom: 49%;
+  left: 43%;
+  bottom: 64%;
 }
 
 .station-right {
-  right: 9%;
-  bottom: 38%;
+  right: 8%;
+  bottom: 23%;
 }
 
 @media (max-width: 840px) {
@@ -906,7 +981,7 @@ button {
   }
 
   .tower-stage {
-    min-height: 560px;
+    min-height: 720px;
   }
 
   .tower {
@@ -930,7 +1005,7 @@ button {
 
   .passenger-car,
   .cargo-car {
-    width: 86px;
+    width: 92px;
   }
 
   .station {

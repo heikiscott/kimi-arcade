@@ -4,6 +4,13 @@ const runToggle = document.querySelector("#runToggle");
 const reverseElevator = document.querySelector("#reverseElevator");
 const sendLow = document.querySelector("#sendLow");
 const sendHigh = document.querySelector("#sendHigh");
+const platformButtons = {
+  platform1: document.querySelector("#goPlatform1"),
+  platform2: document.querySelector("#goPlatform2"),
+  platform3: document.querySelector("#goPlatform3"),
+  platform4: document.querySelector("#goPlatform4"),
+  topApartment: document.querySelector("#goTopApartment"),
+};
 const speedButtons = {
   slow: document.querySelector("#slowSpeed"),
   normal: document.querySelector("#normalSpeed"),
@@ -23,6 +30,9 @@ const elevators = [
     initialT: 0.05,
     speed: 0.00023,
     direction: 1,
+    stops: { platform3: 1, platform4: 0.36, topApartment: 0 },
+    lowStop: "platform3",
+    highStop: "topApartment",
   },
   {
     id: "v2",
@@ -34,6 +44,9 @@ const elevators = [
     initialT: 0.62,
     speed: 0.00019,
     direction: -1,
+    stops: { platform3: 1, platform4: 0.36, topApartment: 0 },
+    lowStop: "platform3",
+    highStop: "topApartment",
   },
   {
     id: "v3",
@@ -45,6 +58,9 @@ const elevators = [
     initialT: 0.36,
     speed: 0.00021,
     direction: 1,
+    stops: { platform3: 1, platform4: 0.36, topApartment: 0 },
+    lowStop: "platform3",
+    highStop: "topApartment",
   },
   {
     id: "v4",
@@ -56,42 +72,54 @@ const elevators = [
     initialT: 0.8,
     speed: 0.00017,
     direction: -1,
+    stops: { platform3: 1, platform4: 0.36, topApartment: 0 },
+    lowStop: "platform3",
+    highStop: "topApartment",
   },
   {
     id: "p1",
     name: "双层斜行客梯 A",
     type: "inclined",
     el: document.querySelector("#passengerCarA"),
-    start: { x: 0.17, y: 0.76 },
-    end: { x: 0.49, y: 0.52 },
+    start: { x: 0.15, y: 0.78 },
+    end: { x: 0.49, y: 0.54 },
     initialT: 0.08,
     speed: 0.00016,
     direction: 1,
     angle: -37,
+    stops: { platform1: 0.38, platform2: 0.68, platform3: 1 },
+    lowStop: "platform1",
+    highStop: "platform3",
   },
   {
     id: "p2",
     name: "双层斜行客梯 B",
     type: "inclined",
     el: document.querySelector("#passengerCarB"),
-    start: { x: 0.51, y: 0.45 },
-    end: { x: 0.85, y: 0.62 },
+    start: { x: 0.51, y: 0.46 },
+    end: { x: 0.87, y: 0.64 },
     initialT: 0.78,
     speed: 0.00014,
     direction: -1,
-    angle: 34,
+    angle: 37,
+    stops: { platform1: 0.38, platform2: 0.68, platform3: 1 },
+    lowStop: "platform1",
+    highStop: "platform3",
   },
   {
     id: "c1",
     name: "单层斜行货梯",
     type: "inclined",
     el: document.querySelector("#cargoCar"),
-    start: { x: 0.24, y: 0.86 },
-    end: { x: 0.77, y: 0.7 },
+    start: { x: 0.21, y: 0.86 },
+    end: { x: 0.48, y: 0.58 },
     initialT: 0.3,
     speed: 0.00009,
     direction: 1,
-    angle: -22,
+    angle: -36,
+    stops: { platform2: 1 },
+    lowStop: "platform2",
+    highStop: "platform2",
   },
 ];
 
@@ -112,14 +140,28 @@ function setStatus() {
   const elevator = selectedElevator();
   selectedElevatorLabel.textContent = `当前：${elevator.name}`;
   runToggle.textContent = elevator.running ? "停下这部" : "启动这部";
-  statusText.textContent = `已选中：${elevator.name}。它现在${elevator.running ? "正在运行" : "停住了"}，速度是${speedName(elevator)}。`;
+  const stopNames = Object.keys(elevator.stops).map(readableStop).join("、");
+  statusText.textContent = `已选中：${elevator.name}。可到：${stopNames}。它现在${elevator.running ? "正在运行" : "停住了"}，速度是${speedName(elevator)}。`;
   Object.values(speedButtons).forEach((button) => button.classList.remove("active"));
   const activeKey = elevator.speedMultiplier === 0.55 ? "slow" : elevator.speedMultiplier === 1.75 ? "fast" : "normal";
   speedButtons[activeKey].classList.add("active");
+  Object.entries(platformButtons).forEach(([stop, button]) => {
+    button.disabled = !(stop in elevator.stops);
+  });
   elevators.forEach((item) => {
     item.el.classList.toggle("selected", item.id === selectedId);
     item.el.classList.toggle("paused", !item.running);
   });
+}
+
+function readableStop(stop) {
+  return {
+    platform1: "一层平台",
+    platform2: "二层平台/餐厅",
+    platform3: "三层平台",
+    platform4: "四层平台",
+    topApartment: "顶端公寓",
+  }[stop] || stop;
 }
 
 function clampBounce(item) {
@@ -161,8 +203,24 @@ function step(time) {
 
   elevators.forEach((item) => {
     if (item.running) {
-      item.t += item.speed * delta * item.speedMultiplier * item.direction;
-      clampBounce(item);
+      if (typeof item.targetT === "number") {
+        const distance = item.targetT - item.t;
+        const stepSize = item.speed * delta * item.speedMultiplier;
+        if (Math.abs(distance) <= stepSize) {
+          item.t = item.targetT;
+          item.targetT = null;
+          item.running = false;
+          if (item.id === selectedId) {
+            setStatus();
+          }
+        } else {
+          item.direction = distance > 0 ? 1 : -1;
+          item.t += stepSize * item.direction;
+        }
+      } else {
+        item.t += item.speed * delta * item.speedMultiplier * item.direction;
+        clampBounce(item);
+      }
     }
     updateElevator(item);
   });
@@ -173,7 +231,6 @@ function step(time) {
 function selectElevator(id) {
   selectedId = id;
   const elevator = selectedElevator();
-  elevator.running = true;
   setStatus();
 }
 
@@ -189,6 +246,7 @@ function resetAllElevators() {
     item.t = item.initialT;
     item.running = true;
     item.speedMultiplier = 1;
+    item.targetT = null;
     updateElevator(item);
   });
   selectedId = "p1";
@@ -209,26 +267,36 @@ reverseElevator.addEventListener("click", () => {
   const elevator = selectedElevator();
   elevator.direction *= -1;
   elevator.running = true;
+  elevator.targetT = null;
   setStatus();
 });
 
+function sendSelectedTo(stop) {
+  const elevator = selectedElevator();
+  if (!(stop in elevator.stops)) {
+    statusText.textContent = `${elevator.name}不能到${readableStop(stop)}，请选择它能到的平台。`;
+    return;
+  }
+  elevator.targetT = elevator.stops[stop];
+  elevator.running = true;
+  setStatus();
+}
+
 sendLow.addEventListener("click", () => {
   const elevator = selectedElevator();
-  elevator.t = 0;
-  elevator.direction = 1;
-  elevator.running = false;
-  updateElevator(elevator);
-  setStatus();
+  sendSelectedTo(elevator.lowStop);
 });
 
 sendHigh.addEventListener("click", () => {
   const elevator = selectedElevator();
-  elevator.t = 1;
-  elevator.direction = -1;
-  elevator.running = false;
-  updateElevator(elevator);
-  setStatus();
+  sendSelectedTo(elevator.highStop);
 });
+
+platformButtons.platform1.addEventListener("click", () => sendSelectedTo("platform1"));
+platformButtons.platform2.addEventListener("click", () => sendSelectedTo("platform2"));
+platformButtons.platform3.addEventListener("click", () => sendSelectedTo("platform3"));
+platformButtons.platform4.addEventListener("click", () => sendSelectedTo("platform4"));
+platformButtons.topApartment.addEventListener("click", () => sendSelectedTo("topApartment"));
 
 speedButtons.slow.addEventListener("click", () => setSelectedSpeed(0.55));
 speedButtons.normal.addEventListener("click", () => setSelectedSpeed(1));

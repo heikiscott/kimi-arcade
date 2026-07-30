@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>埃菲尔铁塔七部电梯</title>
-    <link rel="stylesheet" href="seven-tower-elevator.css?v=eiffel-svg-real-20260730" />
+    <link rel="stylesheet" href="seven-tower-elevator.css?v=eiffel-platform-big-20260730" />
   </head>
   <body>
     <a class="home-link" href="arcade.html">游戏大厅</a>
@@ -13,8 +13,8 @@
       <header class="hero">
         <div>
           <p class="label">2D Elevator Simulator</p>
-          <h1>埃菲尔铁塔七部电梯</h1>
-          <p>点一下任意电梯就能选中它；下面控制台只控制被选中的那部电梯。四部垂直观光电梯、两部双层斜行客梯、一部单层斜行货梯。</p>
+          <h1>埃菲尔铁塔电梯系统</h1>
+          <p>四根斜柱分别是两部黄色双层客梯、一部红色货梯和一条楼梯；客梯到一、二、三层平台，货梯直达二层餐厅，再换中间竖直电梯去四层和顶端公寓。</p>
         </div>
       </header>
 
@@ -70,6 +70,10 @@
               <rect x="286" y="398" width="428" height="34" rx="9" />
               <rect x="172" y="642" width="656" height="36" rx="10" />
             </g>
+            <g class="svg-stairs">
+              <path d="M772 670 L607 246" />
+              <path d="M754 622 L624 622 M735 575 L608 575 M716 528 L592 528 M698 481 L576 481 M680 434 L562 434 M662 387 L548 387 M644 340 L536 340 M626 293 L524 293" />
+            </g>
             <path class="svg-arch" d="M363 670 C380 540 620 540 637 670" />
             <g class="svg-wheels">
               <circle cx="296" cy="523" r="44" />
@@ -99,7 +103,8 @@
 
         <div class="incline-rail passenger-rail rail-a"><span>双层客梯 A</span></div>
         <div class="incline-rail passenger-rail rail-b"><span>双层客梯 B</span></div>
-        <div class="incline-rail cargo-rail rail-c"><span>单层货梯</span></div>
+        <div class="incline-rail cargo-rail rail-c"><span>红色货梯 · 二层餐厅</span></div>
+        <div class="incline-rail stairs-rail rail-d"><span>楼梯通道</span></div>
 
         <button class="inclined-car passenger-car double-deck" id="passengerCarA" data-elevator="p1" type="button">
           <span>上层客舱</span>
@@ -114,17 +119,29 @@
           <strong>BOX</strong>
         </button>
 
-        <div class="station station-left">低区换乘站</div>
-        <div class="station station-mid">中央观景站</div>
-        <div class="station station-right">高区观光站</div>
+        <div class="platform-label label-ground">地面入口</div>
+        <div class="platform-label label-one">一层平台</div>
+        <div class="platform-label label-two">二层平台 · 餐厅</div>
+        <div class="platform-label label-three">三层平台 · 换乘竖直电梯</div>
+        <div class="platform-label label-four">四层平台</div>
+        <div class="platform-label label-top">顶端公寓</div>
+
+        <div class="station station-left">斜柱入口</div>
+        <div class="station station-mid">三层换乘</div>
+        <div class="station station-right">楼梯角</div>
       </section>
 
       <section class="control-panel" aria-label="选中电梯控制台">
         <strong id="selectedElevator">当前：双层斜行客梯 A</strong>
         <button id="runToggle" type="button">停下这部</button>
         <button id="reverseElevator" type="button">反向</button>
-        <button id="sendLow" type="button">去低站</button>
-        <button id="sendHigh" type="button">去高站</button>
+        <button id="sendLow" type="button">去最低站</button>
+        <button id="sendHigh" type="button">去最高站</button>
+        <button id="goPlatform1" type="button">一层平台</button>
+        <button id="goPlatform2" type="button">二层平台</button>
+        <button id="goPlatform3" type="button">三层平台</button>
+        <button id="goPlatform4" type="button">四层平台</button>
+        <button id="goTopApartment" type="button">顶端公寓</button>
         <button id="slowSpeed" type="button">慢速</button>
         <button id="normalSpeed" class="active" type="button">正常</button>
         <button id="fastSpeed" type="button">快速</button>
@@ -133,11 +150,11 @@
 
       <section class="info-bar" aria-label="电梯运行说明">
         <strong id="statusText">已选中：双层斜行客梯 A。下面控制台正在控制这一部。</strong>
-        <p>这是 2D 埃菲尔铁塔电梯示意：点哪一部，控制台就换成哪一部。</p>
+        <p>先点电梯再点平台：黄色客梯走斜柱，红色货梯到二层餐厅，中间竖直电梯负责三层以上。</p>
       </section>
     </main>
 
-    <script src="seven-tower-elevator.js?v=eiffel-svg-real-20260730"></script>
+    <script src="seven-tower-elevator.js?v=eiffel-platform-big-20260730"></script>
     <script src="arcade-stats.js?v=visitor-table-20260728"></script>
   </body>
 </html>
