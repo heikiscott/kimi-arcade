@@ -1316,8 +1316,8 @@ function updatePlayer(dt) {
   const jump = isPressed("jump");
   const flying = performance.now() < player.flightUntil;
   const planeFlight = flying && player.flightMode === "plane";
-  const maxSpeed = flying ? (planeFlight ? 7.2 : 6.2) : player.grounded ? 5.45 : 4.85;
-  const acceleration = player.grounded ? 0.86 : 0.58;
+  const maxSpeed = flying ? (planeFlight ? 7.2 : 6.2) : player.grounded ? 5.8 : 5.25;
+  const acceleration = player.grounded ? 0.94 : 0.68;
   if (left) {
     player.vx -= acceleration * dt;
     player.facing = -1;
@@ -1337,8 +1337,8 @@ function updatePlayer(dt) {
   player.vx = Math.max(-maxSpeed, Math.min(maxSpeed, player.vx));
 
   if (jump && player.grounded) {
-    const jumpBoost = sceneKey === "lava" ? 0.8 : sceneKey === "mine" ? 0.55 : player.rideElevator ? 0.65 : 0;
-    player.vy = -13.7 - jumpBoost;
+    const jumpBoost = sceneKey === "lava" ? 1.15 : sceneKey === "mine" ? 0.9 : player.rideElevator ? 1 : 0.35;
+    player.vy = -14.6 - jumpBoost;
     player.grounded = false;
     player.rideElevator = null;
     playJump();
@@ -1366,7 +1366,7 @@ function updatePlayer(dt) {
     keys.delete("S");
   }
 
-  player.vy += (flying ? 0.34 : 0.72) * dt;
+  player.vy += (flying ? 0.34 : 0.68) * dt;
   const prevY = player.y;
   player.x += player.vx * dt;
   player.y += player.vy * dt;
