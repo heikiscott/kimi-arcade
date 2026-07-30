@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>埃菲尔铁塔七部电梯</title>
-    <link rel="stylesheet" href="seven-tower-elevator.css?v=eiffel-platform-big-20260730" />
+    <link rel="stylesheet" href="seven-tower-elevator.css?v=eiffel-photo-structure-20260730" />
   </head>
   <body>
     <a class="home-link" href="arcade.html">游戏大厅</a>
@@ -18,7 +18,14 @@
         </div>
       </header>
 
-      <section class="tower-stage" id="towerStage" aria-label="埃菲尔铁塔七部电梯运行画面">
+      <nav class="view-switcher" aria-label="电梯视角切换">
+        <button id="viewInterior" class="active" type="button">塔内电梯</button>
+        <button id="viewExterior" type="button">全塔远景</button>
+        <button id="viewPlatform" type="button">二层平台模型</button>
+        <button id="viewStructure" type="button">结构图标注</button>
+      </nav>
+
+      <section class="tower-stage view-interior" id="towerStage" aria-label="埃菲尔铁塔七部电梯运行画面">
         <div class="sun"></div>
         <div class="cloud cloud-a"></div>
         <div class="cloud cloud-b"></div>
@@ -82,6 +89,55 @@
               <path d="M704 388 L704 472 M662 430 L746 430 M674 400 L734 460 M734 400 L674 460" />
             </g>
           </svg>
+        </div>
+
+        <div class="inside-camera" aria-hidden="true">
+          <span class="inside-beam ib-left"></span>
+          <span class="inside-beam ib-right"></span>
+          <span class="inside-beam ib-cross-a"></span>
+          <span class="inside-beam ib-cross-b"></span>
+          <span class="inside-beam ib-cross-c"></span>
+          <span class="inside-stairs stairs-left"></span>
+          <span class="inside-stairs stairs-right"></span>
+          <span class="inside-rail rail-window-left"></span>
+          <span class="inside-rail rail-window-right"></span>
+          <span class="inside-deck deck-top"></span>
+          <span class="inside-deck deck-bottom"></span>
+          <span class="inside-cabin yellow-cabin">
+            <i></i><i></i><i></i><i></i>
+            <b>双层客梯</b>
+          </span>
+          <span class="inside-cabin red-cabin">
+            <i></i><i></i>
+            <b>竖直电梯</b>
+          </span>
+          <span class="people person-a"></span>
+          <span class="people person-b"></span>
+        </div>
+
+        <div class="platform-model" aria-hidden="true">
+          <span class="model-deck"></span>
+          <span class="model-core"></span>
+          <span class="model-leg leg-a"></span>
+          <span class="model-leg leg-b"></span>
+          <span class="model-leg leg-c"></span>
+          <span class="model-leg leg-d"></span>
+          <span class="model-car model-yellow-a">客梯</span>
+          <span class="model-car model-yellow-b">客梯</span>
+          <span class="model-car model-red">塔内电梯</span>
+          <span class="model-stairs"></span>
+        </div>
+
+        <div class="structure-notes" aria-hidden="true">
+          <span class="measure height-total">总高度 324 米</span>
+          <span class="measure height-structure">结构高度 300 米</span>
+          <span class="callout callout-top">顶端天线 / 通信</span>
+          <span class="callout callout-summit">塔顶观景台 276 米</span>
+          <span class="callout callout-second">第二层平台 115 米</span>
+          <span class="callout callout-first">第一层平台 57 米</span>
+          <span class="callout callout-base">底部跨度约 124.9 米</span>
+          <span class="callout callout-elevator">中间竖井：三层换乘后上四层和顶端</span>
+          <span class="callout callout-legs">四脚斜柱：客梯、货梯、楼梯分开</span>
         </div>
 
         <div class="vertical-shaft shaft-1">
@@ -154,7 +210,7 @@
       </section>
     </main>
 
-    <script src="seven-tower-elevator.js?v=eiffel-platform-big-20260730"></script>
+    <script src="seven-tower-elevator.js?v=eiffel-photo-structure-20260730"></script>
     <script src="arcade-stats.js?v=visitor-table-20260728"></script>
   </body>
 </html>

@@ -16,6 +16,12 @@ const speedButtons = {
   normal: document.querySelector("#normalSpeed"),
   fast: document.querySelector("#fastSpeed"),
 };
+const viewButtons = {
+  interior: document.querySelector("#viewInterior"),
+  exterior: document.querySelector("#viewExterior"),
+  platform: document.querySelector("#viewPlatform"),
+  structure: document.querySelector("#viewStructure"),
+};
 const resetScene = document.querySelector("#resetScene");
 const statusText = document.querySelector("#statusText");
 
@@ -297,6 +303,15 @@ platformButtons.platform2.addEventListener("click", () => sendSelectedTo("platfo
 platformButtons.platform3.addEventListener("click", () => sendSelectedTo("platform3"));
 platformButtons.platform4.addEventListener("click", () => sendSelectedTo("platform4"));
 platformButtons.topApartment.addEventListener("click", () => sendSelectedTo("topApartment"));
+
+Object.entries(viewButtons).forEach(([view, button]) => {
+  button.addEventListener("click", () => {
+    stage.classList.remove("view-interior", "view-exterior", "view-platform", "view-structure");
+    stage.classList.add(`view-${view}`);
+    Object.values(viewButtons).forEach((viewButton) => viewButton.classList.remove("active"));
+    button.classList.add("active");
+  });
+});
 
 speedButtons.slow.addEventListener("click", () => setSelectedSpeed(0.55));
 speedButtons.normal.addEventListener("click", () => setSelectedSpeed(1));
