@@ -484,6 +484,10 @@ body {
   background: linear-gradient(135deg, #172632, #607786 58%, #ffd15f);
 }
 
+.seven-tower-elevator {
+  background: linear-gradient(135deg, #245b8f, #607786 46%, #ffd15f);
+}
+
 .two-elevators {
   background: linear-gradient(135deg, #172632, #607786 52%, #ffd15f);
 }
