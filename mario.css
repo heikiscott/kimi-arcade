@@ -510,6 +510,7 @@ button:active {
 
   .developer-badge {
     margin-top: 8px;
+    margin-bottom: 138px;
     padding: 5px 10px 5px 6px;
     font-size: 0.78rem;
   }
@@ -599,12 +600,24 @@ button:active {
   }
 
   .hud {
-    grid-template-columns: 1fr;
-    gap: 7px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
     margin-top: 7px;
     padding: 9px;
     font-size: 0.92rem;
     line-height: 1.35;
+  }
+
+  .hud strong,
+  .hud span {
+    grid-column: 1 / -1;
+  }
+
+  .hud button {
+    width: 100%;
+    min-height: 42px;
+    padding: 0 5px;
+    font-size: 0.88rem;
   }
 
   button {
@@ -612,7 +625,7 @@ button:active {
   }
 
   #restartBtn {
-    min-height: 40px;
+    min-height: 42px;
   }
 }
 
