@@ -49,6 +49,8 @@ let lastFireAt = 0;
 let lastFireHintAt = 0;
 let lastSaveAt = 0;
 let jumpHeld = false;
+let doorHeld = false;
+let elevatorHeld = false;
 let activeRiddleBlock = null;
 let autoGoalFlight = null;
 let easyMode = false;
@@ -836,6 +838,8 @@ function reset(clearSave = true) {
   keys.clear();
   touchControls.clear();
   jumpHeld = false;
+  doorHeld = false;
+  elevatorHeld = false;
   fireballs.length = 0;
   flagCeremony = null;
   activeRiddleBlock = null;
@@ -1204,6 +1208,9 @@ function restoreGameSave() {
   player.rideElevator = null;
   player.rideTrain = null;
   fireballs.length = 0;
+  jumpHeld = false;
+  doorHeld = false;
+  elevatorHeld = false;
   flagCeremony = null;
   activeRiddleBlock = null;
   autoGoalFlight = null;
@@ -1270,6 +1277,7 @@ function update(dt) {
   checkMetroRide();
   checkDoors();
   checkGoal();
+  if (!isPressed("door")) doorHeld = false;
   cameraX += (Math.max(0, Math.min(scene.width - W, player.x - W * 0.42)) - cameraX) * 0.12;
   if (performance.now() - lastSaveAt > 1200) {
     lastSaveAt = performance.now();
@@ -1316,11 +1324,13 @@ function updatePlayer(dt) {
   const left = isPressed("left");
   const right = isPressed("right");
   const jump = isPressed("jump");
+  const elevator = isPressed("elevator");
   const jumpJustPressed = jump && !jumpHeld;
+  const elevatorJustPressed = elevator && !elevatorHeld;
   const flying = performance.now() < player.flightUntil;
   const planeFlight = flying && player.flightMode === "plane";
-  const maxSpeed = flying ? (planeFlight ? 7.2 : 6.2) : player.grounded ? 5.7 : 4.92;
-  const acceleration = player.grounded ? 0.94 : 0.54;
+  const maxSpeed = flying ? (planeFlight ? 7.2 : 6.2) : player.grounded ? 6.05 : 5.25;
+  const acceleration = player.grounded ? 1 : 0.62;
   if (left) {
     player.vx -= acceleration * dt;
     player.facing = -1;
@@ -1340,9 +1350,9 @@ function updatePlayer(dt) {
   player.vx = Math.max(-maxSpeed, Math.min(maxSpeed, player.vx));
 
   if (jumpJustPressed && player.grounded) {
-    const jumpBoost = sceneKey === "lava" ? 1.15 : sceneKey === "mine" ? 0.9 : player.rideElevator ? 1 : 0.35;
-    player.vy = -14.6 - jumpBoost;
-    if (left || right) player.vx += player.facing * 1.1;
+    const jumpBoost = sceneKey === "lava" ? 1.55 : sceneKey === "mine" ? 1.25 : player.rideElevator ? 1.35 : 0.75;
+    player.vy = -15.15 - jumpBoost;
+    if (left || right) player.vx += player.facing * 1.45;
     player.grounded = false;
     player.rideElevator = null;
     playJump();
@@ -1359,19 +1369,17 @@ function updatePlayer(dt) {
 
   if (isPressed("fire")) shootFireball();
 
-  if (isPressed("elevator") && player.rideElevator) {
+  if (elevatorJustPressed && player.rideElevator) {
     player.rideElevator.speedLevel = ((player.rideElevator.speedLevel ?? 1) + 1) % elevatorSpeedMultipliers.length;
     player.rideElevator.speed = (player.rideElevator.baseSpeed || player.rideElevator.speed || 1.2) * elevatorSpeedMultipliers[player.rideElevator.speedLevel];
     player.rideElevator.dir *= -1;
     elevatorHintTimer = performance.now() + 900;
     statusText.textContent = `电梯换方向了，速度档位：${elevatorSpeedLabels[player.rideElevator.speedLevel]}。`;
-    touchControls.delete("elevator");
-    keys.delete("s");
-    keys.delete("S");
   }
 
   jumpHeld = jump;
-  player.vy += (flying ? 0.34 : 0.72) * dt;
+  elevatorHeld = elevator;
+  player.vy += (flying ? 0.34 : 0.7) * dt;
   const prevY = player.y;
   player.x += player.vx * dt;
   player.y += player.vy * dt;
@@ -1387,7 +1395,7 @@ function updatePlayer(dt) {
 
 function resolvePlatforms() {
   const prevBottom = player.y + player.h - player.vy;
-  const solidBlocks = scene.blocks.filter((block) => block.revealed);
+  const solidBlocks = scene.blocks.filter((block) => block.revealed && block.type !== "question" && block.type !== "riddle");
   const trains = scene.trains || [];
   [...scene.platforms, ...scene.elevators, ...trains, ...solidBlocks].forEach((platform) => {
     const r = { x: platform.x, y: platform.y, w: platform.w, h: platform.h };
@@ -1421,8 +1429,9 @@ function handleBlockHits(prevY) {
   const headBefore = prevY;
   scene.blocks.forEach((block) => {
     const blockBottom = block.y + block.h;
-    const overlapX = player.x + player.w > block.x + 4 && player.x < block.x + block.w - 4;
-    if (!overlapX || headBefore < blockBottom || headNow > blockBottom + 8) return;
+    const playerCenter = player.x + player.w / 2;
+    const underBlock = playerCenter > block.x + 6 && playerCenter < block.x + block.w - 6;
+    if (!underBlock || headBefore < blockBottom || headNow > blockBottom + 6) return;
     if (!block.revealed && block.type === "hidden") {
       block.revealed = true;
       statusText.textContent = "顶到隐藏机关了！隐藏砖块出现。";
@@ -1893,11 +1902,10 @@ function checkMetroRide() {
     statusText.textContent = "地铁停在站台：按 E / ↓ / 点“进/出”上车开往下一站。";
     doorHintTimer = performance.now() + 1800;
   }
-  if (!isPressed("door") || train.active) return;
-  touchControls.delete("door");
-  keys.delete("e");
-  keys.delete("E");
-  keys.delete("ArrowDown");
+  const doorPressed = isPressed("door");
+  const doorJustPressed = doorPressed && !doorHeld;
+  if (!doorJustPressed || train.active) return;
+  doorHeld = true;
   train.active = true;
   train.speed = 1.8;
   player.x = train.x + 84;
@@ -1917,11 +1925,10 @@ function checkDoors() {
     statusText.textContent = "现在是七关连线模式：不要从门跳关，继续往右走到旗杆。";
     doorHintTimer = performance.now() + 1600;
   }
-  if (!door || !isPressed("door")) return;
-  touchControls.delete("door");
-  keys.delete("e");
-  keys.delete("E");
-  keys.delete("ArrowDown");
+  const doorPressed = isPressed("door");
+  const doorJustPressed = doorPressed && !doorHeld;
+  if (!door || !doorJustPressed) return;
+  doorHeld = true;
   statusText.textContent = "这次要按顺序闯关：先到旗杆，旗子降下来后会自动进入下一关。";
 }
 
