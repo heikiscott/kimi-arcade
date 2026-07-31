@@ -100,6 +100,250 @@
   }
 }
 
+/* Real controllable elevator correction: make the tower read like Eiffel structure, not spiderweb. */
+.eiffel-frame::before {
+  opacity: 0.1;
+  background:
+    linear-gradient(63deg, transparent 0 46%, rgba(80, 63, 48, 0.42) 46% 48%, transparent 48%),
+    linear-gradient(-63deg, transparent 0 46%, rgba(80, 63, 48, 0.36) 46% 48%, transparent 48%);
+}
+
+.eiffel-svg .svg-tower-fill {
+  opacity: 0.34;
+}
+
+.eiffel-svg .svg-tower-fill path {
+  stroke-width: 4.5;
+  opacity: 0.44;
+}
+
+.eiffel-svg .svg-heavy path {
+  stroke: #4a3528;
+  stroke-width: 22;
+}
+
+.eiffel-svg .svg-decks rect {
+  fill: #5b4030;
+  stroke: #d8ad70;
+  stroke-width: 8;
+}
+
+.eiffel-svg .svg-arch {
+  stroke: #30231c;
+  stroke-width: 34;
+}
+
+.eiffel-svg .svg-wheels {
+  opacity: 0.12;
+}
+
+.tower-stage.view-interior .inside-camera {
+  background:
+    linear-gradient(90deg, rgba(87, 68, 56, 0.14) 0 2px, transparent 2px 13px),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.42), rgba(155, 126, 96, 0.22)),
+    linear-gradient(135deg, rgba(91, 70, 55, 0.22), rgba(255, 255, 255, 0.06));
+}
+
+.tower-stage.view-interior .inside-camera::before,
+.tower-stage.view-interior .inside-camera::after {
+  width: 44px;
+  opacity: 0.34;
+  box-shadow: inset 0 0 0 4px rgba(63, 48, 38, 0.42);
+}
+
+.tower-stage.view-interior .inside-beam {
+  opacity: 0.66;
+}
+
+.tower-stage.view-interior .ib-cross-a,
+.tower-stage.view-interior .ib-cross-b,
+.tower-stage.view-interior .ib-cross-c {
+  opacity: 0.38;
+}
+
+.tower-stage.view-interior .inside-stairs {
+  opacity: 0.75;
+}
+
+.tower-stage.view-interior .yellow-cabin,
+.tower-stage.view-interior .red-cabin {
+  z-index: 36;
+  filter: drop-shadow(0 14px 16px rgba(20, 18, 16, 0.35));
+}
+
+.tower-stage.view-platform {
+  background:
+    radial-gradient(circle at 76% 16%, rgba(255, 240, 160, 0.72), transparent 11%),
+    linear-gradient(180deg, #5daee8 0%, #a8d8f2 42%, #d7eff5 64%, #8fae96 100%);
+}
+
+.tower-stage.view-platform .eiffel-frame {
+  opacity: 0.18;
+}
+
+.tower-stage.view-platform .platform-model {
+  background:
+    radial-gradient(ellipse at 50% 62%, rgba(69, 51, 38, 0.22), transparent 55%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.2), rgba(112, 86, 65, 0.12));
+}
+
+.tower-stage.view-platform .model-lattice,
+.tower-stage.view-platform .model-crane {
+  opacity: 0.1;
+}
+
+.tower-stage.view-platform .model-deck {
+  top: 43%;
+  height: 29%;
+  border: 5px solid rgba(93, 68, 43, 0.9);
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.28) 0 5px, transparent 5px 48px),
+    linear-gradient(180deg, #f6d99f 0%, #d4a15e 62%, #93623a 100%);
+  clip-path: polygon(10% 0, 90% 0, 98% 40%, 82% 100%, 18% 100%, 2% 40%);
+  box-shadow:
+    0 30px 42px rgba(30, 38, 42, 0.32),
+    inset 0 -17px 0 rgba(72, 43, 24, 0.18);
+}
+
+.tower-stage.view-platform .model-edge {
+  opacity: 0.8;
+}
+
+.tower-stage.view-platform .model-core {
+  top: 2%;
+  width: 15%;
+  height: 57%;
+  border: 4px solid rgba(52, 62, 62, 0.88);
+  background:
+    repeating-linear-gradient(90deg, rgba(78, 72, 63, 0.95) 0 5px, transparent 5px 28px),
+    repeating-linear-gradient(0deg, transparent 0 28px, rgba(95, 84, 72, 0.82) 28px 34px),
+    linear-gradient(180deg, rgba(230, 220, 196, 0.88), rgba(142, 120, 91, 0.6));
+  clip-path: polygon(42% 0, 58% 0, 73% 100%, 27% 100%);
+  box-shadow: 0 16px 26px rgba(34, 42, 45, 0.2);
+}
+
+.tower-stage.view-platform .model-core i {
+  display: none;
+}
+
+.tower-stage.view-platform .model-pillar {
+  opacity: 0.9;
+  background: linear-gradient(90deg, #5a493b, #bfa381 48%, #5b4431);
+  box-shadow: 0 0 0 3px rgba(55, 43, 34, 0.35);
+}
+
+.tower-stage.view-platform .model-leg {
+  opacity: 0.92;
+  height: 46%;
+  border-radius: 18px;
+  background:
+    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.28) 0 3px, transparent 3px 18px),
+    linear-gradient(90deg, #4a362a, #b99570 52%, #3d2c24);
+  box-shadow: 0 0 0 4px rgba(45, 34, 27, 0.36);
+}
+
+.tower-stage.view-platform .leg-a {
+  left: 19%;
+  transform: rotate(22deg);
+}
+
+.tower-stage.view-platform .leg-b {
+  left: 35%;
+  transform: rotate(8deg);
+}
+
+.tower-stage.view-platform .leg-c {
+  right: 35%;
+  transform: rotate(-8deg);
+}
+
+.tower-stage.view-platform .leg-d {
+  right: 19%;
+  transform: rotate(-22deg);
+}
+
+.tower-stage.view-platform .model-yellow-a,
+.tower-stage.view-platform .model-yellow-b,
+.tower-stage.view-platform .model-red {
+  opacity: 0.28;
+}
+
+.tower-stage.view-platform .vertical-shaft,
+.tower-stage.view-platform .shaft-line,
+.tower-stage.view-platform .incline-rail {
+  z-index: 28;
+  opacity: 1;
+}
+
+.tower-stage.view-platform .incline-rail {
+  box-shadow:
+    0 0 0 4px rgba(63, 47, 38, 0.26),
+    0 10px 18px rgba(35, 29, 25, 0.24);
+}
+
+.tower-stage.view-platform .passenger-rail {
+  background: linear-gradient(90deg, rgba(255, 221, 92, 0.05), rgba(255, 221, 92, 0.86), rgba(255, 221, 92, 0.05));
+}
+
+.tower-stage.view-platform .cargo-rail {
+  background: linear-gradient(90deg, rgba(214, 62, 52, 0.08), rgba(214, 62, 52, 0.88), rgba(214, 62, 52, 0.08));
+}
+
+.tower-stage.view-platform .inclined-car,
+.tower-stage.view-platform .vertical-car {
+  z-index: 42;
+  opacity: 1;
+  filter: drop-shadow(0 13px 18px rgba(30, 26, 22, 0.35));
+}
+
+.tower-stage.view-platform .inclined-car.selected,
+.tower-stage.view-platform .vertical-car.selected {
+  outline: 6px solid rgba(255, 255, 255, 0.95);
+  box-shadow: 0 0 0 10px rgba(255, 198, 72, 0.45);
+}
+
+.tower-stage.view-platform .model-caption {
+  bottom: 7%;
+  left: 50%;
+  right: auto;
+  width: min(560px, 88%);
+  transform: translateX(-50%);
+  background: rgba(255, 255, 255, 0.86);
+  color: #172632;
+  text-shadow: 0 1px 0 #fff;
+}
+
+.tower-stage.view-platform .platform-label,
+.tower-stage.view-platform .station {
+  z-index: 45;
+  background: rgba(255, 255, 255, 0.86);
+  color: #172632;
+  text-shadow: 0 1px 0 #fff;
+}
+
+@media (max-width: 840px) {
+  .tower-stage.view-platform .model-deck {
+    top: 44%;
+    height: 31%;
+  }
+
+  .tower-stage.view-platform .model-core {
+    width: 22%;
+    height: 54%;
+  }
+
+  .tower-stage.view-platform .model-caption {
+    bottom: 4%;
+    font-size: 0.58rem;
+  }
+
+  .tower-stage.view-platform .inclined-car.selected,
+  .tower-stage.view-platform .vertical-car.selected {
+    outline-width: 4px;
+    box-shadow: 0 0 0 7px rgba(255, 198, 72, 0.42);
+  }
+}
+
 /* Final platform-frame pass: make the platform look like a real Eiffel steel deck and bring controlled elevators back. */
 .tower-stage.view-platform {
   background:

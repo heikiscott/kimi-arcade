@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>埃菲尔铁塔七部电梯</title>
-    <link rel="stylesheet" href="seven-tower-elevator.css?v=eiffel-platform-frame-20260731" />
+    <link rel="stylesheet" href="seven-tower-elevator.css?v=eiffel-real-control-20260731" />
   </head>
   <body>
     <a class="home-link" href="arcade.html">游戏大厅</a>
@@ -14,7 +14,7 @@
         <div>
           <p class="label">2D Elevator Simulator</p>
           <h1>埃菲尔铁塔电梯系统</h1>
-          <p>四根斜柱分别是两部黄色双层客梯、一部红色货梯和一条楼梯；客梯到一、二、三层平台，货梯直达二层餐厅，再换中间竖直电梯去四层和顶端公寓。</p>
+          <p>按照真实埃菲尔铁塔结构简化：四根斜柱撑起平台，两部黄色双层客梯沿斜柱运行，一部红色货梯到二层餐厅，中间竖直电梯负责三层以上。</p>
         </div>
       </header>
 
@@ -140,7 +140,7 @@
           <span class="model-car model-yellow-b">斜行客梯</span>
           <span class="model-car model-red">塔内电梯</span>
           <span class="model-stairs">楼梯</span>
-          <span class="model-caption">二层平台模型：黄色斜行客梯、红色塔内电梯、中央钢架竖井</span>
+          <span class="model-caption">二层平台仿真：平台、四根斜柱、中央竖井和可控制电梯分开显示</span>
         </div>
 
         <div class="structure-notes" aria-hidden="true">
@@ -293,11 +293,11 @@
 
       <section class="info-bar" aria-label="电梯运行说明">
         <strong id="statusText">已选中：双层斜行客梯 A。下面控制台正在控制这一部。</strong>
-        <p>先点电梯再点平台：黄色客梯走斜柱，红色货梯到二层餐厅，中间竖直电梯负责三层以上。</p>
+        <p>先点任意电梯，再用下面控制台：黄色双层客梯走斜柱，红色货梯到二层餐厅，中间竖直电梯从三层继续向上。</p>
       </section>
     </main>
 
-    <script src="seven-tower-elevator.js?v=eiffel-platform-frame-20260731"></script>
+    <script src="seven-tower-elevator.js?v=eiffel-real-control-20260731"></script>
     <script src="arcade-stats.js?v=visitor-table-20260728"></script>
   </body>
 </html>
