@@ -22,6 +22,13 @@ const viewButtons = {
   platform: document.querySelector("#viewPlatform"),
   structure: document.querySelector("#viewStructure"),
 };
+const sceneButtons = {
+  day: document.querySelector("#sceneDay"),
+  river: document.querySelector("#sceneRiver"),
+  garden: document.querySelector("#sceneGarden"),
+  sunset: document.querySelector("#sceneSunset"),
+  night: document.querySelector("#sceneNight"),
+};
 const resetScene = document.querySelector("#resetScene");
 const statusText = document.querySelector("#statusText");
 const touristAvatar = document.querySelector("#touristAvatar");
@@ -357,6 +364,16 @@ Object.entries(viewButtons).forEach(([view, button]) => {
     stage.classList.add(`view-${view}`);
     Object.values(viewButtons).forEach((viewButton) => viewButton.classList.remove("active"));
     button.classList.add("active");
+  });
+});
+
+Object.entries(sceneButtons).forEach(([scene, button]) => {
+  button.addEventListener("click", () => {
+    stage.classList.remove("scene-day", "scene-river", "scene-garden", "scene-sunset", "scene-night");
+    stage.classList.add(`scene-${scene}`);
+    Object.values(sceneButtons).forEach((sceneButton) => sceneButton.classList.remove("active"));
+    button.classList.add("active");
+    statusText.textContent = `已切换到${button.textContent}景色。电梯结构和控制方式保持一模一样。`;
   });
 });
 

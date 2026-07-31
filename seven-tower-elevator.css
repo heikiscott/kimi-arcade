@@ -100,6 +100,175 @@
   }
 }
 
+/* Same elevator, different scenery buttons. */
+.scene-switcher {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+  margin: -4px 0 12px;
+}
+
+.scene-switcher button {
+  min-height: 38px;
+  border: 2px solid rgba(23, 38, 50, 0.55);
+  border-radius: 8px;
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.82);
+  cursor: pointer;
+  font-weight: 950;
+}
+
+.scene-switcher button.active {
+  color: #fff;
+  background: #d93a32;
+}
+
+.tower-stage.scene-day,
+.tower-stage.scene-day.view-platform {
+  background:
+    radial-gradient(circle at 78% 12%, rgba(255, 226, 126, 0.72) 0 5%, transparent 6%),
+    linear-gradient(180deg, #8fc9ee 0%, #d9eef7 42%, #e3dbc7 42%, #b6c59f 100%);
+}
+
+.tower-stage.scene-river,
+.tower-stage.scene-river.view-platform {
+  background:
+    radial-gradient(circle at 18% 14%, rgba(255, 241, 190, 0.65), transparent 10%),
+    linear-gradient(180deg, #77b9e8 0%, #d8f0ff 39%, #9fc6d7 39%, #4e8ba7 63%, #7ca46f 63%, #486f44 100%);
+}
+
+.tower-stage.scene-garden,
+.tower-stage.scene-garden.view-platform {
+  background:
+    radial-gradient(circle at 74% 13%, rgba(255, 232, 142, 0.7), transparent 11%),
+    linear-gradient(180deg, #8ed2f2 0%, #d9f4fb 38%, #cfe5c4 38%, #7eb06c 68%, #3e7b42 100%);
+}
+
+.tower-stage.scene-sunset,
+.tower-stage.scene-sunset.view-platform {
+  background:
+    radial-gradient(circle at 70% 23%, rgba(255, 168, 76, 0.78), transparent 12%),
+    linear-gradient(180deg, #f2a15f 0%, #dc7890 34%, #89739c 62%, #536a72 100%);
+}
+
+.tower-stage.scene-night,
+.tower-stage.scene-night.view-platform {
+  background:
+    radial-gradient(circle at 17% 15%, rgba(255, 248, 208, 0.9) 0 4%, transparent 5%),
+    radial-gradient(circle at 34% 18%, rgba(255, 255, 255, 0.85) 0 1px, transparent 2px),
+    radial-gradient(circle at 62% 10%, rgba(255, 255, 255, 0.8) 0 1px, transparent 2px),
+    radial-gradient(circle at 84% 23%, rgba(255, 255, 255, 0.78) 0 1px, transparent 2px),
+    linear-gradient(180deg, #102849 0%, #243e68 45%, #2b3454 65%, #1e3733 100%);
+}
+
+.tower-stage.scene-river .river {
+  bottom: 9%;
+  height: 25%;
+  background:
+    repeating-linear-gradient(170deg, rgba(255, 255, 255, 0.35) 0 4px, transparent 4px 44px),
+    linear-gradient(180deg, #91cce1, #34769a);
+}
+
+.tower-stage.scene-river .city-block {
+  bottom: 36%;
+  opacity: 0.9;
+}
+
+.tower-stage.scene-garden .river {
+  height: 0;
+  opacity: 0;
+}
+
+.tower-stage.scene-garden .tree {
+  bottom: 15%;
+  transform: scale(1.35);
+  background:
+    radial-gradient(circle at 38% 34%, #93d174 0 26%, transparent 27%),
+    radial-gradient(circle at 62% 30%, #75b95d 0 28%, transparent 29%),
+    radial-gradient(circle at 50% 55%, #4e8c48 0 42%, transparent 43%);
+  box-shadow: 0 28px 0 -13px #704b2e;
+}
+
+.tower-stage.scene-garden .city-block {
+  opacity: 0.35;
+}
+
+.tower-stage.scene-sunset .sun {
+  top: 24%;
+  right: 13%;
+  width: 94px;
+  height: 94px;
+  background: #ff9c42;
+  box-shadow: 0 0 72px rgba(255, 116, 60, 0.7);
+}
+
+.tower-stage.scene-sunset .cloud {
+  background: rgba(255, 188, 156, 0.76);
+}
+
+.tower-stage.scene-sunset .eiffel-svg {
+  filter: drop-shadow(0 20px 25px rgba(32, 20, 30, 0.42)) sepia(0.12);
+}
+
+.tower-stage.scene-night .sun {
+  left: 12%;
+  right: auto;
+  top: 10%;
+  width: 58px;
+  height: 58px;
+  background: #fff7cf;
+  box-shadow: 0 0 42px rgba(255, 247, 207, 0.58);
+}
+
+.tower-stage.scene-night .cloud {
+  opacity: 0.26;
+}
+
+.tower-stage.scene-night .city-block {
+  border-color: rgba(255, 225, 132, 0.24);
+  background:
+    repeating-linear-gradient(90deg, rgba(255, 225, 132, 0.78) 0 8px, transparent 8px 18px),
+    linear-gradient(#273f59, #142538);
+}
+
+.tower-stage.scene-night .tree {
+  background: #183923;
+}
+
+.tower-stage.scene-night .eiffel-svg {
+  filter:
+    drop-shadow(0 0 18px rgba(255, 210, 105, 0.42))
+    drop-shadow(0 22px 26px rgba(0, 0, 0, 0.48));
+}
+
+.tower-stage.scene-night .svg-heavy path,
+.tower-stage.scene-night .svg-decks rect {
+  stroke: #f0c976;
+}
+
+.tower-stage.scene-night .inclined-car,
+.tower-stage.scene-night .vertical-car {
+  box-shadow: 0 0 18px rgba(255, 223, 126, 0.36);
+}
+
+.tower-stage.scene-river .model-caption::before,
+.tower-stage.scene-garden .model-caption::before,
+.tower-stage.scene-sunset .model-caption::before,
+.tower-stage.scene-night .model-caption::before {
+  content: "同一套电梯，只换景色：";
+}
+
+@media (max-width: 840px) {
+  .scene-switcher {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .scene-switcher button {
+    min-height: 34px;
+    font-size: 0.76rem;
+  }
+}
+
 /* Real controllable elevator correction: make the tower read like Eiffel structure, not spiderweb. */
 .eiffel-frame::before {
   opacity: 0.1;

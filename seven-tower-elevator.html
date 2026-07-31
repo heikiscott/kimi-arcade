@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>埃菲尔铁塔七部电梯</title>
-    <link rel="stylesheet" href="seven-tower-elevator.css?v=eiffel-real-control-20260731" />
+    <link rel="stylesheet" href="seven-tower-elevator.css?v=eiffel-scenes-20260731" />
   </head>
   <body>
     <a class="home-link" href="arcade.html">游戏大厅</a>
@@ -25,7 +25,15 @@
         <button id="viewStructure" type="button">结构图标注</button>
       </nav>
 
-      <section class="tower-stage view-interior" id="towerStage" aria-label="埃菲尔铁塔七部电梯运行画面">
+      <nav class="scene-switcher" aria-label="景色切换">
+        <button id="sceneDay" class="active" type="button">巴黎白天</button>
+        <button id="sceneRiver" type="button">塞纳河</button>
+        <button id="sceneGarden" type="button">花园</button>
+        <button id="sceneSunset" type="button">夕阳</button>
+        <button id="sceneNight" type="button">夜景</button>
+      </nav>
+
+      <section class="tower-stage view-interior scene-day" id="towerStage" aria-label="埃菲尔铁塔七部电梯运行画面">
         <div class="sun"></div>
         <div class="cloud cloud-a"></div>
         <div class="cloud cloud-b"></div>
@@ -297,7 +305,7 @@
       </section>
     </main>
 
-    <script src="seven-tower-elevator.js?v=eiffel-real-control-20260731"></script>
+    <script src="seven-tower-elevator.js?v=eiffel-scenes-20260731"></script>
     <script src="arcade-stats.js?v=visitor-table-20260728"></script>
   </body>
 </html>
