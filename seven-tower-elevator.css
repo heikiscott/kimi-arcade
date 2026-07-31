@@ -7,6 +7,269 @@
   --green: #2f9b66;
 }
 
+/* Highest-priority platform frame correction. */
+.tower-stage.view-platform {
+  background:
+    radial-gradient(circle at 70% 14%, rgba(255, 255, 255, 0.42), transparent 14%),
+    linear-gradient(180deg, #79b8e8 0%, #a8d4ed 48%, #86aecb 100%);
+}
+
+.tower-stage.view-platform .platform-model {
+  z-index: 3;
+  opacity: 1;
+  background:
+    repeating-linear-gradient(54deg, transparent 0 32px, rgba(74, 66, 58, 0.5) 32px 38px, transparent 38px 66px),
+    repeating-linear-gradient(-54deg, transparent 0 32px, rgba(74, 66, 58, 0.44) 32px 38px, transparent 38px 66px),
+    radial-gradient(ellipse at 50% 74%, rgba(23, 38, 50, 0.22), transparent 50%);
+}
+
+.tower-stage.view-platform .model-deck {
+  left: 8%;
+  right: 8%;
+  top: 38%;
+  height: 36%;
+  border-color: rgba(95, 72, 48, 0.86);
+  background:
+    repeating-linear-gradient(90deg, rgba(82, 61, 42, 0.24) 0 4px, transparent 4px 34px),
+    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.22) 0 3px, transparent 3px 28px),
+    linear-gradient(180deg, #f7dfaa, #d8aa67 72%, #8d6038);
+  clip-path: polygon(7% 0, 93% 0, 100% 44%, 83% 100%, 17% 100%, 0 44%);
+  box-shadow: 0 36px 46px rgba(23, 38, 50, 0.34), inset 0 -18px 0 rgba(70, 45, 25, 0.18);
+}
+
+.tower-stage.view-platform .model-core {
+  top: -2%;
+  width: 18%;
+  height: 62%;
+  border-color: rgba(41, 61, 74, 0.9);
+}
+
+.tower-stage.view-platform .model-yellow-a,
+.tower-stage.view-platform .model-yellow-b {
+  width: 126px;
+  height: 82px;
+  opacity: 0.82;
+  border-color: #2f2824;
+  background:
+    linear-gradient(90deg, #e2aa32 0 13%, #263642 13% 17%, #f8d26a 17% 31%, #263642 31% 35%, #f8d26a 35% 49%, #263642 49% 53%, #f8d26a 53% 67%, #263642 67% 71%, #e2aa32 71%),
+    linear-gradient(180deg, #ffe37a, #cf8d21);
+}
+
+.tower-stage.view-platform .model-red {
+  top: 18%;
+  width: 62px;
+  height: 108px;
+  opacity: 0.86;
+}
+
+.tower-stage.view-platform .vertical-shaft,
+.tower-stage.view-platform .incline-rail,
+.tower-stage.view-platform .inclined-car,
+.tower-stage.view-platform .platform-label,
+.tower-stage.view-platform .station,
+.tower-stage.view-platform .tourist-avatar {
+  opacity: 1;
+}
+
+.tower-stage.view-platform .inclined-car,
+.tower-stage.view-platform .vertical-car {
+  z-index: 22;
+}
+
+.tower-stage.view-platform .platform-label,
+.tower-stage.view-platform .station,
+.tower-stage.view-platform .tourist-avatar {
+  z-index: 24;
+}
+
+@media (max-width: 840px) {
+  .tower-stage.view-platform .model-core {
+    width: 26%;
+    height: 56%;
+  }
+
+  .tower-stage.view-platform .model-yellow-a,
+  .tower-stage.view-platform .model-yellow-b {
+    width: 88px;
+    height: 60px;
+  }
+
+  .tower-stage.view-platform .model-red {
+    width: 48px;
+    height: 82px;
+  }
+}
+
+/* Final platform-frame pass: make the platform look like a real Eiffel steel deck and bring controlled elevators back. */
+.tower-stage.view-platform {
+  background:
+    radial-gradient(circle at 70% 14%, rgba(255, 255, 255, 0.42), transparent 14%),
+    linear-gradient(180deg, #79b8e8 0%, #a8d4ed 48%, #86aecb 100%);
+}
+
+.view-platform .platform-model {
+  z-index: 3;
+  opacity: 1;
+  background:
+    repeating-linear-gradient(54deg, transparent 0 32px, rgba(74, 66, 58, 0.5) 32px 38px, transparent 38px 66px),
+    repeating-linear-gradient(-54deg, transparent 0 32px, rgba(74, 66, 58, 0.44) 32px 38px, transparent 38px 66px),
+    radial-gradient(ellipse at 50% 74%, rgba(23, 38, 50, 0.22), transparent 50%);
+}
+
+.view-platform .model-deck {
+  left: 8%;
+  right: 8%;
+  top: 38%;
+  height: 36%;
+  border-color: rgba(95, 72, 48, 0.86);
+  background:
+    repeating-linear-gradient(90deg, rgba(82, 61, 42, 0.24) 0 4px, transparent 4px 34px),
+    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.22) 0 3px, transparent 3px 28px),
+    linear-gradient(180deg, #f7dfaa, #d8aa67 72%, #8d6038);
+  clip-path: polygon(7% 0, 93% 0, 100% 44%, 83% 100%, 17% 100%, 0 44%);
+  box-shadow: 0 36px 46px rgba(23, 38, 50, 0.34), inset 0 -18px 0 rgba(70, 45, 25, 0.18);
+}
+
+.view-platform .model-edge-front {
+  left: 10%;
+  right: 10%;
+  top: 66%;
+  height: 46px;
+  background:
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.28) 0 16px, transparent 16px 32px),
+    linear-gradient(180deg, #7b5540, #2f211c);
+}
+
+.view-platform .model-edge-left,
+.view-platform .model-edge-right {
+  top: 50%;
+  height: 34px;
+  background: linear-gradient(180deg, #d4a56e, #6a4b36);
+}
+
+.view-platform .model-core {
+  top: -2%;
+  width: 18%;
+  height: 62%;
+  border-color: rgba(41, 61, 74, 0.9);
+  background:
+    repeating-linear-gradient(45deg, transparent 0 13px, rgba(30, 46, 58, 0.88) 13px 18px),
+    repeating-linear-gradient(-45deg, transparent 0 13px, rgba(30, 46, 58, 0.78) 13px 18px),
+    linear-gradient(90deg, rgba(226, 240, 248, 0.2) 0 24%, transparent 24% 76%, rgba(226, 240, 248, 0.18) 76%),
+    rgba(141, 164, 178, 0.84);
+}
+
+.view-platform .model-pillar,
+.view-platform .model-leg {
+  background:
+    repeating-linear-gradient(180deg, rgba(255, 255, 255, 0.36) 0 10px, transparent 10px 22px),
+    #4d6373;
+  box-shadow: 0 0 0 3px rgba(25, 34, 42, 0.28), 0 14px 20px rgba(23, 38, 50, 0.18);
+}
+
+.view-platform .model-lattice {
+  opacity: 0.95;
+  background:
+    repeating-linear-gradient(42deg, transparent 0 16px, rgba(54, 61, 66, 0.9) 16px 20px),
+    repeating-linear-gradient(-42deg, transparent 0 16px, rgba(54, 61, 66, 0.7) 16px 20px);
+}
+
+.view-platform .model-yellow-a,
+.view-platform .model-yellow-b {
+  width: 126px;
+  height: 82px;
+  opacity: 0.86;
+  border-color: #2f2824;
+  background:
+    linear-gradient(90deg, #e2aa32 0 13%, #263642 13% 17%, #f8d26a 17% 31%, #263642 31% 35%, #f8d26a 35% 49%, #263642 49% 53%, #f8d26a 53% 67%, #263642 67% 71%, #e2aa32 71%),
+    linear-gradient(180deg, #ffe37a, #cf8d21);
+}
+
+.view-platform .model-yellow-a {
+  left: 20%;
+  top: 51%;
+}
+
+.view-platform .model-yellow-b {
+  right: 17%;
+  top: 39%;
+}
+
+.view-platform .model-red {
+  top: 18%;
+  width: 62px;
+  height: 108px;
+  opacity: 0.9;
+  background:
+    linear-gradient(90deg, rgba(23, 38, 50, 0.74) 0 27%, transparent 27% 36%, rgba(23, 38, 50, 0.74) 36% 64%, transparent 64% 73%, rgba(23, 38, 50, 0.74) 73%),
+    linear-gradient(180deg, #ef302e, #901726);
+}
+
+.view-platform .model-stairs {
+  right: 30%;
+  top: 54%;
+  opacity: 0.92;
+}
+
+.view-platform .model-caption {
+  bottom: 4%;
+  background: rgba(255, 255, 255, 0.92);
+}
+
+.view-platform .eiffel-frame {
+  opacity: 0.12;
+}
+
+.view-platform .vertical-shaft,
+.view-platform .incline-rail,
+.view-platform .inclined-car,
+.view-platform .platform-label,
+.view-platform .station,
+.view-platform .tourist-avatar {
+  opacity: 1;
+}
+
+.view-platform .vertical-shaft,
+.view-platform .incline-rail {
+  z-index: 11;
+}
+
+.view-platform .inclined-car,
+.view-platform .vertical-car {
+  z-index: 18;
+}
+
+.view-platform .platform-label,
+.view-platform .station {
+  z-index: 19;
+}
+
+.view-platform .tourist-avatar {
+  z-index: 20;
+}
+
+@media (max-width: 840px) {
+  .view-platform .model-core {
+    width: 26%;
+    height: 56%;
+  }
+
+  .view-platform .model-yellow-a,
+  .view-platform .model-yellow-b {
+    width: 88px;
+    height: 60px;
+  }
+
+  .view-platform .model-red {
+    width: 48px;
+    height: 82px;
+  }
+
+  .view-platform .model-caption {
+    font-size: 0.6rem;
+  }
+}
+
 /* Final priority for the base-up photo view. */
 .tower-stage.view-exterior {
   background:
@@ -2462,5 +2725,98 @@ button {
   .callout-elevator,
   .callout-legs {
     display: none;
+  }
+}
+
+/* Highest-priority platform frame correction, intentionally placed at EOF. */
+.tower-stage.view-platform {
+  background:
+    radial-gradient(circle at 70% 14%, rgba(255, 255, 255, 0.42), transparent 14%),
+    linear-gradient(180deg, #79b8e8 0%, #a8d4ed 48%, #86aecb 100%);
+}
+
+.tower-stage.view-platform .platform-model {
+  z-index: 3;
+  opacity: 1;
+  background:
+    repeating-linear-gradient(54deg, transparent 0 32px, rgba(74, 66, 58, 0.5) 32px 38px, transparent 38px 66px),
+    repeating-linear-gradient(-54deg, transparent 0 32px, rgba(74, 66, 58, 0.44) 32px 38px, transparent 38px 66px),
+    radial-gradient(ellipse at 50% 74%, rgba(23, 38, 50, 0.22), transparent 50%);
+}
+
+.tower-stage.view-platform .model-deck {
+  left: 8%;
+  right: 8%;
+  top: 38%;
+  height: 36%;
+  border-color: rgba(95, 72, 48, 0.86);
+  background:
+    repeating-linear-gradient(90deg, rgba(82, 61, 42, 0.24) 0 4px, transparent 4px 34px),
+    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.22) 0 3px, transparent 3px 28px),
+    linear-gradient(180deg, #f7dfaa, #d8aa67 72%, #8d6038);
+  clip-path: polygon(7% 0, 93% 0, 100% 44%, 83% 100%, 17% 100%, 0 44%);
+  box-shadow: 0 36px 46px rgba(23, 38, 50, 0.34), inset 0 -18px 0 rgba(70, 45, 25, 0.18);
+}
+
+.tower-stage.view-platform .model-core {
+  top: -2%;
+  width: 18%;
+  height: 62%;
+  border-color: rgba(41, 61, 74, 0.9);
+}
+
+.tower-stage.view-platform .model-yellow-a,
+.tower-stage.view-platform .model-yellow-b {
+  width: 126px;
+  height: 82px;
+  opacity: 0.82;
+  border-color: #2f2824;
+  background:
+    linear-gradient(90deg, #e2aa32 0 13%, #263642 13% 17%, #f8d26a 17% 31%, #263642 31% 35%, #f8d26a 35% 49%, #263642 49% 53%, #f8d26a 53% 67%, #263642 67% 71%, #e2aa32 71%),
+    linear-gradient(180deg, #ffe37a, #cf8d21);
+}
+
+.tower-stage.view-platform .model-red {
+  top: 18%;
+  width: 62px;
+  height: 108px;
+  opacity: 0.86;
+}
+
+.tower-stage.view-platform .vertical-shaft,
+.tower-stage.view-platform .incline-rail,
+.tower-stage.view-platform .inclined-car,
+.tower-stage.view-platform .platform-label,
+.tower-stage.view-platform .station,
+.tower-stage.view-platform .tourist-avatar {
+  opacity: 1;
+}
+
+.tower-stage.view-platform .inclined-car,
+.tower-stage.view-platform .vertical-car {
+  z-index: 22;
+}
+
+.tower-stage.view-platform .platform-label,
+.tower-stage.view-platform .station,
+.tower-stage.view-platform .tourist-avatar {
+  z-index: 24;
+}
+
+@media (max-width: 840px) {
+  .tower-stage.view-platform .model-core {
+    width: 26%;
+    height: 56%;
+  }
+
+  .tower-stage.view-platform .model-yellow-a,
+  .tower-stage.view-platform .model-yellow-b {
+    width: 88px;
+    height: 60px;
+  }
+
+  .tower-stage.view-platform .model-red {
+    width: 48px;
+    height: 82px;
   }
 }
