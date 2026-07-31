@@ -7,6 +7,208 @@
   --green: #2f9b66;
 }
 
+/* Final priority for the base-up photo view. */
+.tower-stage.view-exterior {
+  background:
+    linear-gradient(180deg, #126bdc 0%, #2f8eea 34%, #9adbed 72%, #d7ede5 100%);
+}
+
+.tower-stage.view-exterior::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 8;
+  height: 21%;
+  background:
+    radial-gradient(circle at 8% 54%, #263542 0 4px, transparent 5px),
+    radial-gradient(circle at 14% 60%, #efe2d2 0 5px, transparent 6px),
+    radial-gradient(circle at 21% 52%, #172632 0 4px, transparent 5px),
+    radial-gradient(circle at 31% 63%, #f3d0a8 0 5px, transparent 6px),
+    radial-gradient(circle at 42% 55%, #1b2530 0 4px, transparent 5px),
+    radial-gradient(circle at 53% 60%, #f0d2ad 0 5px, transparent 6px),
+    radial-gradient(circle at 66% 52%, #1b2530 0 4px, transparent 5px),
+    radial-gradient(circle at 78% 58%, #f0d2ad 0 5px, transparent 6px),
+    radial-gradient(circle at 88% 50%, #172632 0 4px, transparent 5px),
+    repeating-linear-gradient(90deg, transparent 0 58px, rgba(23, 38, 50, 0.28) 58px 62px),
+    linear-gradient(180deg, rgba(30, 50, 58, 0.16), rgba(38, 46, 44, 0.52)),
+    #728275;
+  box-shadow: inset 0 24px 36px rgba(23, 38, 50, 0.32);
+}
+
+.tower-stage.view-exterior::after {
+  z-index: 7;
+  height: 18%;
+  opacity: 0.5;
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.16) 1px, transparent 1px),
+    linear-gradient(#3b4b47, #242f2f);
+  background-size: 22px 22px, auto;
+}
+
+@media (max-width: 840px) {
+  .tower-stage.view-exterior::before {
+    height: 24%;
+  }
+}
+
+/* Photo-reference exterior: base-up view with huge arch, second platform and visitor plaza. */
+.view-exterior {
+  background:
+    linear-gradient(180deg, #126bdc 0%, #2f8eea 34%, #9adbed 72%, #d7ede5 100%);
+}
+
+.view-exterior::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 8;
+  height: 21%;
+  background:
+    radial-gradient(circle at 8% 54%, #263542 0 4px, transparent 5px),
+    radial-gradient(circle at 14% 60%, #efe2d2 0 5px, transparent 6px),
+    radial-gradient(circle at 21% 52%, #172632 0 4px, transparent 5px),
+    radial-gradient(circle at 31% 63%, #f3d0a8 0 5px, transparent 6px),
+    radial-gradient(circle at 42% 55%, #1b2530 0 4px, transparent 5px),
+    radial-gradient(circle at 53% 60%, #f0d2ad 0 5px, transparent 6px),
+    radial-gradient(circle at 66% 52%, #1b2530 0 4px, transparent 5px),
+    radial-gradient(circle at 78% 58%, #f0d2ad 0 5px, transparent 6px),
+    radial-gradient(circle at 88% 50%, #172632 0 4px, transparent 5px),
+    repeating-linear-gradient(90deg, transparent 0 58px, rgba(23, 38, 50, 0.28) 58px 62px),
+    linear-gradient(180deg, rgba(30, 50, 58, 0.16), rgba(38, 46, 44, 0.52)),
+    #728275;
+  box-shadow: inset 0 24px 36px rgba(23, 38, 50, 0.32);
+}
+
+.view-exterior::after {
+  z-index: 7;
+  height: 18%;
+  opacity: 0.5;
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.16) 1px, transparent 1px),
+    linear-gradient(#3b4b47, #242f2f);
+  background-size: 22px 22px, auto;
+}
+
+.view-exterior .sun,
+.view-exterior .cloud {
+  opacity: 0;
+}
+
+.view-exterior .paris-backdrop {
+  z-index: 2;
+}
+
+.view-exterior .river,
+.view-exterior .city-block {
+  opacity: 0;
+}
+
+.view-exterior .tree {
+  bottom: 17%;
+  opacity: 0.72;
+}
+
+.view-exterior .eiffel-frame {
+  bottom: -22%;
+  z-index: 5;
+  width: min(142%, 1650px);
+  height: 124%;
+  opacity: 1;
+  transform: translateX(-50%) scaleX(1.1);
+  transform-origin: 50% 100%;
+}
+
+.view-exterior .eiffel-svg {
+  filter:
+    drop-shadow(0 30px 28px rgba(10, 10, 10, 0.46))
+    contrast(1.18)
+    saturate(1.12);
+}
+
+.view-exterior .svg-heavy path {
+  stroke: #17100d;
+  stroke-width: 30;
+}
+
+.view-exterior .svg-tower-fill path {
+  stroke: rgba(210, 163, 88, 0.9);
+  stroke-width: 9;
+}
+
+.view-exterior .svg-decks rect {
+  fill: #17100d;
+  stroke: #d39d55;
+  stroke-width: 10;
+}
+
+.view-exterior .svg-decks rect:nth-child(3) {
+  height: 54px;
+}
+
+.view-exterior .svg-arch {
+  stroke: #080604;
+  stroke-width: 56;
+}
+
+.view-exterior .svg-stairs path {
+  stroke: rgba(238, 205, 142, 0.86);
+  stroke-width: 8;
+}
+
+.view-exterior .svg-wheels {
+  opacity: 0.18;
+}
+
+.view-exterior .platform-label,
+.view-exterior .station {
+  z-index: 10;
+  color: #fff;
+  background: rgba(23, 38, 50, 0.74);
+  border-color: rgba(255, 255, 255, 0.52);
+}
+
+.view-exterior .label-one {
+  left: 22%;
+  bottom: 37%;
+}
+
+.view-exterior .label-two {
+  left: 55%;
+  bottom: 56%;
+}
+
+.view-exterior .label-ground {
+  left: 10%;
+  bottom: 20%;
+}
+
+.view-exterior .tourist-avatar {
+  z-index: 11;
+  filter: drop-shadow(0 10px 10px rgba(0, 0, 0, 0.34));
+}
+
+.view-exterior .vertical-shaft,
+.view-exterior .incline-rail,
+.view-exterior .inclined-car {
+  z-index: 9;
+}
+
+@media (max-width: 840px) {
+  .view-exterior .eiffel-frame {
+    bottom: -16%;
+    width: 168%;
+    height: 112%;
+  }
+
+  .view-exterior::before {
+    height: 24%;
+  }
+}
+
 /* Photo-reference interior: denser steel lattice and yellow cabin, based on real tower elevator photos. */
 .view-interior .inside-camera {
   background:
