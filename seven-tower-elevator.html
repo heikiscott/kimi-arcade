@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>埃菲尔铁塔七部电梯</title>
-    <link rel="stylesheet" href="seven-tower-elevator.css?v=eiffel-real-tower-20260801" />
+    <link rel="stylesheet" href="seven-tower-elevator.css?v=eiffel-real-lifts-20260801" />
   </head>
   <body>
     <a class="home-link" href="arcade.html">游戏大厅</a>
@@ -14,7 +14,7 @@
         <div>
           <p class="label">2D Elevator Simulator</p>
           <h1>埃菲尔铁塔电梯系统</h1>
-          <p>按照真实埃菲尔铁塔结构简化：四根斜柱撑起平台，两部黄色双层客梯沿斜柱运行，一部红色货梯到二层餐厅，中间竖直电梯负责三层以上。</p>
+          <p>按真实电梯分布简化：北、东、西三部游客斜梯，南柱餐厅专用梯和货梯，二层到顶层用两部竖直双轿厢电梯。</p>
         </div>
       </header>
 
@@ -97,6 +97,20 @@
               <path d="M704 388 L704 472 M662 430 L746 430 M674 400 L734 460 M734 400 L674 460" />
             </g>
           </svg>
+        </div>
+
+        <div class="tower-real-features" aria-hidden="true">
+          <span class="feature-face face-left"></span>
+          <span class="feature-face face-right"></span>
+          <span class="feature-face face-back"></span>
+          <span class="feature-deck deck-first"></span>
+          <span class="feature-deck deck-second"></span>
+          <span class="feature-deck deck-summit"></span>
+          <span class="feature-restaurant"></span>
+          <span class="feature-apartment"></span>
+          <span class="feature-observation obs-first"></span>
+          <span class="feature-observation obs-second"></span>
+          <span class="feature-observation obs-top"></span>
         </div>
 
         <div class="inside-camera" aria-hidden="true">
@@ -229,35 +243,36 @@
 
         <div class="vertical-shaft shaft-1">
           <div class="shaft-line"></div>
-          <button class="vertical-car" id="verticalCar1" data-elevator="v1" type="button">竖直 1</button>
+          <button class="vertical-car" id="verticalCar1" data-elevator="v1" type="button" aria-label="顶层双轿厢电梯一号">竖直 1</button>
         </div>
         <div class="vertical-shaft shaft-2">
           <div class="shaft-line"></div>
-          <button class="vertical-car blue" id="verticalCar2" data-elevator="v2" type="button">竖直 2</button>
+          <button class="vertical-car blue" id="verticalCar2" data-elevator="v2" type="button" aria-label="顶层双轿厢电梯二号">竖直 2</button>
         </div>
-        <div class="vertical-shaft shaft-3">
-          <div class="shaft-line"></div>
-          <button class="vertical-car green" id="verticalCar3" data-elevator="v3" type="button">竖直 3</button>
-        </div>
-        <div class="vertical-shaft shaft-4">
-          <div class="shaft-line"></div>
-          <button class="vertical-car violet" id="verticalCar4" data-elevator="v4" type="button">竖直 4</button>
-        </div>
-
-        <div class="incline-rail passenger-rail rail-a"><span>双层客梯 A</span></div>
-        <div class="incline-rail passenger-rail rail-b"><span>双层客梯 B</span></div>
-        <div class="incline-rail cargo-rail rail-c"><span>红色货梯 · 二层餐厅</span></div>
+        <div class="incline-rail passenger-rail rail-a"><span>游客斜梯</span></div>
+        <div class="incline-rail passenger-rail rail-b"><span>游客斜梯</span></div>
+        <div class="incline-rail passenger-rail rail-e"><span>游客斜梯</span></div>
+        <div class="incline-rail restaurant-rail rail-f"><span>餐厅电梯</span></div>
+        <div class="incline-rail cargo-rail rail-c"><span>货梯</span></div>
         <div class="incline-rail stairs-rail rail-d"><span>楼梯通道</span></div>
 
-        <button class="inclined-car passenger-car double-deck" id="passengerCarA" data-elevator="p1" type="button">
+        <button class="inclined-car passenger-car double-deck" id="passengerCarA" data-elevator="p1" type="button" aria-label="北柱游客斜梯">
           <span>上层客舱</span>
           <span>下层客舱</span>
         </button>
-        <button class="inclined-car passenger-car double-deck gold" id="passengerCarB" data-elevator="p2" type="button">
+        <button class="inclined-car passenger-car double-deck gold" id="passengerCarB" data-elevator="p2" type="button" aria-label="东柱游客斜梯">
           <span>上层客舱</span>
           <span>下层客舱</span>
         </button>
-        <button class="inclined-car cargo-car" id="cargoCar" data-elevator="c1" type="button">
+        <button class="inclined-car passenger-car double-deck bronze" id="passengerCarC" data-elevator="p3" type="button" aria-label="西柱游客斜梯">
+          <span>上层客舱</span>
+          <span>下层客舱</span>
+        </button>
+        <button class="inclined-car restaurant-car" id="restaurantCar" data-elevator="r1" type="button" aria-label="餐厅专用电梯">
+          <span></span>
+          <strong></strong>
+        </button>
+        <button class="inclined-car cargo-car" id="cargoCar" data-elevator="c1" type="button" aria-label="南柱货梯">
           <span>货梯</span>
           <strong>BOX</strong>
         </button>
@@ -301,11 +316,11 @@
 
       <section class="info-bar" aria-label="电梯运行说明">
         <strong id="statusText">已选中：双层斜行客梯 A。下面控制台正在控制这一部。</strong>
-        <p>先点任意电梯，再用下面控制台：黄色双层客梯走斜柱，红色货梯到二层餐厅，中间竖直电梯从三层继续向上。</p>
+        <p>先点任意电梯，再用下面控制台：三部游客斜梯到一、二层，餐厅梯和货梯到二层，两部竖直双轿厢电梯从二层继续向上。</p>
       </section>
     </main>
 
-    <script src="seven-tower-elevator.js?v=eiffel-real-tower-20260801"></script>
+    <script src="seven-tower-elevator.js?v=eiffel-real-lifts-20260801"></script>
     <script src="arcade-stats.js?v=visitor-table-20260728"></script>
   </body>
 </html>

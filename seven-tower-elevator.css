@@ -100,6 +100,320 @@
   }
 }
 
+/* Final real-lift priority layer: keep the simulator clean and unlabeled. */
+.tower-stage:not(.view-structure) .platform-label,
+.tower-stage:not(.view-structure) .station,
+.tower-stage:not(.view-structure) .incline-rail span,
+.tower-stage:not(.view-structure) .model-caption,
+.tower-stage:not(.view-structure) .inside-cabin b {
+  display: none !important;
+}
+
+.tower-stage:not(.view-structure) .tower-real-features {
+  display: block;
+}
+
+.tower-stage:not(.view-structure) .inclined-car,
+.tower-stage:not(.view-structure) .vertical-car {
+  color: transparent !important;
+  text-shadow: none !important;
+}
+
+.tower-stage:not(.view-structure) .inclined-car span,
+.tower-stage:not(.view-structure) .inclined-car strong {
+  font-size: 0 !important;
+}
+
+.rail-e {
+  left: 39%;
+  top: 48%;
+  width: 35%;
+  transform: rotate(-74deg);
+  transform-origin: left center;
+}
+
+.rail-f {
+  right: 26%;
+  top: 66%;
+  width: 34%;
+  transform: rotate(68deg);
+  transform-origin: right center;
+}
+
+.restaurant-rail {
+  height: 12px;
+  background: linear-gradient(90deg, rgba(245, 184, 67, 0.1), rgba(245, 184, 67, 0.92), rgba(245, 184, 67, 0.1));
+}
+
+.passenger-car.bronze {
+  background:
+    linear-gradient(90deg, #b97c33 0 12%, #25323e 12% 17%, #ffd36c 17% 34%, #25323e 34% 39%, #ffd36c 39% 56%, #25323e 56% 61%, #ffd36c 61% 78%, #25323e 78% 83%, #b97c33 83%),
+    linear-gradient(180deg, #ffe091, #9b612f);
+}
+
+.restaurant-car {
+  width: 88px;
+  height: 56px;
+  border: 4px solid #4b3425;
+  border-radius: 8px;
+  background:
+    linear-gradient(90deg, #f1b649 0 16%, #23333d 16% 22%, #ffd973 22% 38%, #23333d 38% 44%, #ffd973 44% 60%, #23333d 60% 66%, #ffd973 66% 82%, #8f5d2e 82%),
+    linear-gradient(180deg, #ffd86a, #ad7234);
+}
+
+.restaurant-car::after {
+  content: "";
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  top: 8px;
+  height: 7px;
+  border-radius: 999px;
+  background: rgba(255, 247, 200, 0.88);
+}
+
+.view-platform .tower-real-features {
+  opacity: 0.3;
+}
+
+.view-structure .tower-real-features {
+  display: none;
+}
+
+/* Real lift layout: no on-scene labels, more tower faces, restaurant, observatory and apartment. */
+.tower-stage:not(.view-structure) .platform-label,
+.tower-stage:not(.view-structure) .station,
+.tower-stage:not(.view-structure) .incline-rail span,
+.tower-stage:not(.view-structure) .model-caption,
+.tower-stage:not(.view-structure) .inside-cabin b {
+  display: none;
+}
+
+.tower-stage:not(.view-structure) .inclined-car,
+.tower-stage:not(.view-structure) .vertical-car {
+  color: transparent;
+  text-shadow: none;
+}
+
+.tower-stage:not(.view-structure) .inclined-car span,
+.tower-stage:not(.view-structure) .inclined-car strong {
+  font-size: 0;
+}
+
+.tower-real-features {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+}
+
+.feature-face {
+  position: absolute;
+  bottom: 9%;
+  width: 12px;
+  height: 64%;
+  border-radius: 999px;
+  background:
+    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.38) 0 4px, transparent 4px 28px),
+    linear-gradient(90deg, rgba(53, 42, 34, 0.8), rgba(170, 135, 96, 0.75), rgba(52, 41, 34, 0.8));
+  opacity: 0.72;
+}
+
+.face-left {
+  left: 30%;
+  transform: rotate(18deg);
+}
+
+.face-right {
+  right: 30%;
+  transform: rotate(-18deg);
+}
+
+.face-back {
+  left: 50%;
+  bottom: 10%;
+  height: 70%;
+  opacity: 0.44;
+  transform: translateX(-50%);
+}
+
+.feature-deck {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  height: 16px;
+  border-radius: 6px;
+  background:
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.28) 0 5px, transparent 5px 30px),
+    linear-gradient(180deg, rgba(112, 77, 47, 0.94), rgba(52, 38, 31, 0.9));
+  box-shadow: 0 8px 14px rgba(32, 25, 20, 0.26);
+}
+
+.deck-first {
+  bottom: 31%;
+  width: 35%;
+}
+
+.deck-second {
+  bottom: 51%;
+  width: 21%;
+}
+
+.deck-summit {
+  bottom: 77%;
+  width: 11%;
+}
+
+.feature-restaurant {
+  position: absolute;
+  left: 52%;
+  bottom: 52.4%;
+  width: 92px;
+  height: 26px;
+  border: 3px solid rgba(86, 56, 35, 0.82);
+  border-radius: 6px;
+  background:
+    repeating-linear-gradient(90deg, rgba(255, 236, 142, 0.95) 0 10px, rgba(55, 42, 35, 0.82) 10px 14px),
+    linear-gradient(180deg, #d8a85d, #704b2e);
+  box-shadow: 0 0 18px rgba(255, 219, 112, 0.26);
+}
+
+.feature-apartment {
+  position: absolute;
+  left: 50%;
+  bottom: 82%;
+  width: 38px;
+  height: 28px;
+  border: 3px solid rgba(54, 38, 28, 0.84);
+  border-radius: 5px 5px 2px 2px;
+  background:
+    linear-gradient(90deg, #1e2f3b 0 26%, #f4d27d 26% 45%, #1e2f3b 45% 58%, #f4d27d 58% 76%, #1e2f3b 76%),
+    linear-gradient(180deg, #8a6242, #4d382f);
+  transform: translateX(-50%);
+}
+
+.feature-observation {
+  position: absolute;
+  left: 50%;
+  height: 5px;
+  border-radius: 999px;
+  background: rgba(245, 232, 196, 0.9);
+  transform: translateX(-50%);
+  box-shadow: 0 0 0 2px rgba(80, 56, 38, 0.45);
+}
+
+.obs-first {
+  bottom: 34%;
+  width: 31%;
+}
+
+.obs-second {
+  bottom: 55%;
+  width: 18%;
+}
+
+.obs-top {
+  bottom: 81%;
+  width: 8%;
+}
+
+.rail-e {
+  left: 39%;
+  top: 48%;
+  width: 35%;
+  transform: rotate(-74deg);
+  transform-origin: left center;
+}
+
+.rail-f {
+  right: 26%;
+  top: 66%;
+  width: 34%;
+  transform: rotate(68deg);
+  transform-origin: right center;
+}
+
+.restaurant-rail {
+  height: 12px;
+  background: linear-gradient(90deg, rgba(245, 184, 67, 0.1), rgba(245, 184, 67, 0.92), rgba(245, 184, 67, 0.1));
+}
+
+.passenger-car.bronze {
+  background:
+    linear-gradient(90deg, #b97c33 0 12%, #25323e 12% 17%, #ffd36c 17% 34%, #25323e 34% 39%, #ffd36c 39% 56%, #25323e 56% 61%, #ffd36c 61% 78%, #25323e 78% 83%, #b97c33 83%),
+    linear-gradient(180deg, #ffe091, #9b612f);
+}
+
+.restaurant-car {
+  width: 88px;
+  height: 56px;
+  border: 4px solid #4b3425;
+  border-radius: 8px;
+  background:
+    linear-gradient(90deg, #f1b649 0 16%, #23333d 16% 22%, #ffd973 22% 38%, #23333d 38% 44%, #ffd973 44% 60%, #23333d 60% 66%, #ffd973 66% 82%, #8f5d2e 82%),
+    linear-gradient(180deg, #ffd86a, #ad7234);
+}
+
+.restaurant-car::after {
+  content: "";
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  top: 8px;
+  height: 7px;
+  border-radius: 999px;
+  background: rgba(255, 247, 200, 0.88);
+}
+
+.cargo-car {
+  background:
+    linear-gradient(90deg, #8b201c 0 17%, #321d18 17% 23%, #d24738 23% 50%, #321d18 50% 56%, #d24738 56% 82%, #8b201c 82%),
+    linear-gradient(180deg, #e95b4d, #9c2d25);
+}
+
+.vertical-shaft {
+  height: 50%;
+  top: 14%;
+}
+
+.vertical-car::before {
+  content: "";
+  position: absolute;
+  inset: 8px 10px;
+  border-radius: 4px;
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.75) 0 45%, transparent 45% 55%, rgba(255, 255, 255, 0.75) 55%),
+    rgba(46, 78, 102, 0.62);
+}
+
+.view-interior .tower-real-features {
+  opacity: 0.65;
+}
+
+.view-exterior .tower-real-features {
+  opacity: 0.9;
+}
+
+.view-platform .tower-real-features {
+  opacity: 0.28;
+}
+
+.view-structure .tower-real-features {
+  display: none;
+}
+
+@media (max-width: 840px) {
+  .feature-restaurant {
+    width: 56px;
+    height: 20px;
+  }
+
+  .restaurant-car {
+    width: 64px;
+    height: 44px;
+  }
+}
+
 /* Final Eiffel tower realism pass: wide legs, clear platforms, controlled elevators stay unchanged. */
 .eiffel-frame {
   bottom: 6%;
