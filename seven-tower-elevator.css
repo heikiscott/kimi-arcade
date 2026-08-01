@@ -100,6 +100,147 @@
   }
 }
 
+/* Final Eiffel tower realism pass: wide legs, clear platforms, controlled elevators stay unchanged. */
+.eiffel-frame {
+  bottom: 6%;
+  width: min(88%, 940px);
+  height: 90%;
+}
+
+.eiffel-svg {
+  transform: scaleY(1.04);
+  transform-origin: 50% 100%;
+}
+
+.eiffel-svg .svg-spire {
+  fill: #5b4638;
+  stroke: #2f251f;
+  stroke-width: 4;
+}
+
+.eiffel-svg .svg-tower-fill {
+  opacity: 0.5;
+}
+
+.eiffel-svg .svg-tower-fill path {
+  stroke: #7d6654;
+  stroke-width: 5;
+  stroke-linecap: round;
+  opacity: 0.62;
+}
+
+.eiffel-svg .svg-heavy path {
+  stroke: #3f3028;
+  stroke-width: 27;
+  stroke-linecap: round;
+  fill: none;
+}
+
+.eiffel-svg .svg-decks rect {
+  fill: #5f4635;
+  stroke: #e0bd82;
+  stroke-width: 9;
+  filter: drop-shadow(0 8px 8px rgba(28, 22, 18, 0.28));
+}
+
+.eiffel-svg .svg-arch {
+  stroke: #2b211c;
+  stroke-width: 42;
+  stroke-linecap: round;
+  fill: none;
+}
+
+.eiffel-svg .svg-stairs {
+  opacity: 0.7;
+}
+
+.eiffel-svg .svg-wheels {
+  opacity: 0.08;
+}
+
+.view-exterior .eiffel-frame {
+  bottom: 4%;
+  width: min(74%, 800px);
+  height: 92%;
+}
+
+.tower-stage.view-platform .platform-model {
+  background:
+    radial-gradient(ellipse at 50% 62%, rgba(69, 51, 38, 0.22), transparent 55%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.2), rgba(112, 86, 65, 0.12));
+}
+
+.tower-stage.view-platform .model-lattice,
+.tower-stage.view-platform .model-crane {
+  opacity: 0.08;
+}
+
+.tower-stage.view-platform .model-deck {
+  top: 43%;
+  height: 29%;
+  border: 5px solid rgba(93, 68, 43, 0.9);
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.28) 0 5px, transparent 5px 48px),
+    linear-gradient(180deg, #f6d99f 0%, #d4a15e 62%, #93623a 100%);
+  clip-path: polygon(10% 0, 90% 0, 98% 40%, 82% 100%, 18% 100%, 2% 40%);
+}
+
+.tower-stage.view-platform .model-core {
+  top: 2%;
+  width: 15%;
+  height: 57%;
+  border: 4px solid rgba(52, 62, 62, 0.88);
+  background:
+    repeating-linear-gradient(90deg, rgba(78, 72, 63, 0.95) 0 5px, transparent 5px 28px),
+    repeating-linear-gradient(0deg, transparent 0 28px, rgba(95, 84, 72, 0.82) 28px 34px),
+    linear-gradient(180deg, rgba(230, 220, 196, 0.88), rgba(142, 120, 91, 0.6));
+  clip-path: polygon(42% 0, 58% 0, 73% 100%, 27% 100%);
+}
+
+.tower-stage.view-platform .model-core i {
+  display: none;
+}
+
+.tower-stage.view-platform .model-leg {
+  opacity: 0.92;
+  height: 46%;
+  border-radius: 18px;
+  background:
+    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.28) 0 3px, transparent 3px 18px),
+    linear-gradient(90deg, #4a362a, #b99570 52%, #3d2c24);
+  box-shadow: 0 0 0 4px rgba(45, 34, 27, 0.36);
+}
+
+.tower-stage.view-platform .model-yellow-a,
+.tower-stage.view-platform .model-yellow-b,
+.tower-stage.view-platform .model-red {
+  opacity: 0.24;
+}
+
+.tower-stage.view-platform .vertical-shaft,
+.tower-stage.view-platform .shaft-line,
+.tower-stage.view-platform .incline-rail,
+.tower-stage.view-platform .inclined-car,
+.tower-stage.view-platform .vertical-car {
+  opacity: 1;
+}
+
+.tower-stage.view-platform .inclined-car,
+.tower-stage.view-platform .vertical-car {
+  z-index: 42;
+}
+
+@media (max-width: 840px) {
+  .eiffel-frame {
+    width: 96%;
+    height: 88%;
+  }
+
+  .view-exterior .eiffel-frame {
+    width: 90%;
+  }
+}
+
 /* Same elevator, different scenery buttons. */
 .scene-switcher {
   display: grid;
