@@ -338,6 +338,7 @@ function draw() {
   }
 
   drawDecorations();
+  drawRedCircularMazeOverlay();
   drawMallAndBusStop();
   cats.forEach(drawCat);
   guests.filter((guest) => !guest.joined).forEach((guest) => drawPerson(guest, true));
@@ -382,23 +383,25 @@ function drawThemeParkLayout() {
   ctx.lineWidth = 3;
   ctx.stroke();
 
-  ctx.fillStyle = "rgba(255,239,198,0.44)";
+  ctx.fillStyle = "rgba(255,235,215,0.66)";
   ctx.beginPath();
   ctx.arc(roundCx, roundCy, roundR, 0, Math.PI * 2);
   ctx.fill();
-  ctx.strokeStyle = "rgba(23,38,50,0.3)";
-  ctx.lineWidth = 3;
+  ctx.strokeStyle = "rgba(211,47,47,0.78)";
+  ctx.lineWidth = 7;
   ctx.stroke();
 
-  ctx.fillStyle = "rgba(31,107,80,0.2)";
+  ctx.strokeStyle = "rgba(211,47,47,0.38)";
+  ctx.lineWidth = 5;
   ctx.beginPath();
-  ctx.arc(roundCx, roundCy, roundR * 0.72, 0, Math.PI * 2);
+  ctx.arc(roundCx, roundCy, roundR * 0.72, 0.15, Math.PI * 2 - 0.35);
   ctx.stroke();
 
   ctx.fillStyle = "rgba(23,38,50,0.72)";
   ctx.font = "900 18px system-ui";
   ctx.fillText("方形迷宫", squareX + 14, squareY + 27);
-  ctx.fillText("圆形迷宫", roundCx - 42, roundCy - roundR + 31);
+  ctx.fillStyle = "#d93a32";
+  ctx.fillText("红色圆形迷宫", roundCx - 62, roundCy - roundR + 31);
 
   ctx.strokeStyle = "rgba(184,67,49,0.45)";
   ctx.lineWidth = 8;
@@ -406,6 +409,49 @@ function drawThemeParkLayout() {
   ctx.moveTo(roundCx, squareY + squareH);
   ctx.lineTo(roundCx, roundCy - roundR + 6);
   ctx.stroke();
+  ctx.restore();
+}
+
+function drawRedCircularMazeOverlay() {
+  const cx = offsetX + cell * 12.5;
+  const cy = offsetY + cell * 14.1;
+  const rings = [cell * 5.95, cell * 4.65, cell * 3.38, cell * 2.05];
+
+  ctx.save();
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+  rings.forEach((radius, index) => {
+    ctx.strokeStyle = index % 2 === 0 ? "rgba(211,47,47,0.88)" : "rgba(255,111,64,0.82)";
+    ctx.lineWidth = index === 0 ? 9 : 7;
+    const startGap = 0.35 + index * 0.45;
+    const endGap = 0.82 + index * 0.32;
+    ctx.beginPath();
+    ctx.arc(cx, cy, radius, startGap, Math.PI * 2 - endGap);
+    ctx.stroke();
+  });
+
+  ctx.strokeStyle = "rgba(211,47,47,0.78)";
+  ctx.lineWidth = 7;
+  [
+    [-Math.PI / 2, cell * 4.65, cell * 5.95],
+    [0.05, cell * 2.05, cell * 5.95],
+    [Math.PI * 0.55, cell * 2.05, cell * 4.65],
+    [Math.PI * 1.18, cell * 3.38, cell * 5.95]
+  ].forEach(([angle, inner, outer]) => {
+    ctx.beginPath();
+    ctx.moveTo(cx + Math.cos(angle) * inner, cy + Math.sin(angle) * inner);
+    ctx.lineTo(cx + Math.cos(angle) * outer, cy + Math.sin(angle) * outer);
+    ctx.stroke();
+  });
+
+  ctx.fillStyle = "rgba(255,255,255,0.88)";
+  roundRect(cx - cell * 2.45, cy - cell * 0.48, cell * 4.9, cell * 0.96, 10);
+  ctx.fill();
+  ctx.fillStyle = "#d93a32";
+  ctx.font = `900 ${cell * 0.32}px system-ui`;
+  ctx.textAlign = "center";
+  ctx.fillText("红色圆形迷宫", cx, cy + cell * 0.12);
+  ctx.textAlign = "start";
   ctx.restore();
 }
 
