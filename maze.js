@@ -9,23 +9,25 @@ const selectPlayer1 = document.querySelector("#selectPlayer1");
 const selectPlayer2 = document.querySelector("#selectPlayer2");
 
 const maze = [
-  "#####################",
-  "#S..#.....#.....#..G#",
-  "#.#.#.###.#.###.#.#.#",
-  "#.#...#...#...#...#.#",
-  "#.#####.#####.#####.#",
-  "#.....#.....#.....#.#",
-  "###.#.#####.#.###.#.#",
-  "#...#...#...#.#...#.#",
-  "#.#####.#.###.#.###.#",
-  "#.#.....#.....#.....#",
-  "#.#.#########.#####.#",
-  "#...#.....C...#...#.#",
-  "#.###.#######.#.#.#.#",
-  "#G....#.....#...#...#",
-  "#.#####.###.#####.###",
-  "#.....C...#.......E.#",
-  "#####################"
+  "#########################",
+  "#S....#.....#.....#..G..#",
+  "#.###.#.###.#.###.#.###.#",
+  "#...#...#...#...#...#...#",
+  "###.#####.#####.#####.#.#",
+  "#...#.....#.....#.....#.#",
+  "#.###.###.#.###.#.#####.#",
+  "#.....#...#...#.#.....#.#",
+  "#.#####.#####.#.#####.#.#",
+  "#...#.....C...#.....#...#",
+  "###.#.###########.#.###.#",
+  "#...#.....#.....#.#.....#",
+  "#.#####.#.#.###.#.#####.#",
+  "#.....#.#...#...#.....G.#",
+  "#####.#.#####.#####.###.#",
+  "#C....#.....#.....#...#.#",
+  "#.#########.#.###.###.#.#",
+  "#...........#...#.....#E#",
+  "#########################"
 ];
 
 const moves = {
@@ -37,9 +39,9 @@ const moves = {
 
 const rows = maze.length;
 const cols = maze[0].length;
-const cell = Math.min(canvas.width / (cols + 1.4), canvas.height / (rows + 1.2));
+const cell = Math.min(canvas.width / (cols + 2.2), canvas.height / (rows + 4.8));
 const offsetX = (canvas.width - cols * cell) / 2;
-const offsetY = (canvas.height - rows * cell) / 2 + 18;
+const offsetY = 96;
 const wallHeight = cell * 0.34;
 
 let players;
@@ -125,7 +127,7 @@ function createGuests() {
       id: "g1",
       name: "游客小俊",
       row: 1,
-      col: 19,
+      col: 21,
       color: "#f59e0b",
       shirt: "#ffd15f",
       hair: "#4b2d20",
@@ -137,7 +139,7 @@ function createGuests() {
       id: "g2",
       name: "游客娜娜",
       row: 13,
-      col: 1,
+      col: 21,
       color: "#7c4dff",
       shirt: "#9f7aea",
       hair: "#30231c",
@@ -150,8 +152,8 @@ function createGuests() {
 
 function createCats() {
   return [
-    { row: 11, col: 9, direction: "right", phase: 0 },
-    { row: 15, col: 6, direction: "left", phase: 1.4 }
+    { row: 9, col: 10, direction: "right", phase: 0 },
+    { row: 15, col: 1, direction: "left", phase: 1.4 }
   ];
 }
 
@@ -163,7 +165,7 @@ function reset() {
   won = false;
   wanderTick = 0;
   winMovie.classList.remove("show");
-  statusEl.textContent = "1号男生和2号女生从入口出发。猫猫和游客会自己乱走，点游客就能邀请他一起玩。";
+  statusEl.textContent = "从上方入口商场出发，先走方形迷宫，再接到下面圆形迷宫。出口旁边是商场和巴士站。";
   updatePlayerButtons();
   renderGuestControls();
   draw();
@@ -283,11 +285,11 @@ function moveCharacter(id, dr, dc) {
 
   if (isExit(character.row, character.col)) {
     won = true;
-    statusEl.textContent = `${character.name} 找到出口了，大家赢了!`;
+    statusEl.textContent = `${character.name} 找到出口了，大家走到巴士站旁边，赢了!`;
     winMovie.classList.add("show");
     playWinMusic();
   } else {
-    statusEl.textContent = `${character.name} 已经走了 ${character.step} 步。目标是右下角的出口大门。`;
+    statusEl.textContent = `${character.name} 已经走了 ${character.step} 步。先穿过方形迷宫，再从圆形迷宫到右下角出口。`;
   }
 
   draw();
@@ -326,6 +328,7 @@ function moveWanderingGuests() {
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   drawBackground();
+  drawThemeParkLayout();
   drawParkSign();
 
   for (let row = 0; row < rows; row += 1) {
@@ -335,6 +338,7 @@ function draw() {
   }
 
   drawDecorations();
+  drawMallAndBusStop();
   cats.forEach(drawCat);
   guests.filter((guest) => !guest.joined).forEach((guest) => drawPerson(guest, true));
   Object.values(players).forEach((player) => drawPerson(player, false));
@@ -361,6 +365,50 @@ function drawBackground() {
   ctx.fill();
 }
 
+function drawThemeParkLayout() {
+  const squareX = offsetX + cell * 0.55;
+  const squareY = offsetY + cell * 0.55;
+  const squareW = cell * 23.9;
+  const squareH = cell * 9.1;
+  const roundCx = offsetX + cell * 12.5;
+  const roundCy = offsetY + cell * 14.1;
+  const roundR = cell * 6.05;
+
+  ctx.save();
+  ctx.fillStyle = "rgba(255,255,255,0.36)";
+  roundRect(squareX, squareY, squareW, squareH, 16);
+  ctx.fill();
+  ctx.strokeStyle = "rgba(23,38,50,0.28)";
+  ctx.lineWidth = 3;
+  ctx.stroke();
+
+  ctx.fillStyle = "rgba(255,239,198,0.44)";
+  ctx.beginPath();
+  ctx.arc(roundCx, roundCy, roundR, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = "rgba(23,38,50,0.3)";
+  ctx.lineWidth = 3;
+  ctx.stroke();
+
+  ctx.fillStyle = "rgba(31,107,80,0.2)";
+  ctx.beginPath();
+  ctx.arc(roundCx, roundCy, roundR * 0.72, 0, Math.PI * 2);
+  ctx.stroke();
+
+  ctx.fillStyle = "rgba(23,38,50,0.72)";
+  ctx.font = "900 18px system-ui";
+  ctx.fillText("方形迷宫", squareX + 14, squareY + 27);
+  ctx.fillText("圆形迷宫", roundCx - 42, roundCy - roundR + 31);
+
+  ctx.strokeStyle = "rgba(184,67,49,0.45)";
+  ctx.lineWidth = 8;
+  ctx.beginPath();
+  ctx.moveTo(roundCx, squareY + squareH);
+  ctx.lineTo(roundCx, roundCy - roundR + 6);
+  ctx.stroke();
+  ctx.restore();
+}
+
 function drawCloud(x, y, size) {
   ctx.beginPath();
   ctx.arc(x, y, size * 0.5, 0, Math.PI * 2);
@@ -377,10 +425,10 @@ function drawParkSign() {
   ctx.fill();
   ctx.fillStyle = "#172632";
   ctx.font = "900 22px system-ui";
-  ctx.fillText("韩国迷宫主题乐园", 18, 28);
+  ctx.fillText("济州岛迷宫主题乐园", 18, 28);
   ctx.fillStyle = "#b84331";
   ctx.font = "800 14px system-ui";
-  ctx.fillText("미로 테마파크  |  找出口就赢", 18, 50);
+  ctx.fillText("제주 미로 테마파크  |  方形迷宫接圆形迷宫", 18, 50);
   ctx.restore();
 }
 
@@ -391,7 +439,10 @@ function drawTile(row, col, tile) {
     return;
   }
 
-  const shade = (row + col) % 2 === 0 ? "#f8e7bd" : "#f3dca9";
+  const inRoundMaze = row >= 10;
+  const shade = inRoundMaze
+    ? ((row + col) % 2 === 0 ? "#f5e1b2" : "#eed29a")
+    : ((row + col) % 2 === 0 ? "#f8e7bd" : "#f3dca9");
   ctx.fillStyle = shade;
   ctx.fillRect(x, y, cell, cell);
   ctx.strokeStyle = "rgba(23,38,50,0.08)";
@@ -428,7 +479,7 @@ function drawStart(x, y) {
   ctx.fillRect(x + cell * 0.22, y + cell * 0.25, cell * 0.56, cell * 0.52);
   ctx.fillStyle = "#fff";
   ctx.font = `900 ${cell * 0.34}px system-ui`;
-  ctx.fillText("入", x + cell * 0.33, y + cell * 0.62);
+  ctx.fillText("入口", x + cell * 0.1, y + cell * 0.62);
 }
 
 function drawExit(x, y) {
@@ -443,10 +494,53 @@ function drawExit(x, y) {
 }
 
 function drawDecorations() {
-  drawHanokRoof(offsetX + cell * 7.25, offsetY - 22, cell * 2.2);
+  drawHanokRoof(offsetX + cell * 9.5, offsetY - 28, cell * 3);
   drawLantern(offsetX + cell * 2.2, offsetY + cell * 4.5);
-  drawLantern(offsetX + cell * 17.4, offsetY + cell * 9.5);
-  drawTowerSilhouette(canvas.width - 106, 108);
+  drawLantern(offsetX + cell * 19.4, offsetY + cell * 11.5);
+  drawDolHareubang(offsetX + cell * 22.8, offsetY + cell * 2.8);
+  drawDolHareubang(offsetX + cell * 1.8, offsetY + cell * 16.2);
+}
+
+function drawMallAndBusStop() {
+  drawMall(offsetX + cell * 0.6, 28, cell * 5.2, "入口商场");
+  drawMall(offsetX + cell * 16.8, offsetY + cell * 18.25, cell * 4.7, "出口商场");
+  drawBusStop(offsetX + cell * 21.7, offsetY + cell * 18.2);
+}
+
+function drawMall(x, y, width, label) {
+  ctx.save();
+  ctx.fillStyle = "rgba(255,255,255,0.9)";
+  roundRect(x, y, width, 48, 8);
+  ctx.fill();
+  ctx.fillStyle = "#d93a32";
+  ctx.fillRect(x + 10, y + 26, width - 20, 8);
+  ctx.fillStyle = "#245b8f";
+  ctx.font = "900 15px system-ui";
+  ctx.fillText(label, x + 12, y + 20);
+  ctx.fillStyle = "#ffd15f";
+  for (let i = 0; i < 4; i += 1) {
+    ctx.fillRect(x + 16 + i * 30, y + 31, 17, 10);
+  }
+  ctx.restore();
+}
+
+function drawBusStop(x, y) {
+  ctx.save();
+  ctx.fillStyle = "rgba(255,255,255,0.92)";
+  roundRect(x, y, cell * 2.35, 50, 8);
+  ctx.fill();
+  ctx.fillStyle = "#245b8f";
+  ctx.fillRect(x + 12, y + 9, 28, 25);
+  ctx.fillStyle = "#fff";
+  ctx.font = "900 14px system-ui";
+  ctx.fillText("BUS", x + 9, y + 47);
+  ctx.fillStyle = "#172632";
+  ctx.font = "900 13px system-ui";
+  ctx.fillText("巴士站", x + 45, y + 22);
+  ctx.fillStyle = "#51616c";
+  ctx.font = "800 10px system-ui";
+  ctx.fillText("济州岛没有地铁", x + 45, y + 38);
+  ctx.restore();
 }
 
 function drawHanokRoof(x, y, width) {
@@ -476,17 +570,21 @@ function drawLantern(x, y) {
   ctx.lineWidth = 1;
 }
 
-function drawTowerSilhouette(x, y) {
-  ctx.fillStyle = "rgba(23,38,50,0.22)";
+function drawDolHareubang(x, y) {
+  ctx.fillStyle = "rgba(0,0,0,0.18)";
   ctx.beginPath();
-  ctx.moveTo(x, y + 120);
-  ctx.lineTo(x + 38, y);
-  ctx.lineTo(x + 76, y + 120);
-  ctx.closePath();
+  ctx.ellipse(x + 12, y + 46, 18, 5, 0, 0, Math.PI * 2);
   ctx.fill();
-  ctx.fillStyle = "rgba(255,255,255,0.22)";
-  ctx.fillRect(x + 24, y + 36, 28, 5);
-  ctx.fillRect(x + 16, y + 76, 44, 5);
+  ctx.fillStyle = "#5d6466";
+  roundRect(x, y + 12, 24, 34, 8);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(x + 12, y + 10, 12, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = "#172632";
+  ctx.fillRect(x + 7, y + 8, 3, 3);
+  ctx.fillRect(x + 15, y + 8, 3, 3);
+  ctx.fillRect(x + 9, y + 18, 8, 3);
 }
 
 function drawPerson(person, isWandering) {

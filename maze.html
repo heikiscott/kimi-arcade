@@ -3,26 +3,26 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>韩国迷宫主题乐园</title>
-    <link rel="stylesheet" href="maze.css?v=korea-theme-20260814" />
+    <title>济州岛迷宫主题乐园</title>
+    <link rel="stylesheet" href="maze.css?v=jeju-maze-20260814" />
   </head>
   <body>
     <a class="home-link" href="arcade.html">游戏大厅</a>
     <main class="maze-shell">
       <section class="maze-game">
-        <canvas id="mazeCanvas" width="960" height="720" aria-label="韩国迷宫主题乐园游戏"></canvas>
+        <canvas id="mazeCanvas" width="960" height="720" aria-label="济州岛迷宫主题乐园游戏"></canvas>
         <div class="win-movie" id="winMovie">
-          <p>Korea Maze Park</p>
+          <p>Jeju Maze Theme Park</p>
           <h1>找到出口了!</h1>
-          <span>大家跑出巨大迷宫，灯笼亮起来，主题乐园通关。</span>
+          <span>大家从圆形迷宫出口出来，旁边就是商场和巴士站。</span>
           <button id="movieRestartBtn" type="button">再玩一次</button>
         </div>
       </section>
       <section class="maze-panel">
         <div>
-          <p class="label">Korea 3D Maze Park</p>
-          <h2>韩国迷宫主题乐园</h2>
-          <p id="status">1号男生和2号女生从入口出发。猫猫和游客会自己乱走，点游客就能邀请他一起玩。</p>
+          <p class="label">Jeju 3D Maze Park</p>
+          <h2>济州岛迷宫主题乐园</h2>
+          <p id="status">从上方入口商场出发，先走方形迷宫，再接到下面圆形迷宫。出口旁边是商场和巴士站。</p>
         </div>
         <div class="player-switch" aria-label="选择键盘控制的人">
           <button class="active" id="selectPlayer1" type="button">键盘控制 1号男生</button>
@@ -56,7 +56,7 @@
         <button id="restartBtn" type="button">重来</button>
       </section>
     </main>
-    <script src="maze.js?v=korea-theme-20260814"></script>
+    <script src="maze.js?v=jeju-maze-20260814"></script>
     <script src="arcade-stats.js?v=visitor-table-20260728"></script>
   </body>
 </html>
