@@ -1,9 +1,12 @@
 :root {
   --ink: #172632;
-  --wall: #245b8f;
-  --path: #fff6d9;
+  --wall: #1f6b50;
+  --wall-dark: #164733;
+  --path: #f7e9c7;
+  --hanok: #b84331;
   --green: #39a657;
   --red: #d93a32;
+  --blue: #245b8f;
 }
 
 * {
@@ -16,9 +19,9 @@ body {
   color: var(--ink);
   font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   background:
-    linear-gradient(90deg, rgba(255, 255, 255, 0.26) 1px, transparent 1px),
-    linear-gradient(rgba(255, 255, 255, 0.24) 1px, transparent 1px),
-    linear-gradient(135deg, #8ed0f1 0%, #f6e4aa 50%, #69b86b 100%);
+    linear-gradient(90deg, rgba(255, 255, 255, 0.24) 1px, transparent 1px),
+    linear-gradient(rgba(255, 255, 255, 0.22) 1px, transparent 1px),
+    linear-gradient(135deg, #81d3f4 0%, #f4dda0 48%, #5dbb75 100%);
   background-size: 44px 44px, 44px 44px, auto;
 }
 
@@ -36,16 +39,16 @@ button {
   border: 1px solid rgba(23, 38, 50, 0.14);
   border-radius: 8px;
   color: var(--ink);
-  background: rgba(255, 255, 255, 0.88);
+  background: rgba(255, 255, 255, 0.9);
   font-weight: 900;
   text-decoration: none;
 }
 
 .maze-shell {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(280px, 340px);
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 380px);
   gap: 18px;
-  width: min(1240px, calc(100vw - 32px));
+  width: min(1320px, calc(100vw - 32px));
   min-height: 100vh;
   margin: 0 auto;
   padding: 70px 0 28px;
@@ -69,11 +72,11 @@ canvas {
 .maze-panel {
   display: grid;
   align-content: start;
-  gap: 16px;
-  padding: 20px;
+  gap: 14px;
+  padding: 18px;
   border: 1px solid rgba(23, 38, 50, 0.14);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.78);
+  background: rgba(255, 255, 255, 0.82);
   box-shadow: 0 18px 42px rgba(23, 38, 50, 0.12);
 }
 
@@ -88,27 +91,70 @@ canvas {
 
 .maze-panel h2 {
   margin: 0;
-  font-size: clamp(2rem, 4vw, 3.4rem);
+  font-size: clamp(2rem, 4vw, 3.1rem);
   line-height: 0.96;
 }
 
-.maze-panel p:last-child {
-  margin: 12px 0 0;
+.maze-panel p {
+  margin: 10px 0 0;
   color: #51616c;
   font-weight: 850;
   line-height: 1.45;
 }
 
+.player-switch,
+.control-board {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.player-switch button,
+.controller,
+.guest-panel {
+  border: 1px solid rgba(23, 38, 50, 0.12);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.74);
+}
+
+.player-switch button {
+  min-height: 42px;
+  color: var(--ink);
+  cursor: pointer;
+  font-weight: 950;
+}
+
+.player-switch button.active {
+  color: #fff;
+  background: var(--blue);
+}
+
+.controller,
+.guest-panel {
+  padding: 10px;
+}
+
+.controller h3,
+.guest-panel h3 {
+  margin: 0 0 8px;
+  font-size: 1rem;
+}
+
+.guest-panel p {
+  margin: 0 0 10px;
+  font-size: 0.9rem;
+}
+
 .mobile-pad {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
+  gap: 7px;
 }
 
 .mobile-pad button,
 #restartBtn,
 #movieRestartBtn {
-  min-height: 48px;
+  min-height: 44px;
   border-radius: 8px;
   color: #fff;
   background: var(--red);
@@ -129,8 +175,25 @@ canvas {
   grid-column: 3;
 }
 
+.guest-controls {
+  display: grid;
+  gap: 10px;
+}
+
+.guest-controller {
+  display: grid;
+  gap: 8px;
+  padding: 9px;
+  border-radius: 8px;
+  background: rgba(36, 91, 143, 0.08);
+}
+
+.guest-controller strong {
+  font-size: 0.94rem;
+}
+
 #restartBtn {
-  background: #245b8f;
+  background: var(--blue);
 }
 
 .win-movie {
@@ -146,9 +209,9 @@ canvas {
   color: #fff;
   text-align: center;
   background:
-    radial-gradient(circle at 18% 18%, rgba(255, 209, 95, 0.7), transparent 20%),
+    radial-gradient(circle at 18% 18%, rgba(255, 209, 95, 0.72), transparent 20%),
     radial-gradient(circle at 82% 24%, rgba(255, 255, 255, 0.42), transparent 16%),
-    linear-gradient(180deg, rgba(23, 38, 50, 0.58), rgba(23, 38, 50, 0.88));
+    linear-gradient(180deg, rgba(23, 38, 50, 0.56), rgba(23, 38, 50, 0.9));
 }
 
 .win-movie.show {
@@ -178,8 +241,20 @@ canvas {
   padding: 0 22px;
 }
 
-@media (max-width: 880px) {
+@media (max-width: 960px) {
   .maze-shell {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 560px) {
+  .maze-shell {
+    width: min(100vw - 16px, 1320px);
+    padding-top: 62px;
+  }
+
+  .player-switch,
+  .control-board {
     grid-template-columns: 1fr;
   }
 }
