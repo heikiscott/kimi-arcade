@@ -165,7 +165,7 @@ function reset() {
   won = false;
   wanderTick = 0;
   winMovie.classList.remove("show");
-  statusEl.textContent = "从上方入口商场出发，先走方形迷宫，再接到下面圆形迷宫。出口旁边是商场和巴士站。";
+  statusEl.textContent = "从上方入口商场出发，先走方形迷宫，再接到下面的圆形迷宫花园。出口旁边是商场和巴士站。";
   updatePlayerButtons();
   renderGuestControls();
   draw();
@@ -289,7 +289,7 @@ function moveCharacter(id, dr, dc) {
     winMovie.classList.add("show");
     playWinMusic();
   } else {
-    statusEl.textContent = `${character.name} 已经走了 ${character.step} 步。先穿过方形迷宫，再从圆形迷宫到右下角出口。`;
+    statusEl.textContent = `${character.name} 已经走了 ${character.step} 步。先穿过方形迷宫，再从下面的圆形迷宫花园到右下角出口。`;
   }
 
   draw();
@@ -338,7 +338,7 @@ function draw() {
   }
 
   drawDecorations();
-  drawRedCircularMazeOverlay();
+  drawCircularMazeGardenOverlay();
   drawMallAndBusStop();
   cats.forEach(drawCat);
   guests.filter((guest) => !guest.joined).forEach((guest) => drawPerson(guest, true));
@@ -383,15 +383,15 @@ function drawThemeParkLayout() {
   ctx.lineWidth = 3;
   ctx.stroke();
 
-  ctx.fillStyle = "rgba(255,235,215,0.66)";
+  ctx.fillStyle = "rgba(226,244,202,0.72)";
   ctx.beginPath();
   ctx.arc(roundCx, roundCy, roundR, 0, Math.PI * 2);
   ctx.fill();
-  ctx.strokeStyle = "rgba(211,47,47,0.78)";
-  ctx.lineWidth = 7;
+  ctx.strokeStyle = "rgba(31,107,80,0.82)";
+  ctx.lineWidth = 8;
   ctx.stroke();
 
-  ctx.strokeStyle = "rgba(211,47,47,0.38)";
+  ctx.strokeStyle = "rgba(31,107,80,0.35)";
   ctx.lineWidth = 5;
   ctx.beginPath();
   ctx.arc(roundCx, roundCy, roundR * 0.72, 0.15, Math.PI * 2 - 0.35);
@@ -400,19 +400,26 @@ function drawThemeParkLayout() {
   ctx.fillStyle = "rgba(23,38,50,0.72)";
   ctx.font = "900 18px system-ui";
   ctx.fillText("方形迷宫", squareX + 14, squareY + 27);
-  ctx.fillStyle = "#d93a32";
-  ctx.fillText("红色圆形迷宫", roundCx - 62, roundCy - roundR + 31);
+  ctx.fillStyle = "#1f6b50";
+  ctx.fillText("圆形迷宫花园", roundCx - 62, roundCy - roundR + 31);
 
-  ctx.strokeStyle = "rgba(184,67,49,0.45)";
-  ctx.lineWidth = 8;
+  ctx.strokeStyle = "rgba(31,107,80,0.72)";
+  ctx.lineWidth = 13;
   ctx.beginPath();
   ctx.moveTo(roundCx, squareY + squareH);
   ctx.lineTo(roundCx, roundCy - roundR + 6);
   ctx.stroke();
+
+  ctx.strokeStyle = "rgba(255,244,204,0.9)";
+  ctx.lineWidth = 7;
+  ctx.beginPath();
+  ctx.moveTo(roundCx, squareY + squareH + 2);
+  ctx.lineTo(roundCx, roundCy - roundR + 8);
+  ctx.stroke();
   ctx.restore();
 }
 
-function drawRedCircularMazeOverlay() {
+function drawCircularMazeGardenOverlay() {
   const cx = offsetX + cell * 12.5;
   const cy = offsetY + cell * 14.1;
   const rings = [cell * 5.95, cell * 4.65, cell * 3.38, cell * 2.05];
@@ -421,8 +428,8 @@ function drawRedCircularMazeOverlay() {
   ctx.lineCap = "round";
   ctx.lineJoin = "round";
   rings.forEach((radius, index) => {
-    ctx.strokeStyle = index % 2 === 0 ? "rgba(211,47,47,0.88)" : "rgba(255,111,64,0.82)";
-    ctx.lineWidth = index === 0 ? 9 : 7;
+    ctx.strokeStyle = index % 2 === 0 ? "rgba(31,107,80,0.92)" : "rgba(57,166,87,0.84)";
+    ctx.lineWidth = index === 0 ? 10 : 8;
     const startGap = 0.35 + index * 0.45;
     const endGap = 0.82 + index * 0.32;
     ctx.beginPath();
@@ -430,8 +437,8 @@ function drawRedCircularMazeOverlay() {
     ctx.stroke();
   });
 
-  ctx.strokeStyle = "rgba(211,47,47,0.78)";
-  ctx.lineWidth = 7;
+  ctx.strokeStyle = "rgba(31,107,80,0.86)";
+  ctx.lineWidth = 8;
   [
     [-Math.PI / 2, cell * 4.65, cell * 5.95],
     [0.05, cell * 2.05, cell * 5.95],
@@ -444,13 +451,27 @@ function drawRedCircularMazeOverlay() {
     ctx.stroke();
   });
 
-  ctx.fillStyle = "rgba(255,255,255,0.88)";
+  ctx.strokeStyle = "rgba(255,244,204,0.9)";
+  ctx.lineWidth = 4;
+  [
+    [-Math.PI / 2, cell * 4.65, cell * 5.95],
+    [0.05, cell * 2.05, cell * 5.95],
+    [Math.PI * 0.55, cell * 2.05, cell * 4.65],
+    [Math.PI * 1.18, cell * 3.38, cell * 5.95]
+  ].forEach(([angle, inner, outer]) => {
+    ctx.beginPath();
+    ctx.moveTo(cx + Math.cos(angle) * inner, cy + Math.sin(angle) * inner);
+    ctx.lineTo(cx + Math.cos(angle) * outer, cy + Math.sin(angle) * outer);
+    ctx.stroke();
+  });
+
+  ctx.fillStyle = "rgba(255,255,255,0.9)";
   roundRect(cx - cell * 2.45, cy - cell * 0.48, cell * 4.9, cell * 0.96, 10);
   ctx.fill();
-  ctx.fillStyle = "#d93a32";
+  ctx.fillStyle = "#1f6b50";
   ctx.font = `900 ${cell * 0.32}px system-ui`;
   ctx.textAlign = "center";
-  ctx.fillText("红色圆形迷宫", cx, cy + cell * 0.12);
+  ctx.fillText("圆形迷宫花园", cx, cy + cell * 0.12);
   ctx.textAlign = "start";
   ctx.restore();
 }
@@ -474,7 +495,7 @@ function drawParkSign() {
   ctx.fillText("济州岛迷宫主题乐园", 18, 28);
   ctx.fillStyle = "#b84331";
   ctx.font = "800 14px system-ui";
-  ctx.fillText("제주 미로 테마파크  |  方形迷宫接圆形迷宫", 18, 50);
+  ctx.fillText("제주 미로 테마파크  |  方形迷宫接圆形花园", 18, 50);
   ctx.restore();
 }
 
