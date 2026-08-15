@@ -187,6 +187,23 @@ function tileToCanvas(row, col) {
   };
 }
 
+function getCircleMazeInfo() {
+  return {
+    cx: offsetX + cell * 12.5,
+    cy: offsetY + cell * 15.45,
+    radius: cell * 4.25
+  };
+}
+
+function isInsideLowerCircle(row, col) {
+  if (row < 10) return true;
+  const { cx, cy, radius } = getCircleMazeInfo();
+  const { x, y } = tileToCanvas(row, col);
+  const dx = x + cell / 2 - cx;
+  const dy = y + cell / 2 - cy;
+  return Math.hypot(dx, dy) <= radius * 1.08;
+}
+
 function canvasToTile(clientX, clientY) {
   const rect = canvas.getBoundingClientRect();
   const scaleX = canvas.width / rect.width;
@@ -371,9 +388,7 @@ function drawThemeParkLayout() {
   const squareY = offsetY + cell * 0.55;
   const squareW = cell * 23.9;
   const squareH = cell * 9.1;
-  const roundCx = offsetX + cell * 12.5;
-  const roundCy = offsetY + cell * 14.75;
-  const roundR = cell * 4.6;
+  const { cx: roundCx, cy: roundCy, radius: roundR } = getCircleMazeInfo();
 
   ctx.save();
   ctx.fillStyle = "rgba(255,255,255,0.54)";
@@ -420,9 +435,8 @@ function drawThemeParkLayout() {
 }
 
 function drawCircularMazeGardenOverlay() {
-  const cx = offsetX + cell * 12.5;
-  const cy = offsetY + cell * 14.75;
-  const rings = [cell * 4.48, cell * 3.42, cell * 2.38, cell * 1.34];
+  const { cx, cy } = getCircleMazeInfo();
+  const rings = [cell * 4.12, cell * 3.05, cell * 2.02, cell * 1.05];
 
   ctx.save();
   ctx.lineCap = "round";
@@ -440,10 +454,10 @@ function drawCircularMazeGardenOverlay() {
   ctx.strokeStyle = "rgba(31,107,80,0.86)";
   ctx.lineWidth = 8;
   [
-    [-Math.PI / 2, cell * 3.42, cell * 4.48],
-    [0.05, cell * 1.34, cell * 4.48],
-    [Math.PI * 0.55, cell * 1.34, cell * 3.42],
-    [Math.PI * 1.18, cell * 2.38, cell * 4.48]
+    [-Math.PI / 2, cell * 3.05, cell * 4.12],
+    [0.05, cell * 1.05, cell * 4.12],
+    [Math.PI * 0.55, cell * 1.05, cell * 3.05],
+    [Math.PI * 1.18, cell * 2.02, cell * 4.12]
   ].forEach(([angle, inner, outer]) => {
     ctx.beginPath();
     ctx.moveTo(cx + Math.cos(angle) * inner, cy + Math.sin(angle) * inner);
@@ -454,10 +468,10 @@ function drawCircularMazeGardenOverlay() {
   ctx.strokeStyle = "rgba(255,244,204,0.9)";
   ctx.lineWidth = 4;
   [
-    [-Math.PI / 2, cell * 3.42, cell * 4.48],
-    [0.05, cell * 1.34, cell * 4.48],
-    [Math.PI * 0.55, cell * 1.34, cell * 3.42],
-    [Math.PI * 1.18, cell * 2.38, cell * 4.48]
+    [-Math.PI / 2, cell * 3.05, cell * 4.12],
+    [0.05, cell * 1.05, cell * 4.12],
+    [Math.PI * 0.55, cell * 1.05, cell * 3.05],
+    [Math.PI * 1.18, cell * 2.02, cell * 4.12]
   ].forEach(([angle, inner, outer]) => {
     ctx.beginPath();
     ctx.moveTo(cx + Math.cos(angle) * inner, cy + Math.sin(angle) * inner);
@@ -500,6 +514,10 @@ function drawParkSign() {
 }
 
 function drawTile(row, col, tile) {
+  if (row >= 10 && !isInsideLowerCircle(row, col) && tile !== "E") {
+    return;
+  }
+
   const { x, y } = tileToCanvas(row, col);
   if (tile === "#") {
     drawHedgeBlock(x, y);
