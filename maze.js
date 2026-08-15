@@ -165,7 +165,7 @@ function reset() {
   won = false;
   wanderTick = 0;
   winMovie.classList.remove("show");
-  statusEl.textContent = "这是从上往下看的俯视图：上面是正方形迷宫，下面连着圆形迷宫。出口旁边是商场和巴士站。";
+  statusEl.textContent = "这是从上往下看的俯视图：正方形迷宫在上面，圆形迷宫完整在下面，中间只有一条连接通道。";
   updatePlayerButtons();
   renderGuestControls();
   draw();
@@ -372,8 +372,8 @@ function drawThemeParkLayout() {
   const squareW = cell * 23.9;
   const squareH = cell * 9.1;
   const roundCx = offsetX + cell * 12.5;
-  const roundCy = offsetY + cell * 14.1;
-  const roundR = cell * 6.05;
+  const roundCy = offsetY + cell * 14.75;
+  const roundR = cell * 4.6;
 
   ctx.save();
   ctx.fillStyle = "rgba(255,255,255,0.54)";
@@ -401,7 +401,7 @@ function drawThemeParkLayout() {
   ctx.font = "900 18px system-ui";
   ctx.fillText("上面：正方形迷宫", squareX + 14, squareY + 27);
   ctx.fillStyle = "#1f6b50";
-  ctx.fillText("下面：圆形迷宫", roundCx - 64, roundCy - roundR + 31);
+  ctx.fillText("下面：圆形迷宫", roundCx - 64, roundCy - roundR + 26);
 
   ctx.strokeStyle = "rgba(31,107,80,0.72)";
   ctx.lineWidth = 13;
@@ -421,8 +421,8 @@ function drawThemeParkLayout() {
 
 function drawCircularMazeGardenOverlay() {
   const cx = offsetX + cell * 12.5;
-  const cy = offsetY + cell * 14.1;
-  const rings = [cell * 5.95, cell * 4.65, cell * 3.38, cell * 2.05];
+  const cy = offsetY + cell * 14.75;
+  const rings = [cell * 4.48, cell * 3.42, cell * 2.38, cell * 1.34];
 
   ctx.save();
   ctx.lineCap = "round";
@@ -440,10 +440,10 @@ function drawCircularMazeGardenOverlay() {
   ctx.strokeStyle = "rgba(31,107,80,0.86)";
   ctx.lineWidth = 8;
   [
-    [-Math.PI / 2, cell * 4.65, cell * 5.95],
-    [0.05, cell * 2.05, cell * 5.95],
-    [Math.PI * 0.55, cell * 2.05, cell * 4.65],
-    [Math.PI * 1.18, cell * 3.38, cell * 5.95]
+    [-Math.PI / 2, cell * 3.42, cell * 4.48],
+    [0.05, cell * 1.34, cell * 4.48],
+    [Math.PI * 0.55, cell * 1.34, cell * 3.42],
+    [Math.PI * 1.18, cell * 2.38, cell * 4.48]
   ].forEach(([angle, inner, outer]) => {
     ctx.beginPath();
     ctx.moveTo(cx + Math.cos(angle) * inner, cy + Math.sin(angle) * inner);
@@ -454,10 +454,10 @@ function drawCircularMazeGardenOverlay() {
   ctx.strokeStyle = "rgba(255,244,204,0.9)";
   ctx.lineWidth = 4;
   [
-    [-Math.PI / 2, cell * 4.65, cell * 5.95],
-    [0.05, cell * 2.05, cell * 5.95],
-    [Math.PI * 0.55, cell * 2.05, cell * 4.65],
-    [Math.PI * 1.18, cell * 3.38, cell * 5.95]
+    [-Math.PI / 2, cell * 3.42, cell * 4.48],
+    [0.05, cell * 1.34, cell * 4.48],
+    [Math.PI * 0.55, cell * 1.34, cell * 3.42],
+    [Math.PI * 1.18, cell * 2.38, cell * 4.48]
   ].forEach(([angle, inner, outer]) => {
     ctx.beginPath();
     ctx.moveTo(cx + Math.cos(angle) * inner, cy + Math.sin(angle) * inner);
