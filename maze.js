@@ -165,7 +165,7 @@ function reset() {
   won = false;
   wanderTick = 0;
   winMovie.classList.remove("show");
-  statusEl.textContent = "这是从上往下看的俯视图：正方形迷宫在上面，圆形迷宫完整在下面，中间只有一条连接通道。";
+  statusEl.textContent = "这是从上往下看的俯视图：正方形迷宫在上面，圆形迷宫像草图一样一圈一圈接在下面，中间只有一条连接通道。";
   updatePlayerButtons();
   renderGuestControls();
   draw();
@@ -181,6 +181,16 @@ function isExit(row, col) {
 }
 
 function tileToCanvas(row, col) {
+  if (row >= 10) {
+    const { cx, cy, radius } = getCircleMazeInfo();
+    const angle = -Math.PI / 2 + (col / (cols - 1)) * Math.PI * 2;
+    const ring = getCircleRowRadius(row, radius);
+    return {
+      x: cx + Math.cos(angle) * ring - cell / 2,
+      y: cy + Math.sin(angle) * ring - cell / 2
+    };
+  }
+
   return {
     x: offsetX + col * cell,
     y: offsetY + row * cell
@@ -193,6 +203,11 @@ function getCircleMazeInfo() {
     cy: offsetY + cell * 15.45,
     radius: cell * 4.25
   };
+}
+
+function getCircleRowRadius(row, radius) {
+  const localRow = Math.max(0, Math.min(8, row - 10));
+  return radius * (0.92 - localRow * 0.085);
 }
 
 function isInsideLowerCircle(row, col) {
@@ -210,6 +225,27 @@ function canvasToTile(clientX, clientY) {
   const scaleY = canvas.height / rect.height;
   const x = (clientX - rect.left) * scaleX;
   const y = (clientY - rect.top) * scaleY;
+  const { cx, cy, radius } = getCircleMazeInfo();
+  const dx = x - cx;
+  const dy = y - cy;
+  const distance = Math.hypot(dx, dy);
+
+  if (distance <= radius + cell * 0.7) {
+    let angle = Math.atan2(dy, dx) + Math.PI / 2;
+    if (angle < 0) angle += Math.PI * 2;
+    const col = Math.max(0, Math.min(cols - 1, Math.round((angle / (Math.PI * 2)) * (cols - 1))));
+    let bestRow = 10;
+    let bestDistance = Infinity;
+    for (let row = 10; row < rows; row += 1) {
+      const gap = Math.abs(distance - getCircleRowRadius(row, radius));
+      if (gap < bestDistance) {
+        bestDistance = gap;
+        bestRow = row;
+      }
+    }
+    return { row: bestRow, col };
+  }
+
   return {
     row: Math.floor((y - offsetY) / cell),
     col: Math.floor((x - offsetX) / cell)
