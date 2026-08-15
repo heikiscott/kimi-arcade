@@ -43,6 +43,7 @@ const cell = Math.min(canvas.width / (cols + 2.2), canvas.height / (rows + 4.8))
 const offsetX = (canvas.width - cols * cell) / 2;
 const offsetY = 96;
 const wallHeight = cell * 0.34;
+const circleEntranceCol = 17;
 
 let players;
 let guests;
@@ -92,6 +93,10 @@ function playWall() {
 function playWinMusic() {
   const melody = [523, 659, 784, 1046, 988, 784, 659, 784, 880, 1174, 1046, 880, 784, 1046, 1318, 1568];
   melody.forEach((note, index) => playTone(note, index * 0.15, 0.12, 0.05));
+}
+
+function playBlessing() {
+  [784, 988, 1174, 1568].forEach((note, index) => playTone(note, index * 0.06, 0.08, 0.035, "sine"));
 }
 
 function createPlayers() {
@@ -165,7 +170,7 @@ function reset() {
   won = false;
   wanderTick = 0;
   winMovie.classList.remove("show");
-  statusEl.textContent = "这是从上往下看的俯视图：正方形迷宫在上面，圆形迷宫像草图一样一圈一圈接在下面，中间只有一条连接通道。";
+  statusEl.textContent = "这是从上往下看的俯视图：正方形迷宫在上面，圆形迷宫入口已经打通，树篱花朵可以点出祝福。";
   updatePlayerButtons();
   renderGuestControls();
   draw();
@@ -183,7 +188,7 @@ function isExit(row, col) {
 function tileToCanvas(row, col) {
   if (row >= 10) {
     const { cx, cy, radius } = getCircleMazeInfo();
-    const angle = -Math.PI / 2 + (col / (cols - 1)) * Math.PI * 2;
+    const angle = getCircleAngle(col);
     const ring = getCircleRowRadius(row, radius);
     return {
       x: cx + Math.cos(angle) * ring - cell / 2,
@@ -195,6 +200,11 @@ function tileToCanvas(row, col) {
     x: offsetX + col * cell,
     y: offsetY + row * cell
   };
+}
+
+function getCircleAngle(col) {
+  const wrapped = (col - circleEntranceCol + cols) % cols;
+  return -Math.PI / 2 + (wrapped / cols) * Math.PI * 2;
 }
 
 function getCircleMazeInfo() {
@@ -233,7 +243,8 @@ function canvasToTile(clientX, clientY) {
   if (distance <= radius + cell * 0.7) {
     let angle = Math.atan2(dy, dx) + Math.PI / 2;
     if (angle < 0) angle += Math.PI * 2;
-    const col = Math.max(0, Math.min(cols - 1, Math.round((angle / (Math.PI * 2)) * (cols - 1))));
+    const colOffset = Math.round((angle / (Math.PI * 2)) * cols) % cols;
+    const col = (colOffset + circleEntranceCol) % cols;
     let bestRow = 10;
     let bestDistance = Infinity;
     for (let row = 10; row < rows; row += 1) {
@@ -442,6 +453,8 @@ function drawThemeParkLayout() {
   ctx.lineWidth = 10;
   ctx.stroke();
 
+  drawFlowerMeadow(roundCx, roundCy, roundR);
+
   ctx.strokeStyle = "rgba(31,107,80,0.35)";
   ctx.lineWidth = 5;
   ctx.beginPath();
@@ -526,6 +539,27 @@ function drawCircularMazeGardenOverlay() {
   ctx.restore();
 }
 
+function drawFlowerMeadow(cx, cy, radius) {
+  ctx.save();
+  ctx.fillStyle = "rgba(188,225,151,0.62)";
+  ctx.beginPath();
+  ctx.ellipse(cx, cy, radius * 1.18, radius * 1.08, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  const flowers = [
+    [-4.9, -0.8, "#ff6fae"], [-4.25, 1.1, "#ffd15f"], [-3.6, 2.6, "#ffffff"],
+    [-2.8, -3.65, "#ff8c3a"], [-1.9, 3.85, "#ff6fae"], [-1.1, -4.45, "#ffffff"],
+    [-0.2, 4.35, "#ffd15f"], [0.9, -3.85, "#ff6fae"], [1.8, 3.45, "#ff8c3a"],
+    [2.7, -2.95, "#ffffff"], [3.45, 2.0, "#ffd15f"], [4.35, -0.95, "#ff6fae"],
+    [4.95, 0.95, "#ffffff"], [-0.1, -1.35, "#ff8c3a"], [1.15, 1.3, "#ff6fae"],
+    [-1.45, 1.05, "#ffd15f"]
+  ];
+  flowers.forEach(([gx, gy, color], index) => {
+    drawTinyFlower(cx + gx * cell, cy + gy * cell, color, index % 3);
+  });
+  ctx.restore();
+}
+
 function drawCloud(x, y, size) {
   ctx.beginPath();
   ctx.arc(x, y, size * 0.5, 0, Math.PI * 2);
@@ -598,6 +632,33 @@ function drawHedgeBlock(x, y) {
   ctx.lineWidth = 2;
   ctx.strokeRect(x + 5, y + 5, cell - 10, cell - 10);
   ctx.lineWidth = 1;
+
+  [
+    [0.22, 0.23, "#ffd15f"],
+    [0.68, 0.28, "#ff6fae"],
+    [0.36, 0.62, "#ffffff"],
+    [0.75, 0.72, "#ff8c3a"]
+  ].forEach(([fx, fy, color], index) => {
+    drawTinyFlower(x + cell * fx, y + cell * fy, color, index);
+  });
+}
+
+function drawTinyFlower(x, y, color, phase = 0) {
+  ctx.save();
+  ctx.fillStyle = "#236b42";
+  ctx.fillRect(x - 1, y + 2, 2, 7);
+  ctx.fillStyle = color;
+  for (let i = 0; i < 5; i += 1) {
+    const angle = (Math.PI * 2 * i) / 5 + phase * 0.18;
+    ctx.beginPath();
+    ctx.arc(x + Math.cos(angle) * 4, y + Math.sin(angle) * 4, 3, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.fillStyle = "#ffd15f";
+  ctx.beginPath();
+  ctx.arc(x, y, 2.4, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
 }
 
 function drawStart(x, y) {
@@ -854,6 +915,11 @@ canvas.addEventListener("click", (event) => {
   const guest = guests.find((item) => !item.joined && item.row === tile.row && item.col === tile.col);
   if (guest) {
     inviteGuest(guest);
+    return;
+  }
+  if (tile.row >= 0 && tile.row < rows && tile.col >= 0 && tile.col < cols && maze[tile.row][tile.col] === "#") {
+    statusEl.textContent = "你点到了树篱上的花朵：祝你顺利走出济州岛迷宫!";
+    playBlessing();
   }
 });
 
