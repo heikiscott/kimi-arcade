@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>乌龙牌</title>
+    <link rel="stylesheet" href="wulong-card.css?v=first-play-20260815" />
+  </head>
+  <body>
+    <a class="home-link" href="arcade.html">游戏大厅</a>
+    <main class="wulong-shell">
+      <section class="game-table">
+        <header class="table-header">
+          <div>
+            <p class="label">Color Card Battle</p>
+            <h1>乌龙牌</h1>
+            <p class="subtitle">颜色一样、数字一样就能出；谁先把手牌打完，谁就赢。</p>
+          </div>
+          <button id="newSetupBtn" type="button">重新设置</button>
+        </header>
+
+        <section class="setup-panel" id="setupPanel">
+          <div>
+            <p class="label dark">开局设置</p>
+            <h2>你控制 1 个人，电脑控制几个人?</h2>
+          </div>
+          <div class="setup-grid">
+            <label>
+              电脑人数
+              <select id="botCount">
+                <option value="1">1 个电脑</option>
+                <option value="2" selected>2 个电脑</option>
+                <option value="3">3 个电脑</option>
+                <option value="4">4 个电脑</option>
+                <option value="5">5 个电脑</option>
+              </select>
+            </label>
+            <label>
+              每人发牌
+              <select id="handSize">
+                <option value="6">6 张</option>
+                <option value="7" selected>7 张</option>
+              </select>
+            </label>
+          </div>
+          <button id="startBtn" type="button">开始发牌</button>
+        </section>
+
+        <section class="play-area" id="playArea" aria-label="乌龙牌桌面">
+          <div class="opponent-ring" id="opponentRing"></div>
+
+          <div class="center-pile">
+            <div class="draw-stack">
+              <span>摸牌堆</span>
+              <button id="drawBtn" class="deck-card" type="button">抽牌</button>
+              <strong id="deckCount">0</strong>
+            </div>
+            <div class="discard-stack">
+              <span>桌面牌</span>
+              <div id="discardCard" class="card big-card"></div>
+              <strong id="currentColor">当前颜色</strong>
+            </div>
+            <div class="turn-stack">
+              <span>方向</span>
+              <strong id="directionText">顺时针</strong>
+              <em id="penaltyText">没有罚牌</em>
+            </div>
+          </div>
+
+          <div class="message" id="message">先设置电脑人数和发牌数量。</div>
+
+          <div class="my-area">
+            <div class="my-title">
+              <strong id="myTitle">我的手牌</strong>
+              <span id="myCount">0 张</span>
+            </div>
+            <div id="myHand" class="hand"></div>
+            <div class="actions">
+              <button id="passBtn" type="button">认罚 / 跳过</button>
+              <button id="wildRed" class="color-pick red" type="button">红</button>
+              <button id="wildYellow" class="color-pick yellow" type="button">黄</button>
+              <button id="wildBlue" class="color-pick blue" type="button">蓝</button>
+              <button id="wildGreen" class="color-pick green" type="button">绿</button>
+            </div>
+          </div>
+        </section>
+      </section>
+
+      <aside class="rules-card">
+        <p class="label dark">规则</p>
+        <h2>怎么玩</h2>
+        <p>你只能控制自己。电脑可以有 1 到 5 个，都会自动出牌。</p>
+        <p>普通牌：颜色一样或者数字一样就能出。</p>
+        <p>反转：顺序反过来。禁止：下一个人不能出牌。</p>
+        <p>变色：换成你选的颜色。+2、+4：下家要抽牌；如果下家也有 +2 或 +4，可以继续叠加反打。</p>
+        <p>胜利：谁先把自己的手牌全部打完，谁就是赢家。</p>
+      </aside>
+    </main>
+    <script src="wulong-card.js?v=first-play-20260815"></script>
+    <script src="arcade-stats.js?v=visitor-table-20260728"></script>
+  </body>
+</html>

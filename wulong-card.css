@@ -1,0 +1,401 @@
+:root {
+  --ink: #172632;
+  --muted: #5e6e79;
+  --red: #d93a32;
+  --yellow: #ffd15f;
+  --blue: #2468b8;
+  --green: #25a35b;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  color: var(--ink);
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background:
+    radial-gradient(circle at 12% 14%, rgba(255,209,95,0.55), transparent 24%),
+    radial-gradient(circle at 86% 10%, rgba(36,104,184,0.26), transparent 26%),
+    linear-gradient(135deg, #e7f2ed 0%, #fff4cf 44%, #dff0ff 100%);
+}
+
+.home-link {
+  position: fixed;
+  top: 18px;
+  left: 18px;
+  z-index: 6;
+  padding: 12px 18px;
+  border: 1px solid rgba(23, 38, 50, 0.14);
+  border-radius: 8px;
+  color: var(--ink);
+  background: rgba(255,255,255,0.9);
+  text-decoration: none;
+  font-weight: 950;
+  box-shadow: 0 12px 26px rgba(23,38,50,0.12);
+}
+
+.wulong-shell {
+  width: min(1320px, calc(100vw - 28px));
+  min-height: 100vh;
+  margin: 0 auto;
+  padding: 86px 0 34px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 18px;
+  align-items: start;
+}
+
+.game-table,
+.rules-card {
+  border: 1px solid rgba(23, 38, 50, 0.14);
+  border-radius: 8px;
+  box-shadow: 0 18px 42px rgba(23,38,50,0.13);
+}
+
+.game-table {
+  min-height: 760px;
+  padding: 18px;
+  background:
+    linear-gradient(rgba(255,255,255,0.13) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.12) 1px, transparent 1px),
+    radial-gradient(circle at center, #158362, #0d5f4b 72%);
+  background-size: 36px 36px, 36px 36px, auto;
+}
+
+.table-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: start;
+}
+
+h1,
+h2,
+p {
+  margin: 0;
+}
+
+h1 {
+  color: #fff;
+  font-size: clamp(2.6rem, 7vw, 5.6rem);
+  line-height: 0.95;
+}
+
+h2 {
+  font-size: 2rem;
+  line-height: 1.06;
+}
+
+.subtitle {
+  margin-top: 10px;
+  color: rgba(255,255,255,0.82);
+  font-weight: 850;
+}
+
+.label {
+  margin-bottom: 8px;
+  color: rgba(255,255,255,0.76);
+  font-size: 0.78rem;
+  font-weight: 950;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.label.dark {
+  color: var(--muted);
+}
+
+button,
+select {
+  font: inherit;
+}
+
+button {
+  min-height: 44px;
+  border: 3px solid var(--ink);
+  border-radius: 8px;
+  color: var(--ink);
+  background: #fff;
+  font-weight: 950;
+  cursor: pointer;
+  box-shadow: 0 5px 0 rgba(23,38,50,0.23);
+}
+
+button:active {
+  transform: translateY(3px);
+  box-shadow: 0 2px 0 rgba(23,38,50,0.23);
+}
+
+.setup-panel {
+  margin-top: 18px;
+  padding: 20px;
+  display: grid;
+  gap: 18px;
+  border-radius: 8px;
+  background: rgba(255,255,255,0.9);
+}
+
+.setup-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+label {
+  display: grid;
+  gap: 8px;
+  color: var(--muted);
+  font-weight: 900;
+}
+
+select {
+  min-height: 46px;
+  padding: 0 12px;
+  border: 2px solid rgba(23,38,50,0.22);
+  border-radius: 8px;
+  color: var(--ink);
+  background: #fff;
+  font-weight: 900;
+}
+
+.play-area {
+  display: none;
+  gap: 16px;
+  margin-top: 18px;
+}
+
+.play-area.active {
+  display: grid;
+}
+
+.opponent-ring {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(128px, 1fr));
+  gap: 10px;
+}
+
+.player-chip {
+  padding: 11px;
+  border: 2px solid rgba(255,255,255,0.42);
+  border-radius: 8px;
+  color: #fff;
+  background: rgba(0,0,0,0.14);
+}
+
+.player-chip.active {
+  border-color: var(--yellow);
+  background: rgba(255,209,95,0.22);
+}
+
+.player-chip strong,
+.player-chip span {
+  display: block;
+}
+
+.player-chip span {
+  margin-top: 5px;
+  color: rgba(255,255,255,0.76);
+  font-weight: 850;
+}
+
+.center-pile {
+  display: grid;
+  grid-template-columns: 150px minmax(0, 1fr) 150px;
+  gap: 12px;
+  align-items: stretch;
+}
+
+.draw-stack,
+.discard-stack,
+.turn-stack,
+.message,
+.my-area,
+.rules-card {
+  border-radius: 8px;
+  background: rgba(255,255,255,0.9);
+}
+
+.draw-stack,
+.discard-stack,
+.turn-stack {
+  padding: 13px;
+  display: grid;
+  gap: 8px;
+  align-content: center;
+  justify-items: center;
+  text-align: center;
+  font-weight: 950;
+}
+
+.draw-stack span,
+.discard-stack span,
+.turn-stack span {
+  color: var(--muted);
+  font-size: 0.86rem;
+}
+
+.deck-card {
+  width: 78px;
+  min-height: 108px;
+  color: #fff;
+  background: repeating-linear-gradient(45deg, #172632, #172632 8px, #245b8f 8px, #245b8f 16px);
+}
+
+.message {
+  padding: 14px;
+  color: var(--ink);
+  font-weight: 950;
+  line-height: 1.42;
+}
+
+.my-area {
+  padding: 14px;
+}
+
+.my-title {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 12px;
+  font-size: 1.2rem;
+}
+
+.my-title span {
+  color: var(--muted);
+  font-weight: 900;
+}
+
+.hand {
+  min-height: 162px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+}
+
+.card {
+  width: 68px;
+  min-height: 96px;
+  padding: 7px;
+  border: 3px solid #fff;
+  border-radius: 8px;
+  color: #fff;
+  display: grid;
+  align-content: space-between;
+  justify-items: center;
+  font-weight: 950;
+  box-shadow: 0 8px 0 rgba(23,38,50,0.2);
+}
+
+.card.big-card {
+  width: 96px;
+  min-height: 132px;
+  font-size: 1.2rem;
+}
+
+.card.playable {
+  outline: 4px solid var(--yellow);
+  cursor: pointer;
+}
+
+.card.disabled {
+  opacity: 0.42;
+  filter: grayscale(0.5);
+}
+
+.card.red,
+.color-pick.red {
+  background: var(--red);
+}
+
+.card.yellow,
+.color-pick.yellow {
+  color: var(--ink);
+  background: var(--yellow);
+}
+
+.card.blue,
+.color-pick.blue {
+  background: var(--blue);
+}
+
+.card.green,
+.color-pick.green {
+  background: var(--green);
+}
+
+.card.wild {
+  background:
+    linear-gradient(135deg, var(--red) 0 25%, var(--yellow) 25% 50%, var(--blue) 50% 75%, var(--green) 75%);
+}
+
+.card span:first-child {
+  justify-self: start;
+}
+
+.card strong {
+  font-size: 1.4rem;
+}
+
+.card small {
+  justify-self: end;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.color-pick {
+  min-width: 58px;
+  color: #fff;
+}
+
+.rules-card {
+  padding: 22px;
+  display: grid;
+  gap: 13px;
+}
+
+.rules-card p {
+  color: #4e5f69;
+  font-weight: 820;
+  line-height: 1.48;
+}
+
+@media (max-width: 900px) {
+  .wulong-shell {
+    grid-template-columns: 1fr;
+    width: min(100vw - 18px, 720px);
+    padding-top: 78px;
+  }
+
+  .table-header,
+  .center-pile,
+  .setup-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .table-header {
+    display: grid;
+  }
+
+  .center-pile {
+    display: grid;
+  }
+
+  .card {
+    width: 58px;
+    min-height: 84px;
+  }
+
+  .card.big-card {
+    width: 82px;
+    min-height: 112px;
+  }
+}

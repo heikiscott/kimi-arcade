@@ -356,6 +356,10 @@ body {
   background: linear-gradient(135deg, #11634f, #172632 52%, #ffd15f);
 }
 
+.wulong {
+  background: linear-gradient(135deg, #d93a32, #ffd15f 34%, #2468b8 68%, #25a35b);
+}
+
 .rail {
   background: linear-gradient(135deg, #bd6a1d, #334655);
 }
