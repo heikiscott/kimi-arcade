@@ -10,6 +10,7 @@ const setupPanel = document.querySelector("#setupPanel");
 const playArea = document.querySelector("#playArea");
 const botCountInput = document.querySelector("#botCount");
 const handSizeInput = document.querySelector("#handSize");
+const stackRuleInput = document.querySelector("#stackRule");
 const startBtn = document.querySelector("#startBtn");
 const newSetupBtn = document.querySelector("#newSetupBtn");
 const opponentRing = document.querySelector("#opponentRing");
@@ -74,6 +75,7 @@ function shuffle(items) {
 function startGame() {
   const botCount = Number(botCountInput.value);
   const handSize = Number(handSizeInput.value);
+  const stacking = stackRuleInput.checked;
   const players = [
     { id: "me", name: "我", isHuman: true, hand: [] },
     ...Array.from({ length: botCount }, (_, index) => ({
@@ -103,13 +105,14 @@ function startGame() {
     direction: 1,
     pendingDraw: 0,
     pendingSource: null,
+    stacking,
     over: false,
     waitingForColor: false
   };
 
   setupPanel.style.display = "none";
   playArea.classList.add("active");
-  setMessage(`发牌完成：你 1 个人，电脑 ${botCount} 个人，每人 ${handSize} 张。现在你先出，谁先把手牌打完谁赢。`);
+  setMessage(`发牌完成：你 1 个人，电脑 ${botCount} 个人，每人 ${handSize} 张。${stacking ? "已开启叠加玩法。" : "标准规则：+2/+4 直接让下家抽牌并跳过。"} 现在你先出。`);
   render();
 }
 
@@ -149,7 +152,7 @@ function cardDrawValue(card) {
 
 function canPlay(card) {
   if (!game || game.over || game.waitingForColor) return false;
-  if (game.pendingDraw > 0) return isDrawCard(card);
+  if (game.pendingDraw > 0) return game.stacking && isDrawCard(card);
   const top = topCard();
   if (card.color === "wild") return true;
   return card.color === game.currentColor || card.label === top.label;
@@ -175,7 +178,7 @@ function playCard(player, cardIndex, chosenColor = null) {
   if (player.id !== currentPlayer().id) return;
   const card = player.hand[cardIndex];
   if (!card || !canPlay(card)) {
-    setMessage(game.pendingDraw > 0 ? `现在累计罚牌 ${game.pendingDraw} 张，只能出 +2 或 +4 来反打。` : "这张牌现在不能出，要颜色一样、数字一样，或者出变色牌。");
+    setMessage(game.pendingDraw > 0 ? `现在累计罚牌 ${game.pendingDraw} 张，只有开启叠加玩法时才能出 +2 或 +4 反打。` : "这张牌现在不能出，要颜色一样、数字一样、功能一样，或者出变色牌。");
     return;
   }
 
@@ -191,23 +194,32 @@ function playCard(player, cardIndex, chosenColor = null) {
     return;
   }
 
-  applyCardEffect(player, card, chosenColor);
+  const unoCall = player.hand.length === 1 ? ` ${player.name} 喊 UNO!` : "";
+  applyCardEffect(player, card, chosenColor, unoCall);
 }
 
-function applyCardEffect(player, card, chosenColor) {
+function applyCardEffect(player, card, chosenColor, unoCall = "") {
   if (card.type === "reverse") {
     game.direction *= -1;
-    advanceTurn(1);
-    setMessage(`${player.name} 出了反转，顺序换方向了。`);
+    advanceTurn(game.players.length === 2 ? 2 : 1);
+    setMessage(`${player.name} 出了反转，${game.players.length === 2 ? "两人局里等于跳过对方。" : "顺序换方向了。"}${unoCall}`);
   } else if (card.type === "skip") {
     const skipped = game.players[nextIndex()];
     advanceTurn(2);
-    setMessage(`${player.name} 出了禁止，${skipped.name} 被跳过。`);
+    setMessage(`${player.name} 出了禁止，${skipped.name} 被跳过。${unoCall}`);
   } else if (isDrawCard(card)) {
-    game.pendingDraw += cardDrawValue(card);
-    game.pendingSource = player.name;
-    advanceTurn(1);
-    setMessage(`${player.name} 出了 ${card.label}，累计罚牌变成 ${game.pendingDraw} 张。下家可以继续出 +2/+4 反打。`);
+    const count = cardDrawValue(card);
+    if (game.stacking) {
+      game.pendingDraw += count;
+      game.pendingSource = player.name;
+      advanceTurn(1);
+      setMessage(`${player.name} 出了 ${card.label}，累计罚牌变成 ${game.pendingDraw} 张。下家可以继续出 +2/+4 反打。${unoCall}`);
+    } else {
+      const punished = game.players[nextIndex()];
+      drawCards(punished, count);
+      advanceTurn(2);
+      setMessage(`${player.name} 出了 ${card.label}，${punished.name} 抽 ${count} 张并跳过。${unoCall}`);
+    }
   } else if (card.type === "wild") {
     if (player.isHuman && !chosenColor) {
       game.waitingForColor = true;
@@ -216,10 +228,10 @@ function applyCardEffect(player, card, chosenColor) {
       return;
     }
     advanceTurn(1);
-    setMessage(`${player.name} 出了变色，颜色变成${colorNames[game.currentColor]}。`);
+    setMessage(`${player.name} 出了变色，颜色变成${colorNames[game.currentColor]}。${unoCall}`);
   } else {
     advanceTurn(1);
-    setMessage(`${player.name} 出了 ${cardText(card)}。`);
+    setMessage(`${player.name} 出了 ${cardText(card)}。${unoCall}`);
   }
   render();
   maybeBotTurn();
@@ -248,7 +260,7 @@ function humanDrawOrPass() {
     game.pendingDraw = 0;
     game.pendingSource = null;
     advanceTurn(1);
-    setMessage(`你认罚，抽了 ${count} 张牌。`);
+    setMessage(`你抽了累计罚牌 ${count} 张，并跳过这一轮。`);
   } else {
     drawCards(me, 1);
     setMessage("你抽了一张牌。如果能出，可以直接点手牌出。");
@@ -267,7 +279,7 @@ function maybeBotTurn() {
 function botTurn(player) {
   if (!game || game.over || currentPlayer().id !== player.id) return;
   let index = -1;
-  if (game.pendingDraw > 0) {
+  if (game.pendingDraw > 0 && game.stacking) {
     index = player.hand.findIndex(isDrawCard);
   } else {
     index = chooseBotPlayableCard(player);
@@ -380,7 +392,9 @@ function renderMyHand() {
 }
 
 function cardMarkup(card) {
-  return `<span>${card.color === "wild" ? "彩" : colorNames[card.color]}</span><strong>${card.label}</strong><small>${card.type === "number" ? "数字" : "功能"}</small>`;
+  const corner = card.color === "wild" ? "彩" : colorNames[card.color];
+  const typeName = card.type === "number" ? "数字" : "功能";
+  return `<span class="corner top">${corner}</span><strong class="center-symbol">${card.label}</strong><small class="corner bottom">${typeName}</small>`;
 }
 
 Object.entries(colorButtons).forEach(([color, button]) => {

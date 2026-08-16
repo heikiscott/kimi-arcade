@@ -3,8 +3,8 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>乌龙牌 UNO</title>
-    <link rel="stylesheet" href="wulong-card.css?v=american-wulong-20260815" />
+    <title>乌龙牌 UNO 风格</title>
+    <link rel="stylesheet" href="wulong-card.css?v=uno-standard-20260815" />
   </head>
   <body>
     <a class="home-link" href="arcade.html">游戏大厅</a>
@@ -13,8 +13,8 @@
         <header class="table-header">
           <div>
             <p class="label">UNO Style Color Card Battle</p>
-            <h1>乌龙牌 UNO</h1>
-            <p class="subtitle">UNO 风格颜色牌玩法，中文叫乌龙牌：颜色一样、数字一样就能出；谁先把手牌打完，谁就赢。</p>
+            <h1>乌龙牌 UNO 风格</h1>
+            <p class="subtitle">按美国常见 UNO 标准规则来玩：颜色一样、数字一样或功能一样就能出；+2、+4 默认让下家抽牌并跳过。</p>
           </div>
           <button id="newSetupBtn" type="button">重新设置</button>
         </header>
@@ -41,6 +41,10 @@
                 <option value="6">6 张</option>
                 <option value="7" selected>7 张</option>
               </select>
+            </label>
+            <label class="check-option">
+              <input id="stackRule" type="checkbox" />
+              开启叠加玩法（可选）
             </label>
           </div>
           <button id="startBtn" type="button">开始发牌</button>
@@ -76,7 +80,7 @@
             </div>
             <div id="myHand" class="hand"></div>
             <div class="actions">
-              <button id="passBtn" type="button">认罚 / 跳过</button>
+              <button id="passBtn" type="button">抽牌 / 跳过</button>
               <button id="wildRed" class="color-pick red" type="button">红</button>
               <button id="wildYellow" class="color-pick yellow" type="button">黄</button>
               <button id="wildBlue" class="color-pick blue" type="button">蓝</button>
@@ -92,11 +96,13 @@
         <p>你只能控制自己。电脑可以有 1 到 5 个，都会自动出牌。</p>
         <p>普通牌：颜色一样或者数字一样就能出。</p>
         <p>反转：顺序反过来。禁止：下一个人不能出牌。</p>
-        <p>变色：换成你选的颜色。+2、+4：下家要抽牌；如果下家也有 +2 或 +4，可以继续叠加反打。</p>
+        <p>标准玩法：+2 让下家抽 2 张并跳过；+4 变色，下家抽 4 张并跳过。</p>
+        <p>叠加玩法：只有开局勾选后，+2、+4 才能继续反打累计。</p>
+        <p>牌面是原创 UNO 风格红黄蓝绿卡，不使用官方商标图案。</p>
         <p>胜利：谁先把自己的手牌全部打完，谁就是赢家。</p>
       </aside>
     </main>
-    <script src="wulong-card.js?v=american-wulong-20260815"></script>
+    <script src="wulong-card.js?v=uno-standard-20260815"></script>
     <script src="arcade-stats.js?v=visitor-table-20260728"></script>
   </body>
 </html>
