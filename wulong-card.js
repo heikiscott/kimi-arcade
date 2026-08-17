@@ -15,6 +15,7 @@ const stackRuleInput = document.querySelector("#stackRule");
 const playerSetupEl = document.querySelector("#playerSetup");
 const startBtn = document.querySelector("#startBtn");
 const newSetupBtn = document.querySelector("#newSetupBtn");
+const tableSceneEl = document.querySelector("#tableScene");
 const opponentRing = document.querySelector("#opponentRing");
 const myHandEl = document.querySelector("#myHand");
 const myCountEl = document.querySelector("#myCount");
@@ -174,7 +175,7 @@ function resetToSetup() {
   game = null;
   setupPanel.style.display = "grid";
   playArea.classList.remove("active");
-  setMessage("先设置电脑人数和发牌数量。");
+  setMessage("先设置总人数、玩家资料和发牌员。");
 }
 
 function topCard() {
@@ -394,9 +395,50 @@ function cardText(card) {
 
 function render() {
   if (!game) return;
+  renderTableScene();
   renderOpponents();
   renderCenter();
   renderMyHand();
+}
+
+function renderTableScene() {
+  const current = currentPlayer();
+  const seats = game.players.map((player, index) => {
+    const angle = (360 / game.players.length) * index;
+    const face = player.gender === "male" ? "男" : "女";
+    return `
+      <div class="table-seat ${current.id === player.id ? "active" : ""}" style="--angle:${angle}deg">
+        <div class="chair-back"></div>
+        <div class="person-3d ${player.gender}">
+          <div class="person-head"><span>${face}</span></div>
+          <div class="person-body"></div>
+          <div class="person-arm left"></div>
+          <div class="person-arm right"></div>
+        </div>
+        <div class="seat-name">${player.name}</div>
+        <div class="seat-cards">${player.hand.length} 张</div>
+      </div>
+    `;
+  }).join("");
+  tableSceneEl.innerHTML = `
+    <div class="table-arena">
+      <div class="room-backdrop"></div>
+      <div class="round-table">
+        <div class="felt-rim"></div>
+        <div class="felt-surface">
+          <div class="table-center-hole">
+            <div class="dealer-3d ${game.dealerGender}">
+              <div class="dealer-head">${game.dealerGender === "male" ? "男" : "女"}</div>
+              <div class="dealer-body"></div>
+            </div>
+          </div>
+          <div class="mini-card-pile draw-mini"></div>
+          <div class="mini-card-pile discard-mini ${topCard().color}">${topCard().label}</div>
+        </div>
+      </div>
+      ${seats}
+    </div>
+  `;
 }
 
 function renderOpponents() {
