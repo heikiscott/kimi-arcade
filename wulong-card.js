@@ -423,7 +423,7 @@ function renderTableScene() {
   tableSceneEl.innerHTML = `
     <div class="table-arena">
       <div class="room-backdrop"></div>
-      <div class="round-table">
+      <div class="round-table block-table">
         <div class="felt-rim"></div>
         <div class="felt-surface">
           <div class="table-center-hole">

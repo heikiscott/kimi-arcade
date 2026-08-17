@@ -271,39 +271,41 @@ select {
 }
 
 .table-scene {
-  min-height: 430px;
+  min-height: 500px;
   overflow: hidden;
   border: 4px solid rgba(255,255,255,0.52);
   border-radius: 8px;
   background:
-    radial-gradient(circle at 50% 35%, rgba(255,255,255,0.32), transparent 28%),
-    linear-gradient(180deg, #c8edf8 0 38%, #216d58 39% 100%);
-  perspective: 980px;
+    linear-gradient(90deg, rgba(255,255,255,0.18) 1px, transparent 1px),
+    linear-gradient(rgba(255,255,255,0.18) 1px, transparent 1px),
+    linear-gradient(180deg, #d8f7ff 0 18%, #baf0ff 19% 40%, #53d6e8 41% 100%);
+  background-size: 52px 52px, 52px 52px, auto;
+  perspective: 1050px;
   box-shadow: inset 0 0 0 3px rgba(23,38,50,0.18), 0 14px 28px rgba(23,38,50,0.18);
 }
 
 .table-arena {
   position: relative;
-  min-height: 430px;
+  min-height: 500px;
   transform-style: preserve-3d;
 }
 
 .room-backdrop {
   position: absolute;
-  inset: 18px 26px 46%;
+  inset: 18px 26px 52%;
   border-radius: 8px;
   background:
-    linear-gradient(90deg, transparent 0 14%, rgba(255,255,255,0.28) 14% 15%, transparent 15% 31%, rgba(255,255,255,0.26) 31% 32%, transparent 32%),
-    linear-gradient(180deg, rgba(255,255,255,0.46), rgba(255,255,255,0.08));
-  opacity: 0.64;
+    linear-gradient(90deg, transparent 0 12%, rgba(23,38,50,0.14) 12% 13%, transparent 13% 24%, rgba(23,38,50,0.12) 24% 25%, transparent 25%),
+    linear-gradient(180deg, rgba(255,255,255,0.88), rgba(210,226,235,0.42));
+  opacity: 0.78;
 }
 
 .round-table {
   position: absolute;
   left: 50%;
-  top: 57%;
-  width: min(620px, 78vw);
-  height: 260px;
+  top: 58%;
+  width: min(520px, 76vw);
+  height: 312px;
   transform: translate(-50%, -50%) rotateX(62deg);
   transform-style: preserve-3d;
 }
@@ -312,37 +314,42 @@ select {
 .felt-surface {
   position: absolute;
   inset: 0;
-  border-radius: 50%;
+  border-radius: 6px;
 }
 
 .felt-rim {
   background:
-    radial-gradient(ellipse at center, #164435 0 62%, #8a552c 63% 76%, #3b261a 77% 100%);
-  box-shadow: 0 34px 36px rgba(0,0,0,0.34);
+    linear-gradient(90deg, rgba(0,0,0,0.18) 0 8%, transparent 8% 16%),
+    linear-gradient(180deg, #9a5c30 0%, #61391f 72%, #352013 100%);
+  background-size: 52px 100%, auto;
+  box-shadow: 0 42px 0 #3a2214, 0 66px 44px rgba(0,0,0,0.38);
 }
 
 .felt-surface {
-  inset: 20px 36px;
+  inset: 16px;
   background:
-    radial-gradient(circle at center, rgba(255,255,255,0.16), transparent 35%),
-    #12694f;
-  border: 8px solid rgba(255,255,255,0.18);
-  transform: translateZ(16px);
-  box-shadow: inset 0 0 34px rgba(0,0,0,0.25);
+    linear-gradient(90deg, rgba(255,255,255,0.12) 2px, transparent 2px),
+    linear-gradient(rgba(0,0,0,0.12) 2px, transparent 2px),
+    linear-gradient(135deg, #8c5128, #6b3d20 58%, #4b2b17);
+  background-size: 54px 54px, 54px 54px, auto;
+  border: 10px solid rgba(54,31,18,0.9);
+  transform: translateZ(22px);
+  box-shadow: inset 0 0 0 5px rgba(255,255,255,0.08), inset 0 -24px 32px rgba(0,0,0,0.24);
 }
 
 .table-center-hole {
   position: absolute;
   left: 50%;
   top: 50%;
-  width: 118px;
-  height: 74px;
+  width: 116px;
+  height: 92px;
   display: grid;
   place-items: end center;
-  border-radius: 50%;
+  border-radius: 8px;
   background:
-    radial-gradient(ellipse at center, #050708 0 48%, #2a3439 50% 64%, rgba(255,255,255,0.22) 66% 72%, transparent 74%);
+    linear-gradient(135deg, #f0d7a2 0 12%, #7b4a28 13% 26%, #f0d7a2 27% 39%, #7b4a28 40% 52%, #f0d7a2 53% 66%, #7b4a28 67% 100%);
   transform: translate(-50%, -50%) rotateX(-62deg) translateZ(28px);
+  box-shadow: inset 0 0 0 8px rgba(90,51,27,0.78), 0 10px 16px rgba(0,0,0,0.24);
 }
 
 .dealer-3d {
@@ -360,14 +367,12 @@ select {
   top: 0;
   display: grid;
   place-items: center;
-  border-radius: 50%;
+  border-radius: 4px;
   color: #172632;
   font-weight: 950;
   background:
-    radial-gradient(circle at 36% 34%, #fff8ea 0 7%, transparent 8%),
-    radial-gradient(circle at 64% 34%, #fff8ea 0 7%, transparent 8%),
-    radial-gradient(circle at 50% 58%, #b7684a 0 8%, transparent 9%),
-    linear-gradient(#3b2418 0 18%, #f2bf8f 19% 100%);
+    linear-gradient(90deg, transparent 0 26%, #172632 26% 33%, transparent 33% 62%, #172632 62% 69%, transparent 69%),
+    linear-gradient(180deg, #3b2418 0 18%, #f2bf8f 18% 100%);
   border: 3px solid rgba(23,38,50,0.36);
   transform: translateX(-50%);
 }
@@ -383,8 +388,10 @@ select {
   top: 38px;
   width: 54px;
   height: 66px;
-  border-radius: 18px 18px 10px 10px;
-  background: linear-gradient(135deg, #182739, #f4c653 54%, #8d2d3a);
+  border-radius: 4px;
+  background:
+    linear-gradient(90deg, rgba(255,255,255,0.14) 0 18%, transparent 18% 82%, rgba(0,0,0,0.14) 82% 100%),
+    linear-gradient(135deg, #f7f7f2, #f4c653 54%, #8d2d3a);
   border: 3px solid rgba(23,38,50,0.32);
   transform: translateX(-50%);
 }
@@ -405,7 +412,7 @@ select {
   display: grid;
   place-items: center;
   border: 3px solid #fff;
-  border-radius: 8px;
+  border-radius: 5px;
   color: #fff;
   font-size: 0.9rem;
   font-weight: 950;
@@ -433,7 +440,7 @@ select {
 .table-seat {
   position: absolute;
   left: 50%;
-  top: 57%;
+  top: 58%;
   width: 116px;
   height: 150px;
   display: grid;
@@ -442,7 +449,7 @@ select {
   transform:
     translate(-50%, -50%)
     rotate(var(--angle))
-    translateY(-192px)
+    translateY(-218px)
     rotate(calc(var(--angle) * -1));
   transform-style: preserve-3d;
   transition: transform 220ms ease, filter 220ms ease;
@@ -454,43 +461,46 @@ select {
 
 .chair-back {
   position: absolute;
-  top: 38px;
-  width: 92px;
-  height: 82px;
-  border-radius: 18px 18px 8px 8px;
-  background: linear-gradient(145deg, #5b3828, #b77a48);
-  box-shadow: inset -10px -12px 0 rgba(0,0,0,0.15), 0 12px 16px rgba(0,0,0,0.25);
+  top: 44px;
+  width: 102px;
+  height: 88px;
+  border-radius: 4px;
+  background:
+    linear-gradient(90deg, rgba(255,255,255,0.12) 0 14%, transparent 14% 86%, rgba(0,0,0,0.16) 86%),
+    linear-gradient(180deg, #9b6339, #6b3f25);
+  box-shadow: 0 18px 0 #3c2415, inset -10px -12px 0 rgba(0,0,0,0.15), 0 22px 18px rgba(0,0,0,0.25);
 }
 
 .person-3d {
   position: relative;
-  width: 72px;
-  height: 104px;
+  width: 76px;
+  height: 116px;
   transform-style: preserve-3d;
 }
 
 .person-head {
-  width: 44px;
-  height: 44px;
+  width: 46px;
+  height: 46px;
   z-index: 3;
+  box-shadow: inset -8px -8px 0 rgba(0,0,0,0.13), 0 7px 0 rgba(0,0,0,0.15);
 }
 
 .person-3d.female .person-head {
   background:
-    radial-gradient(circle at 36% 34%, #fff8ea 0 7%, transparent 8%),
-    radial-gradient(circle at 64% 34%, #fff8ea 0 7%, transparent 8%),
-    radial-gradient(circle at 50% 60%, #b7684a 0 8%, transparent 9%),
-    linear-gradient(#4d2b1f 0 24%, #f0bf91 25% 100%);
+    linear-gradient(90deg, transparent 0 26%, #172632 26% 33%, transparent 33% 62%, #172632 62% 69%, transparent 69%),
+    linear-gradient(180deg, #4d2b1f 0 24%, #f0bf91 24% 100%);
 }
 
 .person-body {
   position: absolute;
   left: 50%;
-  top: 39px;
+  top: 42px;
   width: 58px;
-  height: 62px;
-  border-radius: 18px 18px 14px 14px;
-  background: linear-gradient(135deg, #1e73c6, #f0cc4d);
+  height: 66px;
+  border-radius: 4px;
+  background:
+    linear-gradient(90deg, rgba(255,255,255,0.13) 0 18%, transparent 18% 82%, rgba(0,0,0,0.17) 82%),
+    linear-gradient(135deg, #1e73c6, #f0cc4d);
   border: 3px solid rgba(23,38,50,0.3);
   transform: translateX(-50%);
   z-index: 2;
@@ -502,12 +512,13 @@ select {
 
 .person-arm {
   position: absolute;
-  top: 52px;
-  width: 18px;
-  height: 44px;
-  border-radius: 999px;
+  top: 58px;
+  width: 16px;
+  height: 48px;
+  border-radius: 4px;
   background: #efbf91;
   z-index: 1;
+  box-shadow: inset -4px -4px 0 rgba(0,0,0,0.12);
 }
 
 .person-arm.left {
@@ -525,7 +536,7 @@ select {
   position: relative;
   z-index: 4;
   padding: 3px 8px;
-  border-radius: 999px;
+  border-radius: 5px;
   background: rgba(255,255,255,0.9);
   color: var(--ink);
   font-size: 0.82rem;
@@ -889,12 +900,12 @@ select {
 
   .table-scene,
   .table-arena {
-    min-height: 360px;
+    min-height: 390px;
   }
 
   .round-table {
-    width: min(510px, 88vw);
-    height: 214px;
+    width: min(420px, 82vw);
+    height: 250px;
   }
 
   .table-seat {
@@ -903,13 +914,13 @@ select {
     transform:
       translate(-50%, -50%)
       rotate(var(--angle))
-      translateY(-152px)
+      translateY(-174px)
       rotate(calc(var(--angle) * -1));
   }
 
   .chair-back {
-    width: 74px;
-    height: 66px;
+    width: 76px;
+    height: 68px;
   }
 
   .person-3d {
@@ -918,18 +929,18 @@ select {
   }
 
   .person-head {
-    width: 36px;
-    height: 36px;
+    width: 38px;
+    height: 38px;
   }
 
   .person-body {
-    top: 32px;
-    width: 46px;
-    height: 52px;
+    top: 35px;
+    width: 48px;
+    height: 54px;
   }
 
   .person-arm {
-    top: 42px;
+    top: 46px;
     height: 35px;
   }
 
