@@ -138,6 +138,53 @@ button:active {
   background: rgba(255,255,255,0.9);
 }
 
+.cover-stage {
+  min-height: 230px;
+  padding: 22px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 390px);
+  gap: 22px;
+  align-items: center;
+  border: 3px solid rgba(23,38,50,0.14);
+  border-radius: 8px;
+  background:
+    radial-gradient(circle at 76% 26%, rgba(255,255,255,0.72), transparent 26%),
+    linear-gradient(135deg, #f7fbff 0%, #fff0d0 56%, #e7f7ef 100%);
+}
+
+.cover-copy {
+  display: grid;
+  gap: 10px;
+}
+
+.cover-copy p:last-child {
+  color: var(--muted);
+  font-weight: 850;
+  line-height: 1.42;
+}
+
+.cover-cards {
+  min-height: 180px;
+  display: grid;
+  grid-template-columns: repeat(5, 64px);
+  justify-content: center;
+  align-items: center;
+  transform: rotate(-4deg);
+}
+
+.cover-card {
+  grid-row: 1;
+  width: 76px;
+  min-height: 112px;
+  transform: translateX(calc(var(--i, 0) * -12px)) rotate(calc((var(--i, 0) - 2) * 8deg));
+}
+
+.cover-card:nth-child(1) { --i: 0; }
+.cover-card:nth-child(2) { --i: 1; }
+.cover-card:nth-child(3) { --i: 2; }
+.cover-card:nth-child(4) { --i: 3; }
+.cover-card:nth-child(5) { --i: 4; }
+
 .setup-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -168,6 +215,39 @@ label {
   width: 20px;
   height: 20px;
   accent-color: var(--red);
+}
+
+.player-setup {
+  display: grid;
+  gap: 10px;
+}
+
+.player-row {
+  display: grid;
+  grid-template-columns: 86px minmax(120px, 1fr) 112px 132px 122px;
+  gap: 10px;
+  align-items: end;
+  padding: 12px;
+  border: 2px solid rgba(23,38,50,0.12);
+  border-radius: 8px;
+  background: rgba(255,255,255,0.74);
+}
+
+.player-row strong {
+  align-self: center;
+  color: var(--ink);
+  font-size: 1.02rem;
+}
+
+.player-row input {
+  min-height: 46px;
+  padding: 0 12px;
+  border: 2px solid rgba(23,38,50,0.22);
+  border-radius: 8px;
+  color: var(--ink);
+  background: #fff;
+  font: inherit;
+  font-weight: 900;
 }
 
 select {
@@ -209,6 +289,10 @@ select {
   background: rgba(255,209,95,0.22);
 }
 
+.player-chip.human {
+  border-color: rgba(255,255,255,0.76);
+}
+
 .player-chip strong,
 .player-chip span {
   display: block;
@@ -220,14 +304,32 @@ select {
   font-weight: 850;
 }
 
+.player-meta {
+  margin-top: 5px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.player-meta em {
+  padding: 2px 7px;
+  border-radius: 999px;
+  color: rgba(255,255,255,0.86);
+  background: rgba(255,255,255,0.14);
+  font-style: normal;
+  font-size: 0.78rem;
+  font-weight: 850;
+}
+
 .center-pile {
   display: grid;
-  grid-template-columns: 150px minmax(0, 1fr) 150px;
+  grid-template-columns: 132px minmax(148px, 0.75fr) minmax(0, 1fr) 132px;
   gap: 12px;
   align-items: stretch;
 }
 
 .draw-stack,
+.dealer-stage,
 .discard-stack,
 .turn-stack,
 .message,
@@ -238,6 +340,7 @@ select {
 }
 
 .draw-stack,
+.dealer-stage,
 .discard-stack,
 .turn-stack {
   padding: 13px;
@@ -250,10 +353,55 @@ select {
 }
 
 .draw-stack span,
+.dealer-stage span,
 .discard-stack span,
 .turn-stack span {
   color: var(--muted);
   font-size: 0.86rem;
+}
+
+.dealer-stage {
+  position: relative;
+  overflow: hidden;
+}
+
+.table-hole {
+  width: 112px;
+  height: 82px;
+  display: grid;
+  place-items: end center;
+  border-radius: 50%;
+  background:
+    radial-gradient(ellipse at center, #050708 0 44%, #28333a 46% 59%, rgba(255,255,255,0.22) 61% 68%, transparent 70%);
+  box-shadow: inset 0 10px 18px rgba(0,0,0,0.48);
+}
+
+.dealer-avatar {
+  width: 58px;
+  height: 78px;
+  display: grid;
+  place-items: start center;
+  padding-top: 9px;
+  border: 3px solid rgba(23,38,50,0.62);
+  border-radius: 24px 24px 14px 14px;
+  color: #172632;
+  font-weight: 950;
+  background:
+    radial-gradient(circle at 50% 20%, #ffe0b8 0 23%, transparent 24%),
+    linear-gradient(#324b76 0 38%, #f6c24a 39% 100%);
+  transform: translateY(8px);
+  animation: dealerRise 900ms ease-out both;
+}
+
+.dealer-avatar.male {
+  background:
+    radial-gradient(circle at 50% 20%, #ffd7a8 0 23%, transparent 24%),
+    linear-gradient(#1c2c42 0 38%, #2d71c8 39% 100%);
+}
+
+@keyframes dealerRise {
+  from { transform: translateY(70px); }
+  to { transform: translateY(8px); }
 }
 
 .deck-card {
@@ -458,6 +606,7 @@ select {
 
   .table-header,
   .center-pile,
+  .cover-stage,
   .setup-grid {
     grid-template-columns: 1fr;
   }
@@ -468,6 +617,18 @@ select {
 
   .center-pile {
     display: grid;
+  }
+
+  .cover-cards {
+    grid-template-columns: repeat(5, 50px);
+  }
+
+  .player-row {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .player-row strong {
+    grid-column: 1 / -1;
   }
 
   .card {

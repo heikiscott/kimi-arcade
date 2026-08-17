@@ -8,9 +8,11 @@ const colors = [
 const colorNames = Object.fromEntries(colors.map((color) => [color.id, color.name]));
 const setupPanel = document.querySelector("#setupPanel");
 const playArea = document.querySelector("#playArea");
-const botCountInput = document.querySelector("#botCount");
+const playerCountInput = document.querySelector("#playerCount");
 const handSizeInput = document.querySelector("#handSize");
+const dealerGenderInput = document.querySelector("#dealerGender");
 const stackRuleInput = document.querySelector("#stackRule");
+const playerSetupEl = document.querySelector("#playerSetup");
 const startBtn = document.querySelector("#startBtn");
 const newSetupBtn = document.querySelector("#newSetupBtn");
 const opponentRing = document.querySelector("#opponentRing");
@@ -22,6 +24,8 @@ const discardCardEl = document.querySelector("#discardCard");
 const currentColorEl = document.querySelector("#currentColor");
 const directionTextEl = document.querySelector("#directionText");
 const penaltyTextEl = document.querySelector("#penaltyText");
+const dealerAvatarEl = document.querySelector("#dealerAvatar");
+const dealerTextEl = document.querySelector("#dealerText");
 const messageEl = document.querySelector("#message");
 const drawBtn = document.querySelector("#drawBtn");
 const passBtn = document.querySelector("#passBtn");
@@ -33,6 +37,9 @@ const colorButtons = {
 };
 
 let game = null;
+
+const countries = ["中国", "美国", "日本", "韩国", "新加坡", "法国", "英国", "加拿大"];
+const defaultNames = ["Kimi", "Emma", "Lucas", "Mia", "Noah", "Sofia"];
 
 function makeDeck() {
   const deck = [];
@@ -72,19 +79,61 @@ function shuffle(items) {
   return copy;
 }
 
+function renderPlayerSetup() {
+  const total = Number(playerCountInput.value);
+  playerSetupEl.innerHTML = "";
+  for (let index = 0; index < total; index += 1) {
+    const row = document.createElement("div");
+    row.className = "player-row";
+    row.innerHTML = `
+      <strong>玩家${index + 1}</strong>
+      <label>
+        名字
+        <input class="player-name" value="${defaultNames[index] || `玩家${index + 1}`}" />
+      </label>
+      <label>
+        控制
+        <select class="player-control">
+          <option value="human" ${index === 0 ? "selected" : ""}>本机人工</option>
+          <option value="bot" ${index !== 0 ? "selected" : ""}>电脑控制</option>
+        </select>
+      </label>
+      <label>
+        性别
+        <select class="player-gender">
+          <option value="male" ${index % 2 === 0 ? "selected" : ""}>男</option>
+          <option value="female" ${index % 2 === 1 ? "selected" : ""}>女</option>
+        </select>
+      </label>
+      <label>
+        国家
+        <select class="player-country">
+          ${countries.map((country, countryIndex) => `<option value="${country}" ${countryIndex === index % countries.length ? "selected" : ""}>${country}</option>`).join("")}
+        </select>
+      </label>
+    `;
+    playerSetupEl.append(row);
+  }
+}
+
+function readPlayerConfigs() {
+  const rows = [...playerSetupEl.querySelectorAll(".player-row")];
+  const configs = rows.map((row, index) => ({
+    id: index === 0 ? "me" : `player-${index + 1}`,
+    name: row.querySelector(".player-name").value.trim() || `玩家${index + 1}`,
+    isHuman: row.querySelector(".player-control").value === "human",
+    gender: row.querySelector(".player-gender").value,
+    country: row.querySelector(".player-country").value,
+    hand: []
+  }));
+  if (!configs.some((player) => player.isHuman)) configs[0].isHuman = true;
+  return configs;
+}
+
 function startGame() {
-  const botCount = Number(botCountInput.value);
-  const handSize = Number(handSizeInput.value);
+  const players = readPlayerConfigs();
+  const handSize = players.length === 2 ? 7 : 6;
   const stacking = stackRuleInput.checked;
-  const players = [
-    { id: "me", name: "我", isHuman: true, hand: [] },
-    ...Array.from({ length: botCount }, (_, index) => ({
-      id: `bot-${index + 1}`,
-      name: `电脑${index + 1}`,
-      isHuman: false,
-      hand: []
-    }))
-  ];
   const deck = makeDeck();
   players.forEach((player) => {
     player.hand = deck.splice(0, handSize);
@@ -106,14 +155,19 @@ function startGame() {
     pendingDraw: 0,
     pendingSource: null,
     stacking,
+    dealerGender: dealerGenderInput.value,
     over: false,
     waitingForColor: false
   };
 
   setupPanel.style.display = "none";
   playArea.classList.add("active");
-  setMessage(`发牌完成：你 1 个人，电脑 ${botCount} 个人，每人 ${handSize} 张。${stacking ? "已开启叠加玩法。" : "标准规则：+2/+4 直接让下家抽牌并跳过。"} 现在你先出。`);
+  dealerAvatarEl.className = `dealer-avatar ${game.dealerGender}`;
+  dealerAvatarEl.textContent = game.dealerGender === "male" ? "男" : "女";
+  dealerTextEl.textContent = `${game.dealerGender === "male" ? "男" : "女"}发牌员升起来发牌`;
+  setMessage(`发牌完成：一共 ${players.length} 人，${players.length === 2 ? "两人局每人 7 张" : "多人局每人 6 张"}。${stacking ? "已开启叠加玩法。" : "标准规则：+2/+4 直接让下家抽牌并跳过。"} 现在 ${currentPlayer().name} 先出。`);
   render();
+  maybeBotTurn();
 }
 
 function resetToSetup() {
@@ -347,10 +401,18 @@ function render() {
 
 function renderOpponents() {
   opponentRing.innerHTML = "";
-  game.players.filter((player) => !player.isHuman).forEach((player) => {
+  game.players.forEach((player) => {
     const chip = document.createElement("div");
-    chip.className = `player-chip ${currentPlayer().id === player.id ? "active" : ""}`;
-    chip.innerHTML = `<strong>${player.name}</strong><span>${player.hand.length} 张牌</span>`;
+    chip.className = `player-chip ${player.isHuman ? "human" : "bot"} ${currentPlayer().id === player.id ? "active" : ""}`;
+    chip.innerHTML = `
+      <strong>${player.name}</strong>
+      <span>${player.hand.length} 张牌</span>
+      <div class="player-meta">
+        <em>${player.isHuman ? "人工" : "电脑"}</em>
+        <em>${player.gender === "male" ? "男" : "女"}</em>
+        <em>${player.country}</em>
+      </div>
+    `;
     opponentRing.append(chip);
   });
 }
@@ -368,11 +430,13 @@ function renderCenter() {
 }
 
 function renderMyHand() {
-  const me = game.players[0];
-  myCountEl.textContent = `${me.hand.length} 张`;
+  const current = currentPlayer();
+  const visiblePlayer = current.isHuman ? current : game.players.find((player) => player.isHuman) || game.players[0];
+  myTitleEl.textContent = current.isHuman ? `${visiblePlayer.name} 的手牌` : `等待 ${current.name} 自动出牌`;
+  myCountEl.textContent = `${visiblePlayer.hand.length} 张`;
   myHandEl.innerHTML = "";
-  me.hand.forEach((card, index) => {
-    const playable = currentPlayer().id === "me" && canPlay(card);
+  visiblePlayer.hand.forEach((card, index) => {
+    const playable = current.id === visiblePlayer.id && visiblePlayer.isHuman && canPlay(card);
     const button = document.createElement("button");
     button.type = "button";
     button.className = `card ${card.color} ${playable ? "playable" : "disabled"}`;
@@ -381,10 +445,11 @@ function renderMyHand() {
       if (card.color === "wild" && playable) {
         game.waitingForColor = true;
         game.pendingWildIndex = index;
+        game.pendingWildPlayerId = visiblePlayer.id;
         setMessage(`你选中了 ${card.label}，请先点红、黄、蓝、绿。`);
         render();
       } else {
-        playCard(me, index);
+        playCard(visiblePlayer, index);
       }
     });
     myHandEl.append(button);
@@ -402,18 +467,22 @@ Object.entries(colorButtons).forEach(([color, button]) => {
     if (!game || game.over) return;
     if (typeof game.pendingWildIndex === "number") {
       const index = game.pendingWildIndex;
+      const player = game.players.find((item) => item.id === game.pendingWildPlayerId) || currentPlayer();
       game.pendingWildIndex = null;
+      game.pendingWildPlayerId = null;
       game.waitingForColor = false;
-      playCard(game.players[0], index, color);
+      playCard(player, index, color);
     } else {
       chooseWildColor(color);
     }
   });
 });
 
+playerCountInput.addEventListener("change", renderPlayerSetup);
 startBtn.addEventListener("click", startGame);
 newSetupBtn.addEventListener("click", resetToSetup);
 drawBtn.addEventListener("click", humanDrawOrPass);
 passBtn.addEventListener("click", humanDrawOrPass);
 
+renderPlayerSetup();
 resetToSetup();

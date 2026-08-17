@@ -3,8 +3,8 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>乌龙牌 UNO 风格</title>
-    <link rel="stylesheet" href="wulong-card.css?v=uno-standard-20260815" />
+    <title>乌龙牌美国风格新版</title>
+    <link rel="stylesheet" href="wulong-card.css?v=uno-table-20260817" />
   </head>
   <body>
     <a class="home-link" href="arcade.html">游戏大厅</a>
@@ -13,33 +13,53 @@
         <header class="table-header">
           <div>
             <p class="label">UNO Style Color Card Battle</p>
-            <h1>乌龙牌 UNO 风格</h1>
-            <p class="subtitle">按美国常见 UNO 标准规则来玩：颜色一样、数字一样或功能一样就能出；+2、+4 默认让下家抽牌并跳过。</p>
+            <h1>乌龙牌美国风格新版</h1>
+            <p class="subtitle">原创美国颜色牌风格：红、黄、蓝、绿数字牌，加上变色、禁止、反转、+2、+4。两人每人 7 张，多人每人 6 张。</p>
           </div>
           <button id="newSetupBtn" type="button">重新设置</button>
         </header>
 
         <section class="setup-panel" id="setupPanel">
+          <div class="cover-stage" aria-label="乌龙牌封面">
+            <div class="cover-copy">
+              <p class="label dark">American Color Card Style</p>
+              <h2>先选玩家，再让发牌员从桌子中间出来发牌</h2>
+              <p>牌面是原创红黄蓝绿风格，不复制官方商标图案；规则按常见颜色牌标准玩法。</p>
+            </div>
+            <div class="cover-cards" aria-hidden="true">
+              <div class="card red cover-card"><span>红</span><strong>1</strong><small>数字</small></div>
+              <div class="card yellow cover-card"><span>黄</span><strong>2</strong><small>数字</small></div>
+              <div class="card green cover-card"><span>绿</span><strong>3</strong><small>数字</small></div>
+              <div class="card blue cover-card"><span>蓝</span><strong>4</strong><small>数字</small></div>
+              <div class="card wild cover-card"><span>彩</span><strong>+4</strong><small>功能</small></div>
+            </div>
+          </div>
           <div>
             <p class="label dark">开局设置</p>
-            <h2>你控制 1 个人，电脑控制几个人?</h2>
+            <h2>选几个人、谁是电脑、谁是本机人工</h2>
           </div>
           <div class="setup-grid">
             <label>
-              电脑人数
-              <select id="botCount">
-                <option value="1">1 个电脑</option>
-                <option value="2" selected>2 个电脑</option>
-                <option value="3">3 个电脑</option>
-                <option value="4">4 个电脑</option>
-                <option value="5">5 个电脑</option>
+              总人数
+              <select id="playerCount">
+                <option value="2">2 人</option>
+                <option value="3" selected>3 人</option>
+                <option value="4">4 人</option>
+                <option value="5">5 人</option>
+                <option value="6">6 人</option>
               </select>
             </label>
             <label>
-              每人发牌
+              发牌规则
               <select id="handSize">
-                <option value="6">6 张</option>
-                <option value="7" selected>7 张</option>
+                <option value="auto" selected>自动：2 人 7 张，多人 6 张</option>
+              </select>
+            </label>
+            <label>
+              发牌员
+              <select id="dealerGender">
+                <option value="female" selected>女发牌员</option>
+                <option value="male">男发牌员</option>
               </select>
             </label>
             <label class="check-option">
@@ -47,6 +67,7 @@
               开启叠加玩法（可选）
             </label>
           </div>
+          <div class="player-setup" id="playerSetup"></div>
           <button id="startBtn" type="button">开始发牌</button>
         </section>
 
@@ -58,6 +79,13 @@
               <span>摸牌堆</span>
               <button id="drawBtn" class="deck-card" type="button">抽牌</button>
               <strong id="deckCount">0</strong>
+            </div>
+            <div class="dealer-stage">
+              <span>发牌员</span>
+              <div class="table-hole">
+                <div id="dealerAvatar" class="dealer-avatar female">女</div>
+              </div>
+              <strong id="dealerText">从桌子中间升起</strong>
             </div>
             <div class="discard-stack">
               <span>桌面牌</span>
@@ -94,6 +122,8 @@
         <p class="label dark">规则</p>
         <h2>怎么玩</h2>
         <p>你只能控制自己。电脑可以有 1 到 5 个，都会自动出牌。</p>
+        <p>也可以把其他玩家设为“本机人工”，同一台手机或电脑轮流点自己的手牌。</p>
+        <p>两个人玩自动每人 7 张；三个人以上自动每人 6 张。</p>
         <p>普通牌：颜色一样或者数字一样就能出。</p>
         <p>反转：顺序反过来。禁止：下一个人不能出牌。</p>
         <p>标准玩法：+2 让下家抽 2 张并跳过；+4 变色，下家抽 4 张并跳过。</p>
@@ -102,7 +132,7 @@
         <p>胜利：谁先把自己的手牌全部打完，谁就是赢家。</p>
       </aside>
     </main>
-    <script src="wulong-card.js?v=uno-standard-20260815"></script>
+    <script src="wulong-card.js?v=uno-table-20260817"></script>
     <script src="arcade-stats.js?v=visitor-table-20260728"></script>
   </body>
 </html>
