@@ -420,6 +420,10 @@ body {
   background: linear-gradient(135deg, #245b8f, #39a657);
 }
 
+.shinhwa-world {
+  background: linear-gradient(135deg, #172632, #d93a32 38%, #ffd15f 72%, #39a657);
+}
+
 .riddle {
   background: linear-gradient(135deg, #d94a78, #ffd15f);
 }

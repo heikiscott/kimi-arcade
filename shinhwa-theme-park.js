@@ -1,0 +1,681 @@
+import * as THREE from "./assets/three.module.js";
+
+const canvas = document.querySelector("#parkCanvas");
+const statusText = document.querySelector("#statusText");
+const nearName = document.querySelector("#nearName");
+const nearInfo = document.querySelector("#nearInfo");
+const rideList = document.querySelector("#rideList");
+const moveStick = document.querySelector("#moveStick");
+const moveKnob = document.querySelector("#moveKnob");
+const buttons = {
+  ride: document.querySelector("#rideBtn"),
+  leave: document.querySelector("#leaveRideBtn"),
+  next: document.querySelector("#nextBtn"),
+  reset: document.querySelector("#resetBtn")
+};
+
+const rideData = [
+  {
+    id: "dancing",
+    name: "Dancing Oscar",
+    zone: "Oscar's New World",
+    model: "coaster",
+    position: [-18, 0, -24],
+    color: 0xd93a32,
+    info: "旋转过山车，慢慢爬升后俯冲，能看到济州海风和森林。"
+  },
+  {
+    id: "spin",
+    name: "Oscar's Spin'n Bump",
+    zone: "Oscar's New World",
+    model: "spinBump",
+    position: [8, 0, -26],
+    color: 0xffd15f,
+    info: "圆盘高速旋转，座椅跟着起伏，像被风甩起来。"
+  },
+  {
+    id: "dragon",
+    name: "Oscar's Dragon",
+    zone: "Oscar's New World",
+    model: "dragon",
+    position: [27, 0, -17],
+    color: 0x2f79c8,
+    info: "蓝色神话龙背上的旋转项目，龙身会绕着柱子飞。"
+  },
+  {
+    id: "whirl",
+    name: "Flying Whirl",
+    zone: "Rotary Park",
+    model: "whirl",
+    position: [-28, 0, 1],
+    color: 0x7c4dff,
+    info: "飞行旋转项目，椅子围着中心塔转起来。"
+  },
+  {
+    id: "finding",
+    name: "Finding Larva",
+    zone: "Rotary Park",
+    model: "darkRide",
+    position: [-6, 0, 2],
+    color: 0x172632,
+    info: "戴 3D 眼镜的室内射击馆，坐小车找隐藏目标。"
+  },
+  {
+    id: "flying",
+    name: "Flying Larva",
+    zone: "Larva Adventure Village",
+    model: "flying",
+    position: [18, 0, 4],
+    color: 0xf06aa3,
+    info: "小飞机围绕中轴上升下降，适合从空中看乐园。"
+  },
+  {
+    id: "carousel",
+    name: "Larva's Sweet Carousel",
+    zone: "Larva Adventure Village",
+    model: "carousel",
+    position: [-21, 0, 27],
+    color: 0xff8c3a,
+    info: "甜点风格旋转木马，彩色座位一圈一圈转。"
+  },
+  {
+    id: "buck",
+    name: "Buck's Dance",
+    zone: "Larva Adventure Village",
+    model: "dance",
+    position: [4, 0, 25],
+    color: 0x39a657,
+    info: "音乐舞台旋转项目，灯光会跟着节奏闪。"
+  },
+  {
+    id: "express",
+    name: "Larva's World Express",
+    zone: "Larva Adventure Village",
+    model: "train",
+    position: [29, 0, 24],
+    color: 0xd93a32,
+    info: "小火车绕村庄轨道慢慢开，可以看完整个区域。"
+  },
+  {
+    id: "playground",
+    name: "Adventure Play Ground",
+    zone: "Family Zone",
+    model: "playground",
+    position: [0, 0, 47],
+    color: 0x245b8f,
+    info: "攀爬网、滑梯和软垫区，像儿童冒险场。"
+  }
+];
+
+const keys = new Set();
+const pointer = { active: false, x: 0, y: 0 };
+const velocity = new THREE.Vector3();
+const clock = new THREE.Clock();
+const interactive = [];
+let nearest = null;
+let riding = null;
+let selectedIndex = 0;
+
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, preserveDrawingBuffer: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+renderer.setClearColor(0x8fd8ff);
+renderer.shadowMap.enabled = true;
+
+const scene = new THREE.Scene();
+scene.fog = new THREE.Fog(0xbfeeff, 55, 145);
+
+const camera = new THREE.PerspectiveCamera(58, 1, 0.1, 260);
+camera.position.set(0, 12, 18);
+
+const sun = new THREE.DirectionalLight(0xffffff, 2.2);
+sun.position.set(26, 42, 18);
+sun.castShadow = true;
+sun.shadow.mapSize.width = 2048;
+sun.shadow.mapSize.height = 2048;
+scene.add(sun);
+scene.add(new THREE.HemisphereLight(0xdff8ff, 0x4f7a49, 1.25));
+
+const materials = {
+  grass: new THREE.MeshStandardMaterial({ color: 0x70bd72, roughness: 0.85 }),
+  path: new THREE.MeshStandardMaterial({ color: 0xd8c486, roughness: 0.72 }),
+  water: new THREE.MeshStandardMaterial({ color: 0x58c9ef, roughness: 0.45, metalness: 0.05 }),
+  steel: new THREE.MeshStandardMaterial({ color: 0xb8c2c8, roughness: 0.32, metalness: 0.48 }),
+  dark: new THREE.MeshStandardMaterial({ color: 0x172632, roughness: 0.55 }),
+  white: new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.42 }),
+  wood: new THREE.MeshStandardMaterial({ color: 0x8c562e, roughness: 0.7 }),
+  glass: new THREE.MeshStandardMaterial({ color: 0x9fe7ff, roughness: 0.08, metalness: 0.18, transparent: true, opacity: 0.55 })
+};
+
+function makeMat(color, roughness = 0.5, metalness = 0.05) {
+  return new THREE.MeshStandardMaterial({ color, roughness, metalness });
+}
+
+function box(name, size, position, material, parent = scene) {
+  const mesh = new THREE.Mesh(new THREE.BoxGeometry(size[0], size[1], size[2]), material);
+  mesh.name = name;
+  mesh.position.set(position[0], position[1], position[2]);
+  mesh.castShadow = true;
+  mesh.receiveShadow = true;
+  parent.add(mesh);
+  return mesh;
+}
+
+function cyl(name, radius, height, position, material, parent = scene, radialSegments = 32) {
+  const mesh = new THREE.Mesh(new THREE.CylinderGeometry(radius, radius, height, radialSegments), material);
+  mesh.name = name;
+  mesh.position.set(position[0], position[1], position[2]);
+  mesh.castShadow = true;
+  mesh.receiveShadow = true;
+  parent.add(mesh);
+  return mesh;
+}
+
+function sphere(name, radius, position, material, parent = scene, widthSegments = 32) {
+  const mesh = new THREE.Mesh(new THREE.SphereGeometry(radius, widthSegments, 16), material);
+  mesh.name = name;
+  mesh.position.set(position[0], position[1], position[2]);
+  mesh.castShadow = true;
+  mesh.receiveShadow = true;
+  parent.add(mesh);
+  return mesh;
+}
+
+function label(text, position, size = 84) {
+  const canvasLabel = document.createElement("canvas");
+  canvasLabel.width = 640;
+  canvasLabel.height = 180;
+  const context = canvasLabel.getContext("2d");
+  context.clearRect(0, 0, canvasLabel.width, canvasLabel.height);
+  context.fillStyle = "rgba(255,255,255,0.88)";
+  roundedRect(context, 20, 20, 600, 128, 18);
+  context.fill();
+  context.fillStyle = "#172632";
+  context.font = `900 ${size}px system-ui`;
+  context.textAlign = "center";
+  context.textBaseline = "middle";
+  context.fillText(text, 320, 84);
+  const texture = new THREE.CanvasTexture(canvasLabel);
+  const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: texture, transparent: true }));
+  sprite.position.set(position[0], position[1], position[2]);
+  sprite.scale.set(9.5, 2.7, 1);
+  scene.add(sprite);
+  return sprite;
+}
+
+function roundedRect(context, x, y, width, height, radius) {
+  const right = x + width;
+  const bottom = y + height;
+  context.beginPath();
+  context.moveTo(x + radius, y);
+  context.lineTo(right - radius, y);
+  context.quadraticCurveTo(right, y, right, y + radius);
+  context.lineTo(right, bottom - radius);
+  context.quadraticCurveTo(right, bottom, right - radius, bottom);
+  context.lineTo(x + radius, bottom);
+  context.quadraticCurveTo(x, bottom, x, bottom - radius);
+  context.lineTo(x, y + radius);
+  context.quadraticCurveTo(x, y, x + radius, y);
+  context.closePath();
+}
+
+function buildWorld() {
+  const ground = box("park-ground", [92, 0.7, 96], [0, -0.36, 8], materials.grass);
+  ground.receiveShadow = true;
+  box("main-path", [10, 0.08, 92], [0, 0.03, 10], materials.path);
+  box("cross-path", [78, 0.09, 9], [0, 0.05, 8], materials.path);
+  box("entrance-plaza", [34, 0.1, 14], [0, 0.06, 54], materials.path);
+  box("water-lake", [21, 0.06, 14], [34, 0.08, -36], materials.water);
+
+  const gate = new THREE.Group();
+  gate.position.set(0, 0, 55);
+  box("gate-left", [2, 7, 2], [-9, 3.5, 0], materials.dark, gate);
+  box("gate-right", [2, 7, 2], [9, 3.5, 0], materials.dark, gate);
+  box("gate-top", [22, 2, 2], [0, 8, 0], makeMat(0xd93a32), gate);
+  box("gate-roof", [25, 1.2, 4], [0, 9.6, 0], makeMat(0xffd15f), gate);
+  scene.add(gate);
+  label("SHINHWA THEME PARK", [0, 13, 55], 58);
+
+  addZoneSign("Oscar's New World", [-18, 5, -38], 0xd93a32);
+  addZoneSign("Rotary Park", [-18, 5, 9], 0x245b8f);
+  addZoneSign("Larva Adventure Village", [20, 5, 36], 0xff8c3a);
+
+  for (let i = 0; i < 34; i += 1) {
+    const z = -38 + i * 2.7;
+    const side = i % 2 === 0 ? -1 : 1;
+    addTree(side * (26 + (i % 5) * 3), z, 1 + (i % 3) * 0.16);
+  }
+
+  addHotelBackdrop();
+  rideData.forEach((ride, index) => addAttraction(ride, index));
+}
+
+function addZoneSign(text, position, color) {
+  const group = new THREE.Group();
+  group.position.set(position[0], position[1], position[2]);
+  box("zone-sign", [12, 4, 0.8], [0, 0, 0], makeMat(color), group);
+  box("zone-post", [0.5, 5, 0.5], [-4.8, -3.8, 0], materials.dark, group);
+  box("zone-post", [0.5, 5, 0.5], [4.8, -3.8, 0], materials.dark, group);
+  scene.add(group);
+  label(text, [position[0], position[1] + 0.1, position[2] + 0.3], 46);
+}
+
+function addHotelBackdrop() {
+  for (let i = 0; i < 5; i += 1) {
+    const building = box("resort-hotel", [7, 11 + i * 2, 4], [-34 + i * 6, 5.5 + i, -52], makeMat(0xe9dfc9));
+    for (let floor = 0; floor < 5 + i; floor += 1) {
+      for (let win = 0; win < 2; win += 1) {
+        box("hotel-window", [0.8, 0.8, 0.08], [-2 + win * 4, -4 + floor * 1.8, 2.05], materials.glass, building);
+      }
+    }
+  }
+}
+
+function addTree(x, z, scale = 1) {
+  const group = new THREE.Group();
+  group.position.set(x, 0, z);
+  cyl("tree-trunk", 0.28 * scale, 2.4 * scale, [0, 1.2 * scale, 0], makeMat(0x7b4f2a), group, 12);
+  sphere("tree-top", 1.25 * scale, [0, 3 * scale, 0], makeMat(0x267447), group);
+  scene.add(group);
+}
+
+function addAttraction(ride, index) {
+  const group = new THREE.Group();
+  group.position.set(ride.position[0], 0, ride.position[2]);
+  group.userData = { ride, seats: [], motion: 0 };
+
+  const base = cyl("ride-base", 5.2, 0.42, [0, 0.22, 0], makeMat(ride.color), group, 48);
+  base.scale.z = 0.72;
+  label(ride.name, [ride.position[0], 5.8, ride.position[2] + 5.8], 42);
+
+  if (ride.model === "coaster") buildCoaster(group, ride);
+  if (ride.model === "spinBump") buildSpinBump(group, ride);
+  if (ride.model === "dragon") buildDragon(group, ride);
+  if (ride.model === "whirl") buildWhirl(group, ride);
+  if (ride.model === "darkRide") buildDarkRide(group, ride);
+  if (ride.model === "flying") buildFlying(group, ride);
+  if (ride.model === "carousel") buildCarousel(group, ride);
+  if (ride.model === "dance") buildDance(group, ride);
+  if (ride.model === "train") buildTrain(group, ride);
+  if (ride.model === "playground") buildPlayground(group, ride);
+
+  scene.add(group);
+  interactive.push(group);
+  const item = document.createElement("button");
+  item.type = "button";
+  item.innerHTML = `<strong>${index + 1}. ${ride.name}</strong><span>${ride.zone}</span>`;
+  item.addEventListener("click", () => focusRide(index));
+  rideList.append(item);
+  ride.listButton = item;
+}
+
+function buildCoaster(group, ride) {
+  const points = [
+    new THREE.Vector3(-8, 1.2, 4),
+    new THREE.Vector3(-4, 8, 0),
+    new THREE.Vector3(3, 5, -5),
+    new THREE.Vector3(8, 1.7, -1),
+    new THREE.Vector3(2, 4, 6),
+    new THREE.Vector3(-8, 1.2, 4)
+  ];
+  const curve = new THREE.CatmullRomCurve3(points, true);
+  const track = new THREE.Mesh(new THREE.TubeGeometry(curve, 120, 0.18, 10, true), materials.steel);
+  track.castShadow = true;
+  group.add(track);
+  const rail2 = new THREE.Mesh(new THREE.TubeGeometry(curve, 120, 0.07, 8, true), makeMat(ride.color));
+  rail2.position.y = 0.5;
+  group.add(rail2);
+  for (let i = 0; i < 7; i += 1) {
+    cyl("coaster-support", 0.12, 5.5, [-7 + i * 2.4, 2.8, -2 + Math.sin(i) * 5], materials.steel, group, 8);
+  }
+  const car = box("spinning-coaster-car", [2.2, 1.1, 1.7], [0, 2, 0], makeMat(0xffd15f), group);
+  car.userData.curve = curve;
+  group.userData.seats.push(car);
+}
+
+function buildSpinBump(group, ride) {
+  const arm = new THREE.Group();
+  group.userData.rotor = arm;
+  cyl("spin-center", 0.9, 5, [0, 2.5, 0], materials.steel, arm);
+  const disc = cyl("spin-disc", 5.5, 0.55, [0, 3.4, 0], makeMat(ride.color), arm, 64);
+  disc.rotation.x = Math.PI / 2;
+  for (let i = 0; i < 12; i += 1) {
+    const angle = (i / 12) * Math.PI * 2;
+    const seat = box("spin-seat", [1.2, 0.9, 1.2], [Math.cos(angle) * 4.2, 4, Math.sin(angle) * 4.2], makeMat(0xffffff), arm);
+    seat.lookAt(0, 4, 0);
+  }
+  group.add(arm);
+}
+
+function buildDragon(group, ride) {
+  const rotor = new THREE.Group();
+  group.userData.rotor = rotor;
+  cyl("dragon-tower", 0.8, 6, [0, 3, 0], makeMat(0x1c4b88), rotor);
+  for (let i = 0; i < 6; i += 1) {
+    const angle = (i / 6) * Math.PI * 2;
+    const body = sphere("blue-dragon-seat", 0.95, [Math.cos(angle) * 4.8, 3.6, Math.sin(angle) * 4.8], makeMat(0x2f79c8), rotor);
+    body.scale.set(1.7, 0.7, 0.8);
+    const head = sphere("dragon-head", 0.45, [Math.cos(angle) * 5.8, 3.85, Math.sin(angle) * 5.8], makeMat(0x58c9ef), rotor);
+    body.lookAt(0, 3.6, 0);
+    head.lookAt(0, 3.85, 0);
+  }
+  group.add(rotor);
+}
+
+function buildWhirl(group, ride) {
+  const rotor = new THREE.Group();
+  group.userData.rotor = rotor;
+  cyl("whirl-tower", 0.7, 8.5, [0, 4.25, 0], materials.steel, rotor);
+  for (let i = 0; i < 8; i += 1) {
+    const angle = (i / 8) * Math.PI * 2;
+    const arm = box("whirl-arm", [0.22, 0.22, 6], [Math.cos(angle) * 1.8, 7.6, Math.sin(angle) * 1.8], materials.steel, rotor);
+    arm.rotation.y = -angle;
+    const seat = box("flying-chair", [1, 0.75, 0.8], [Math.cos(angle) * 5.2, 4.7, Math.sin(angle) * 5.2], makeMat(ride.color), rotor);
+    seat.lookAt(0, 4.7, 0);
+  }
+  group.add(rotor);
+}
+
+function buildDarkRide(group, ride) {
+  box("dark-ride-building", [12, 6, 9], [0, 3, 0], makeMat(0x222b35), group);
+  box("dark-ride-door", [4, 3.4, 0.25], [0, 1.7, 4.65], makeMat(0xffd15f), group);
+  box("dome-screen", [7, 3.3, 0.2], [0, 4.2, -4.65], materials.glass, group);
+  for (let i = 0; i < 5; i += 1) {
+    const target = sphere("shooting-target", 0.35, [-4 + i * 2, 3.2 + (i % 2), 4.9], makeMat(i % 2 ? 0xf06aa3 : 0x39a657), group);
+    target.userData.float = i;
+  }
+}
+
+function buildFlying(group, ride) {
+  const rotor = new THREE.Group();
+  group.userData.rotor = rotor;
+  cyl("flying-tower", 0.55, 7, [0, 3.5, 0], materials.steel, rotor);
+  for (let i = 0; i < 8; i += 1) {
+    const angle = (i / 8) * Math.PI * 2;
+    box("tiny-plane", [1.7, 0.55, 1.1], [Math.cos(angle) * 4.6, 3.2, Math.sin(angle) * 4.6], makeMat(ride.color), rotor);
+    box("tiny-plane-wing", [2.6, 0.12, 0.45], [Math.cos(angle) * 4.6, 3.28, Math.sin(angle) * 4.6], materials.white, rotor);
+  }
+  group.add(rotor);
+}
+
+function buildCarousel(group, ride) {
+  const rotor = new THREE.Group();
+  group.userData.rotor = rotor;
+  cyl("carousel-pole", 0.42, 5.2, [0, 2.6, 0], materials.steel, rotor);
+  const canopy = cyl("carousel-canopy", 4.8, 0.7, [0, 5.4, 0], makeMat(ride.color), rotor, 48);
+  canopy.scale.y = 0.5;
+  cyl("carousel-floor", 5, 0.35, [0, 1.2, 0], makeMat(0xfff0b8), rotor, 48);
+  for (let i = 0; i < 10; i += 1) {
+    const angle = (i / 10) * Math.PI * 2;
+    const x = Math.cos(angle) * 3.7;
+    const z = Math.sin(angle) * 3.7;
+    cyl("carousel-pole-small", 0.07, 4, [x, 3.15, z], materials.steel, rotor, 8);
+    const seat = sphere("sweet-seat", 0.55, [x, 2.15 + (i % 2) * 0.35, z], makeMat(i % 2 ? 0xf06aa3 : 0xffd15f), rotor);
+    seat.scale.set(1.45, 0.75, 0.7);
+  }
+  group.add(rotor);
+}
+
+function buildDance(group, ride) {
+  const rotor = new THREE.Group();
+  group.userData.rotor = rotor;
+  cyl("dance-platform", 4.8, 0.5, [0, 1, 0], makeMat(0x39a657), rotor, 48);
+  for (let i = 0; i < 9; i += 1) {
+    const angle = (i / 9) * Math.PI * 2;
+    const seat = box("dance-seat", [1.1, 0.9, 1.1], [Math.cos(angle) * 3.4, 1.75, Math.sin(angle) * 3.4], makeMat(i % 2 ? 0xffd15f : 0x245b8f), rotor);
+    seat.rotation.y = -angle;
+  }
+  group.add(rotor);
+}
+
+function buildTrain(group, ride) {
+  const curve = new THREE.EllipseCurve(0, 0, 7.4, 4.7, 0, Math.PI * 2);
+  const points = curve.getPoints(80).map((point) => new THREE.Vector3(point.x, 0.35, point.y));
+  const track = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(points, true), 80, 0.08, 8, true), materials.steel);
+  group.add(track);
+  const train = new THREE.Group();
+  group.userData.train = train;
+  for (let i = 0; i < 4; i += 1) {
+    box("train-car", [1.3, 1.1, 1.7], [-i * 1.45, 1, 0], makeMat(i === 0 ? ride.color : 0xffd15f), train);
+  }
+  group.add(train);
+}
+
+function buildPlayground(group, ride) {
+  box("net-frame-a", [0.35, 5, 0.35], [-4, 2.5, -2], materials.steel, group);
+  box("net-frame-b", [0.35, 5, 0.35], [4, 2.5, -2], materials.steel, group);
+  box("climb-net", [8.4, 0.12, 5.5], [0, 4.2, -2], materials.glass, group).rotation.x = Math.PI / 4;
+  const slide = box("big-slide", [2.3, 0.35, 8], [3.7, 2.1, 3], makeMat(ride.color), group);
+  slide.rotation.x = -0.45;
+  cyl("ball-pit", 3.2, 0.6, [-3, 0.45, 3.4], makeMat(0xffd15f), group, 32);
+  for (let i = 0; i < 18; i += 1) {
+    sphere("play-ball", 0.22, [-5 + Math.random() * 4, 0.9, 1.8 + Math.random() * 3.2], makeMat(i % 3 === 0 ? 0xd93a32 : i % 3 === 1 ? 0x245b8f : 0x39a657), group, 12);
+  }
+}
+
+const player = new THREE.Group();
+player.position.set(0, 0, 48);
+player.rotation.y = Math.PI;
+const playerBody = cyl("player-body", 0.72, 1.4, [0, 1.35, 0], makeMat(0x245b8f), player, 18);
+playerBody.scale.x = 0.85;
+sphere("player-head", 0.56, [0, 2.28, 0], makeMat(0xf1bd8c), player);
+box("player-hair", [0.9, 0.22, 0.78], [0, 2.72, 0.05], makeMat(0x2b2118), player);
+box("player-bag", [1.15, 1, 0.22], [0, 1.35, 0.62], makeMat(0x172632), player);
+scene.add(player);
+
+function updateRideList() {
+  rideData.forEach((ride, index) => ride.listButton?.classList.toggle("active", index === selectedIndex));
+}
+
+function focusRide(index) {
+  selectedIndex = index;
+  const ride = rideData[index];
+  player.position.set(ride.position[0], 0, ride.position[2] + 9);
+  player.rotation.y = Math.PI;
+  statusText.textContent = `已经走到 ${ride.name} 前面。点“乘坐最近项目”就可以体验。`;
+  updateRideList();
+}
+
+function rideNearest() {
+  if (!nearest) return;
+  riding = nearest;
+  statusText.textContent = `正在乘坐 ${riding.userData.ride.name}。镜头会跟着项目动，点“下车”回到地面。`;
+}
+
+function leaveRide() {
+  if (!riding) return;
+  const ride = riding.userData.ride;
+  player.position.set(ride.position[0] + 7, 0, ride.position[2] + 7);
+  riding = null;
+  statusText.textContent = "已经下车了，可以继续在乐园里面走。";
+}
+
+function moveNextRide() {
+  selectedIndex = (selectedIndex + 1) % rideData.length;
+  focusRide(selectedIndex);
+}
+
+function resetPlayer() {
+  riding = null;
+  player.position.set(0, 0, 48);
+  player.rotation.y = Math.PI;
+  statusText.textContent = "回到入口。先从大门进入，再选择想玩的项目。";
+}
+
+function updateNearest() {
+  let best = null;
+  let bestDistance = Infinity;
+  interactive.forEach((group) => {
+    const distance = player.position.distanceTo(group.position);
+    if (distance < bestDistance) {
+      bestDistance = distance;
+      best = group;
+    }
+  });
+  nearest = bestDistance < 15 ? best : null;
+  if (nearest) {
+    const ride = nearest.userData.ride;
+    nearName.textContent = ride.name;
+    nearInfo.textContent = `${ride.zone} · ${ride.info}`;
+    selectedIndex = rideData.findIndex((item) => item.id === ride.id);
+  } else {
+    nearName.textContent = "附近没有项目";
+    nearInfo.textContent = "沿着黄色道路走，靠近设施后就能乘坐。";
+  }
+  updateRideList();
+}
+
+function updatePlayer(delta) {
+  if (riding) return;
+  const turnSpeed = 2.35;
+  const moveSpeed = keys.has("Shift") ? 12 : 7.5;
+  if (keys.has("a") || keys.has("ArrowLeft")) player.rotation.y += turnSpeed * delta;
+  if (keys.has("d") || keys.has("ArrowRight")) player.rotation.y -= turnSpeed * delta;
+
+  const forward = new THREE.Vector3(Math.sin(player.rotation.y), 0, Math.cos(player.rotation.y));
+  const move = new THREE.Vector3();
+  if (keys.has("w") || keys.has("ArrowUp")) move.add(forward);
+  if (keys.has("s") || keys.has("ArrowDown")) move.sub(forward);
+  if (pointer.active) {
+    move.add(forward.multiplyScalar(-pointer.y));
+    player.rotation.y -= pointer.x * turnSpeed * delta * 0.85;
+  }
+
+  if (move.lengthSq() > 0) {
+    move.normalize().multiplyScalar(moveSpeed * delta);
+    velocity.lerp(move, 0.45);
+  } else {
+    velocity.multiplyScalar(0.82);
+  }
+  player.position.add(velocity);
+  player.position.x = THREE.MathUtils.clamp(player.position.x, -43, 43);
+  player.position.z = THREE.MathUtils.clamp(player.position.z, -45, 58);
+}
+
+function updateRides(elapsed, delta) {
+  interactive.forEach((group) => {
+    group.userData.motion += delta;
+    if (group.userData.rotor) {
+      group.userData.rotor.rotation.y += delta * (0.45 + (group.userData.ride.id.length % 4) * 0.18);
+      group.userData.rotor.position.y = Math.sin(elapsed * 1.4 + group.position.x) * 0.18;
+    }
+    if (group.userData.train) {
+      const t = (elapsed * 0.08) % 1;
+      const angle = t * Math.PI * 2;
+      group.userData.train.position.set(Math.cos(angle) * 7.4, 0.75, Math.sin(angle) * 4.7);
+      group.userData.train.rotation.y = -angle + Math.PI / 2;
+    }
+    group.traverse((child) => {
+      if (child.userData.curve) {
+        const point = child.userData.curve.getPoint((elapsed * 0.06) % 1);
+        child.position.copy(point);
+        child.rotation.y += delta * 2.2;
+      }
+      if (child.userData.float !== undefined) {
+        child.position.y += Math.sin(elapsed * 2 + child.userData.float) * 0.003;
+      }
+    });
+  });
+}
+
+function updateCamera(elapsed) {
+  const target = new THREE.Vector3();
+  if (riding) {
+    const ride = riding.userData.ride;
+    const circle = elapsed * 1.2;
+    target.set(ride.position[0], 3, ride.position[2]);
+    camera.position.lerp(new THREE.Vector3(ride.position[0] + Math.cos(circle) * 11, 8 + Math.sin(circle * 1.7) * 2, ride.position[2] + Math.sin(circle) * 11), 0.08);
+    camera.lookAt(target);
+    return;
+  }
+
+  const forward = new THREE.Vector3(Math.sin(player.rotation.y), 0, Math.cos(player.rotation.y));
+  const desired = player.position.clone().sub(forward.multiplyScalar(12));
+  desired.y = 8.2;
+  desired.x += Math.cos(elapsed * 0.7) * 0.08;
+  camera.position.lerp(desired, 0.12);
+  target.copy(player.position);
+  target.y = 2.1;
+  camera.lookAt(target);
+}
+
+function resize() {
+  const rect = canvas.getBoundingClientRect();
+  const width = Math.max(1, Math.floor(rect.width));
+  const height = Math.max(1, Math.floor(rect.height));
+  camera.aspect = width / height;
+  camera.updateProjectionMatrix();
+  renderer.setSize(width, height, false);
+}
+
+function animate() {
+  const delta = Math.min(clock.getDelta(), 0.04);
+  const elapsed = clock.elapsedTime;
+  resize();
+  updatePlayer(delta);
+  updateRides(elapsed, delta);
+  updateNearest();
+  updateCamera(elapsed);
+  renderer.render(scene, camera);
+  requestAnimationFrame(animate);
+}
+
+function setupInput() {
+  window.addEventListener("keydown", (event) => {
+    keys.add(event.key.toLowerCase());
+    if (event.key === "Enter") rideNearest();
+    if (event.key === "Escape") leaveRide();
+  });
+  window.addEventListener("keyup", (event) => keys.delete(event.key.toLowerCase()));
+
+  document.addEventListener("click", (event) => {
+    const moveButton = event.target.closest("[data-move]");
+    if (!moveButton || riding) return;
+    const action = moveButton.dataset.move;
+    if (action === "turnLeft") player.rotation.y += Math.PI / 8;
+    if (action === "turnRight") player.rotation.y -= Math.PI / 8;
+    const forward = new THREE.Vector3(Math.sin(player.rotation.y), 0, Math.cos(player.rotation.y));
+    if (action === "forward") player.position.add(forward.multiplyScalar(2.4));
+    if (action === "backward") player.position.add(forward.multiplyScalar(-2.4));
+  });
+
+  const startStick = (event) => {
+    pointer.active = true;
+    updateStick(event);
+  };
+  const endStick = () => {
+    pointer.active = false;
+    pointer.x = 0;
+    pointer.y = 0;
+    moveKnob.style.transform = "translate(-50%, -50%)";
+  };
+  const updateStick = (event) => {
+    if (!pointer.active) return;
+    const touch = event.touches?.[0] || event;
+    const rect = moveStick.getBoundingClientRect();
+    const dx = touch.clientX - rect.left - rect.width / 2;
+    const dy = touch.clientY - rect.top - rect.height / 2;
+    const max = rect.width * 0.34;
+    const length = Math.hypot(dx, dy) || 1;
+    const clamped = Math.min(length, max);
+    pointer.x = (dx / length) * (clamped / max);
+    pointer.y = (dy / length) * (clamped / max);
+    moveKnob.style.transform = `translate(calc(-50% + ${pointer.x * max}px), calc(-50% + ${pointer.y * max}px))`;
+    event.preventDefault();
+  };
+  moveStick.addEventListener("pointerdown", startStick);
+  window.addEventListener("pointermove", updateStick);
+  window.addEventListener("pointerup", endStick);
+  moveStick.addEventListener("touchstart", startStick, { passive: false });
+  window.addEventListener("touchmove", updateStick, { passive: false });
+  window.addEventListener("touchend", endStick);
+
+  buttons.ride.addEventListener("click", rideNearest);
+  buttons.leave.addEventListener("click", leaveRide);
+  buttons.next.addEventListener("click", moveNextRide);
+  buttons.reset.addEventListener("click", resetPlayer);
+}
+
+buildWorld();
+setupInput();
+updateRideList();
+animate();

@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>济州神话世界主题公园 3D</title>
+    <link rel="stylesheet" href="shinhwa-theme-park.css?v=shinhwa-3d-20260820" />
+  </head>
+  <body>
+    <a class="home-link" href="arcade.html">游戏大厅</a>
+    <main class="page">
+      <section class="stage">
+        <canvas id="parkCanvas" aria-label="济州神话世界主题公园 3D 游览"></canvas>
+        <div class="hud">
+          <p>Jeju Shinhwa World</p>
+          <h1>济州神话世界主题公园 3D</h1>
+          <span id="statusText">走到一个项目旁边，点“乘坐最近项目”。A/D 转头，W/S 前后走。</span>
+        </div>
+        <div class="near-card" id="nearCard">
+          <strong id="nearName">正在寻找项目</strong>
+          <span id="nearInfo">靠近游乐设施会显示介绍。</span>
+        </div>
+        <div class="stick" id="moveStick" aria-label="移动摇杆">
+          <span id="moveKnob"></span>
+        </div>
+        <div class="quick-actions" aria-label="游乐园操作按钮">
+          <button id="rideBtn" type="button">乘坐最近项目</button>
+          <button id="leaveRideBtn" type="button">下车</button>
+          <button id="nextBtn" type="button">去下一个项目</button>
+          <button id="resetBtn" type="button">回入口</button>
+        </div>
+      </section>
+      <section class="controls">
+        <div>
+          <p class="label">Original 3D Simulation</p>
+          <h2>项目列表</h2>
+          <p>这是原创 3D 模型版：项目名字参考真实乐园，场景和模型重新绘制，不复制官方素材。</p>
+        </div>
+        <div class="ride-list" id="rideList"></div>
+        <div class="button-grid">
+          <button data-move="forward" type="button">前进</button>
+          <button data-move="turnLeft" type="button">向左看</button>
+          <button data-move="turnRight" type="button">向右看</button>
+          <button data-move="backward" type="button">后退</button>
+        </div>
+      </section>
+    </main>
+    <script type="module" src="shinhwa-theme-park.js?v=shinhwa-3d-20260820"></script>
+    <script src="arcade-stats.js?v=visitor-table-20260728"></script>
+  </body>
+</html>
