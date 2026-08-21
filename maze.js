@@ -303,9 +303,9 @@ function renderGuestControls() {
     panel.innerHTML = `
       <strong>${guest.name}</strong>
       <div class="mobile-pad" aria-label="${guest.name}方向按钮">
-        <button data-player="${guest.id}" data-move="up" type="button">前</button>
-        <button data-player="${guest.id}" data-move="left" type="button">左转</button>
-        <button data-player="${guest.id}" data-move="right" type="button">右转</button>
+        <button data-player="${guest.id}" data-move="up" type="button">前进</button>
+        <button data-player="${guest.id}" data-move="left" type="button">向左看</button>
+        <button data-player="${guest.id}" data-move="right" type="button">向右看</button>
         <button data-player="${guest.id}" data-move="down" type="button">后退</button>
       </div>
     `;
@@ -344,7 +344,7 @@ function moveCharacter(id, action) {
     character.dir = (character.dir + (action === "turnLeft" ? 3 : 1)) % directions.length;
     activePlayerId = id;
     updatePlayerButtons();
-    statusEl.textContent = `${character.name} 把头转向${directions[character.dir].name}边。现在看到的是前方的迷宫路。`;
+    statusEl.textContent = `${character.name} 只是把头转向${directions[character.dir].name}边，还没有往前走。看清楚路再点“前进”。`;
     playStep();
     draw();
     return;
@@ -356,7 +356,7 @@ function moveCharacter(id, action) {
   const nextCol = character.col + direction.dc * sign;
 
   if (isWall(nextRow, nextCol)) {
-    statusEl.textContent = `${character.name} 前面是很高的树篱墙，先左转或右转找路。`;
+    statusEl.textContent = `${character.name} 前面是很高的树篱墙，先点“向左看”或“向右看”找路。`;
     playWall();
     draw();
     return;
@@ -485,7 +485,8 @@ function drawFirstPersonScene(viewer) {
     visibleSprites.filter((sprite) => Math.round(sprite.depth) === depth).forEach(draw3DSprite);
   }
 
-  drawViewerHands(viewer);
+  drawOverShoulderAvatar(viewer);
+  drawMiniMap(viewer);
   drawCompass(viewer);
 }
 
@@ -710,21 +711,80 @@ function draw3DCat(x, y, size) {
   ctx.restore();
 }
 
-function drawViewerHands(viewer) {
+function drawOverShoulderAvatar(viewer) {
   ctx.save();
-  ctx.fillStyle = "rgba(23,38,50,0.22)";
+  ctx.fillStyle = "rgba(23,38,50,0.24)";
   ctx.beginPath();
-  ctx.ellipse(480, 702, 210, 26, 0, 0, Math.PI * 2);
+  ctx.ellipse(480, 705, 230, 28, 0, 0, Math.PI * 2);
   ctx.fill();
+
+  const bodyGradient = ctx.createLinearGradient(380, 600, 580, 720);
+  bodyGradient.addColorStop(0, viewer.shirt);
+  bodyGradient.addColorStop(1, "#183f7a");
+  ctx.fillStyle = bodyGradient;
+  roundRect(366, 610, 228, 120, 46);
+  ctx.fill();
+
+  ctx.fillStyle = "#f1bd8c";
+  ctx.beginPath();
+  ctx.arc(480, 590, 54, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = viewer.hair;
+  ctx.beginPath();
+  ctx.arc(480, 568, 56, Math.PI, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = "rgba(255,255,255,0.22)";
+  ctx.beginPath();
+  ctx.ellipse(442, 622, 34, 12, -0.4, 0, Math.PI * 2);
+  ctx.ellipse(522, 622, 34, 12, 0.4, 0, Math.PI * 2);
+  ctx.fill();
+
   ctx.fillStyle = viewer.shirt;
-  roundRect(330, 636, 90, 58, 18);
-  roundRect(540, 636, 90, 58, 18);
+  roundRect(306, 650, 92, 50, 20);
+  roundRect(562, 650, 92, 50, 20);
   ctx.fill();
   ctx.fillStyle = "#f1bd8c";
   ctx.beginPath();
-  ctx.arc(425, 652, 28, 0, Math.PI * 2);
-  ctx.arc(535, 652, 28, 0, Math.PI * 2);
+  ctx.arc(400, 662, 23, 0, Math.PI * 2);
+  ctx.arc(560, 662, 23, 0, Math.PI * 2);
   ctx.fill();
+  ctx.restore();
+}
+
+function drawMiniMap(viewer) {
+  const mapX = 24;
+  const mapY = 540;
+  const mapCell = 4.8;
+  ctx.save();
+  ctx.fillStyle = "rgba(255,255,255,0.84)";
+  roundRect(mapX - 10, mapY - 30, 150, 136, 8);
+  ctx.fill();
+  ctx.fillStyle = "#172632";
+  ctx.font = "900 14px system-ui";
+  ctx.fillText("小地图", mapX, mapY - 10);
+
+  for (let row = 0; row < rows; row += 1) {
+    for (let col = 0; col < cols; col += 1) {
+      ctx.fillStyle = maze[row][col] === "#" ? "#1f6b50" : "#f5dfaa";
+      ctx.fillRect(mapX + col * mapCell, mapY + row * mapCell, mapCell - 0.4, mapCell - 0.4);
+    }
+  }
+
+  const px = mapX + viewer.col * mapCell + mapCell / 2;
+  const py = mapY + viewer.row * mapCell + mapCell / 2;
+  const dir = directions[viewer.dir];
+  ctx.fillStyle = "#d93a32";
+  ctx.beginPath();
+  ctx.arc(px, py, 4.8, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = "#d93a32";
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(px, py);
+  ctx.lineTo(px + dir.dc * 13, py + dir.dr * 13);
+  ctx.stroke();
   ctx.restore();
 }
 
@@ -741,7 +801,7 @@ function drawCompass(viewer) {
   ctx.fillText(directions[viewer.dir].name, 720, 94);
   ctx.fillStyle = "#51616c";
   ctx.font = "800 12px system-ui";
-  ctx.fillText("A/D 或左右按钮转头", 770, 92);
+  ctx.fillText("A/D 或按钮只是转头", 770, 92);
   ctx.restore();
 }
 
