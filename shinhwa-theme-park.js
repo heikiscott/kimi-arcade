@@ -9,6 +9,7 @@ const moveStick = document.querySelector("#moveStick");
 const moveKnob = document.querySelector("#moveKnob");
 const buttons = {
   ride: document.querySelector("#rideBtn"),
+  ticket: document.querySelector("#ticketBtn"),
   leave: document.querySelector("#leaveRideBtn"),
   next: document.querySelector("#nextBtn"),
   reset: document.querySelector("#resetBtn")
@@ -115,6 +116,12 @@ const interactive = [];
 let nearest = null;
 let riding = null;
 let selectedIndex = 0;
+const entrance = {
+  ticketChecked: false,
+  friend: null,
+  inspector: null,
+  gateArms: []
+};
 
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, preserveDrawingBuffer: true });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
@@ -180,7 +187,7 @@ function sphere(name, radius, position, material, parent = scene, widthSegments 
   return mesh;
 }
 
-function label(text, position, size = 84) {
+function label(text, position, size = 84, scaleX = 9.5, scaleY = 2.7) {
   const canvasLabel = document.createElement("canvas");
   canvasLabel.width = 640;
   canvasLabel.height = 180;
@@ -197,7 +204,7 @@ function label(text, position, size = 84) {
   const texture = new THREE.CanvasTexture(canvasLabel);
   const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: texture, transparent: true }));
   sprite.position.set(position[0], position[1], position[2]);
-  sprite.scale.set(9.5, 2.7, 1);
+  sprite.scale.set(scaleX, scaleY, 1);
   scene.add(sprite);
   return sprite;
 }
@@ -234,6 +241,7 @@ function buildWorld() {
   box("gate-roof", [25, 1.2, 4], [0, 9.6, 0], makeMat(0xffd15f), gate);
   scene.add(gate);
   label("SHINHWA THEME PARK", [0, 13, 55], 58);
+  addTicketArea();
 
   addZoneSign("Oscar's New World", [-18, 5, -38], 0xd93a32);
   addZoneSign("Rotary Park", [-18, 5, 9], 0x245b8f);
@@ -247,6 +255,40 @@ function buildWorld() {
 
   addHotelBackdrop();
   rideData.forEach((ride, index) => addAttraction(ride, index));
+}
+
+function addTicketArea() {
+  box("ticket-booth", [4.6, 3.3, 3], [6.4, 1.65, 59.6], makeMat(0xfff2c7));
+  box("ticket-window", [2.5, 1.35, 0.1], [6.4, 2.15, 58.05], materials.glass);
+  box("ticket-counter", [6.8, 0.45, 1.2], [0, 0.7, 56.7], makeMat(0x172632));
+  box("ticket-lane-left", [0.35, 1.5, 8], [-2.6, 0.75, 58.8], materials.steel);
+  box("ticket-lane-right", [0.35, 1.5, 8], [2.6, 0.75, 58.8], materials.steel);
+  entrance.gateArms = [
+    box("ticket-gate-arm-left", [3.1, 0.24, 0.24], [-1.4, 1.45, 55.9], makeMat(0xd93a32)),
+    box("ticket-gate-arm-right", [3.1, 0.24, 0.24], [1.4, 1.45, 55.9], makeMat(0xd93a32))
+  ];
+  entrance.gateArms[0].rotation.y = 0.28;
+  entrance.gateArms[1].rotation.y = -0.28;
+  entrance.inspector = createPerson({
+    name: "检票员",
+    position: [5.1, 0, 56.8],
+    rotation: -Math.PI * 0.72,
+    shirt: 0x274b76,
+    pants: 0x172632,
+    cap: 0x274b76,
+    badge: true
+  });
+  entrance.friend = createPerson({
+    name: "一起玩的朋友",
+    position: [-3.6, 0, 61.3],
+    rotation: Math.PI,
+    shirt: 0xf06aa3,
+    pants: 0x245b8f,
+    cap: 0xffd15f,
+    hair: 0x2b2118
+  });
+  label("检票员", [5.1, 4.2, 56.8], 38, 3.2, 1.0);
+  label("朋友", [-3.6, 4.2, 61.3], 38, 2.8, 1.0);
 }
 
 function addZoneSign(text, position, color) {
@@ -453,7 +495,7 @@ function buildPlayground(group, ride) {
 }
 
 const player = new THREE.Group();
-player.position.set(0, 0, 48);
+player.position.set(0, 0, 61);
 player.rotation.y = Math.PI;
 const playerBody = cyl("player-body", 0.72, 1.4, [0, 1.35, 0], makeMat(0x245b8f), player, 18);
 playerBody.scale.x = 0.85;
@@ -461,6 +503,30 @@ sphere("player-head", 0.56, [0, 2.28, 0], makeMat(0xf1bd8c), player);
 box("player-hair", [0.9, 0.22, 0.78], [0, 2.72, 0.05], makeMat(0x2b2118), player);
 box("player-bag", [1.15, 1, 0.22], [0, 1.35, 0.62], makeMat(0x172632), player);
 scene.add(player);
+label("我", [0, 4.2, 61], 46, 1.5, 0.9);
+
+function createPerson(config) {
+  const person = new THREE.Group();
+  person.position.set(config.position[0], config.position[1], config.position[2]);
+  person.rotation.y = config.rotation || 0;
+  const body = cyl(`${config.name}-body`, 0.62, 1.35, [0, 1.35, 0], makeMat(config.shirt || 0x39a657), person, 18);
+  body.scale.x = 0.84;
+  sphere(`${config.name}-head`, 0.5, [0, 2.23, 0], makeMat(0xf1bd8c), person);
+  box(`${config.name}-hair`, [0.78, 0.2, 0.66], [0, 2.62, 0.03], makeMat(config.hair || 0x2b2118), person);
+  box(`${config.name}-leg-left`, [0.32, 0.85, 0.32], [-0.22, 0.42, 0], makeMat(config.pants || 0x172632), person);
+  box(`${config.name}-leg-right`, [0.32, 0.85, 0.32], [0.22, 0.42, 0], makeMat(config.pants || 0x172632), person);
+  box(`${config.name}-arm-left`, [0.22, 0.85, 0.22], [-0.75, 1.42, 0], makeMat(config.shirt || 0x39a657), person).rotation.z = -0.18;
+  box(`${config.name}-arm-right`, [0.22, 0.85, 0.22], [0.75, 1.42, 0], makeMat(config.shirt || 0x39a657), person).rotation.z = 0.18;
+  if (config.cap) {
+    box(`${config.name}-cap`, [1, 0.24, 0.78], [0, 2.82, 0], makeMat(config.cap), person);
+  }
+  if (config.badge) {
+    box(`${config.name}-ticket-scanner`, [0.48, 0.28, 0.16], [-0.76, 1.78, -0.16], makeMat(0xffd15f), person);
+    box(`${config.name}-badge`, [0.24, 0.24, 0.08], [0.38, 1.8, -0.48], makeMat(0xffd15f), person);
+  }
+  scene.add(person);
+  return person;
+}
 
 function updateRideList() {
   rideData.forEach((ride, index) => ride.listButton?.classList.toggle("active", index === selectedIndex));
@@ -476,9 +542,28 @@ function focusRide(index) {
 }
 
 function rideNearest() {
+  if (!entrance.ticketChecked && player.position.z > 51) {
+    statusText.textContent = "检票员说：先点“检票入园”，检完票才能去坐项目。";
+    return;
+  }
   if (!nearest) return;
   riding = nearest;
   statusText.textContent = `正在乘坐 ${riding.userData.ride.name}。镜头会跟着项目动，点“下车”回到地面。`;
+}
+
+function checkTicket() {
+  const distance = player.position.distanceTo(new THREE.Vector3(0, 0, 57));
+  if (distance > 9) {
+    statusText.textContent = "先走到大门检票口旁边，检票员才能帮你刷票。";
+    return;
+  }
+  entrance.ticketChecked = true;
+  entrance.gateArms.forEach((arm, index) => {
+    arm.rotation.y = index === 0 ? Math.PI / 2 : -Math.PI / 2;
+    arm.material = makeMat(0x39a657);
+  });
+  buttons.ticket.textContent = "已检票";
+  statusText.textContent = "检票员已经刷票，闸机打开了。你和朋友可以一起进园。";
 }
 
 function leaveRide() {
@@ -496,12 +581,26 @@ function moveNextRide() {
 
 function resetPlayer() {
   riding = null;
-  player.position.set(0, 0, 48);
+  player.position.set(0, 0, 61);
   player.rotation.y = Math.PI;
-  statusText.textContent = "回到入口。先从大门进入，再选择想玩的项目。";
+  entrance.ticketChecked = false;
+  entrance.gateArms.forEach((arm, index) => {
+    arm.rotation.y = index === 0 ? 0.28 : -0.28;
+    arm.material = makeMat(0xd93a32);
+  });
+  buttons.ticket.textContent = "检票入园";
+  statusText.textContent = "回到入口。你和朋友站在检票口前，先找检票员检票。";
 }
 
 function updateNearest() {
+  if (player.position.z > 51 && !entrance.ticketChecked) {
+    nearest = null;
+    nearName.textContent = "入口检票口";
+    nearInfo.textContent = "检票员在右边，点“检票入园”后闸机会打开。";
+    updateRideList();
+    return;
+  }
+
   let best = null;
   let bestDistance = Infinity;
   interactive.forEach((group) => {
@@ -518,10 +617,21 @@ function updateNearest() {
     nearInfo.textContent = `${ride.zone} · ${ride.info}`;
     selectedIndex = rideData.findIndex((item) => item.id === ride.id);
   } else {
-    nearName.textContent = "附近没有项目";
-    nearInfo.textContent = "沿着黄色道路走，靠近设施后就能乘坐。";
+    const atGate = player.position.z > 51;
+    nearName.textContent = atGate ? "入口检票口" : "附近没有项目";
+    nearInfo.textContent = atGate ? "检票员在右边，点“检票入园”后闸机会打开。" : "沿着黄色道路走，靠近设施后就能乘坐。";
   }
   updateRideList();
+}
+
+function updateCompanion(elapsed) {
+  if (!entrance.friend || riding) return;
+  const offset = new THREE.Vector3(-3.2, 0, 1.4);
+  const desired = player.position.clone().add(offset);
+  desired.x = THREE.MathUtils.clamp(desired.x, -43, 43);
+  desired.z = THREE.MathUtils.clamp(desired.z, entrance.ticketChecked ? -45 : 56.5, 63);
+  entrance.friend.position.lerp(desired, 0.045);
+  entrance.friend.rotation.y = player.rotation.y + Math.sin(elapsed * 1.6) * 0.08;
 }
 
 function updatePlayer(delta) {
@@ -547,8 +657,13 @@ function updatePlayer(delta) {
     velocity.multiplyScalar(0.82);
   }
   player.position.add(velocity);
+  if (!entrance.ticketChecked && player.position.z < 53) {
+    player.position.z = 53;
+    velocity.z = Math.max(0, velocity.z);
+    statusText.textContent = "检票闸还没开，先点“检票入园”。";
+  }
   player.position.x = THREE.MathUtils.clamp(player.position.x, -43, 43);
-  player.position.z = THREE.MathUtils.clamp(player.position.z, -45, 58);
+  player.position.z = THREE.MathUtils.clamp(player.position.z, -45, 63);
 }
 
 function updateRides(elapsed, delta) {
@@ -588,6 +703,13 @@ function updateCamera(elapsed) {
     return;
   }
 
+  if (!entrance.ticketChecked && player.position.z > 51) {
+    const desired = new THREE.Vector3(player.position.x * 0.35, 18, 78);
+    camera.position.lerp(desired, 0.12);
+    camera.lookAt(new THREE.Vector3(1.5, 2.2, 56.5));
+    return;
+  }
+
   const forward = new THREE.Vector3(Math.sin(player.rotation.y), 0, Math.cos(player.rotation.y));
   const desired = player.position.clone().sub(forward.multiplyScalar(12));
   desired.y = 8.2;
@@ -612,6 +734,7 @@ function animate() {
   const elapsed = clock.elapsedTime;
   resize();
   updatePlayer(delta);
+  updateCompanion(elapsed);
   updateRides(elapsed, delta);
   updateNearest();
   updateCamera(elapsed);
@@ -670,6 +793,7 @@ function setupInput() {
   window.addEventListener("touchend", endStick);
 
   buttons.ride.addEventListener("click", rideNearest);
+  buttons.ticket.addEventListener("click", checkTicket);
   buttons.leave.addEventListener("click", leaveRide);
   buttons.next.addEventListener("click", moveNextRide);
   buttons.reset.addEventListener("click", resetPlayer);
