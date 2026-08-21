@@ -37,6 +37,13 @@ const moves = {
   right: [0, 1]
 };
 
+const directions = [
+  { name: "北", dr: -1, dc: 0 },
+  { name: "东", dr: 0, dc: 1 },
+  { name: "南", dr: 1, dc: 0 },
+  { name: "西", dr: 0, dc: -1 }
+];
+
 const rows = maze.length;
 const cols = maze[0].length;
 const cell = Math.min(canvas.width / (cols + 2.2), canvas.height / (rows + 4.8));
@@ -110,6 +117,7 @@ function createPlayers() {
       shirt: "#2f77dc",
       hair: "#282018",
       step: 0,
+      dir: 1,
       type: "boy"
     },
     p2: {
@@ -121,6 +129,7 @@ function createPlayers() {
       shirt: "#ef6aa6",
       hair: "#4b2d20",
       step: 0,
+      dir: 1,
       type: "girl"
     }
   };
@@ -138,6 +147,7 @@ function createGuests() {
       hair: "#4b2d20",
       joined: false,
       step: 0,
+      dir: 3,
       type: "guest"
     },
     {
@@ -150,6 +160,7 @@ function createGuests() {
       hair: "#30231c",
       joined: false,
       step: 0,
+      dir: 2,
       type: "guest"
     }
   ];
@@ -170,7 +181,7 @@ function reset() {
   won = false;
   wanderTick = 0;
   winMovie.classList.remove("show");
-  statusEl.textContent = "这是从上往下看的俯视图：正方形迷宫在上面，圆形迷宫入口已经打通，树篱花朵可以点出祝福。";
+  statusEl.textContent = "这是第一视角：你看着前方走迷宫，左/右可以转头，前/后可以移动。先过正方形迷宫，再进入下面圆形迷宫。";
   updatePlayerButtons();
   renderGuestControls();
   draw();
@@ -292,10 +303,10 @@ function renderGuestControls() {
     panel.innerHTML = `
       <strong>${guest.name}</strong>
       <div class="mobile-pad" aria-label="${guest.name}方向按钮">
-        <button data-player="${guest.id}" data-move="up" type="button">上</button>
-        <button data-player="${guest.id}" data-move="left" type="button">左</button>
-        <button data-player="${guest.id}" data-move="right" type="button">右</button>
-        <button data-player="${guest.id}" data-move="down" type="button">下</button>
+        <button data-player="${guest.id}" data-move="up" type="button">前</button>
+        <button data-player="${guest.id}" data-move="left" type="button">左转</button>
+        <button data-player="${guest.id}" data-move="right" type="button">右转</button>
+        <button data-player="${guest.id}" data-move="down" type="button">后退</button>
       </div>
     `;
     guestControlsEl.append(panel);
@@ -325,15 +336,27 @@ function checkGuestCollision(character) {
   });
 }
 
-function moveCharacter(id, dr, dc) {
+function moveCharacter(id, action) {
   if (won) return;
   const character = players[id];
   if (!character) return;
-  const nextRow = character.row + dr;
-  const nextCol = character.col + dc;
+  if (action === "turnLeft" || action === "turnRight") {
+    character.dir = (character.dir + (action === "turnLeft" ? 3 : 1)) % directions.length;
+    activePlayerId = id;
+    updatePlayerButtons();
+    statusEl.textContent = `${character.name} 把头转向${directions[character.dir].name}边。现在看到的是前方的迷宫路。`;
+    playStep();
+    draw();
+    return;
+  }
+
+  const direction = directions[character.dir];
+  const sign = action === "backward" ? -1 : 1;
+  const nextRow = character.row + direction.dr * sign;
+  const nextCol = character.col + direction.dc * sign;
 
   if (isWall(nextRow, nextCol)) {
-    statusEl.textContent = `${character.name} 撞到树篱墙了，换一条路。`;
+    statusEl.textContent = `${character.name} 前面是很高的树篱墙，先左转或右转找路。`;
     playWall();
     draw();
     return;
@@ -353,7 +376,7 @@ function moveCharacter(id, dr, dc) {
     winMovie.classList.add("show");
     playWinMusic();
   } else {
-    statusEl.textContent = `${character.name} 已经走了 ${character.step} 步。上面正方形，下面圆形，继续往出口走。`;
+    statusEl.textContent = `${character.name} 已经走了 ${character.step} 步。现在朝${directions[character.dir].name}，继续往前看路。`;
   }
 
   draw();
@@ -364,17 +387,18 @@ function moveWanderingGuests() {
   wanderTick += 1;
   guests.forEach((guest, index) => {
     if (guest.joined) return;
-    const directions = [
-      [-1, 0],
-      [1, 0],
-      [0, -1],
-      [0, 1]
+    const wanderDirections = [
+      [-1, 0, 0],
+      [0, 1, 1],
+      [1, 0, 2],
+      [0, -1, 3]
     ];
-    const legal = directions.filter(([dr, dc]) => !isWall(guest.row + dr, guest.col + dc));
+    const legal = wanderDirections.filter(([dr, dc]) => !isWall(guest.row + dr, guest.col + dc));
     if (legal.length === 0) return;
     const choice = legal[(wanderTick + index + Math.floor(Math.random() * legal.length)) % legal.length];
     guest.row += choice[0];
     guest.col += choice[1];
+    guest.dir = choice[2];
     guest.step += 1;
   });
   cats.forEach((cat, index) => {
@@ -391,22 +415,334 @@ function moveWanderingGuests() {
 
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  drawBackground();
-  drawThemeParkLayout();
-  drawParkSign();
+  drawFirstPersonScene(players[activePlayerId] || players.p1);
+}
 
-  for (let row = 0; row < rows; row += 1) {
-    for (let col = 0; col < cols; col += 1) {
-      drawTile(row, col, maze[row][col]);
+function getRelativeTile(viewer, depth, lateral) {
+  const forward = directions[viewer.dir];
+  const right = directions[(viewer.dir + 1) % directions.length];
+  return {
+    row: viewer.row + forward.dr * depth + right.dr * lateral,
+    col: viewer.col + forward.dc * depth + right.dc * lateral
+  };
+}
+
+function getRelativePosition(viewer, row, col) {
+  const forward = directions[viewer.dir];
+  const right = directions[(viewer.dir + 1) % directions.length];
+  const dr = row - viewer.row;
+  const dc = col - viewer.col;
+  return {
+    depth: dr * forward.dr + dc * forward.dc,
+    lateral: dr * right.dr + dc * right.dc
+  };
+}
+
+function getProjection(depth, lateral) {
+  const safeDepth = Math.max(0.34, depth);
+  const scale = 1 / (safeDepth * 0.78 + 0.22);
+  return {
+    x: canvas.width / 2 + lateral * 184 * scale,
+    y: 360 + 220 * scale,
+    scale
+  };
+}
+
+function drawFirstPersonScene(viewer) {
+  draw3DBackground(viewer);
+  draw3DParkSign(viewer);
+
+  for (let depth = 8; depth >= 1; depth -= 1) {
+    for (let lateral = -depth - 2; lateral <= depth + 2; lateral += 1) {
+      const tile = getRelativeTile(viewer, depth, lateral);
+      draw3DGroundTile(tile.row, tile.col, depth, lateral);
     }
   }
 
-  drawDecorations();
-  drawCircularMazeGardenOverlay();
-  drawMallAndBusStop();
-  cats.forEach(drawCat);
-  guests.filter((guest) => !guest.joined).forEach((guest) => drawPerson(guest, true));
-  Object.values(players).forEach((player) => drawPerson(player, false));
+  const visibleSprites = [
+    ...cats.map((cat) => ({ kind: "cat", item: cat, row: cat.row, col: cat.col })),
+    ...guests.filter((guest) => !guest.joined).map((guest) => ({ kind: "guest", item: guest, row: guest.row, col: guest.col })),
+    ...Object.values(players)
+      .filter((player) => player.id !== viewer.id)
+      .map((player) => ({ kind: "person", item: player, row: player.row, col: player.col }))
+  ]
+    .map((sprite) => ({ ...sprite, ...getRelativePosition(viewer, sprite.row, sprite.col) }))
+    .filter((sprite) => sprite.depth > 0 && sprite.depth <= 8 && Math.abs(sprite.lateral) <= sprite.depth + 1.4)
+    .sort((a, b) => b.depth - a.depth);
+
+  for (let depth = 8; depth >= 1; depth -= 1) {
+    for (let lateral = -depth - 2; lateral <= depth + 2; lateral += 1) {
+      const tile = getRelativeTile(viewer, depth, lateral);
+      if (isWall(tile.row, tile.col)) {
+        draw3DHedge(depth, lateral);
+      } else if (tile.row >= 0 && tile.row < rows && tile.col >= 0 && tile.col < cols) {
+        const symbol = maze[tile.row][tile.col];
+        if (symbol === "S" || symbol === "E" || symbol === "C" || symbol === "G") {
+          draw3DMarker(symbol, depth, lateral, tile.row);
+        }
+      }
+    }
+    visibleSprites.filter((sprite) => Math.round(sprite.depth) === depth).forEach(draw3DSprite);
+  }
+
+  drawViewerHands(viewer);
+  drawCompass(viewer);
+}
+
+function draw3DBackground(viewer) {
+  const sky = ctx.createLinearGradient(0, 0, 0, 360);
+  sky.addColorStop(0, "#6dc7f5");
+  sky.addColorStop(0.72, "#dff8ff");
+  sky.addColorStop(1, "#f9eec7");
+  ctx.fillStyle = sky;
+  ctx.fillRect(0, 0, canvas.width, 390);
+
+  ctx.fillStyle = "rgba(255,255,255,0.78)";
+  drawCloud(140, 78, 54);
+  drawCloud(650, 96, 42);
+  drawCloud(820, 170, 28);
+
+  const ground = ctx.createLinearGradient(0, 320, 0, canvas.height);
+  ground.addColorStop(0, "#d7c082");
+  ground.addColorStop(0.28, "#f1d9a1");
+  ground.addColorStop(1, "#9f7a43");
+  ctx.fillStyle = ground;
+  ctx.fillRect(0, 330, canvas.width, canvas.height - 330);
+
+  ctx.fillStyle = "rgba(31,107,80,0.18)";
+  ctx.beginPath();
+  ctx.moveTo(0, 342);
+  ctx.quadraticCurveTo(250, 280, 480, 342);
+  ctx.quadraticCurveTo(710, 402, 960, 330);
+  ctx.lineTo(960, 402);
+  ctx.lineTo(0, 402);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.fillStyle = "rgba(23,38,50,0.72)";
+  ctx.font = "900 18px system-ui";
+  const place = viewer.row >= 10 ? "圆形迷宫区" : "正方形迷宫区";
+  ctx.fillText(`${place} · 第一视角`, 28, 42);
+}
+
+function draw3DParkSign(viewer) {
+  ctx.save();
+  ctx.fillStyle = "rgba(255,255,255,0.88)";
+  roundRect(26, 54, 350, 68, 8);
+  ctx.fill();
+  ctx.fillStyle = "#172632";
+  ctx.font = "900 22px system-ui";
+  ctx.fillText("济州岛 3D 迷宫主题乐园", 44, 84);
+  ctx.fillStyle = "#1f6b50";
+  ctx.font = "850 14px system-ui";
+  ctx.fillText(`当前控制：${viewer.name} · 朝${directions[viewer.dir].name} · 左右键转头`, 44, 106);
+  ctx.restore();
+}
+
+function draw3DGroundTile(row, col, depth, lateral) {
+  const nearLeft = getProjection(depth - 0.48, lateral - 0.52);
+  const nearRight = getProjection(depth - 0.48, lateral + 0.52);
+  const farRight = getProjection(depth + 0.48, lateral + 0.52);
+  const farLeft = getProjection(depth + 0.48, lateral - 0.52);
+  const isKnown = row >= 0 && row < rows && col >= 0 && col < cols;
+  const inRound = row >= 10;
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(nearLeft.x, nearLeft.y);
+  ctx.lineTo(nearRight.x, nearRight.y);
+  ctx.lineTo(farRight.x, farRight.y);
+  ctx.lineTo(farLeft.x, farLeft.y);
+  ctx.closePath();
+  ctx.fillStyle = !isKnown
+    ? "#7dbb73"
+    : inRound
+      ? ((row + col) % 2 === 0 ? "#e9cf8d" : "#f5dfaa")
+      : ((row + col) % 2 === 0 ? "#f2d696" : "#f8e9bc");
+  ctx.fill();
+  ctx.strokeStyle = "rgba(79,60,34,0.18)";
+  ctx.lineWidth = Math.max(1, 3 / depth);
+  ctx.stroke();
+  ctx.restore();
+}
+
+function draw3DHedge(depth, lateral) {
+  const projection = getProjection(depth, lateral);
+  const width = 164 * projection.scale;
+  const height = 310 * projection.scale;
+  const x = projection.x - width / 2;
+  const y = projection.y - height;
+  const side = 22 * projection.scale;
+
+  ctx.save();
+  const hedge = ctx.createLinearGradient(x, y, x, y + height);
+  hedge.addColorStop(0, "#2fa96e");
+  hedge.addColorStop(0.55, "#1f6b50");
+  hedge.addColorStop(1, "#164733");
+  ctx.fillStyle = "rgba(0,0,0,0.18)";
+  roundRect(x + side * 0.45, y + side, width, height, Math.max(4, 12 * projection.scale));
+  ctx.fill();
+  ctx.fillStyle = hedge;
+  roundRect(x, y, width, height, Math.max(5, 12 * projection.scale));
+  ctx.fill();
+
+  ctx.fillStyle = "rgba(255,255,255,0.12)";
+  ctx.fillRect(x + width * 0.1, y + height * 0.12, width * 0.78, Math.max(2, 8 * projection.scale));
+  ctx.fillStyle = "rgba(8,55,31,0.28)";
+  for (let i = 0; i < 5; i += 1) {
+    ctx.beginPath();
+    ctx.arc(x + width * (0.2 + i * 0.16), y + height * (0.22 + (i % 2) * 0.2), Math.max(3, 13 * projection.scale), 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  const flowerColors = ["#ffd15f", "#ff6fae", "#ffffff", "#ff8c3a"];
+  flowerColors.forEach((color, index) => {
+    draw3DFlower(x + width * (0.18 + index * 0.2), y + height * (0.56 + (index % 2) * 0.16), color, projection.scale);
+  });
+  ctx.restore();
+}
+
+function draw3DFlower(x, y, color, scale) {
+  ctx.save();
+  ctx.fillStyle = color;
+  for (let i = 0; i < 5; i += 1) {
+    const angle = (Math.PI * 2 * i) / 5;
+    ctx.beginPath();
+    ctx.arc(x + Math.cos(angle) * 5 * scale, y + Math.sin(angle) * 5 * scale, Math.max(1.8, 5 * scale), 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.fillStyle = "#ffd15f";
+  ctx.beginPath();
+  ctx.arc(x, y, Math.max(1.8, 3.4 * scale), 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+}
+
+function draw3DMarker(symbol, depth, lateral, row) {
+  const projection = getProjection(depth, lateral);
+  const width = 110 * projection.scale;
+  const height = 64 * projection.scale;
+  const x = projection.x - width / 2;
+  const y = projection.y - 142 * projection.scale;
+  const label = symbol === "E" ? "出口巴士站" : symbol === "S" ? "入口商场" : symbol === "C" ? "猫猫通道" : "游客点";
+  ctx.save();
+  ctx.fillStyle = symbol === "E" ? "#803420" : symbol === "S" ? "#39a657" : "#245b8f";
+  roundRect(x, y, width, height, Math.max(4, 9 * projection.scale));
+  ctx.fill();
+  ctx.fillStyle = "#fff";
+  ctx.font = `900 ${Math.max(10, 22 * projection.scale)}px system-ui`;
+  ctx.textAlign = "center";
+  ctx.fillText(label, projection.x, y + height * 0.58);
+  if (row >= 10) {
+    ctx.fillStyle = "rgba(255,209,95,0.9)";
+    ctx.fillText("圆形迷宫", projection.x, y + height + 18 * projection.scale);
+  }
+  ctx.textAlign = "start";
+  ctx.restore();
+}
+
+function draw3DSprite(sprite) {
+  const projection = getProjection(sprite.depth, sprite.lateral);
+  const size = sprite.kind === "cat" ? 58 * projection.scale : 96 * projection.scale;
+  const x = projection.x;
+  const y = projection.y - size * 0.72;
+
+  if (sprite.kind === "cat") {
+    draw3DCat(x, y, size);
+    return;
+  }
+  draw3DPerson(sprite.item, x, y, size, sprite.kind === "guest");
+}
+
+function draw3DPerson(person, x, y, size, isGuest) {
+  ctx.save();
+  ctx.fillStyle = "rgba(0,0,0,0.2)";
+  ctx.beginPath();
+  ctx.ellipse(x, y + size * 0.86, size * 0.26, size * 0.08, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = person.shirt;
+  roundRect(x - size * 0.18, y + size * 0.34, size * 0.36, size * 0.36, size * 0.07);
+  ctx.fill();
+  ctx.fillStyle = "#f1bd8c";
+  ctx.beginPath();
+  ctx.arc(x, y + size * 0.18, size * 0.17, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = person.hair;
+  ctx.beginPath();
+  ctx.arc(x, y + size * 0.11, size * 0.18, Math.PI, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = "#101820";
+  ctx.fillRect(x - size * 0.06, y + size * 0.16, Math.max(2, size * 0.02), Math.max(2, size * 0.02));
+  ctx.fillRect(x + size * 0.05, y + size * 0.16, Math.max(2, size * 0.02), Math.max(2, size * 0.02));
+  ctx.strokeStyle = "#101820";
+  ctx.lineWidth = Math.max(1, size * 0.018);
+  ctx.beginPath();
+  ctx.arc(x, y + size * 0.22, size * 0.06, 0.18, Math.PI - 0.18);
+  ctx.stroke();
+  ctx.fillStyle = person.color;
+  ctx.font = `900 ${Math.max(10, size * 0.13)}px system-ui`;
+  ctx.textAlign = "center";
+  ctx.fillText(isGuest ? "点我加入" : person.name, x, y - size * 0.06);
+  ctx.textAlign = "start";
+  ctx.restore();
+}
+
+function draw3DCat(x, y, size) {
+  ctx.save();
+  ctx.fillStyle = "#f5a94d";
+  ctx.beginPath();
+  ctx.ellipse(x, y + size * 0.36, size * 0.32, size * 0.2, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(x - size * 0.24, y + size * 0.22, size * 0.18, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(x - size * 0.36, y + size * 0.09);
+  ctx.lineTo(x - size * 0.3, y - size * 0.08);
+  ctx.lineTo(x - size * 0.21, y + size * 0.08);
+  ctx.fill();
+  ctx.strokeStyle = "#f5a94d";
+  ctx.lineWidth = Math.max(3, size * 0.08);
+  ctx.beginPath();
+  ctx.arc(x + size * 0.34, y + size * 0.25, size * 0.22, -0.5, 1.8);
+  ctx.stroke();
+  ctx.fillStyle = "#172632";
+  ctx.fillRect(x - size * 0.29, y + size * 0.2, size * 0.04, size * 0.04);
+  ctx.restore();
+}
+
+function drawViewerHands(viewer) {
+  ctx.save();
+  ctx.fillStyle = "rgba(23,38,50,0.22)";
+  ctx.beginPath();
+  ctx.ellipse(480, 702, 210, 26, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = viewer.shirt;
+  roundRect(330, 636, 90, 58, 18);
+  roundRect(540, 636, 90, 58, 18);
+  ctx.fill();
+  ctx.fillStyle = "#f1bd8c";
+  ctx.beginPath();
+  ctx.arc(425, 652, 28, 0, Math.PI * 2);
+  ctx.arc(535, 652, 28, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+}
+
+function drawCompass(viewer) {
+  ctx.save();
+  ctx.fillStyle = "rgba(255,255,255,0.88)";
+  roundRect(700, 34, 224, 76, 8);
+  ctx.fill();
+  ctx.fillStyle = "#172632";
+  ctx.font = "900 17px system-ui";
+  ctx.fillText("方向", 720, 62);
+  ctx.fillStyle = "#245b8f";
+  ctx.font = "950 28px system-ui";
+  ctx.fillText(directions[viewer.dir].name, 720, 94);
+  ctx.fillStyle = "#51616c";
+  ctx.font = "800 12px system-ui";
+  ctx.fillText("A/D 或左右按钮转头", 770, 92);
+  ctx.restore();
 }
 
 function drawBackground() {
@@ -888,37 +1224,47 @@ window.addEventListener("keydown", (event) => {
   }
 
   const keyMoves = {
-    ArrowUp: moves.up,
-    w: moves.up,
-    ArrowDown: moves.down,
-    s: moves.down,
-    ArrowLeft: moves.left,
-    a: moves.left,
-    ArrowRight: moves.right,
-    d: moves.right
+    ArrowUp: "forward",
+    w: "forward",
+    ArrowDown: "backward",
+    s: "backward",
+    ArrowLeft: "turnLeft",
+    a: "turnLeft",
+    ArrowRight: "turnRight",
+    d: "turnRight"
   };
-  const moveBy = keyMoves[event.key];
-  if (!moveBy) return;
+  const action = keyMoves[event.key];
+  if (!action) return;
   event.preventDefault();
-  moveCharacter(activePlayerId, moveBy[0], moveBy[1]);
+  moveCharacter(activePlayerId, action);
 });
 
 document.addEventListener("click", (event) => {
   const button = event.target.closest("[data-move]");
   if (!button) return;
-  const moveBy = moves[button.dataset.move];
-  moveCharacter(button.dataset.player || activePlayerId, moveBy[0], moveBy[1]);
+  const actions = {
+    up: "forward",
+    down: "backward",
+    left: "turnLeft",
+    right: "turnRight"
+  };
+  moveCharacter(button.dataset.player || activePlayerId, actions[button.dataset.move]);
 });
 
 canvas.addEventListener("click", (event) => {
-  const tile = canvasToTile(event.clientX, event.clientY);
-  const guest = guests.find((item) => !item.joined && item.row === tile.row && item.col === tile.col);
+  const viewer = players[activePlayerId] || players.p1;
+  const visibleGuests = guests
+    .filter((item) => !item.joined)
+    .map((item) => ({ guest: item, ...getRelativePosition(viewer, item.row, item.col) }))
+    .filter((item) => item.depth > 0 && item.depth <= 3 && Math.abs(item.lateral) <= 1);
+  const guest = visibleGuests[0]?.guest;
   if (guest) {
     inviteGuest(guest);
     return;
   }
-  if (tile.row >= 0 && tile.row < rows && tile.col >= 0 && tile.col < cols && maze[tile.row][tile.col] === "#") {
-    statusEl.textContent = "你点到了树篱上的花朵：祝你顺利走出济州岛迷宫!";
+  const frontTile = getRelativeTile(viewer, 1, 0);
+  if (isWall(frontTile.row, frontTile.col)) {
+    statusEl.textContent = "你点到了前方树篱上的花朵：祝你顺利走出济州岛迷宫!";
     playBlessing();
   }
 });
