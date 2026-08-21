@@ -360,6 +360,12 @@ body {
   background: linear-gradient(135deg, #d93a32, #ffd15f 34%, #2468b8 68%, #25a35b);
 }
 
+.bomb-cat-card {
+  background:
+    radial-gradient(circle at 72% 18%, rgba(255, 209, 95, 0.9), transparent 22%),
+    linear-gradient(135deg, #172632, #6b3b22 48%, #d93a32);
+}
+
 .rail {
   background: linear-gradient(135deg, #bd6a1d, #334655);
 }

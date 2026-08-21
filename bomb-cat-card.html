@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>爆炸猫咪牌桌</title>
+    <link rel="stylesheet" href="bomb-cat-card.css?v=bomb-cat-table-20260821" />
+  </head>
+  <body>
+    <a class="home-link" href="arcade.html">游戏大厅</a>
+    <main class="cat-shell">
+      <section class="hero">
+        <p class="label">Original 3D Card Table</p>
+        <h1>爆炸猫咪牌桌</h1>
+        <p>四个人围着木质圆桌打原创猫咪卡牌。你控制底下的自己，其他三个人由电脑控制；抽到黑色炸猫时，有防爆鱼就能救命，没有就淘汰。</p>
+        <div class="top-actions">
+          <button id="newGameBtn" type="button">重新开局</button>
+          <button id="autoBtn" type="button">电脑继续</button>
+        </div>
+      </section>
+
+      <section class="table-stage" aria-label="爆炸猫咪牌桌">
+        <div class="room-lamp left"></div>
+        <div class="room-lamp right"></div>
+        <div id="playerRing" class="player-ring"></div>
+
+        <div class="round-table">
+          <div class="wood-rings"></div>
+          <button id="drawBtn" class="deck stack" type="button">
+            <span>摸牌堆</span>
+            <strong id="deckCount">0</strong>
+          </button>
+          <div id="discardPile" class="discard stack">
+            <span>弃牌</span>
+            <strong id="discardTop">空</strong>
+          </div>
+          <div class="bomb-card">
+            <span>黑色炸猫</span>
+            <strong>💣</strong>
+          </div>
+        </div>
+
+        <div class="status-panel">
+          <strong id="turnText">准备发牌</strong>
+          <span id="statusText">点“重新开局”开始。</span>
+        </div>
+      </section>
+
+      <section class="hand-panel">
+        <div class="hand-title">
+          <div>
+            <p class="label dark">My Cards</p>
+            <h2>我的手牌</h2>
+          </div>
+          <strong id="handCount">0 张</strong>
+        </div>
+        <div id="myHand" class="hand"></div>
+      </section>
+
+      <aside class="rules">
+        <p class="label dark">怎么玩</p>
+        <h2>别抽到炸猫</h2>
+        <p><strong>摸牌：</strong>你每回合可以先出任意张功能牌，最后点摸牌结束回合。</p>
+        <p><strong>黑色炸猫：</strong>抽到它会爆炸；如果手里有“防爆鱼”，会自动救你。</p>
+        <p><strong>跳过：</strong>不摸牌，直接结束这一回合。</p>
+        <p><strong>攻击：</strong>让下一个人连续玩两回合。</p>
+        <p><strong>预知：</strong>偷看摸牌堆最上面三张。</p>
+        <p><strong>洗牌：</strong>把摸牌堆重新打乱。</p>
+        <p><strong>胜利：</strong>最后还没被炸猫淘汰的人赢。</p>
+      </aside>
+    </main>
+    <script src="bomb-cat-card.js?v=bomb-cat-table-20260821"></script>
+    <script src="arcade-stats.js?v=visitor-table-20260728"></script>
+  </body>
+</html>
