@@ -27,12 +27,12 @@ const rideData = [
   },
   {
     id: "spin",
-    name: "Oscar's Spin'n Bump",
+    name: "Oscar Spin Bomb",
     zone: "Oscar's New World",
     model: "spinBump",
     position: [8, 0, -26],
     color: 0xffd15f,
-    info: "圆盘高速旋转，座椅跟着起伏，像被风甩起来。"
+    info: "参考你拍的视频：橙色和青绿色座舱围着中轴旋转，前面有安全压杆。"
   },
   {
     id: "dragon",
@@ -81,12 +81,12 @@ const rideData = [
   },
   {
     id: "buck",
-    name: "Buck's Dance",
-    zone: "Larva Adventure Village",
+    name: "Spinning Oscar",
+    zone: "Oscar's New World",
     model: "dance",
     position: [4, 0, 25],
     color: 0x39a657,
-    info: "音乐舞台旋转项目，灯光会跟着节奏闪。"
+    info: "参考你拍的视频：一整排座椅在雕像背景前旋转，游客坐在安全杆后面。"
   },
   {
     id: "express",
@@ -400,6 +400,19 @@ function addQueueRails(group, ride) {
   group.add(queue);
 }
 
+function addSeatedRider(parent, position, scale = 1, shirt = 0x245b8f) {
+  const rider = new THREE.Group();
+  rider.position.set(position[0], position[1], position[2]);
+  const skin = makeMat(0xf1bd8c);
+  cyl("ride-passenger-body", 0.16 * scale, 0.42 * scale, [0, 0.28 * scale, 0], makeMat(shirt), rider, 10);
+  sphere("ride-passenger-head", 0.14 * scale, [0, 0.58 * scale, 0], skin, rider, 10);
+  box("ride-passenger-hair", [0.24 * scale, 0.06 * scale, 0.2 * scale], [0, 0.71 * scale, 0.02 * scale], makeMat(0x2b2118), rider);
+  box("ride-passenger-arm-left", [0.07 * scale, 0.34 * scale, 0.06 * scale], [-0.2 * scale, 0.32 * scale, -0.05 * scale], makeMat(shirt), rider).rotation.x = 0.5;
+  box("ride-passenger-arm-right", [0.07 * scale, 0.34 * scale, 0.06 * scale], [0.2 * scale, 0.32 * scale, -0.05 * scale], makeMat(shirt), rider).rotation.x = 0.5;
+  parent.add(rider);
+  return rider;
+}
+
 function addAttraction(ride, index) {
   const group = new THREE.Group();
   group.position.set(ride.position[0], 0, ride.position[2]);
@@ -432,6 +445,20 @@ function addAttraction(ride, index) {
 }
 
 function buildCoaster(group, ride) {
+  const mint = makeMat(0xa8ddd0, 0.38, 0.18);
+  const station = new THREE.Group();
+  station.position.set(-8.9, 0, 6.1);
+  box("coaster-station-wall", [11.5, 5.8, 0.45], [0, 2.9, 0], makeMat(0xcaa76f), station);
+  box("coaster-station-platform", [12.5, 0.35, 5], [0, 0.5, -2.7], makeMat(0xd6c29a), station);
+  box("coaster-station-roof", [12.8, 0.6, 5.5], [0, 5.95, -2.6], makeMat(0x80513b), station);
+  box("coaster-way-out-sign", [3.8, 0.85, 0.12], [-2.8, 4.2, 0.3], makeMat(0xffffff), station);
+  label("WAY OUT", [ride.position[0] - 11.8, 4.25, ride.position[2] + 6.55], 22, 2.5, 0.7);
+  for (let i = 0; i < 7; i += 1) {
+    box("coaster-mint-rail", [0.12, 1.2, 5.2], [-5.8 + i * 1.9, 1.15, -2.7], mint, station);
+  }
+  box("coaster-mint-walkway", [10.5, 0.14, 1.7], [0.3, 1.55, -5.7], mint, station);
+  group.add(station);
+
   const points = [
     new THREE.Vector3(-8, 1.2, 4),
     new THREE.Vector3(-4, 8, 0),
@@ -450,21 +477,44 @@ function buildCoaster(group, ride) {
   for (let i = 0; i < 7; i += 1) {
     cyl("coaster-support", 0.12, 5.5, [-7 + i * 2.4, 2.8, -2 + Math.sin(i) * 5], materials.steel, group, 8);
   }
-  const car = box("spinning-coaster-car", [2.2, 1.1, 1.7], [0, 2, 0], makeMat(0xffd15f), group);
+  const car = new THREE.Group();
+  box("spinning-coaster-car-body", [2.4, 0.85, 1.75], [0, 0.45, 0], makeMat(0xffd15f), car);
+  box("spinning-coaster-seat-back", [2.1, 0.75, 0.18], [0, 0.9, 0.62], materials.dark, car);
+  box("spinning-coaster-front", [2.1, 0.45, 0.18], [0, 0.68, -0.72], makeMat(0xa8ddd0), car);
+  addSeatedRider(car, [-0.48, 0.75, 0.04], 1.05, 0x245b8f);
+  addSeatedRider(car, [0.48, 0.75, 0.04], 1.05, 0xf06aa3);
+  car.position.set(0, 2, 0);
   car.userData.curve = curve;
+  group.add(car);
   group.userData.seats.push(car);
 }
 
 function buildSpinBump(group, ride) {
+  const marquee = new THREE.Group();
+  marquee.position.set(0, 0, 6.8);
+  box("spin-marquee", [10, 2.2, 0.42], [0, 3.4, 0], makeMat(0xffb2a1), marquee);
+  for (let i = 0; i < 18; i += 1) {
+    sphere("spin-marquee-bulb", 0.13, [-4.4 + i * 0.52, 4.1, -0.28], makeMat(i % 2 ? 0xffd15f : 0xffffff), marquee, 8);
+  }
+  group.add(marquee);
+
   const arm = new THREE.Group();
   group.userData.rotor = arm;
-  cyl("spin-center", 0.9, 5, [0, 2.5, 0], materials.steel, arm);
-  const disc = cyl("spin-disc", 5.5, 0.55, [0, 3.4, 0], makeMat(ride.color), arm, 64);
+  cyl("spin-center", 0.9, 5, [0, 2.5, 0], makeMat(0x75c9bf), arm);
+  const disc = cyl("spin-disc", 5.5, 0.55, [0, 3.4, 0], makeMat(0xeaa46d), arm, 64);
   disc.rotation.x = Math.PI / 2;
-  for (let i = 0; i < 12; i += 1) {
-    const angle = (i / 12) * Math.PI * 2;
-    const seat = box("spin-seat", [1.2, 0.9, 1.2], [Math.cos(angle) * 4.2, 4, Math.sin(angle) * 4.2], makeMat(0xffffff), arm);
-    seat.lookAt(0, 4, 0);
+  for (let i = 0; i < 10; i += 1) {
+    const angle = (i / 10) * Math.PI * 2;
+    const seatGroup = new THREE.Group();
+    seatGroup.position.set(Math.cos(angle) * 4.2, 3.9, Math.sin(angle) * 4.2);
+    seatGroup.lookAt(0, 3.9, 0);
+    box("spin-pod-orange-front", [1.35, 0.85, 0.72], [0, 0.25, -0.3], makeMat(0xf0a16b), seatGroup);
+    box("spin-pod-turquoise-back", [1.35, 1.05, 0.76], [0, 0.38, 0.35], makeMat(0x75c9bf), seatGroup);
+    box("spin-black-seat", [1, 0.88, 0.2], [0, 0.58, 0.76], materials.dark, seatGroup);
+    box("spin-safety-bar", [1.25, 0.12, 0.12], [0, 0.88, -0.48], materials.dark, seatGroup);
+    addSeatedRider(seatGroup, [-0.32, 0.76, 0.08], 0.82, 0xffffff);
+    addSeatedRider(seatGroup, [0.32, 0.76, 0.08], 0.82, 0x245b8f);
+    arm.add(seatGroup);
   }
   group.add(arm);
 }
@@ -556,15 +606,30 @@ function buildCarousel(group, ride) {
 }
 
 function buildDance(group, ride) {
-  const rotor = new THREE.Group();
-  group.userData.rotor = rotor;
-  cyl("dance-platform", 4.8, 0.5, [0, 1, 0], makeMat(0x39a657), rotor, 48);
-  for (let i = 0; i < 9; i += 1) {
-    const angle = (i / 9) * Math.PI * 2;
-    const seat = box("dance-seat", [1.1, 0.9, 1.1], [Math.cos(angle) * 3.4, 1.75, Math.sin(angle) * 3.4], makeMat(i % 2 ? 0xffd15f : 0x245b8f), rotor);
-    seat.rotation.y = -angle;
+  const statueMat = makeMat(0xb46d58, 0.58, 0.05);
+  const statue = new THREE.Group();
+  statue.position.set(0, 0, -5.3);
+  box("dance-stone-pedestal", [4.2, 2, 2.6], [0, 1, 0], makeMat(0x9d6a50), statue);
+  sphere("dance-statue-head", 1.05, [0, 2.6, 0], statueMat, statue, 18);
+  box("dance-statue-headdress", [2.2, 1.1, 0.6], [0, 3.55, -0.08], statueMat, statue);
+  box("dance-statue-eye-left", [0.18, 0.08, 0.06], [-0.32, 2.72, -0.92], materials.dark, statue);
+  box("dance-statue-eye-right", [0.18, 0.08, 0.06], [0.32, 2.72, -0.92], materials.dark, statue);
+  group.add(statue);
+
+  const platform = new THREE.Group();
+  group.userData.rotor = platform;
+  box("dance-ride-track", [12, 0.38, 1.2], [0, 1.05, 0], makeMat(0x92523e), platform);
+  box("dance-blue-ramp", [4.8, 0.35, 1.3], [-6.2, 0.82, -1.2], makeMat(0x2f79c8), group).rotation.z = -0.2;
+  for (let i = 0; i < 8; i += 1) {
+    const x = -4.9 + i * 1.4;
+    const seat = new THREE.Group();
+    seat.position.set(x, 1.52 + Math.sin(i) * 0.06, 0);
+    box("dance-saddle-seat", [1.1, 0.5, 1.35], [0, 0.32, 0], makeMat(0xb46d58), seat);
+    box("dance-safety-grip", [0.95, 0.1, 0.1], [0, 0.9, -0.62], materials.dark, seat);
+    addSeatedRider(seat, [0, 0.73, 0], 0.86, i % 2 ? 0xffffff : 0x245b8f);
+    platform.add(seat);
   }
-  group.add(rotor);
+  group.add(platform);
 }
 
 function buildTrain(group, ride) {
