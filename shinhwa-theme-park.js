@@ -508,16 +508,24 @@ function buildCoaster(group, ride) {
   for (let i = 0; i < 7; i += 1) {
     cyl("coaster-support", 0.12, 5.5, [-7 + i * 2.4, 2.8, -2 + Math.sin(i) * 5], materials.steel, group, 8);
   }
-  const car = new THREE.Group();
-  box("spinning-coaster-car-body", [2.4, 0.85, 1.75], [0, 0.45, 0], makeMat(0xffd15f), car);
-  box("spinning-coaster-seat-back", [2.1, 0.75, 0.18], [0, 0.9, 0.62], materials.dark, car);
-  box("spinning-coaster-front", [2.1, 0.45, 0.18], [0, 0.68, -0.72], makeMat(0xa8ddd0), car);
-  addSeatedRider(car, [-0.48, 0.75, 0.04], 1.05, 0x245b8f);
-  addSeatedRider(car, [0.48, 0.75, 0.04], 1.05, 0xf06aa3);
-  car.position.set(0, 2, 0);
-  car.userData.curve = curve;
-  group.add(car);
-  group.userData.seats.push(car);
+  const trainCars = [];
+  const carColors = [0xffd15f, 0xd93a32, 0x75c9bf, 0xff8c3a, 0xf06aa3];
+  for (let i = 0; i < 5; i += 1) {
+    const car = new THREE.Group();
+    box("spinning-coaster-car-body", [1.55, 0.72, 1.38], [0, 0.42, 0], makeMat(carColors[i]), car);
+    box("spinning-coaster-seat-back", [1.32, 0.58, 0.14], [0, 0.82, 0.48], materials.dark, car);
+    box("spinning-coaster-front", [1.3, 0.34, 0.14], [0, 0.62, -0.56], makeMat(0xa8ddd0), car);
+    box("coaster-car-link", [0.18, 0.12, 0.7], [0, 0.46, 0.92], materials.dark, car);
+    cyl("coaster-wheel-left", 0.16, 0.12, [-0.64, 0.15, -0.42], materials.dark, car, 10).rotation.z = Math.PI / 2;
+    cyl("coaster-wheel-right", 0.16, 0.12, [0.64, 0.15, -0.42], materials.dark, car, 10).rotation.z = Math.PI / 2;
+    addSeatedRider(car, [-0.31, 0.68, 0.02], 0.72, i % 2 ? 0xffffff : 0x245b8f);
+    addSeatedRider(car, [0.31, 0.68, 0.02], 0.72, i % 2 ? 0x39a657 : 0xf06aa3);
+    car.userData.carOffset = i * 0.028;
+    group.add(car);
+    trainCars.push(car);
+    group.userData.seats.push(car);
+  }
+  group.userData.coasterTrain = { curve, cars: trainCars };
 }
 
 function buildSpinBump(group, ride) {
@@ -994,6 +1002,20 @@ function updateRides(elapsed, delta) {
       const angle = t * Math.PI * 2;
       group.userData.train.position.set(Math.cos(angle) * 7.4, 0.75, Math.sin(angle) * 4.7);
       group.userData.train.rotation.y = -angle + Math.PI / 2;
+    }
+    if (group.userData.coasterTrain) {
+      const { curve, cars } = group.userData.coasterTrain;
+      const baseT = (elapsed * 0.055) % 1;
+      cars.forEach((car) => {
+        const t = (baseT - car.userData.carOffset + 1) % 1;
+        const nextT = (t + 0.006) % 1;
+        const point = curve.getPoint(t);
+        const next = curve.getPoint(nextT);
+        car.position.copy(point);
+        car.position.y += 0.65;
+        car.rotation.y = Math.atan2(next.x - point.x, next.z - point.z);
+        car.rotation.z = THREE.MathUtils.clamp((next.y - point.y) * 0.22, -0.28, 0.28);
+      });
     }
     group.traverse((child) => {
       if (child.userData.curve) {
