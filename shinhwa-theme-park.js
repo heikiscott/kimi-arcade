@@ -259,9 +259,10 @@ function buildWorld() {
 
   addHotelBackdrop();
   addParkFurniture();
+  addParkWorkers();
   addThemeMascots();
   rideData.forEach((ride, index) => addAttraction(ride, index));
-  addCrowdVisitors(240);
+  addCrowdVisitors(320);
 }
 
 function addTicketArea() {
@@ -368,6 +369,30 @@ function addParkFurniture() {
     box("snack-window", [2.6, 1.1, 0.1], [0, 1.55, -1.55], materials.glass, kiosk);
     scene.add(kiosk);
   }
+}
+
+function addParkWorkers() {
+  const workerSpots = [
+    { name: "Dancing Oscar 工作员", position: [-23, 0, -16], rotation: 1.25, shirt: 0xffd15f, cap: 0xd93a32 },
+    { name: "Oscar Spin Bomb 工作员", position: [4.5, 0, -18], rotation: -0.8, shirt: 0x75c9bf, cap: 0xeaa46d },
+    { name: "Spinning Oscar 工作员", position: [-1.8, 0, 20.5], rotation: 0.5, shirt: 0xb46d58, cap: 0xffd15f },
+    { name: "室内馆工作员", position: [-12, 0, 8.7], rotation: 1.4, shirt: 0x274b76, cap: 0x274b76 },
+    { name: "商店工作员", position: [37.8, 0, 22], rotation: -Math.PI / 2, shirt: 0xd93a32, cap: 0xffffff },
+    { name: "巡园工作员", position: [-9, 0, 36], rotation: 0.2, shirt: 0x39a657, cap: 0xffd15f }
+  ];
+  workerSpots.forEach((spot) => {
+    const worker = createPerson({
+      name: spot.name,
+      position: spot.position,
+      rotation: spot.rotation,
+      shirt: spot.shirt,
+      pants: 0x172632,
+      cap: spot.cap,
+      badge: true
+    });
+    worker.scale.setScalar(0.82);
+    worker.userData.isWorker = true;
+  });
 }
 
 function addThemeMascots() {
@@ -702,6 +727,9 @@ function createTinyVisitor(config) {
   body.scale.x = 0.78;
   sphere("visitor-head", 0.22, [0, 1.42, 0], skin, visitor, 10);
   box("visitor-hair", [0.34, 0.09, 0.28], [0, 1.58, 0.02], makeMat(config.hair), visitor);
+  box("visitor-eye-left", [0.035, 0.025, 0.012], [-0.075, 1.44, -0.205], materials.dark, visitor);
+  box("visitor-eye-right", [0.035, 0.025, 0.012], [0.075, 1.44, -0.205], materials.dark, visitor);
+  box("visitor-neutral-mouth", [0.11, 0.012, 0.012], [0, 1.36, -0.212], materials.dark, visitor);
   box("visitor-leg-left", [0.12, 0.48, 0.12], [-0.09, 0.34, 0], pants, visitor);
   box("visitor-leg-right", [0.12, 0.48, 0.12], [0.09, 0.34, 0], pants, visitor);
   visitor.scale.setScalar(config.scale || 1);
@@ -712,6 +740,30 @@ function addCrowdVisitors(count) {
   const shirts = [0xd93a32, 0x245b8f, 0xffd15f, 0x39a657, 0xf06aa3, 0x7c4dff, 0xffffff];
   const pants = [0x172632, 0x245b8f, 0x5b4636, 0x303b45];
   const hairs = [0x2b2118, 0x523923, 0x111111, 0x7b4f2a];
+  const flowCount = Math.floor(count * 0.52);
+  for (let i = 0; i < flowCount; i += 1) {
+    const lane = i % 9;
+    const visitor = createTinyVisitor({
+      position: [
+        -4.4 + lane * 1.1 + (Math.random() - 0.5) * 0.22,
+        -44 + Math.random() * 106
+      ],
+      rotation: 0,
+      shirt: shirts[(i + lane) % shirts.length],
+      pants: pants[(i + 2 * lane) % pants.length],
+      hair: hairs[(i + 3) % hairs.length],
+      scale: 0.78 + Math.random() * 0.42
+    });
+    visitor.userData = {
+      flow: true,
+      laneX: visitor.position.x,
+      phase: Math.random() * Math.PI * 2,
+      speed: 1.2 + Math.random() * 1.4,
+      sway: 0.08 + Math.random() * 0.16
+    };
+    scene.add(visitor);
+    crowdVisitors.push(visitor);
+  }
   const clusters = [
     { x: 0, z: 47, rx: 14, rz: 6 },
     { x: -18, z: -24, rx: 11, rz: 8 },
@@ -721,7 +773,7 @@ function addCrowdVisitors(count) {
     { x: 4, z: 25, rx: 15, rz: 8 },
     { x: 29, z: 24, rx: 10, rz: 8 }
   ];
-  for (let i = 0; i < count; i += 1) {
+  for (let i = flowCount; i < count; i += 1) {
     const cluster = clusters[i % clusters.length];
     const lane = i % 5;
     const x = cluster.x + (Math.random() - 0.5) * cluster.rx * 2;
@@ -858,6 +910,17 @@ function updateCompanion(elapsed) {
 function updateCrowd(elapsed) {
   crowdVisitors.forEach((visitor, index) => {
     const data = visitor.userData;
+    if (data.flow) {
+      visitor.position.z += data.speed * 0.028;
+      if (visitor.position.z > 62) {
+        visitor.position.z = -45;
+        visitor.position.x = data.laneX + (Math.random() - 0.5) * 0.25;
+      }
+      visitor.position.x = data.laneX + Math.sin(elapsed * 1.4 + data.phase) * data.sway;
+      visitor.position.y = Math.sin(elapsed * 5.2 + index) * 0.018;
+      visitor.rotation.y = 0;
+      return;
+    }
     if (data.pause && Math.sin(elapsed * 0.45 + data.phase) > 0.6) {
       visitor.rotation.y += Math.sin(elapsed + index) * 0.003;
       return;
