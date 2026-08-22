@@ -122,6 +122,7 @@ const entrance = {
   inspector: null,
   gateArms: []
 };
+const crowdVisitors = [];
 
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, preserveDrawingBuffer: true });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
@@ -246,6 +247,9 @@ function buildWorld() {
   addZoneSign("Oscar's New World", [-18, 5, -38], 0xd93a32);
   addZoneSign("Rotary Park", [-18, 5, 9], 0x245b8f);
   addZoneSign("Larva Adventure Village", [20, 5, 36], 0xff8c3a);
+  addThemeGateway("OSCAR'S NEW WORLD", "Dancing Oscar / Spin'n Bump", [-17, 0, -39], 0xd93a32);
+  addThemeGateway("ROTARY PARK", "Indoor 3D Theater / Flying Whirl", [-21, 0, 10], 0x245b8f);
+  addThemeGateway("LARVA ADVENTURE VILLAGE", "Flying Larva / World Express", [21, 0, 39], 0xff8c3a);
 
   for (let i = 0; i < 34; i += 1) {
     const z = -38 + i * 2.7;
@@ -254,7 +258,10 @@ function buildWorld() {
   }
 
   addHotelBackdrop();
+  addParkFurniture();
+  addThemeMascots();
   rideData.forEach((ride, index) => addAttraction(ride, index));
+  addCrowdVisitors(240);
 }
 
 function addTicketArea() {
@@ -301,6 +308,18 @@ function addZoneSign(text, position, color) {
   label(text, [position[0], position[1] + 0.1, position[2] + 0.3], 46);
 }
 
+function addThemeGateway(title, subtitle, position, color) {
+  const group = new THREE.Group();
+  group.position.set(position[0], 0, position[2]);
+  box("theme-gateway-left", [0.55, 5.8, 0.55], [-6.2, 2.9, 0], materials.steel, group);
+  box("theme-gateway-right", [0.55, 5.8, 0.55], [6.2, 2.9, 0], materials.steel, group);
+  box("theme-gateway-top", [13.6, 1.1, 0.7], [0, 5.8, 0], makeMat(color), group);
+  box("theme-gateway-back", [13.2, 3.1, 0.24], [0, 3.9, -0.18], makeMat(0xffffff), group);
+  scene.add(group);
+  label(title, [position[0], 6.25, position[2] + 0.4], 44, 7.2, 1.0);
+  label(subtitle, [position[0], 4.2, position[2] + 0.4], 30, 7.2, 0.8);
+}
+
 function addHotelBackdrop() {
   for (let i = 0; i < 5; i += 1) {
     const building = box("resort-hotel", [7, 11 + i * 2, 4], [-34 + i * 6, 5.5 + i, -52], makeMat(0xe9dfc9));
@@ -320,6 +339,67 @@ function addTree(x, z, scale = 1) {
   scene.add(group);
 }
 
+function addParkFurniture() {
+  const lampMat = makeMat(0x172632, 0.35, 0.28);
+  const lightMat = new THREE.MeshStandardMaterial({ color: 0xfff1a5, emissive: 0xffc94a, emissiveIntensity: 0.7, roughness: 0.35 });
+  for (let i = 0; i < 18; i += 1) {
+    const x = i % 2 === 0 ? -6.6 : 6.6;
+    const z = -35 + i * 5.2;
+    cyl("park-lamp-post", 0.07, 3.4, [x, 1.7, z], lampMat, scene, 8);
+    sphere("park-lamp-light", 0.36, [x, 3.55, z], lightMat, scene, 12);
+  }
+  for (let i = 0; i < 12; i += 1) {
+    const x = i % 2 === 0 ? -10.2 : 10.2;
+    const z = -31 + i * 7.2;
+    const bench = new THREE.Group();
+    bench.position.set(x, 0, z);
+    bench.rotation.y = i % 2 === 0 ? Math.PI / 2 : -Math.PI / 2;
+    box("bench-seat", [2.4, 0.18, 0.7], [0, 0.82, 0], materials.wood, bench);
+    box("bench-back", [2.4, 0.2, 0.72], [0, 1.25, 0.38], materials.wood, bench);
+    box("bench-leg-left", [0.16, 0.68, 0.16], [-0.9, 0.42, -0.18], materials.dark, bench);
+    box("bench-leg-right", [0.16, 0.68, 0.16], [0.9, 0.42, -0.18], materials.dark, bench);
+    scene.add(bench);
+  }
+  for (let i = 0; i < 7; i += 1) {
+    const kiosk = new THREE.Group();
+    kiosk.position.set(i % 2 ? 38 : -38, 0, -30 + i * 13);
+    box("snack-kiosk", [4.2, 2.6, 3], [0, 1.3, 0], makeMat(i % 2 ? 0xffd15f : 0xd93a32), kiosk);
+    box("snack-kiosk-awning", [4.8, 0.45, 3.6], [0, 2.85, 0], makeMat(0xffffff), kiosk);
+    box("snack-window", [2.6, 1.1, 0.1], [0, 1.55, -1.55], materials.glass, kiosk);
+    scene.add(kiosk);
+  }
+}
+
+function addThemeMascots() {
+  const oscar = new THREE.Group();
+  oscar.position.set(-31, 0, -34);
+  sphere("oscar-round-sculpture", 1.5, [0, 1.7, 0], makeMat(0xffd15f), oscar, 24);
+  box("oscar-hat", [2.4, 0.45, 1.5], [0, 3.1, 0], makeMat(0xd93a32), oscar);
+  sphere("oscar-nose", 0.28, [0, 1.82, -1.42], makeMat(0xf1bd8c), oscar, 12);
+  scene.add(oscar);
+
+  const larva = new THREE.Group();
+  larva.position.set(31, 0, 37);
+  for (let i = 0; i < 5; i += 1) {
+    const segment = sphere("larva-color-sculpture", 0.78, [0, 1.1 + i * 0.24, -1.4 + i * 0.65], makeMat(i % 2 ? 0xd93a32 : 0xffd15f), larva, 18);
+    segment.scale.set(1, 0.8, 1.25);
+  }
+  scene.add(larva);
+}
+
+function addQueueRails(group, ride) {
+  const queue = new THREE.Group();
+  queue.position.set(-6.4, 0, 6.9);
+  const railMat = makeMat(0x172632, 0.34, 0.42);
+  for (let i = 0; i < 4; i += 1) {
+    box("queue-rail", [4.2, 0.12, 0.12], [i % 2 ? 2.1 : -2.1, 1.05, -i * 1.25], railMat, queue);
+    cyl("queue-post", 0.08, 1.45, [-4.2, 0.73, -i * 1.25], railMat, queue, 8);
+    cyl("queue-post", 0.08, 1.45, [4.2, 0.73, -i * 1.25], railMat, queue, 8);
+  }
+  box("queue-sign-board", [3.4, 1.2, 0.18], [0, 2.1, -5.2], makeMat(ride.color), queue);
+  group.add(queue);
+}
+
 function addAttraction(ride, index) {
   const group = new THREE.Group();
   group.position.set(ride.position[0], 0, ride.position[2]);
@@ -328,6 +408,7 @@ function addAttraction(ride, index) {
   const base = cyl("ride-base", 5.2, 0.42, [0, 0.22, 0], makeMat(ride.color), group, 48);
   base.scale.z = 0.72;
   label(ride.name, [ride.position[0], 5.8, ride.position[2] + 5.8], 42);
+  addQueueRails(group, ride);
 
   if (ride.model === "coaster") buildCoaster(group, ride);
   if (ride.model === "spinBump") buildSpinBump(group, ride);
@@ -418,9 +499,26 @@ function buildWhirl(group, ride) {
 }
 
 function buildDarkRide(group, ride) {
-  box("dark-ride-building", [12, 6, 9], [0, 3, 0], makeMat(0x222b35), group);
+  const wallMat = makeMat(0x222b35);
+  const roofMat = new THREE.MeshStandardMaterial({ color: 0x172632, roughness: 0.36, metalness: 0.1, transparent: true, opacity: 0.78 });
+  const lightMat = new THREE.MeshStandardMaterial({ color: 0x80f5ff, emissive: 0x38d5ff, emissiveIntensity: 0.65, roughness: 0.18 });
+  box("dark-ride-back-wall", [12, 6, 0.45], [0, 3, -4.5], wallMat, group);
+  box("dark-ride-left-wall", [0.45, 6, 9], [-6, 3, 0], wallMat, group);
+  box("dark-ride-right-glass-wall", [0.24, 5.4, 9], [6, 3, 0], materials.glass, group);
+  box("dark-ride-cutaway-roof", [12.8, 0.45, 9.6], [0, 6.25, 0], roofMat, group);
+  box("dark-ride-floor", [11.4, 0.2, 8.4], [0, 0.3, 0], makeMat(0x303b45), group);
   box("dark-ride-door", [4, 3.4, 0.25], [0, 1.7, 4.65], makeMat(0xffd15f), group);
   box("dome-screen", [7, 3.3, 0.2], [0, 4.2, -4.65], materials.glass, group);
+  label("室内项目 · 3D THEATER", [ride.position[0], 7.6, ride.position[2] + 2.2], 36, 6.8, 1.0);
+  for (let row = 0; row < 3; row += 1) {
+    for (let col = 0; col < 3; col += 1) {
+      const cart = box("dark-ride-car", [1.15, 0.75, 1.2], [-2.6 + col * 2.6, 0.9, 1.9 - row * 1.55], makeMat(col % 2 ? 0xd93a32 : 0x245b8f), group);
+      box("dark-ride-seat-back", [1, 0.85, 0.15], [0, 0.6, 0.45], materials.dark, cart);
+    }
+  }
+  for (let i = 0; i < 6; i += 1) {
+    sphere("dark-ride-ceiling-light", 0.2, [-4.5 + i * 1.8, 5.72, -1.8 + (i % 2) * 2.4], lightMat, group, 10);
+  }
   for (let i = 0; i < 5; i += 1) {
     const target = sphere("shooting-target", 0.35, [-4 + i * 2, 3.2 + (i % 2), 4.9], makeMat(i % 2 ? 0xf06aa3 : 0x39a657), group);
     target.userData.float = i;
@@ -528,6 +626,62 @@ function createPerson(config) {
   return person;
 }
 
+function createTinyVisitor(config) {
+  const visitor = new THREE.Group();
+  visitor.position.set(config.position[0], 0, config.position[1]);
+  visitor.rotation.y = config.rotation || 0;
+  const shirt = makeMat(config.shirt);
+  const pants = makeMat(config.pants);
+  const skin = makeMat(0xf1bd8c);
+  const body = cyl("visitor-body", 0.25, 0.76, [0, 0.92, 0], shirt, visitor, 10);
+  body.scale.x = 0.78;
+  sphere("visitor-head", 0.22, [0, 1.42, 0], skin, visitor, 10);
+  box("visitor-hair", [0.34, 0.09, 0.28], [0, 1.58, 0.02], makeMat(config.hair), visitor);
+  box("visitor-leg-left", [0.12, 0.48, 0.12], [-0.09, 0.34, 0], pants, visitor);
+  box("visitor-leg-right", [0.12, 0.48, 0.12], [0.09, 0.34, 0], pants, visitor);
+  visitor.scale.setScalar(config.scale || 1);
+  return visitor;
+}
+
+function addCrowdVisitors(count) {
+  const shirts = [0xd93a32, 0x245b8f, 0xffd15f, 0x39a657, 0xf06aa3, 0x7c4dff, 0xffffff];
+  const pants = [0x172632, 0x245b8f, 0x5b4636, 0x303b45];
+  const hairs = [0x2b2118, 0x523923, 0x111111, 0x7b4f2a];
+  const clusters = [
+    { x: 0, z: 47, rx: 14, rz: 6 },
+    { x: -18, z: -24, rx: 11, rz: 8 },
+    { x: 8, z: -26, rx: 11, rz: 8 },
+    { x: -6, z: 2, rx: 12, rz: 7 },
+    { x: 18, z: 4, rx: 12, rz: 7 },
+    { x: 4, z: 25, rx: 15, rz: 8 },
+    { x: 29, z: 24, rx: 10, rz: 8 }
+  ];
+  for (let i = 0; i < count; i += 1) {
+    const cluster = clusters[i % clusters.length];
+    const lane = i % 5;
+    const x = cluster.x + (Math.random() - 0.5) * cluster.rx * 2;
+    const z = cluster.z + (Math.random() - 0.5) * cluster.rz * 2;
+    const visitor = createTinyVisitor({
+      position: [THREE.MathUtils.clamp(x, -42, 42), THREE.MathUtils.clamp(z, -44, 61)],
+      rotation: Math.random() * Math.PI * 2,
+      shirt: shirts[i % shirts.length],
+      pants: pants[(i + lane) % pants.length],
+      hair: hairs[(i + 2) % hairs.length],
+      scale: 0.78 + Math.random() * 0.42
+    });
+    visitor.userData = {
+      origin: visitor.position.clone(),
+      phase: Math.random() * Math.PI * 2,
+      speed: 0.18 + Math.random() * 0.38,
+      radiusX: 0.8 + Math.random() * 2.8,
+      radiusZ: 0.8 + Math.random() * 2.8,
+      pause: Math.random() > 0.72
+    };
+    scene.add(visitor);
+    crowdVisitors.push(visitor);
+  }
+}
+
 function updateRideList() {
   rideData.forEach((ride, index) => ride.listButton?.classList.toggle("active", index === selectedIndex));
 }
@@ -626,12 +780,35 @@ function updateNearest() {
 
 function updateCompanion(elapsed) {
   if (!entrance.friend || riding) return;
-  const offset = new THREE.Vector3(-3.2, 0, 1.4);
-  const desired = player.position.clone().add(offset);
-  desired.x = THREE.MathUtils.clamp(desired.x, -43, 43);
-  desired.z = THREE.MathUtils.clamp(desired.z, entrance.ticketChecked ? -45 : 56.5, 63);
-  entrance.friend.position.lerp(desired, 0.045);
-  entrance.friend.rotation.y = player.rotation.y + Math.sin(elapsed * 1.6) * 0.08;
+  const desired = entrance.ticketChecked
+    ? new THREE.Vector3(Math.sin(elapsed * 0.27) * 9, 0, 37 + Math.cos(elapsed * 0.22) * 7)
+    : new THREE.Vector3(-3.6 + Math.sin(elapsed * 0.8) * 0.35, 0, 61.3);
+  entrance.friend.position.lerp(desired, 0.018);
+  entrance.friend.rotation.y = Math.atan2(
+    desired.x - entrance.friend.position.x,
+    desired.z - entrance.friend.position.z
+  );
+}
+
+function updateCrowd(elapsed) {
+  crowdVisitors.forEach((visitor, index) => {
+    const data = visitor.userData;
+    if (data.pause && Math.sin(elapsed * 0.45 + data.phase) > 0.6) {
+      visitor.rotation.y += Math.sin(elapsed + index) * 0.003;
+      return;
+    }
+    const t = elapsed * data.speed + data.phase;
+    const nextX = data.origin.x + Math.sin(t) * data.radiusX;
+    const nextZ = data.origin.z + Math.cos(t * 0.82) * data.radiusZ;
+    const dx = nextX - visitor.position.x;
+    const dz = nextZ - visitor.position.z;
+    visitor.position.x = THREE.MathUtils.lerp(visitor.position.x, nextX, 0.035);
+    visitor.position.z = THREE.MathUtils.lerp(visitor.position.z, nextZ, 0.035);
+    if (Math.abs(dx) + Math.abs(dz) > 0.001) {
+      visitor.rotation.y = Math.atan2(dx, dz);
+    }
+    visitor.position.y = Math.sin(elapsed * 3.2 + index) * 0.025;
+  });
 }
 
 function updatePlayer(delta) {
@@ -704,19 +881,19 @@ function updateCamera(elapsed) {
   }
 
   if (!entrance.ticketChecked && player.position.z > 51) {
-    const desired = new THREE.Vector3(player.position.x * 0.35, 18, 78);
+    const desired = new THREE.Vector3(0, 58, 62);
     camera.position.lerp(desired, 0.12);
-    camera.lookAt(new THREE.Vector3(1.5, 2.2, 56.5));
+    camera.lookAt(new THREE.Vector3(0, 0, 26));
     return;
   }
 
   const forward = new THREE.Vector3(Math.sin(player.rotation.y), 0, Math.cos(player.rotation.y));
   const desired = player.position.clone().sub(forward.multiplyScalar(12));
-  desired.y = 8.2;
+  desired.y = 10.6;
   desired.x += Math.cos(elapsed * 0.7) * 0.08;
   camera.position.lerp(desired, 0.12);
   target.copy(player.position);
-  target.y = 2.1;
+  target.y = 1.2;
   camera.lookAt(target);
 }
 
@@ -735,6 +912,7 @@ function animate() {
   resize();
   updatePlayer(delta);
   updateCompanion(elapsed);
+  updateCrowd(elapsed);
   updateRides(elapsed, delta);
   updateNearest();
   updateCamera(elapsed);
