@@ -111,6 +111,12 @@ const rideData = [
 const keys = new Set();
 const pointer = { active: false, x: 0, y: 0 };
 const velocity = new THREE.Vector3();
+const viewState = {
+  pitch: 0,
+  targetPitch: 0,
+  distance: 12,
+  targetDistance: 12
+};
 const clock = new THREE.Clock();
 const interactive = [];
 let nearest = null;
@@ -945,6 +951,10 @@ function updatePlayer(delta) {
   const moveSpeed = keys.has("Shift") ? 12 : 7.5;
   if (keys.has("a") || keys.has("ArrowLeft")) player.rotation.y += turnSpeed * delta;
   if (keys.has("d") || keys.has("ArrowRight")) player.rotation.y -= turnSpeed * delta;
+  if (keys.has("q")) viewState.targetPitch = THREE.MathUtils.clamp(viewState.targetPitch + delta * 1.25, -0.42, 0.85);
+  if (keys.has("e")) viewState.targetPitch = THREE.MathUtils.clamp(viewState.targetPitch - delta * 1.25, -0.42, 0.85);
+  if (keys.has("z")) viewState.targetDistance = THREE.MathUtils.clamp(viewState.targetDistance - delta * 8, 7.5, 22);
+  if (keys.has("x")) viewState.targetDistance = THREE.MathUtils.clamp(viewState.targetDistance + delta * 8, 7.5, 22);
 
   const forward = new THREE.Vector3(Math.sin(player.rotation.y), 0, Math.cos(player.rotation.y));
   const move = new THREE.Vector3();
@@ -998,31 +1008,41 @@ function updateRides(elapsed, delta) {
 }
 
 function updateCamera(elapsed) {
+  viewState.pitch = THREE.MathUtils.lerp(viewState.pitch, viewState.targetPitch, 0.08);
+  viewState.distance = THREE.MathUtils.lerp(viewState.distance, viewState.targetDistance, 0.08);
+  const lookHeight = THREE.MathUtils.clamp(2 + viewState.pitch * 18, 0.8, 18);
   const target = new THREE.Vector3();
   if (riding) {
     const ride = riding.userData.ride;
     const circle = elapsed * 1.2;
-    target.set(ride.position[0], 3, ride.position[2]);
-    camera.position.lerp(new THREE.Vector3(ride.position[0] + Math.cos(circle) * 11, 8 + Math.sin(circle * 1.7) * 2, ride.position[2] + Math.sin(circle) * 11), 0.08);
+    target.set(ride.position[0], 3 + viewState.pitch * 9, ride.position[2]);
+    camera.position.lerp(new THREE.Vector3(ride.position[0] + Math.cos(circle) * 11, 8 + viewState.pitch * 5 + Math.sin(circle * 1.7) * 2, ride.position[2] + Math.sin(circle) * 11), 0.08);
     camera.lookAt(target);
     return;
   }
 
   if (!entrance.ticketChecked && player.position.z > 51) {
-    const desired = new THREE.Vector3(0, 58, 62);
+    const desired = new THREE.Vector3(0, 58 + viewState.pitch * 12, 62 + viewState.distance * 0.18);
     camera.position.lerp(desired, 0.12);
-    camera.lookAt(new THREE.Vector3(0, 0, 26));
+    camera.lookAt(new THREE.Vector3(0, lookHeight, 26));
     return;
   }
 
   const forward = new THREE.Vector3(Math.sin(player.rotation.y), 0, Math.cos(player.rotation.y));
-  const desired = player.position.clone().sub(forward.multiplyScalar(12));
-  desired.y = 10.6;
+  const desired = player.position.clone().sub(forward.multiplyScalar(viewState.distance));
+  desired.y = 9.4 + viewState.pitch * 3.2;
   desired.x += Math.cos(elapsed * 0.7) * 0.08;
   camera.position.lerp(desired, 0.12);
   target.copy(player.position);
-  target.y = 1.2;
+  target.y = lookHeight;
   camera.lookAt(target);
+}
+
+function nudgeView(action) {
+  if (action === "lookUp") viewState.targetPitch = THREE.MathUtils.clamp(viewState.targetPitch + 0.16, -0.42, 0.85);
+  if (action === "lookDown") viewState.targetPitch = THREE.MathUtils.clamp(viewState.targetPitch - 0.16, -0.42, 0.85);
+  if (action === "zoomIn") viewState.targetDistance = THREE.MathUtils.clamp(viewState.targetDistance - 1.7, 7.5, 22);
+  if (action === "zoomOut") viewState.targetDistance = THREE.MathUtils.clamp(viewState.targetDistance + 1.7, 7.5, 22);
 }
 
 function resize() {
@@ -1057,6 +1077,11 @@ function setupInput() {
   window.addEventListener("keyup", (event) => keys.delete(event.key.toLowerCase()));
 
   document.addEventListener("click", (event) => {
+    const viewButton = event.target.closest("[data-view]");
+    if (viewButton) {
+      nudgeView(viewButton.dataset.view);
+      return;
+    }
     const moveButton = event.target.closest("[data-move]");
     if (!moveButton || riding) return;
     const action = moveButton.dataset.move;
@@ -1066,6 +1091,11 @@ function setupInput() {
     if (action === "forward") player.position.add(forward.multiplyScalar(2.4));
     if (action === "backward") player.position.add(forward.multiplyScalar(-2.4));
   });
+
+  canvas.addEventListener("wheel", (event) => {
+    viewState.targetDistance = THREE.MathUtils.clamp(viewState.targetDistance + Math.sign(event.deltaY) * 1.4, 7.5, 22);
+    event.preventDefault();
+  }, { passive: false });
 
   const startStick = (event) => {
     pointer.active = true;
