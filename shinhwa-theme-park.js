@@ -233,12 +233,13 @@ function roundedRect(context, x, y, width, height, radius) {
 }
 
 function buildWorld() {
-  const ground = box("park-ground", [92, 0.7, 96], [0, -0.36, 8], materials.grass);
+  const ground = box("park-ground", [104, 0.7, 104], [0, -0.36, 6], materials.grass);
   ground.receiveShadow = true;
   box("main-path", [10, 0.08, 92], [0, 0.03, 10], materials.path);
   box("cross-path", [78, 0.09, 9], [0, 0.05, 8], materials.path);
   box("entrance-plaza", [34, 0.1, 14], [0, 0.06, 54], materials.path);
   box("water-lake", [21, 0.06, 14], [34, 0.08, -36], materials.water);
+  addGuideMapLayout();
 
   const gate = new THREE.Group();
   gate.position.set(0, 0, 55);
@@ -267,8 +268,40 @@ function buildWorld() {
   addParkFurniture();
   addParkWorkers();
   addThemeMascots();
+  addMomoZoo();
+  addDenseMapForest();
   rideData.forEach((ride, index) => addAttraction(ride, index));
   addCrowdVisitors(320);
+}
+
+function addGuideMapLayout() {
+  const streetMat = makeMat(0xd9a7ad, 0.74, 0.04);
+  const sideMat = makeMat(0xd8c486, 0.74, 0.04);
+  const plazaMat = makeMat(0xe8d69c, 0.72, 0.04);
+  box("map-main-street-pink", [12.5, 0.12, 34], [0, 0.12, 39], streetMat);
+  label("MAIN STREET", [0, 0.75, 38.5], 34, 4.2, 1.1);
+  const leftFork = box("map-left-fork-road", [6.8, 0.1, 31], [-14, 0.1, 21], sideMat);
+  leftFork.rotation.y = -0.72;
+  const rightFork = box("map-right-fork-road", [6.8, 0.1, 30], [15, 0.1, 23], sideMat);
+  rightFork.rotation.y = 0.7;
+  const oscarLane = box("map-oscar-lane", [7.5, 0.1, 31], [-18, 0.1, -25], sideMat);
+  oscarLane.rotation.y = 0.36;
+  const larvaLane = box("map-larva-lane", [7.5, 0.1, 29], [25, 0.1, 21], sideMat);
+  larvaLane.rotation.y = -0.45;
+  cyl("map-rotary-round", 12.5, 0.12, [-18, 0.12, 8], plazaMat, scene, 56);
+  cyl("map-larva-round", 13.5, 0.12, [25, 0.12, 26], plazaMat, scene, 56);
+  addRoadLoop(-6, -29, 13, 1.15, "map-coaster-loop-road");
+  addRoadLoop(24, 36, 9, 0.78, "map-larva-loop-road");
+}
+
+function addRoadLoop(x, z, radius, scaleZ, name) {
+  const road = new THREE.Mesh(new THREE.TorusGeometry(radius, 0.55, 10, 84), materials.path);
+  road.name = name;
+  road.position.set(x, 0.16, z);
+  road.rotation.x = Math.PI / 2;
+  road.scale.y = scaleZ;
+  road.receiveShadow = true;
+  scene.add(road);
 }
 
 function addTicketArea() {
@@ -374,6 +407,51 @@ function addParkFurniture() {
     box("snack-kiosk-awning", [4.8, 0.45, 3.6], [0, 2.85, 0], makeMat(0xffffff), kiosk);
     box("snack-window", [2.6, 1.1, 0.1], [0, 1.55, -1.55], materials.glass, kiosk);
     scene.add(kiosk);
+  }
+}
+
+function addMomoZoo() {
+  const zoo = new THREE.Group();
+  zoo.position.set(-34, 0, 12);
+  box("momo-zoo-building", [15, 3.2, 8], [0, 1.6, 0], makeMat(0xf1dfba), zoo);
+  box("momo-zoo-roof", [16, 0.55, 9], [0, 3.45, 0], makeMat(0xd93a32), zoo);
+  box("momo-zoo-front", [12, 1.4, 0.18], [0, 2.1, -4.15], makeMat(0xffffff), zoo);
+  label("MOMO ZOO", [-34, 5.1, 7.5], 40, 5.6, 1.1);
+  for (let i = 0; i < 4; i += 1) {
+    const pen = new THREE.Group();
+    pen.position.set(-6 + i * 4, 0, 7.5);
+    box("zoo-pen-floor", [3.1, 0.08, 3.1], [0, 0.08, 0], makeMat(0xd8c486), pen);
+    for (let side = 0; side < 4; side += 1) {
+      const rail = box("zoo-pen-rail", [3.3, 0.16, 0.12], [0, 0.7, side === 0 ? -1.65 : 1.65], materials.wood, pen);
+      if (side >= 2) rail.rotation.y = Math.PI / 2;
+      if (side >= 2) rail.position.set(side === 2 ? -1.65 : 1.65, 0.7, 0);
+    }
+    sphere("zoo-small-figure", 0.34, [0, 0.62, 0], makeMat(i % 2 ? 0x8c562e : 0xeeeeee), pen, 12);
+    zoo.add(pen);
+  }
+  scene.add(zoo);
+}
+
+function addDenseMapForest() {
+  const clusters = [
+    { x: -36, z: -30, w: 22, d: 20, count: 42 },
+    { x: 35, z: -8, w: 23, d: 30, count: 50 },
+    { x: 38, z: 36, w: 18, d: 20, count: 34 },
+    { x: -38, z: 34, w: 18, d: 18, count: 28 }
+  ];
+  clusters.forEach((cluster, clusterIndex) => {
+    for (let i = 0; i < cluster.count; i += 1) {
+      const x = cluster.x + (Math.random() - 0.5) * cluster.w;
+      const z = cluster.z + (Math.random() - 0.5) * cluster.d;
+      addTree(x, z, 0.62 + ((i + clusterIndex) % 4) * 0.08);
+    }
+  });
+  for (let i = 0; i < 10; i += 1) {
+    const car = new THREE.Group();
+    car.position.set(-30 + (i % 5) * 2.2, 0, 45 + Math.floor(i / 5) * 2.2);
+    box("parking-car-body", [1.55, 0.48, 2.15], [0, 0.42, 0], makeMat(i % 3 === 0 ? 0xd93a32 : i % 3 === 1 ? 0x245b8f : 0xffd15f), car);
+    box("parking-car-window", [1.2, 0.28, 1], [0, 0.78, -0.05], materials.glass, car);
+    scene.add(car);
   }
 }
 
