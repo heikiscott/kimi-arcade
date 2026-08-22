@@ -380,11 +380,11 @@ function addParkFurniture() {
 function addParkWorkers() {
   const workerSpots = [
     { name: "Dancing Oscar 工作员", position: [-23, 0, -16], rotation: 1.25, shirt: 0xffd15f, cap: 0xd93a32 },
-    { name: "Oscar Spin Bomb 工作员", position: [4.5, 0, -18], rotation: -0.8, shirt: 0x75c9bf, cap: 0xeaa46d },
-    { name: "Spinning Oscar 工作员", position: [-1.8, 0, 20.5], rotation: 0.5, shirt: 0xb46d58, cap: 0xffd15f },
-    { name: "室内馆工作员", position: [-12, 0, 8.7], rotation: 1.4, shirt: 0x274b76, cap: 0x274b76 },
-    { name: "商店工作员", position: [37.8, 0, 22], rotation: -Math.PI / 2, shirt: 0xd93a32, cap: 0xffffff },
-    { name: "巡园工作员", position: [-9, 0, 36], rotation: 0.2, shirt: 0x39a657, cap: 0xffd15f }
+    { name: "Oscar Spin Bomb 工作员", position: [4.5, 0, -18], rotation: -0.8, shirt: 0x75c9bf, cap: 0xeaa46d, expression: "calm" },
+    { name: "Spinning Oscar 工作员", position: [-1.8, 0, 20.5], rotation: 0.5, shirt: 0xb46d58, cap: 0xffd15f, expression: "happy" },
+    { name: "室内馆工作员", position: [-12, 0, 8.7], rotation: 1.4, shirt: 0x274b76, cap: 0x274b76, expression: "calm" },
+    { name: "商店工作员", position: [37.8, 0, 22], rotation: -Math.PI / 2, shirt: 0xd93a32, cap: 0xffffff, expression: "happy" },
+    { name: "巡园工作员", position: [-9, 0, 36], rotation: 0.2, shirt: 0x39a657, cap: 0xffd15f, expression: "curious" }
   ];
   workerSpots.forEach((spot) => {
     const worker = createPerson({
@@ -394,6 +394,7 @@ function addParkWorkers() {
       shirt: spot.shirt,
       pants: 0x172632,
       cap: spot.cap,
+      expression: spot.expression || "happy",
       badge: true
     });
     worker.scale.setScalar(0.82);
@@ -703,10 +704,33 @@ const playerBody = cyl("player-body", 0.72, 1.4, [0, 1.35, 0], makeMat(0x245b8f)
 playerBody.scale.x = 0.85;
 sphere("player-head", 0.56, [0, 2.28, 0], makeMat(0xf1bd8c), player);
 box("player-hair", [0.9, 0.22, 0.78], [0, 2.72, 0.05], makeMat(0x2b2118), player);
+addSimpleFace(player, "player", 1.55, 2.28, -0.52, "happy");
 box("player-bag", [1.15, 1, 0.22], [0, 1.35, 0.62], makeMat(0x172632), player);
 player.scale.setScalar(0.78);
 scene.add(player);
 label("我", [0, 3.35, 61], 42, 1.25, 0.78);
+
+function addSimpleFace(parent, prefix, scale, baseY, frontZ, mood = "calm") {
+  const eyeW = 0.04 * scale;
+  const eyeH = 0.03 * scale;
+  const mouthW = 0.1 * scale;
+  const mouthH = 0.014 * scale;
+  box(`${prefix}-eye-left`, [eyeW, eyeH, 0.012], [-0.09 * scale, baseY + 0.06 * scale, frontZ], materials.dark, parent);
+  box(`${prefix}-eye-right`, [eyeW, eyeH, 0.012], [0.09 * scale, baseY + 0.06 * scale, frontZ], materials.dark, parent);
+  if (mood === "happy") {
+    box(`${prefix}-smile-center`, [mouthW, mouthH, 0.012], [0, baseY - 0.07 * scale, frontZ - 0.002], materials.dark, parent);
+    box(`${prefix}-smile-left`, [mouthW * 0.45, mouthH, 0.012], [-0.055 * scale, baseY - 0.052 * scale, frontZ - 0.002], materials.dark, parent).rotation.z = -0.35;
+    box(`${prefix}-smile-right`, [mouthW * 0.45, mouthH, 0.012], [0.055 * scale, baseY - 0.052 * scale, frontZ - 0.002], materials.dark, parent).rotation.z = 0.35;
+    return;
+  }
+  if (mood === "curious") {
+    box(`${prefix}-mouth-open`, [mouthW * 0.44, mouthH * 2.4, 0.012], [0, baseY - 0.072 * scale, frontZ - 0.002], materials.dark, parent);
+    box(`${prefix}-brow-left`, [mouthW * 0.46, mouthH, 0.012], [-0.09 * scale, baseY + 0.13 * scale, frontZ - 0.002], materials.dark, parent).rotation.z = 0.25;
+    box(`${prefix}-brow-right`, [mouthW * 0.46, mouthH, 0.012], [0.09 * scale, baseY + 0.13 * scale, frontZ - 0.002], materials.dark, parent).rotation.z = -0.25;
+    return;
+  }
+  box(`${prefix}-mouth-calm`, [mouthW, mouthH, 0.012], [0, baseY - 0.07 * scale, frontZ - 0.002], materials.dark, parent);
+}
 
 function createPerson(config) {
   const person = new THREE.Group();
@@ -716,6 +740,7 @@ function createPerson(config) {
   body.scale.x = 0.84;
   sphere(`${config.name}-head`, 0.5, [0, 2.23, 0], makeMat(0xf1bd8c), person);
   box(`${config.name}-hair`, [0.78, 0.2, 0.66], [0, 2.62, 0.03], makeMat(config.hair || 0x2b2118), person);
+  addSimpleFace(person, config.name, 1.25, 2.23, -0.46, config.expression || "happy");
   box(`${config.name}-leg-left`, [0.32, 0.85, 0.32], [-0.22, 0.42, 0], makeMat(config.pants || 0x172632), person);
   box(`${config.name}-leg-right`, [0.32, 0.85, 0.32], [0.22, 0.42, 0], makeMat(config.pants || 0x172632), person);
   box(`${config.name}-arm-left`, [0.22, 0.85, 0.22], [-0.75, 1.42, 0], makeMat(config.shirt || 0x39a657), person).rotation.z = -0.18;
@@ -742,9 +767,7 @@ function createTinyVisitor(config) {
   body.scale.x = 0.78;
   sphere("visitor-head", 0.22, [0, 1.42, 0], skin, visitor, 10);
   box("visitor-hair", [0.34, 0.09, 0.28], [0, 1.58, 0.02], makeMat(config.hair), visitor);
-  box("visitor-eye-left", [0.035, 0.025, 0.012], [-0.075, 1.44, -0.205], materials.dark, visitor);
-  box("visitor-eye-right", [0.035, 0.025, 0.012], [0.075, 1.44, -0.205], materials.dark, visitor);
-  box("visitor-neutral-mouth", [0.11, 0.012, 0.012], [0, 1.36, -0.212], materials.dark, visitor);
+  addSimpleFace(visitor, "visitor", 0.55, 1.42, -0.205, config.expression || "calm");
   box("visitor-leg-left", [0.12, 0.48, 0.12], [-0.09, 0.34, 0], pants, visitor);
   box("visitor-leg-right", [0.12, 0.48, 0.12], [0.09, 0.34, 0], pants, visitor);
   visitor.scale.setScalar(config.scale || 1);
@@ -755,6 +778,7 @@ function addCrowdVisitors(count) {
   const shirts = [0xd93a32, 0x245b8f, 0xffd15f, 0x39a657, 0xf06aa3, 0x7c4dff, 0xffffff];
   const pants = [0x172632, 0x245b8f, 0x5b4636, 0x303b45];
   const hairs = [0x2b2118, 0x523923, 0x111111, 0x7b4f2a];
+  const expressions = ["happy", "calm", "curious", "happy", "calm"];
   const flowCount = Math.floor(count * 0.52);
   for (let i = 0; i < flowCount; i += 1) {
     const lane = i % 9;
@@ -767,6 +791,7 @@ function addCrowdVisitors(count) {
       shirt: shirts[(i + lane) % shirts.length],
       pants: pants[(i + 2 * lane) % pants.length],
       hair: hairs[(i + 3) % hairs.length],
+      expression: expressions[(i + lane) % expressions.length],
       scale: 0.78 + Math.random() * 0.42
     });
     visitor.userData = {
@@ -799,6 +824,7 @@ function addCrowdVisitors(count) {
       shirt: shirts[i % shirts.length],
       pants: pants[(i + lane) % pants.length],
       hair: hairs[(i + 2) % hairs.length],
+      expression: expressions[(i + 2 * lane) % expressions.length],
       scale: 0.78 + Math.random() * 0.42
     });
     visitor.userData = {
