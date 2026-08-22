@@ -696,8 +696,9 @@ playerBody.scale.x = 0.85;
 sphere("player-head", 0.56, [0, 2.28, 0], makeMat(0xf1bd8c), player);
 box("player-hair", [0.9, 0.22, 0.78], [0, 2.72, 0.05], makeMat(0x2b2118), player);
 box("player-bag", [1.15, 1, 0.22], [0, 1.35, 0.62], makeMat(0x172632), player);
+player.scale.setScalar(0.78);
 scene.add(player);
-label("我", [0, 4.2, 61], 46, 1.5, 0.9);
+label("我", [0, 3.35, 61], 42, 1.25, 0.78);
 
 function createPerson(config) {
   const person = new THREE.Group();
