@@ -125,6 +125,7 @@ let rideSeat = null;
 let selectedIndex = 0;
 let audioContext = null;
 let coasterSound = null;
+let rideSound = null;
 const entrance = {
   ticketChecked: false,
   friend: null,
@@ -213,6 +214,52 @@ function stopCoasterSound() {
   coasterSound.rumble.stop(endAt);
   coasterSound.wheelClick.stop(endAt);
   coasterSound = null;
+}
+
+function startRideSound(kind = "gentle") {
+  const context = ensureAudio();
+  if (!context || rideSound) return;
+  const scream = context.createOscillator();
+  const crowd = context.createOscillator();
+  const lfo = context.createOscillator();
+  const lfoGain = context.createGain();
+  const gain = context.createGain();
+  scream.type = "triangle";
+  crowd.type = "sawtooth";
+  lfo.type = "sine";
+  scream.frequency.value = kind === "wild" ? 760 : 520;
+  crowd.frequency.value = kind === "wild" ? 230 : 170;
+  lfo.frequency.value = kind === "wild" ? 5.4 : 3.2;
+  lfoGain.gain.value = kind === "wild" ? 185 : 95;
+  gain.gain.value = kind === "wild" ? 0.032 : 0.018;
+  lfo.connect(lfoGain);
+  lfoGain.connect(scream.frequency);
+  scream.connect(gain);
+  crowd.connect(gain);
+  gain.connect(context.destination);
+  scream.start();
+  crowd.start();
+  lfo.start();
+  rideSound = { scream, crowd, lfo, gain };
+}
+
+function stopRideSound() {
+  if (!rideSound || !audioContext) return;
+  const endAt = audioContext.currentTime + 0.1;
+  rideSound.gain.gain.linearRampToValueAtTime(0.001, endAt);
+  rideSound.scream.stop(endAt);
+  rideSound.crowd.stop(endAt);
+  rideSound.lfo.stop(endAt);
+  rideSound = null;
+}
+
+function updateRideSound(intensity = 0.4) {
+  if (!rideSound || !audioContext) return;
+  const now = audioContext.currentTime;
+  const clamped = THREE.MathUtils.clamp(intensity, 0.15, 1);
+  rideSound.scream.frequency.setTargetAtTime(480 + clamped * 420, now, 0.06);
+  rideSound.crowd.frequency.setTargetAtTime(150 + clamped * 150, now, 0.08);
+  rideSound.gain.gain.setTargetAtTime(0.012 + clamped * 0.032, now, 0.07);
 }
 
 function updateCoasterSound(phaseKey, speed) {
@@ -775,13 +822,36 @@ function buildSpinBump(group, ride) {
   }
   group.add(marquee);
 
+  const swingRailPoints = [
+    new THREE.Vector3(-6.6, 3.15, -0.75),
+    new THREE.Vector3(-4.2, 2.15, -0.75),
+    new THREE.Vector3(0, 1.55, -0.75),
+    new THREE.Vector3(4.2, 2.15, -0.75),
+    new THREE.Vector3(6.6, 3.15, -0.75)
+  ];
+  const swingRail = new THREE.CatmullRomCurve3(swingRailPoints, false, "catmullrom", 0.24);
+  const railA = new THREE.Mesh(new THREE.TubeGeometry(swingRail, 90, 0.11, 8, false), materials.steel);
+  railA.name = "spin-bomb-swing-rail-front";
+  railA.castShadow = true;
+  group.add(railA);
+  const railB = railA.clone();
+  railB.name = "spin-bomb-swing-rail-back";
+  railB.position.z = 1.5;
+  group.add(railB);
+  box("spin-bomb-left-support", [0.34, 5.2, 0.34], [-6.7, 2.6, 0], materials.steel, group).rotation.z = -0.28;
+  box("spin-bomb-right-support", [0.34, 5.2, 0.34], [6.7, 2.6, 0], materials.steel, group).rotation.z = 0.28;
+  box("spin-bomb-top-beam", [13.8, 0.26, 0.26], [0, 5.05, 0], materials.steel, group);
+
   const arm = new THREE.Group();
-  group.userData.rotor = arm;
+  group.userData.spinBumpArm = arm;
   cyl("spin-center", 0.9, 5, [0, 2.5, 0], makeMat(0x75c9bf), arm);
   const disc = cyl("spin-disc", 5.5, 0.55, [0, 3.4, 0], makeMat(0xeaa46d), arm, 64);
   disc.rotation.x = Math.PI / 2;
-  for (let i = 0; i < 10; i += 1) {
-    const angle = (i / 10) * Math.PI * 2;
+  box("spin-bomb-ship-floor", [7.6, 0.34, 2.15], [0, 2.08, 0], makeMat(0xffd15f), arm);
+  box("spin-bomb-ship-front", [0.6, 1.2, 2.05], [-4.1, 2.55, 0], makeMat(0xf0a16b), arm).rotation.z = 0.34;
+  box("spin-bomb-ship-back", [0.6, 1.2, 2.05], [4.1, 2.55, 0], makeMat(0xf0a16b), arm).rotation.z = -0.34;
+  for (let i = 0; i < 11; i += 1) {
+    const angle = (i / 11) * Math.PI * 2;
     const seatGroup = new THREE.Group();
     seatGroup.position.set(Math.cos(angle) * 4.2, 3.9, Math.sin(angle) * 4.2);
     seatGroup.lookAt(0, 3.9, 0);
@@ -1116,6 +1186,7 @@ function rideNearest() {
     riding.userData.coasterTrain.phaseName = "";
     startCoasterSound();
   }
+  startRideSound(riding.userData.coasterTrain || riding.userData.spinBumpArm ? "wild" : "gentle");
   rideSeat.add(player);
   player.position.set(0, 0, 0);
   player.rotation.set(0, 0, 0);
@@ -1143,6 +1214,7 @@ function leaveRide() {
   if (!riding) return;
   const ride = riding.userData.ride;
   if (riding.userData.coasterTrain) stopCoasterSound();
+  stopRideSound();
   scene.add(player);
   player.position.set(ride.position[0] + 7, 0, ride.position[2] + 7);
   player.rotation.set(0, Math.PI, 0);
@@ -1161,6 +1233,7 @@ function moveNextRide() {
 
 function resetPlayer() {
   stopCoasterSound();
+  stopRideSound();
   scene.add(player);
   riding = null;
   rideSeat = null;
@@ -1305,6 +1378,20 @@ function updateRides(elapsed, delta) {
     if (group.userData.rotor) {
       group.userData.rotor.rotation.y += delta * (0.45 + (group.userData.ride.id.length % 4) * 0.18);
       group.userData.rotor.position.y = Math.sin(elapsed * 1.4 + group.position.x) * 0.18;
+      if (riding === group) updateRideSound(0.32 + Math.abs(Math.sin(elapsed * 1.4 + group.position.x)) * 0.28);
+    }
+    if (group.userData.spinBumpArm) {
+      const swing = Math.sin(elapsed * 1.18);
+      const endpointSlow = 0.45 + 0.55 * Math.abs(Math.cos(elapsed * 1.18));
+      group.userData.spinBumpArm.rotation.z = swing * 0.72;
+      group.userData.spinBumpArm.rotation.y += delta * 0.28 * endpointSlow;
+      group.userData.spinBumpArm.position.x = swing * 1.35;
+      group.userData.spinBumpArm.position.y = 0.35 + (1 - Math.abs(swing)) * 0.65;
+      if (riding === group) {
+        const side = swing > 0 ? "右边" : "左边";
+        statusText.textContent = `Oscar Spin Bomb：像海盗船一样摆到${side}，到边上会减速，再甩回来。`;
+        updateRideSound(0.55 + Math.abs(swing) * 0.4);
+      }
     }
     if (group.userData.train) {
       const t = (elapsed * 0.08) % 1;
@@ -1348,15 +1435,16 @@ function updateRides(elapsed, delta) {
         const cabin = car.userData.cabin;
         if (cabin) {
           const stationSlowdown = baseT < 0.1 || baseT > 0.88 ? 0.25 : 1;
-          const spinBoost = phase.sound === "loop" ? 1.65 : phase.sound === "drop" ? 1.25 : 1;
-          car.userData.spinAngle += delta * (1.15 + phaseSpeed * 1.35) * stationSlowdown * spinBoost * car.userData.spinRate;
-          cabin.rotation.y = car.userData.spinAngle + Math.sin(elapsed * 1.8 + car.userData.spinPhase) * 0.16;
+          const spinBoost = phase.sound === "loop" ? 3.35 : phase.sound === "drop" ? 1.75 : 1.25;
+          car.userData.spinAngle += delta * (2.25 + phaseSpeed * 2.8) * stationSlowdown * spinBoost * car.userData.spinRate;
+          cabin.rotation.y = car.userData.spinAngle + Math.sin(elapsed * 2.8 + car.userData.spinPhase) * 0.22;
           cabin.position.y = Math.sin(elapsed * 7 + car.userData.spinPhase) * 0.025;
         }
         car.traverse((child) => {
           if (child.name?.startsWith("coaster-wheel")) child.rotation.x += delta * (4 + phaseSpeed * 11);
         });
       });
+      if (riding === group) updateRideSound(phase.sound === "loop" ? 1 : phase.sound === "drop" ? 0.85 : 0.45);
     }
     group.traverse((child) => {
       if (child.userData.curve) {
