@@ -101,6 +101,24 @@ const rideData = [
     info: "小火车绕村庄轨道慢慢开，可以看完整个区域。"
   },
   {
+    id: "ghost",
+    name: "Haunted Ghost Train",
+    zone: "Mystery Zone",
+    model: "ghostTrain",
+    position: [-29, 0, -42],
+    color: 0x5b3ea6,
+    info: "鬼屋小火车，很多游客一起坐车穿过灵鬼屋，遇到鬼影时轨道会突然转弯。"
+  },
+  {
+    id: "penguin",
+    name: "Penguin Splash",
+    zone: "Water Fun Zone",
+    model: "penguinSplash",
+    position: [28, 0, -43],
+    color: 0x38bdf8,
+    info: "企鹅水花过山车，先爬上高处，再嗖一下冲进水池，水花会扑上来。"
+  },
+  {
     id: "playground",
     name: "Adventure Play Ground",
     zone: "Family Zone",
@@ -882,6 +900,8 @@ function addAttraction(ride, index) {
   if (ride.model === "carousel") buildCarousel(group, ride);
   if (ride.model === "dance") buildDance(group, ride);
   if (ride.model === "train") buildTrain(group, ride);
+  if (ride.model === "ghostTrain") buildGhostTrain(group, ride);
+  if (ride.model === "penguinSplash") buildPenguinSplash(group, ride);
   if (ride.model === "playground") buildPlayground(group, ride);
 
   scene.add(group);
@@ -1159,6 +1179,118 @@ function buildTrain(group, ride) {
   group.add(train);
 }
 
+function makeGhostTrainCurve() {
+  return new THREE.CatmullRomCurve3([
+    new THREE.Vector3(-5.8, 0.5, 5.2),
+    new THREE.Vector3(-7.5, 0.6, 1.2),
+    new THREE.Vector3(-4.6, 0.72, -3.7),
+    new THREE.Vector3(-0.8, 0.58, -5.4),
+    new THREE.Vector3(3.4, 0.72, -3.5),
+    new THREE.Vector3(6.8, 0.6, -0.3),
+    new THREE.Vector3(4.2, 0.55, 3.8),
+    new THREE.Vector3(0.5, 0.62, 5.7),
+    new THREE.Vector3(-3.5, 0.55, 4.5),
+    new THREE.Vector3(-5.8, 0.5, 5.2)
+  ], true, "catmullrom", 0.25);
+}
+
+function buildGhostTrain(group, ride) {
+  const wall = makeMat(0x251c32);
+  const purple = makeMat(ride.color);
+  const glow = new THREE.MeshStandardMaterial({ color: 0xb794ff, emissive: 0x7c4dff, emissiveIntensity: 0.7, roughness: 0.35 });
+  box("ghost-house-back", [15, 6.2, 0.35], [0, 3.2, -5.8], wall, group);
+  box("ghost-house-left", [0.35, 6.2, 11.5], [-7.4, 3.2, 0], wall, group);
+  box("ghost-house-right", [0.35, 6.2, 11.5], [7.4, 3.2, 0], wall, group);
+  box("ghost-house-roof", [15.8, 0.55, 12.4], [0, 6.55, 0], purple, group);
+  box("ghost-train-door", [4.2, 3.4, 0.3], [-5.2, 1.9, 5.9], makeMat(0x0f172a), group);
+  box("ghost-exit-door", [3.4, 3.2, 0.3], [5.6, 1.8, 5.9], makeMat(0x0f172a), group);
+  label("GHOST TRAIN", [ride.position[0], 7.7, ride.position[2] + 5.9], 34, 6.5, 0.9);
+
+  const curve = makeGhostTrainCurve();
+  const track = new THREE.Mesh(new THREE.TubeGeometry(curve, 160, 0.1, 8, true), materials.steel);
+  group.add(track);
+  const train = new THREE.Group();
+  group.userData.ghostTrain = { curve, train, elapsed: 0, phaseName: "" };
+  for (let i = 0; i < 4; i += 1) {
+    const car = box("ghost-car", [1.35, 0.9, 1.55], [-i * 1.35, 0.95, 0], makeMat(i === 0 ? 0x111827 : 0x5b3ea6), train);
+    box("ghost-car-front", [1.1, 0.35, 0.12], [-i * 1.35, 1.35, -0.82], glow, train);
+    addSeatedRider(train, [-i * 1.35 - 0.28, 1.43, -0.12], 0.6, i % 2 ? 0xffffff : 0xf06aa3);
+    addSeatedRider(train, [-i * 1.35 + 0.28, 1.43, -0.12], 0.6, i % 2 ? 0x245b8f : 0x39a657);
+    if (i === 0) {
+      addSelectableSeat(group, train, [-i * 1.35 - 0.28, 1.31, -0.36], 0, 0.3, null);
+      addSelectableSeat(group, train, [-i * 1.35 + 0.28, 1.31, -0.36], 0, 0.3, null);
+    }
+    car.castShadow = true;
+  }
+  group.add(train);
+
+  for (let i = 0; i < 8; i += 1) {
+    const x = -5.8 + (i % 4) * 3.7;
+    const z = -3.5 + Math.floor(i / 4) * 4.6;
+    const ghost = new THREE.Group();
+    ghost.position.set(x, 2.15 + (i % 2) * 0.5, z);
+    sphere("floating-ghost-head", 0.48, [0, 0.52, 0], glow, ghost, 16);
+    const body = cyl("floating-ghost-body", 0.5, 0.9, [0, 0, 0], glow, ghost, 16);
+    body.scale.y = 0.82;
+    box("ghost-eye-left", [0.1, 0.08, 0.04], [-0.16, 0.68, -0.45], materials.dark, ghost);
+    box("ghost-eye-right", [0.1, 0.08, 0.04], [0.16, 0.68, -0.45], materials.dark, ghost);
+    ghost.userData.float = i * 0.8;
+    group.add(ghost);
+  }
+}
+
+function makePenguinSplashCurve() {
+  return new THREE.CatmullRomCurve3([
+    new THREE.Vector3(-7.4, 0.65, 5.8),
+    new THREE.Vector3(-6.2, 1.6, 2.3),
+    new THREE.Vector3(-4.6, 3.4, -1.2),
+    new THREE.Vector3(-2.2, 6.2, -4.8),
+    new THREE.Vector3(0.8, 7.4, -5.2),
+    new THREE.Vector3(4.2, 5.5, -2.5),
+    new THREE.Vector3(6.8, 2.2, 1.8),
+    new THREE.Vector3(5.4, 0.55, 5.4),
+    new THREE.Vector3(1.5, 0.38, 6.8),
+    new THREE.Vector3(-3.8, 0.42, 6.4),
+    new THREE.Vector3(-7.4, 0.65, 5.8)
+  ], true, "catmullrom", 0.22);
+}
+
+function buildPenguinSplash(group, ride) {
+  const curve = makePenguinSplashCurve();
+  const waterMat = new THREE.MeshStandardMaterial({ color: 0x38bdf8, roughness: 0.25, metalness: 0.05, transparent: true, opacity: 0.72 });
+  const splashMat = new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0x9ee9ff, emissiveIntensity: 0.25, roughness: 0.2, transparent: true, opacity: 0.88 });
+  box("penguin-water-pool", [14.5, 0.28, 8.3], [0, 0.28, 4.7], waterMat, group);
+  const track = new THREE.Mesh(new THREE.TubeGeometry(curve, 180, 0.12, 8, true), materials.steel);
+  group.add(track);
+  const secondRail = new THREE.Mesh(new THREE.TubeGeometry(curve, 180, 0.05, 8, true), makeMat(0xffffff));
+  secondRail.position.y = 0.32;
+  group.add(secondRail);
+  for (let i = 0; i < 9; i += 1) {
+    cyl("penguin-track-support", 0.08, 5 + (i % 3) * 1.2, [-6 + i * 1.5, 2.6 + (i % 3) * 0.6, -2.9 + (i % 2) * 3.2], materials.steel, group, 8);
+  }
+
+  const boat = new THREE.Group();
+  group.userData.penguinSplash = { curve, boat, elapsed: 0, phaseName: "" };
+  box("penguin-boat-body", [2.4, 0.9, 1.35], [0, 0.75, 0], makeMat(0x0f172a), boat);
+  box("penguin-boat-belly", [1.8, 0.5, 1.42], [0, 0.95, -0.05], materials.white, boat);
+  sphere("penguin-boat-head", 0.42, [0, 1.52, -0.58], makeMat(0x0f172a), boat, 16);
+  box("penguin-beak", [0.32, 0.12, 0.18], [0, 1.5, -0.98], makeMat(0xffd15f), boat);
+  addSeatedRider(boat, [-0.44, 1.22, 0.1], 0.72, 0xffffff);
+  addSeatedRider(boat, [0.44, 1.22, 0.1], 0.72, 0x245b8f);
+  addSelectableSeat(group, boat, [-0.44, 1.1, -0.18], 0, 0.32, null);
+  addSelectableSeat(group, boat, [0.44, 1.1, -0.18], 0, 0.32, null);
+  group.add(boat);
+
+  const splashes = new THREE.Group();
+  for (let i = 0; i < 18; i += 1) {
+    const drop = sphere("penguin-splash-drop", 0.13 + (i % 3) * 0.04, [-2.7 + (i % 6) * 1.05, 0.95 + Math.random() * 1.4, 4.1 + Math.floor(i / 6) * 0.65], splashMat, splashes, 10);
+    drop.userData.float = i * 0.3;
+  }
+  group.userData.splashDrops = splashes;
+  group.add(splashes);
+  label("PENGUIN SPLASH", [ride.position[0], 8.4, ride.position[2] + 4.8], 32, 7.2, 0.9);
+}
+
 function buildPlayground(group, ride) {
   box("net-frame-a", [0.35, 5, 0.35], [-4, 2.5, -2], materials.steel, group);
   box("net-frame-b", [0.35, 5, 0.35], [4, 2.5, -2], materials.steel, group);
@@ -1359,7 +1491,12 @@ function rideNearest() {
     riding.userData.coasterTrain.phaseName = "";
     startCoasterSound();
   }
-  startRideSound(riding.userData.coasterTrain || riding.userData.spinBumpArm ? "wild" : "gentle");
+  if (riding.userData.ghostTrain || riding.userData.penguinSplash) {
+    riding.userData.motion = 0;
+    if (riding.userData.ghostTrain) riding.userData.ghostTrain.phaseName = "";
+    if (riding.userData.penguinSplash) riding.userData.penguinSplash.phaseName = "";
+  }
+  startRideSound(riding.userData.coasterTrain || riding.userData.spinBumpArm || riding.userData.ghostTrain || riding.userData.penguinSplash ? "wild" : "gentle");
   if (rideSeat.userData.dummyRider) rideSeat.userData.dummyRider.visible = false;
   rideSeat.add(player);
   player.position.set(0, 0, 0);
@@ -1597,6 +1734,63 @@ function updateRides(elapsed, delta) {
       const angle = t * Math.PI * 2;
       group.userData.train.position.set(Math.cos(angle) * 7.4, 0.75, Math.sin(angle) * 4.7);
       group.userData.train.rotation.y = -angle + Math.PI / 2;
+    }
+    if (group.userData.ghostTrain) {
+      const ride = group.userData.ghostTrain;
+      const curve = ride.curve;
+      const duration = 34;
+      const baseT = controlled ? Math.min(group.userData.motion / duration, 0.995) : (elapsed * 0.055) % 1;
+      const point = curve.getPoint(baseT);
+      const next = curve.getPoint((baseT + 0.012) % 1);
+      ride.train.position.copy(point);
+      ride.train.rotation.y = Math.atan2(next.x - point.x, next.z - point.z);
+      ride.train.rotation.z = Math.sin(baseT * Math.PI * 8) * 0.08;
+      if (controlled) {
+        const message = baseT < 0.2
+          ? "鬼屋小火车：车厢慢慢开进灵鬼屋。"
+          : baseT < 0.48
+            ? "鬼影出来了，小火车突然转弯跑！"
+            : baseT < 0.78
+              ? "很多游客跟你一起坐着，车厢绕过黑暗弯道。"
+              : "快到出口了，鬼影在后面飘。";
+        if (!rideControl.paused && ride.phaseName !== message) {
+          ride.phaseName = message;
+          statusText.textContent = `${message} 速度 ${rideControl.speed.toFixed(1).replace(".0", "")} 倍。`;
+        }
+        updateRideSound(baseT > 0.2 && baseT < 0.68 ? 0.76 : 0.42);
+      }
+    }
+    if (group.userData.penguinSplash) {
+      const ride = group.userData.penguinSplash;
+      const curve = ride.curve;
+      const duration = 24;
+      const baseT = controlled ? Math.min(group.userData.motion / duration, 0.995) : (elapsed * 0.07) % 1;
+      const point = curve.getPoint(baseT);
+      const next = curve.getPoint((baseT + 0.01) % 1);
+      ride.boat.position.copy(point);
+      ride.boat.rotation.y = Math.atan2(next.x - point.x, next.z - point.z);
+      ride.boat.rotation.x = THREE.MathUtils.clamp((point.y - next.y) * 0.16, -0.42, 0.55);
+      ride.boat.rotation.z = Math.sin(baseT * Math.PI * 6) * 0.1;
+      const splashPower = baseT > 0.56 && baseT < 0.72 ? 1 : 0.18;
+      group.userData.splashDrops.children.forEach((drop, index) => {
+        drop.visible = splashPower > 0.3 || index % 4 === 0;
+        drop.position.y = 0.85 + Math.abs(Math.sin(elapsed * 5 + index)) * (0.35 + splashPower * 1.8);
+        drop.scale.setScalar(0.65 + splashPower * (0.8 + (index % 3) * 0.12));
+      });
+      if (controlled) {
+        const message = baseT < 0.32
+          ? "企鹅水花：企鹅车正在慢慢爬上高处。"
+          : baseT < 0.56
+            ? "到最高点了，马上往水池冲下去。"
+            : baseT < 0.72
+              ? "嗖！冲进水里，水花扑上来了！"
+              : "企鹅车开始减速，水花慢慢落下来。";
+        if (!rideControl.paused && ride.phaseName !== message) {
+          ride.phaseName = message;
+          statusText.textContent = `${message} 速度 ${rideControl.speed.toFixed(1).replace(".0", "")} 倍。`;
+        }
+        updateRideSound(splashPower > 0.3 ? 0.95 : 0.5);
+      }
     }
     if (group.userData.coasterTrain) {
       const train = group.userData.coasterTrain;
