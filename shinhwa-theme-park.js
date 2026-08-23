@@ -112,8 +112,12 @@ const rideData = [
 
 const keys = new Set();
 const pointer = { active: false, x: 0, y: 0 };
+const lookDrag = { active: false, x: 0, y: 0 };
 const velocity = new THREE.Vector3();
+const upAxis = new THREE.Vector3(0, 1, 0);
 const viewState = {
+  yaw: 0,
+  targetYaw: 0,
   pitch: 0,
   targetPitch: 0,
   distance: 12,
@@ -1604,6 +1608,7 @@ function updateRides(elapsed, delta) {
 }
 
 function updateCamera(elapsed) {
+  viewState.yaw = THREE.MathUtils.lerp(viewState.yaw, viewState.targetYaw, 0.12);
   viewState.pitch = THREE.MathUtils.lerp(viewState.pitch, viewState.targetPitch, 0.08);
   viewState.distance = THREE.MathUtils.lerp(viewState.distance, viewState.targetDistance, 0.08);
   const lookHeight = THREE.MathUtils.clamp(2 + viewState.pitch * 18, 0.8, 18);
@@ -1612,14 +1617,15 @@ function updateCamera(elapsed) {
   const activeRide = getActiveRideGroup();
 
   if (viewState.screen === "wide") {
-    const desired = new THREE.Vector3(0, 72 + viewState.pitch * 10, 72 + viewState.distance * 0.24);
+    const wideOffset = new THREE.Vector3(Math.sin(viewState.yaw) * 72, 72 + viewState.pitch * 10, Math.cos(viewState.yaw) * 72 + viewState.distance * 0.24);
+    const desired = wideOffset;
     camera.position.lerp(desired, 0.1);
     camera.lookAt(new THREE.Vector3(0, 3.2, -2));
     return;
   }
 
   if (viewState.screen === "gate") {
-    const desired = new THREE.Vector3(-18, 18 + viewState.pitch * 5, 72);
+    const desired = new THREE.Vector3(-18, 18 + viewState.pitch * 5, 72).applyAxisAngle(upAxis, viewState.yaw);
     camera.position.lerp(desired, 0.1);
     camera.lookAt(new THREE.Vector3(0, 2.4, 48));
     return;
@@ -1627,7 +1633,7 @@ function updateCamera(elapsed) {
 
   if (viewState.screen === "ride" && activeRide) {
     const center = activeRide.position.clone();
-    const orbit = elapsed * 0.28;
+    const orbit = elapsed * 0.28 + viewState.yaw;
     const desired = center.clone().add(new THREE.Vector3(Math.cos(orbit) * 24, 15 + viewState.pitch * 6, Math.sin(orbit) * 24));
     camera.position.lerp(desired, 0.1);
     camera.lookAt(center.clone().add(new THREE.Vector3(0, 4.5, 0)));
@@ -1644,6 +1650,7 @@ function updateCamera(elapsed) {
       direction = new THREE.Vector3(Math.sin(player.rotation.y), 0, Math.cos(player.rotation.y)).normalize();
       base.add(new THREE.Vector3(0, 2.45, 0));
     }
+    direction.applyAxisAngle(upAxis, viewState.yaw).normalize();
     camera.position.lerp(base.add(direction.clone().multiplyScalar(0.45)), 0.18);
     camera.lookAt(base.clone().add(direction.multiplyScalar(13)).add(new THREE.Vector3(0, viewState.pitch * 4, 0)));
     return;
@@ -1678,19 +1685,23 @@ function updateCamera(elapsed) {
         .add(sideDir.multiplyScalar(1.8))
         .add(new THREE.Vector3(0, 3.1 + viewState.pitch * 3, 0));
     }
+    if (Math.abs(viewState.yaw) > 0.001) {
+      const offset = rideCam.clone().sub(target).applyAxisAngle(upAxis, viewState.yaw);
+      rideCam.copy(target).add(offset);
+    }
     camera.position.lerp(rideCam, 0.14);
     camera.lookAt(target);
     return;
   }
 
   if (!entrance.ticketChecked && player.position.z > 51) {
-    const desired = new THREE.Vector3(0, 58 + viewState.pitch * 12, 62 + viewState.distance * 0.18);
+    const desired = new THREE.Vector3(0, 58 + viewState.pitch * 12, 62 + viewState.distance * 0.18).applyAxisAngle(upAxis, viewState.yaw);
     camera.position.lerp(desired, 0.12);
     camera.lookAt(new THREE.Vector3(0, lookHeight, 26));
     return;
   }
 
-  const forward = new THREE.Vector3(Math.sin(player.rotation.y), 0, Math.cos(player.rotation.y));
+  const forward = new THREE.Vector3(Math.sin(player.rotation.y + viewState.yaw), 0, Math.cos(player.rotation.y + viewState.yaw));
   const desired = player.position.clone().sub(forward.multiplyScalar(viewState.distance));
   desired.y = 9.4 + viewState.pitch * 3.2;
   desired.x += Math.cos(elapsed * 0.7) * 0.08;
@@ -1769,6 +1780,33 @@ function setupInput() {
     viewState.targetDistance = THREE.MathUtils.clamp(viewState.targetDistance + Math.sign(event.deltaY) * 1.4, 7.5, 22);
     event.preventDefault();
   }, { passive: false });
+
+  const startLookDrag = (event) => {
+    if (event.button !== undefined && event.button !== 0) return;
+    lookDrag.active = true;
+    lookDrag.x = event.clientX;
+    lookDrag.y = event.clientY;
+    canvas.setPointerCapture?.(event.pointerId);
+    event.preventDefault();
+  };
+  const updateLookDrag = (event) => {
+    if (!lookDrag.active) return;
+    const dx = event.clientX - lookDrag.x;
+    const dy = event.clientY - lookDrag.y;
+    lookDrag.x = event.clientX;
+    lookDrag.y = event.clientY;
+    viewState.targetYaw -= dx * 0.006;
+    viewState.targetPitch = THREE.MathUtils.clamp(viewState.targetPitch - dy * 0.0045, -0.42, 0.85);
+    event.preventDefault();
+  };
+  const endLookDrag = (event) => {
+    lookDrag.active = false;
+    if (event?.pointerId !== undefined) canvas.releasePointerCapture?.(event.pointerId);
+  };
+  canvas.addEventListener("pointerdown", startLookDrag);
+  window.addEventListener("pointermove", updateLookDrag, { passive: false });
+  window.addEventListener("pointerup", endLookDrag);
+  window.addEventListener("pointercancel", endLookDrag);
 
   const startStick = (event) => {
     pointer.active = true;
