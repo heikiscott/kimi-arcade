@@ -123,6 +123,8 @@ let nearest = null;
 let riding = null;
 let rideSeat = null;
 let selectedIndex = 0;
+let audioContext = null;
+let coasterSound = null;
 const entrance = {
   ticketChecked: false,
   friend: null,
@@ -130,6 +132,17 @@ const entrance = {
   gateArms: []
 };
 const crowdVisitors = [];
+
+const coasterPhases = [
+  { name: "系好安全带，车厢准备出发", end: 0.08, sound: "station" },
+  { name: "链条正在把车厢慢慢拉上坡", end: 0.28, sound: "lift" },
+  { name: "到最高点了，马上快速俯冲", end: 0.39, sound: "drop" },
+  { name: "冲上第二个上坡，再滑下来", end: 0.52, sound: "fast" },
+  { name: "进入第一个大圈，座椅和轮子一起转", end: 0.64, sound: "loop" },
+  { name: "反方向再转一个大圈", end: 0.76, sound: "loop" },
+  { name: "开始刹车减速", end: 0.9, sound: "brake" },
+  { name: "慢慢进站停稳，游客可以下车", end: 1, sound: "station" }
+];
 
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, preserveDrawingBuffer: true });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
@@ -163,6 +176,59 @@ const materials = {
 
 function makeMat(color, roughness = 0.5, metalness = 0.05) {
   return new THREE.MeshStandardMaterial({ color, roughness, metalness });
+}
+
+function ensureAudio() {
+  if (audioContext) return audioContext;
+  const AudioCtx = window.AudioContext || window.webkitAudioContext;
+  if (!AudioCtx) return null;
+  audioContext = new AudioCtx();
+  audioContext.resume?.();
+  return audioContext;
+}
+
+function startCoasterSound() {
+  const context = ensureAudio();
+  if (!context || coasterSound) return;
+  const rumble = context.createOscillator();
+  const wheelClick = context.createOscillator();
+  const gain = context.createGain();
+  rumble.type = "sawtooth";
+  wheelClick.type = "square";
+  rumble.frequency.value = 82;
+  wheelClick.frequency.value = 18;
+  gain.gain.value = 0.045;
+  rumble.connect(gain);
+  wheelClick.connect(gain);
+  gain.connect(context.destination);
+  rumble.start();
+  wheelClick.start();
+  coasterSound = { rumble, wheelClick, gain };
+}
+
+function stopCoasterSound() {
+  if (!coasterSound) return;
+  const endAt = audioContext.currentTime + 0.08;
+  coasterSound.gain.gain.linearRampToValueAtTime(0.001, endAt);
+  coasterSound.rumble.stop(endAt);
+  coasterSound.wheelClick.stop(endAt);
+  coasterSound = null;
+}
+
+function updateCoasterSound(phaseKey, speed) {
+  if (!coasterSound || !audioContext) return;
+  const now = audioContext.currentTime;
+  const settings = {
+    station: [45, 7, 0.018],
+    lift: [70, 13, 0.045],
+    drop: [145, 28, 0.075],
+    fast: [125, 24, 0.065],
+    loop: [115, 21, 0.07],
+    brake: [56, 9, 0.038]
+  }[phaseKey] || [80, 14, 0.04];
+  coasterSound.rumble.frequency.setTargetAtTime(settings[0] + speed * 16, now, 0.08);
+  coasterSound.wheelClick.frequency.setTargetAtTime(settings[1] + speed * 4, now, 0.08);
+  coasterSound.gain.gain.setTargetAtTime(settings[2], now, 0.08);
 }
 
 function box(name, size, position, material, parent = scene) {
@@ -534,6 +600,45 @@ function addPlayerSeat(parent, position, rotationY = 0, scale = 0.34) {
   return seat;
 }
 
+function getCoasterPhase(progress) {
+  return coasterPhases.find((phase) => progress <= phase.end) || coasterPhases[coasterPhases.length - 1];
+}
+
+function coasterSpeedForProgress(progress) {
+  if (progress < 0.08) return 0.08;
+  if (progress < 0.28) return 0.18;
+  if (progress < 0.39) return 1.28;
+  if (progress < 0.52) return 0.95;
+  if (progress < 0.76) return 0.72;
+  if (progress < 0.9) return 0.33;
+  return 0.07;
+}
+
+function makeCoasterCurve() {
+  const points = [
+    new THREE.Vector3(-9, 1.25, 5.2),
+    new THREE.Vector3(-10.2, 2.4, 1.5),
+    new THREE.Vector3(-9.5, 5.2, -3.2),
+    new THREE.Vector3(-7.4, 9.1, -7.4),
+    new THREE.Vector3(-3.8, 12.2, -8.3),
+    new THREE.Vector3(0.7, 3.1, -7.2),
+    new THREE.Vector3(4.9, 5.9, -5.4),
+    new THREE.Vector3(7.2, 2.3, -2.1),
+    new THREE.Vector3(5.2, 6.5, 1.1),
+    new THREE.Vector3(1.8, 8.1, 1.7),
+    new THREE.Vector3(-1.4, 5.3, 0.8),
+    new THREE.Vector3(1.1, 2.2, -0.9),
+    new THREE.Vector3(4.6, 4.1, 1.2),
+    new THREE.Vector3(7.1, 7.4, 3.8),
+    new THREE.Vector3(3.8, 5.6, 6.3),
+    new THREE.Vector3(-0.6, 2.2, 4.9),
+    new THREE.Vector3(-4.8, 2.0, 5.8),
+    new THREE.Vector3(-8.4, 1.35, 5.4),
+    new THREE.Vector3(-9, 1.25, 5.2)
+  ];
+  return new THREE.CatmullRomCurve3(points, true, "catmullrom", 0.45);
+}
+
 function addAttraction(ride, index) {
   const group = new THREE.Group();
   group.position.set(ride.position[0], 0, ride.position[2]);
@@ -580,23 +685,39 @@ function buildCoaster(group, ride) {
   box("coaster-mint-walkway", [10.5, 0.14, 1.7], [0.3, 1.55, -5.7], mint, station);
   group.add(station);
 
-  const points = [
-    new THREE.Vector3(-8, 1.2, 4),
-    new THREE.Vector3(-4, 8, 0),
-    new THREE.Vector3(3, 5, -5),
-    new THREE.Vector3(8, 1.7, -1),
-    new THREE.Vector3(2, 4, 6),
-    new THREE.Vector3(-8, 1.2, 4)
-  ];
-  const curve = new THREE.CatmullRomCurve3(points, true);
-  const track = new THREE.Mesh(new THREE.TubeGeometry(curve, 120, 0.18, 10, true), materials.steel);
+  const curve = makeCoasterCurve();
+  const track = new THREE.Mesh(new THREE.TubeGeometry(curve, 190, 0.18, 10, true), materials.steel);
   track.castShadow = true;
   group.add(track);
-  const rail2 = new THREE.Mesh(new THREE.TubeGeometry(curve, 120, 0.07, 8, true), makeMat(ride.color));
+  const rail2 = new THREE.Mesh(new THREE.TubeGeometry(curve, 190, 0.07, 8, true), makeMat(ride.color));
   rail2.position.y = 0.5;
   group.add(rail2);
-  for (let i = 0; i < 7; i += 1) {
-    cyl("coaster-support", 0.12, 5.5, [-7 + i * 2.4, 2.8, -2 + Math.sin(i) * 5], materials.steel, group, 8);
+  const loopMat = makeMat(ride.color, 0.28, 0.22);
+  const frontLoop = new THREE.Mesh(new THREE.TorusGeometry(2.65, 0.13, 10, 76), loopMat);
+  frontLoop.name = "coaster-forward-loop";
+  frontLoop.position.set(1.2, 5.2, 0.5);
+  frontLoop.rotation.y = Math.PI / 2;
+  frontLoop.castShadow = true;
+  group.add(frontLoop);
+  const reverseLoop = new THREE.Mesh(new THREE.TorusGeometry(2.35, 0.13, 10, 76), materials.steel);
+  reverseLoop.name = "coaster-reverse-loop";
+  reverseLoop.position.set(4.8, 5.1, 4.3);
+  reverseLoop.rotation.y = Math.PI / 2;
+  reverseLoop.rotation.z = Math.PI;
+  reverseLoop.castShadow = true;
+  group.add(reverseLoop);
+  const chain = box("coaster-chain-lift", [0.35, 0.2, 11], [-8.5, 6.4, -3.5], materials.dark, group);
+  chain.rotation.x = -0.42;
+  for (let i = 0; i < 10; i += 1) {
+    const tooth = box("coaster-chain-tooth", [0.55, 0.18, 0.08], [-8.5, 2.2 + i * 0.82, 1.2 - i * 0.78], makeMat(0xffd15f), group);
+    tooth.rotation.x = -0.42;
+  }
+  for (let i = 0; i < 12; i += 1) {
+    const sample = curve.getPoint(i / 12);
+    cyl("coaster-support", 0.12, Math.max(1.4, sample.y - 0.15), [sample.x, sample.y * 0.5, sample.z], materials.steel, group, 8);
+  }
+  for (let i = 0; i < 6; i += 1) {
+    box("coaster-brake-fin", [0.12, 0.55, 1.2], [-6.9 - i * 0.45, 1.95, 5.1], makeMat(0x172632), group);
   }
   const trainCars = [];
   const carColors = [0xffd15f, 0xd93a32, 0x75c9bf, 0xff8c3a, 0xf06aa3];
@@ -615,7 +736,7 @@ function buildCoaster(group, ride) {
     trainCars.push(car);
     if (i === 0) group.userData.seats.push(addPlayerSeat(car, [0, 0.58, -0.18], 0, 0.32));
   }
-  group.userData.coasterTrain = { curve, cars: trainCars };
+  group.userData.coasterTrain = { curve, cars: trainCars, elapsed: 0, phaseName: "" };
 }
 
 function buildSpinBump(group, ride) {
@@ -963,6 +1084,11 @@ function rideNearest() {
   }
   riding = nearest;
   rideSeat = seat;
+  if (riding.userData.coasterTrain) {
+    riding.userData.coasterTrain.elapsed = 0;
+    riding.userData.coasterTrain.phaseName = "";
+    startCoasterSound();
+  }
   rideSeat.add(player);
   player.position.set(0, 0, 0);
   player.rotation.set(0, 0, 0);
@@ -989,6 +1115,7 @@ function checkTicket() {
 function leaveRide() {
   if (!riding) return;
   const ride = riding.userData.ride;
+  if (riding.userData.coasterTrain) stopCoasterSound();
   scene.add(player);
   player.position.set(ride.position[0] + 7, 0, ride.position[2] + 7);
   player.rotation.set(0, Math.PI, 0);
@@ -1006,6 +1133,7 @@ function moveNextRide() {
 }
 
 function resetPlayer() {
+  stopCoasterSound();
   scene.add(player);
   riding = null;
   rideSeat = null;
@@ -1158,8 +1286,28 @@ function updateRides(elapsed, delta) {
       group.userData.train.rotation.y = -angle + Math.PI / 2;
     }
     if (group.userData.coasterTrain) {
-      const { curve, cars } = group.userData.coasterTrain;
-      const baseT = (elapsed * 0.055) % 1;
+      const train = group.userData.coasterTrain;
+      const { curve, cars } = train;
+      const rideDuration = 28;
+      if (riding === group) {
+        train.elapsed = Math.min(rideDuration, train.elapsed + delta);
+      } else {
+        train.elapsed = (train.elapsed + delta * 0.42) % rideDuration;
+      }
+      const baseT = riding === group && train.elapsed >= rideDuration ? 0.995 : (train.elapsed / rideDuration) % 1;
+      const phase = getCoasterPhase(baseT);
+      const phaseSpeed = coasterSpeedForProgress(baseT);
+      if (riding === group) {
+        updateCoasterSound(phase.sound, phaseSpeed);
+        if (train.phaseName !== phase.name) {
+          train.phaseName = phase.name;
+          statusText.textContent = `Dancing Oscar：${phase.name}`;
+        }
+        if (train.elapsed >= rideDuration) {
+          stopCoasterSound();
+          statusText.textContent = "Dancing Oscar 已经进站停稳，游客可以点“下车”下来。";
+        }
+      }
       cars.forEach((car) => {
         const t = (baseT - car.userData.carOffset + 1) % 1;
         const nextT = (t + 0.006) % 1;
@@ -1168,7 +1316,11 @@ function updateRides(elapsed, delta) {
         car.position.copy(point);
         car.position.y += 0.65;
         car.rotation.y = Math.atan2(next.x - point.x, next.z - point.z);
-        car.rotation.z = THREE.MathUtils.clamp((next.y - point.y) * 0.22, -0.28, 0.28);
+        car.rotation.x = THREE.MathUtils.clamp((point.y - next.y) * 0.14, -0.45, 0.45);
+        car.rotation.z = THREE.MathUtils.clamp((next.y - point.y) * 0.28 + Math.sin(t * Math.PI * 4) * 0.12, -0.48, 0.48);
+        car.traverse((child) => {
+          if (child.name?.startsWith("coaster-wheel")) child.rotation.x += delta * (4 + phaseSpeed * 11);
+        });
       });
     }
     group.traverse((child) => {
