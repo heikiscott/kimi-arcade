@@ -7,6 +7,7 @@ const nearInfo = document.querySelector("#nearInfo");
 const rideList = document.querySelector("#rideList");
 const moveStick = document.querySelector("#moveStick");
 const moveKnob = document.querySelector("#moveKnob");
+const screenButtons = Array.from(document.querySelectorAll("[data-screen]"));
 const buttons = {
   ride: document.querySelector("#rideBtn"),
   seat: document.querySelector("#seatBtn"),
@@ -116,7 +117,8 @@ const viewState = {
   pitch: 0,
   targetPitch: 0,
   distance: 12,
-  targetDistance: 12
+  targetDistance: 12,
+  screen: "follow"
 };
 const clock = new THREE.Clock();
 const interactive = [];
@@ -726,6 +728,39 @@ function restoreSeatDummy(seat = rideSeat) {
   if (seat?.userData.dummyRider) {
     seat.userData.dummyRider.visible = true;
   }
+}
+
+function getActiveRideGroup() {
+  return riding || nearest || interactive[selectedIndex] || null;
+}
+
+function getFocusWorldPosition() {
+  if (riding && rideSeat) {
+    const seatWorld = new THREE.Vector3();
+    rideSeat.getWorldPosition(seatWorld);
+    return seatWorld;
+  }
+  return player.position.clone();
+}
+
+function updateScreenButtons() {
+  screenButtons.forEach((button) => {
+    button.classList.toggle("active", button.dataset.screen === viewState.screen);
+  });
+}
+
+function setScreenMode(mode) {
+  viewState.screen = mode;
+  updateScreenButtons();
+  const names = {
+    follow: "跟随屏幕",
+    first: "第一视角屏幕",
+    seat: "座位屏幕",
+    wide: "全园大屏幕",
+    ride: "轨道屏幕",
+    gate: "门口屏幕"
+  };
+  statusText.textContent = `已经切换到${names[mode] || "新屏幕"}，你可以继续走路、选座或者乘坐项目。`;
 }
 
 function getCoasterPhase(progress) {
@@ -1573,6 +1608,47 @@ function updateCamera(elapsed) {
   viewState.distance = THREE.MathUtils.lerp(viewState.distance, viewState.targetDistance, 0.08);
   const lookHeight = THREE.MathUtils.clamp(2 + viewState.pitch * 18, 0.8, 18);
   const target = new THREE.Vector3();
+  const focus = getFocusWorldPosition();
+  const activeRide = getActiveRideGroup();
+
+  if (viewState.screen === "wide") {
+    const desired = new THREE.Vector3(0, 72 + viewState.pitch * 10, 72 + viewState.distance * 0.24);
+    camera.position.lerp(desired, 0.1);
+    camera.lookAt(new THREE.Vector3(0, 3.2, -2));
+    return;
+  }
+
+  if (viewState.screen === "gate") {
+    const desired = new THREE.Vector3(-18, 18 + viewState.pitch * 5, 72);
+    camera.position.lerp(desired, 0.1);
+    camera.lookAt(new THREE.Vector3(0, 2.4, 48));
+    return;
+  }
+
+  if (viewState.screen === "ride" && activeRide) {
+    const center = activeRide.position.clone();
+    const orbit = elapsed * 0.28;
+    const desired = center.clone().add(new THREE.Vector3(Math.cos(orbit) * 24, 15 + viewState.pitch * 6, Math.sin(orbit) * 24));
+    camera.position.lerp(desired, 0.1);
+    camera.lookAt(center.clone().add(new THREE.Vector3(0, 4.5, 0)));
+    return;
+  }
+
+  if (viewState.screen === "first") {
+    const base = focus.clone();
+    let direction;
+    if (riding && rideSeat) {
+      direction = new THREE.Vector3(0, 0, -1).applyQuaternion(rideSeat.getWorldQuaternion(new THREE.Quaternion())).normalize();
+      base.add(new THREE.Vector3(0, 1.1, 0));
+    } else {
+      direction = new THREE.Vector3(Math.sin(player.rotation.y), 0, Math.cos(player.rotation.y)).normalize();
+      base.add(new THREE.Vector3(0, 2.45, 0));
+    }
+    camera.position.lerp(base.add(direction.clone().multiplyScalar(0.45)), 0.18);
+    camera.lookAt(base.clone().add(direction.multiplyScalar(13)).add(new THREE.Vector3(0, viewState.pitch * 4, 0)));
+    return;
+  }
+
   if (riding && rideSeat) {
     const seatWorld = new THREE.Vector3();
     rideSeat.getWorldPosition(seatWorld);
@@ -1674,6 +1750,11 @@ function setupInput() {
       nudgeView(viewButton.dataset.view);
       return;
     }
+    const screenButton = event.target.closest("[data-screen]");
+    if (screenButton) {
+      setScreenMode(screenButton.dataset.screen);
+      return;
+    }
     const moveButton = event.target.closest("[data-move]");
     if (!moveButton || riding) return;
     const action = moveButton.dataset.move;
@@ -1732,4 +1813,5 @@ buildWorld();
 setupInput();
 updateRideList();
 updateSeatButton(null);
+updateScreenButtons();
 animate();

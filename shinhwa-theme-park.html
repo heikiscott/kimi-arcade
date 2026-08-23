@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>济州神话世界主题公园 3D</title>
-    <link rel="stylesheet" href="shinhwa-theme-park.css?v=shinhwa-seat-select-20260823" />
+    <link rel="stylesheet" href="shinhwa-theme-park.css?v=shinhwa-multi-screen-20260823" />
   </head>
   <body>
     <a class="home-link" href="arcade.html">游戏大厅</a>
@@ -37,6 +37,14 @@
           <button data-view="zoomIn" type="button">放大</button>
           <button data-view="zoomOut" type="button">缩小</button>
         </div>
+        <div class="screen-actions" aria-label="屏幕视角切换">
+          <button data-screen="follow" type="button">跟随</button>
+          <button data-screen="first" type="button">第一视角</button>
+          <button data-screen="seat" type="button">座位</button>
+          <button data-screen="wide" type="button">全园</button>
+          <button data-screen="ride" type="button">轨道</button>
+          <button data-screen="gate" type="button">门口</button>
+        </div>
       </section>
       <section class="controls">
         <div>
@@ -53,7 +61,7 @@
         </div>
       </section>
     </main>
-    <script type="module" src="shinhwa-theme-park.js?v=shinhwa-seat-select-20260823"></script>
+    <script type="module" src="shinhwa-theme-park.js?v=shinhwa-multi-screen-20260823"></script>
     <script src="arcade-stats.js?v=visitor-table-20260728"></script>
   </body>
 </html>
