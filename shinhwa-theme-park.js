@@ -8,6 +8,7 @@ const rideList = document.querySelector("#rideList");
 const moveStick = document.querySelector("#moveStick");
 const moveKnob = document.querySelector("#moveKnob");
 const screenButtons = Array.from(document.querySelectorAll("[data-screen]"));
+const rideControlButtons = Array.from(document.querySelectorAll("[data-ride-control]"));
 const buttons = {
   ride: document.querySelector("#rideBtn"),
   seat: document.querySelector("#seatBtn"),
@@ -123,6 +124,10 @@ const viewState = {
   distance: 12,
   targetDistance: 12,
   screen: "follow"
+};
+const rideControl = {
+  speed: 1,
+  paused: false
 };
 const clock = new THREE.Clock();
 const interactive = [];
@@ -767,6 +772,40 @@ function setScreenMode(mode) {
   statusText.textContent = `已经切换到${names[mode] || "新屏幕"}，你可以继续走路、选座或者乘坐项目。`;
 }
 
+function updateRideControlButtons() {
+  rideControlButtons.forEach((button) => {
+    button.disabled = !riding;
+    if (button.dataset.rideControl === "pause") {
+      button.textContent = rideControl.paused ? "继续" : "暂停";
+    }
+  });
+}
+
+function changeRideSpeed(direction) {
+  if (!riding) {
+    statusText.textContent = "先坐上项目，才能控制它加速或者减速。";
+    updateRideControlButtons();
+    return;
+  }
+  const next = rideControl.speed + direction * 0.35;
+  rideControl.speed = THREE.MathUtils.clamp(next, 0.35, 2.8);
+  const speedText = rideControl.speed.toFixed(1).replace(".0", "");
+  statusText.textContent = `${riding.userData.ride.name} 速度调到 ${speedText} 倍。`;
+}
+
+function toggleRidePause() {
+  if (!riding) {
+    statusText.textContent = "先坐上项目，才能暂停或者继续。";
+    updateRideControlButtons();
+    return;
+  }
+  rideControl.paused = !rideControl.paused;
+  updateRideControlButtons();
+  statusText.textContent = rideControl.paused
+    ? `${riding.userData.ride.name} 暂停了，画面可以继续滑动看四周。`
+    : `${riding.userData.ride.name} 继续运行，速度是 ${rideControl.speed.toFixed(1).replace(".0", "")} 倍。`;
+}
+
 function getCoasterPhase(progress) {
   return coasterPhases.find((phase) => progress <= phase.end) || coasterPhases[coasterPhases.length - 1];
 }
@@ -1313,6 +1352,8 @@ function rideNearest() {
   }
   riding = nearest;
   rideSeat = seat;
+  rideControl.speed = 1;
+  rideControl.paused = false;
   if (riding.userData.coasterTrain) {
     riding.userData.coasterTrain.elapsed = 0;
     riding.userData.coasterTrain.phaseName = "";
@@ -1327,6 +1368,7 @@ function rideNearest() {
   playerLabel.visible = false;
   statusText.textContent = `你已经坐进 ${riding.userData.ride.name} 的第 ${rideSeat.userData.seatNumber || selectedSeatIndex + 1}/${count} 号座位了，安全杆在前面，镜头会跟着座位动。点“下车”回到出口。`;
   updateSeatButton(riding);
+  updateRideControlButtons();
 }
 
 function checkTicket() {
@@ -1357,8 +1399,10 @@ function leaveRide() {
   playerLabel.visible = true;
   rideSeat = null;
   riding = null;
+  rideControl.paused = false;
   statusText.textContent = "已经下车了，可以继续在乐园里面走。";
   updateSeatButton(nearest);
+  updateRideControlButtons();
 }
 
 function moveNextRide() {
@@ -1374,6 +1418,8 @@ function resetPlayer() {
   scene.add(player);
   riding = null;
   rideSeat = null;
+  rideControl.speed = 1;
+  rideControl.paused = false;
   selectedSeatIndex = 0;
   selectedSeatRideId = null;
   player.scale.setScalar(playerGroundScale);
@@ -1388,6 +1434,7 @@ function resetPlayer() {
   buttons.ticket.textContent = "检票入园";
   statusText.textContent = "回到入口。你和朋友站在检票口前，先找检票员检票。";
   updateSeatButton(null);
+  updateRideControlButtons();
 }
 
 function updateNearest() {
@@ -1522,22 +1569,26 @@ function updatePlayer(delta) {
 
 function updateRides(elapsed, delta) {
   interactive.forEach((group) => {
-    group.userData.motion += delta;
+    const controlled = riding === group;
+    const rideDelta = controlled && rideControl.paused ? 0 : delta * (controlled ? rideControl.speed : 1);
+    group.userData.motion += rideDelta;
     if (group.userData.rotor) {
-      group.userData.rotor.rotation.y += delta * (0.45 + (group.userData.ride.id.length % 4) * 0.18);
-      group.userData.rotor.position.y = Math.sin(elapsed * 1.4 + group.position.x) * 0.18;
-      if (riding === group) updateRideSound(0.32 + Math.abs(Math.sin(elapsed * 1.4 + group.position.x)) * 0.28);
+      const rotorTime = controlled ? group.userData.motion : elapsed;
+      group.userData.rotor.rotation.y += rideDelta * (0.45 + (group.userData.ride.id.length % 4) * 0.18);
+      group.userData.rotor.position.y = Math.sin(rotorTime * 1.4 + group.position.x) * 0.18;
+      if (controlled) updateRideSound(0.32 + Math.abs(Math.sin(rotorTime * 1.4 + group.position.x)) * 0.28);
     }
     if (group.userData.spinBumpArm) {
-      const swing = Math.sin(elapsed * 1.18);
-      const endpointSlow = 0.45 + 0.55 * Math.abs(Math.cos(elapsed * 1.18));
+      const spinTime = group.userData.motion;
+      const swing = Math.sin(spinTime * 1.18);
+      const endpointSlow = 0.45 + 0.55 * Math.abs(Math.cos(spinTime * 1.18));
       group.userData.spinBumpArm.rotation.z = swing * 0.72;
-      group.userData.spinBumpArm.rotation.y += delta * 0.28 * endpointSlow;
+      group.userData.spinBumpArm.rotation.y += rideDelta * 0.28 * endpointSlow;
       group.userData.spinBumpArm.position.x = swing * 1.35;
       group.userData.spinBumpArm.position.y = 0.35 + (1 - Math.abs(swing)) * 0.65;
-      if (riding === group) {
+      if (controlled) {
         const side = swing > 0 ? "右边" : "左边";
-        statusText.textContent = `Oscar Spin Bomb：像海盗船一样摆到${side}，到边上会减速，再甩回来。`;
+        if (!rideControl.paused) statusText.textContent = `Oscar Spin Bomb：像海盗船一样摆到${side}，速度 ${rideControl.speed.toFixed(1).replace(".0", "")} 倍。`;
         updateRideSound(0.55 + Math.abs(swing) * 0.4);
       }
     }
@@ -1551,19 +1602,19 @@ function updateRides(elapsed, delta) {
       const train = group.userData.coasterTrain;
       const { curve, cars } = train;
       const rideDuration = 28;
-      if (riding === group) {
-        train.elapsed = Math.min(rideDuration, train.elapsed + delta);
+      if (controlled) {
+        train.elapsed = Math.min(rideDuration, train.elapsed + rideDelta);
       } else {
         train.elapsed = (train.elapsed + delta * 0.42) % rideDuration;
       }
-      const baseT = riding === group && train.elapsed >= rideDuration ? 0.995 : (train.elapsed / rideDuration) % 1;
+      const baseT = controlled && train.elapsed >= rideDuration ? 0.995 : (train.elapsed / rideDuration) % 1;
       const phase = getCoasterPhase(baseT);
       const phaseSpeed = coasterSpeedForProgress(baseT);
-      if (riding === group) {
+      if (controlled) {
         updateCoasterSound(phase.sound, phaseSpeed);
-        if (train.phaseName !== phase.name) {
+        if (!rideControl.paused && train.phaseName !== phase.name) {
           train.phaseName = phase.name;
-          statusText.textContent = `Dancing Oscar：${phase.name}`;
+          statusText.textContent = `Dancing Oscar：${phase.name}，速度 ${rideControl.speed.toFixed(1).replace(".0", "")} 倍。`;
         }
         if (train.elapsed >= rideDuration) {
           stopCoasterSound();
@@ -1584,15 +1635,15 @@ function updateRides(elapsed, delta) {
         if (cabin) {
           const stationSlowdown = baseT < 0.1 || baseT > 0.88 ? 0.25 : 1;
           const spinBoost = phase.sound === "loop" ? 3.35 : phase.sound === "drop" ? 1.75 : 1.25;
-          car.userData.spinAngle += delta * (2.25 + phaseSpeed * 2.8) * stationSlowdown * spinBoost * car.userData.spinRate;
+          car.userData.spinAngle += rideDelta * (2.25 + phaseSpeed * 2.8) * stationSlowdown * spinBoost * car.userData.spinRate;
           cabin.rotation.y = car.userData.spinAngle + Math.sin(elapsed * 2.8 + car.userData.spinPhase) * 0.22;
           cabin.position.y = Math.sin(elapsed * 7 + car.userData.spinPhase) * 0.025;
         }
         car.traverse((child) => {
-          if (child.name?.startsWith("coaster-wheel")) child.rotation.x += delta * (4 + phaseSpeed * 11);
+          if (child.name?.startsWith("coaster-wheel")) child.rotation.x += rideDelta * (4 + phaseSpeed * 11);
         });
       });
-      if (riding === group) updateRideSound(phase.sound === "loop" ? 1 : phase.sound === "drop" ? 0.85 : 0.45);
+      if (controlled) updateRideSound(rideControl.paused ? 0.08 : phase.sound === "loop" ? 1 : phase.sound === "drop" ? 0.85 : 0.45);
     }
     group.traverse((child) => {
       if (child.userData.curve) {
@@ -1766,6 +1817,14 @@ function setupInput() {
       setScreenMode(screenButton.dataset.screen);
       return;
     }
+    const rideControlButton = event.target.closest("[data-ride-control]");
+    if (rideControlButton) {
+      const action = rideControlButton.dataset.rideControl;
+      if (action === "slow") changeRideSpeed(-1);
+      if (action === "fast") changeRideSpeed(1);
+      if (action === "pause") toggleRidePause();
+      return;
+    }
     const moveButton = event.target.closest("[data-move]");
     if (!moveButton || riding) return;
     const action = moveButton.dataset.move;
@@ -1852,4 +1911,5 @@ setupInput();
 updateRideList();
 updateSeatButton(null);
 updateScreenButtons();
+updateRideControlButtons();
 animate();

@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>济州神话世界主题公园 3D</title>
-    <link rel="stylesheet" href="shinhwa-theme-park.css?v=shinhwa-swipe-view-20260823" />
+    <link rel="stylesheet" href="shinhwa-theme-park.css?v=shinhwa-ride-control-20260823" />
   </head>
   <body>
     <a class="home-link" href="arcade.html">游戏大厅</a>
@@ -45,6 +45,11 @@
           <button data-screen="ride" type="button">轨道</button>
           <button data-screen="gate" type="button">门口</button>
         </div>
+        <div class="ride-controls" aria-label="项目速度控制">
+          <button data-ride-control="slow" type="button">慢一点</button>
+          <button data-ride-control="fast" type="button">快一点</button>
+          <button data-ride-control="pause" type="button">暂停</button>
+        </div>
       </section>
       <section class="controls">
         <div>
@@ -61,7 +66,7 @@
         </div>
       </section>
     </main>
-    <script type="module" src="shinhwa-theme-park.js?v=shinhwa-swipe-view-20260823"></script>
+    <script type="module" src="shinhwa-theme-park.js?v=shinhwa-ride-control-20260823"></script>
     <script src="arcade-stats.js?v=visitor-table-20260728"></script>
   </body>
 </html>

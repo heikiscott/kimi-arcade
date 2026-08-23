@@ -183,9 +183,21 @@ button {
   width: min(250px, calc(100% - 460px));
 }
 
+.ride-controls {
+  position: absolute;
+  right: 22px;
+  top: 202px;
+  z-index: 8;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(62px, 1fr));
+  gap: 6px;
+  width: min(250px, calc(100% - 460px));
+}
+
 .quick-actions button,
 .view-actions button,
 .screen-actions button,
+.ride-controls button,
 .button-grid button,
 .ride-list button {
   min-height: 44px;
@@ -214,6 +226,21 @@ button {
   box-shadow: 0 4px 0 rgba(23, 38, 50, 0.12);
   backdrop-filter: blur(8px);
   font-size: 0.78rem;
+}
+
+.ride-controls button {
+  min-height: 34px;
+  color: #fff;
+  background: rgba(23, 38, 50, 0.82);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  box-shadow: 0 4px 0 rgba(23, 38, 50, 0.16);
+  backdrop-filter: blur(8px);
+  font-size: 0.78rem;
+}
+
+.ride-controls button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
 }
 
 .screen-actions button.active {
@@ -372,6 +399,14 @@ button {
     gap: 5px;
   }
 
+  .ride-controls {
+    top: 424px;
+    right: 12px;
+    width: 190px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 5px;
+  }
+
   .quick-actions button {
     min-height: 36px;
     padding: 4px 6px;
@@ -385,6 +420,12 @@ button {
   }
 
   .screen-actions button {
+    min-height: 28px;
+    padding: 4px 5px;
+    font-size: 0.66rem;
+  }
+
+  .ride-controls button {
     min-height: 28px;
     padding: 4px 5px;
     font-size: 0.66rem;
