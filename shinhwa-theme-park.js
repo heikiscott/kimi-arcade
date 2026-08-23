@@ -617,26 +617,44 @@ function coasterSpeedForProgress(progress) {
 function makeCoasterCurve() {
   const points = [
     new THREE.Vector3(-9, 1.25, 5.2),
-    new THREE.Vector3(-10.2, 2.4, 1.5),
-    new THREE.Vector3(-9.5, 5.2, -3.2),
-    new THREE.Vector3(-7.4, 9.1, -7.4),
-    new THREE.Vector3(-3.8, 12.2, -8.3),
-    new THREE.Vector3(0.7, 3.1, -7.2),
-    new THREE.Vector3(4.9, 5.9, -5.4),
-    new THREE.Vector3(7.2, 2.3, -2.1),
-    new THREE.Vector3(5.2, 6.5, 1.1),
-    new THREE.Vector3(1.8, 8.1, 1.7),
-    new THREE.Vector3(-1.4, 5.3, 0.8),
-    new THREE.Vector3(1.1, 2.2, -0.9),
-    new THREE.Vector3(4.6, 4.1, 1.2),
-    new THREE.Vector3(7.1, 7.4, 3.8),
-    new THREE.Vector3(3.8, 5.6, 6.3),
-    new THREE.Vector3(-0.6, 2.2, 4.9),
+    new THREE.Vector3(-10.4, 2.2, 1.7),
+    new THREE.Vector3(-9.8, 5.1, -3.3),
+    new THREE.Vector3(-7.8, 8.9, -6.9),
+    new THREE.Vector3(-4.3, 11.6, -7.4),
+    new THREE.Vector3(-1.6, 3.2, -6.6),
+    new THREE.Vector3(0.2, 1.4, -4.4)
+  ];
+  const frontCenter = new THREE.Vector3(3.3, 5.55, -2.2);
+  const frontRadius = 4.15;
+  for (let i = 0; i <= 24; i += 1) {
+    const angle = -Math.PI * 0.72 + (Math.PI * 2.05 * i) / 24;
+    points.push(new THREE.Vector3(
+      frontCenter.x + Math.cos(angle) * frontRadius,
+      frontCenter.y + Math.sin(angle) * frontRadius,
+      frontCenter.z + Math.sin(angle * 0.5) * 0.55
+    ));
+  }
+  points.push(
+    new THREE.Vector3(6.8, 4.1, 1.2),
+    new THREE.Vector3(7.4, 6.8, 3.4)
+  );
+  const reverseCenter = new THREE.Vector3(3.5, 5.45, 4.5);
+  const reverseRadius = 3.15;
+  for (let i = 0; i <= 20; i += 1) {
+    const angle = Math.PI * 0.18 - (Math.PI * 1.82 * i) / 20;
+    points.push(new THREE.Vector3(
+      reverseCenter.x + Math.cos(angle) * reverseRadius,
+      reverseCenter.y + Math.sin(angle) * reverseRadius,
+      reverseCenter.z + Math.cos(angle * 0.5) * 0.45
+    ));
+  }
+  points.push(
+    new THREE.Vector3(0.4, 2.6, 5.1),
     new THREE.Vector3(-4.8, 2.0, 5.8),
     new THREE.Vector3(-8.4, 1.35, 5.4),
     new THREE.Vector3(-9, 1.25, 5.2)
-  ];
-  return new THREE.CatmullRomCurve3(points, true, "catmullrom", 0.45);
+  );
+  return new THREE.CatmullRomCurve3(points, true, "catmullrom", 0.22);
 }
 
 function addAttraction(ride, index) {
@@ -686,22 +704,22 @@ function buildCoaster(group, ride) {
   group.add(station);
 
   const curve = makeCoasterCurve();
-  const track = new THREE.Mesh(new THREE.TubeGeometry(curve, 190, 0.18, 10, true), materials.steel);
+  const track = new THREE.Mesh(new THREE.TubeGeometry(curve, 260, 0.18, 10, true), materials.steel);
   track.castShadow = true;
   group.add(track);
-  const rail2 = new THREE.Mesh(new THREE.TubeGeometry(curve, 190, 0.07, 8, true), makeMat(ride.color));
+  const rail2 = new THREE.Mesh(new THREE.TubeGeometry(curve, 260, 0.07, 8, true), makeMat(ride.color));
   rail2.position.y = 0.5;
   group.add(rail2);
   const loopMat = makeMat(ride.color, 0.28, 0.22);
-  const frontLoop = new THREE.Mesh(new THREE.TorusGeometry(2.65, 0.13, 10, 76), loopMat);
+  const frontLoop = new THREE.Mesh(new THREE.TorusGeometry(4.15, 0.13, 10, 96), loopMat);
   frontLoop.name = "coaster-forward-loop";
-  frontLoop.position.set(1.2, 5.2, 0.5);
+  frontLoop.position.set(3.3, 5.55, -2.2);
   frontLoop.rotation.y = Math.PI / 2;
   frontLoop.castShadow = true;
   group.add(frontLoop);
-  const reverseLoop = new THREE.Mesh(new THREE.TorusGeometry(2.35, 0.13, 10, 76), materials.steel);
+  const reverseLoop = new THREE.Mesh(new THREE.TorusGeometry(3.15, 0.13, 10, 88), materials.steel);
   reverseLoop.name = "coaster-reverse-loop";
-  reverseLoop.position.set(4.8, 5.1, 4.3);
+  reverseLoop.position.set(3.5, 5.45, 4.5);
   reverseLoop.rotation.y = Math.PI / 2;
   reverseLoop.rotation.z = Math.PI;
   reverseLoop.castShadow = true;
@@ -721,13 +739,13 @@ function buildCoaster(group, ride) {
   }
   const trainCars = [];
   const carColors = [0xffd15f, 0xd93a32, 0x75c9bf, 0xff8c3a, 0xf06aa3];
-  for (let i = 0; i < 5; i += 1) {
+  for (let i = 0; i < 11; i += 1) {
     const car = new THREE.Group();
     const cabin = new THREE.Group();
     cabin.name = "spinning-coaster-rotating-cabin";
     box("coaster-spin-pivot", [1.12, 0.18, 1.12], [0, 0.2, 0], materials.dark, car);
     cyl("coaster-spin-bearing", 0.28, 0.18, [0, 0.34, 0], materials.steel, car, 18);
-    box("spinning-coaster-car-body", [1.55, 0.72, 1.38], [0, 0.42, 0], makeMat(carColors[i]), cabin);
+    box("spinning-coaster-car-body", [1.55, 0.72, 1.38], [0, 0.42, 0], makeMat(carColors[i % carColors.length]), cabin);
     box("spinning-coaster-seat-back", [1.32, 0.58, 0.14], [0, 0.82, 0.48], materials.dark, cabin);
     box("spinning-coaster-front", [1.3, 0.34, 0.14], [0, 0.62, -0.56], makeMat(0xa8ddd0), cabin);
     box("coaster-car-link", [0.18, 0.12, 0.7], [0, 0.46, 0.92], materials.dark, car);
@@ -736,7 +754,7 @@ function buildCoaster(group, ride) {
     addSeatedRider(cabin, [-0.31, 0.68, 0.02], 0.72, i % 2 ? 0xffffff : 0x245b8f);
     addSeatedRider(cabin, [0.31, 0.68, 0.02], 0.72, i % 2 ? 0x39a657 : 0xf06aa3);
     car.add(cabin);
-    car.userData.carOffset = i * 0.028;
+    car.userData.carOffset = i * 0.018;
     car.userData.cabin = cabin;
     car.userData.spinAngle = i * 0.9;
     car.userData.spinPhase = i * 1.17;
