@@ -23,7 +23,7 @@ const rideData = [
     model: "coaster",
     position: [-18, 0, -24],
     color: 0xd93a32,
-    info: "旋转过山车，慢慢爬升后俯冲，能看到济州海风和森林。"
+    info: "旋转过山车，慢慢爬升后俯冲，座舱会一边沿轨道跑一边自己转。"
   },
   {
     id: "spin",
@@ -138,8 +138,8 @@ const coasterPhases = [
   { name: "链条正在把车厢慢慢拉上坡", end: 0.28, sound: "lift" },
   { name: "到最高点了，马上快速俯冲", end: 0.39, sound: "drop" },
   { name: "冲上第二个上坡，再滑下来", end: 0.52, sound: "fast" },
-  { name: "进入第一个大圈，座椅和轮子一起转", end: 0.64, sound: "loop" },
-  { name: "反方向再转一个大圈", end: 0.76, sound: "loop" },
+  { name: "进入第一个大圈，车厢一边跑一边旋转", end: 0.64, sound: "loop" },
+  { name: "反方向再转一个大圈，座舱继续旋转", end: 0.76, sound: "loop" },
   { name: "开始刹车减速", end: 0.9, sound: "brake" },
   { name: "慢慢进站停稳，游客可以下车", end: 1, sound: "station" }
 ];
@@ -723,18 +723,27 @@ function buildCoaster(group, ride) {
   const carColors = [0xffd15f, 0xd93a32, 0x75c9bf, 0xff8c3a, 0xf06aa3];
   for (let i = 0; i < 5; i += 1) {
     const car = new THREE.Group();
-    box("spinning-coaster-car-body", [1.55, 0.72, 1.38], [0, 0.42, 0], makeMat(carColors[i]), car);
-    box("spinning-coaster-seat-back", [1.32, 0.58, 0.14], [0, 0.82, 0.48], materials.dark, car);
-    box("spinning-coaster-front", [1.3, 0.34, 0.14], [0, 0.62, -0.56], makeMat(0xa8ddd0), car);
+    const cabin = new THREE.Group();
+    cabin.name = "spinning-coaster-rotating-cabin";
+    box("coaster-spin-pivot", [1.12, 0.18, 1.12], [0, 0.2, 0], materials.dark, car);
+    cyl("coaster-spin-bearing", 0.28, 0.18, [0, 0.34, 0], materials.steel, car, 18);
+    box("spinning-coaster-car-body", [1.55, 0.72, 1.38], [0, 0.42, 0], makeMat(carColors[i]), cabin);
+    box("spinning-coaster-seat-back", [1.32, 0.58, 0.14], [0, 0.82, 0.48], materials.dark, cabin);
+    box("spinning-coaster-front", [1.3, 0.34, 0.14], [0, 0.62, -0.56], makeMat(0xa8ddd0), cabin);
     box("coaster-car-link", [0.18, 0.12, 0.7], [0, 0.46, 0.92], materials.dark, car);
     cyl("coaster-wheel-left", 0.16, 0.12, [-0.64, 0.15, -0.42], materials.dark, car, 10).rotation.z = Math.PI / 2;
     cyl("coaster-wheel-right", 0.16, 0.12, [0.64, 0.15, -0.42], materials.dark, car, 10).rotation.z = Math.PI / 2;
-    addSeatedRider(car, [-0.31, 0.68, 0.02], 0.72, i % 2 ? 0xffffff : 0x245b8f);
-    addSeatedRider(car, [0.31, 0.68, 0.02], 0.72, i % 2 ? 0x39a657 : 0xf06aa3);
+    addSeatedRider(cabin, [-0.31, 0.68, 0.02], 0.72, i % 2 ? 0xffffff : 0x245b8f);
+    addSeatedRider(cabin, [0.31, 0.68, 0.02], 0.72, i % 2 ? 0x39a657 : 0xf06aa3);
+    car.add(cabin);
     car.userData.carOffset = i * 0.028;
+    car.userData.cabin = cabin;
+    car.userData.spinAngle = i * 0.9;
+    car.userData.spinPhase = i * 1.17;
+    car.userData.spinRate = i % 2 ? -1 : 1;
     group.add(car);
     trainCars.push(car);
-    if (i === 0) group.userData.seats.push(addPlayerSeat(car, [0, 0.58, -0.18], 0, 0.32));
+    if (i === 0) group.userData.seats.push(addPlayerSeat(cabin, [0, 0.58, -0.18], 0, 0.32));
   }
   group.userData.coasterTrain = { curve, cars: trainCars, elapsed: 0, phaseName: "" };
 }
@@ -1318,6 +1327,14 @@ function updateRides(elapsed, delta) {
         car.rotation.y = Math.atan2(next.x - point.x, next.z - point.z);
         car.rotation.x = THREE.MathUtils.clamp((point.y - next.y) * 0.14, -0.45, 0.45);
         car.rotation.z = THREE.MathUtils.clamp((next.y - point.y) * 0.28 + Math.sin(t * Math.PI * 4) * 0.12, -0.48, 0.48);
+        const cabin = car.userData.cabin;
+        if (cabin) {
+          const stationSlowdown = baseT < 0.1 || baseT > 0.88 ? 0.25 : 1;
+          const spinBoost = phase.sound === "loop" ? 1.65 : phase.sound === "drop" ? 1.25 : 1;
+          car.userData.spinAngle += delta * (1.15 + phaseSpeed * 1.35) * stationSlowdown * spinBoost * car.userData.spinRate;
+          cabin.rotation.y = car.userData.spinAngle + Math.sin(elapsed * 1.8 + car.userData.spinPhase) * 0.16;
+          cabin.position.y = Math.sin(elapsed * 7 + car.userData.spinPhase) * 0.025;
+        }
         car.traverse((child) => {
           if (child.name?.startsWith("coaster-wheel")) child.rotation.x += delta * (4 + phaseSpeed * 11);
         });
