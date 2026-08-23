@@ -9,6 +9,7 @@ const moveStick = document.querySelector("#moveStick");
 const moveKnob = document.querySelector("#moveKnob");
 const buttons = {
   ride: document.querySelector("#rideBtn"),
+  seat: document.querySelector("#seatBtn"),
   ticket: document.querySelector("#ticketBtn"),
   leave: document.querySelector("#leaveRideBtn"),
   next: document.querySelector("#nextBtn"),
@@ -123,6 +124,8 @@ let nearest = null;
 let riding = null;
 let rideSeat = null;
 let selectedIndex = 0;
+let selectedSeatIndex = 0;
+let selectedSeatRideId = null;
 let audioContext = null;
 let coasterSound = null;
 let rideSound = null;
@@ -647,6 +650,84 @@ function addPlayerSeat(parent, position, rotationY = 0, scale = 0.34) {
   return seat;
 }
 
+function addSelectableSeat(group, parent, position, rotationY, scale, dummyRider) {
+  const seat = addPlayerSeat(parent, position, rotationY, scale);
+  seat.userData.seatNumber = group.userData.seats.length + 1;
+  seat.userData.dummyRider = dummyRider;
+  group.userData.seats.push(seat);
+  return seat;
+}
+
+function normalizeSeatIndex(count) {
+  if (!count) return 0;
+  selectedSeatIndex = ((selectedSeatIndex % count) + count) % count;
+  return selectedSeatIndex;
+}
+
+function getSeatGroup() {
+  if (nearest?.userData.seats?.length) return nearest;
+  const focused = interactive[selectedIndex];
+  return focused?.userData.seats?.length ? focused : null;
+}
+
+function syncSeatSelection(group) {
+  const count = group?.userData.seats?.length || 0;
+  if (!count) {
+    selectedSeatIndex = 0;
+    selectedSeatRideId = null;
+    return 0;
+  }
+  const rideId = group.userData.ride.id;
+  if (selectedSeatRideId !== rideId) {
+    selectedSeatIndex = 0;
+    selectedSeatRideId = rideId;
+  }
+  normalizeSeatIndex(count);
+  return count;
+}
+
+function updateSeatButton(group = nearest) {
+  if (!buttons.seat) return;
+  const target = group?.userData.seats?.length ? group : getSeatGroup();
+  const count = syncSeatSelection(target);
+  if (!count) {
+    buttons.seat.textContent = "选座";
+    buttons.seat.disabled = true;
+    return;
+  }
+  if (riding) {
+    buttons.seat.textContent = rideSeat?.userData.seatNumber ? `座位 ${rideSeat.userData.seatNumber}/${count}` : "已入座";
+    buttons.seat.disabled = true;
+    return;
+  }
+  buttons.seat.textContent = `选座 ${selectedSeatIndex + 1}/${count}`;
+  buttons.seat.disabled = false;
+}
+
+function chooseSeat() {
+  const group = getSeatGroup();
+  const count = syncSeatSelection(group);
+  if (!count) {
+    statusText.textContent = "这个项目暂时没有可选座位。";
+    updateSeatButton(group);
+    return;
+  }
+  if (riding) {
+    statusText.textContent = `你已经坐在第 ${rideSeat?.userData.seatNumber || selectedSeatIndex + 1} 号座位了，想换座位要先下车。`;
+    updateSeatButton(group);
+    return;
+  }
+  selectedSeatIndex = (selectedSeatIndex + 1) % count;
+  updateSeatButton(group);
+  statusText.textContent = `已经选择 ${group.userData.ride.name} 第 ${selectedSeatIndex + 1}/${count} 号座位。点“乘坐最近项目”就会坐到这个座位。`;
+}
+
+function restoreSeatDummy(seat = rideSeat) {
+  if (seat?.userData.dummyRider) {
+    seat.userData.dummyRider.visible = true;
+  }
+}
+
 function getCoasterPhase(progress) {
   return coasterPhases.find((phase) => progress <= phase.end) || coasterPhases[coasterPhases.length - 1];
 }
@@ -798,8 +879,8 @@ function buildCoaster(group, ride) {
     box("coaster-car-link", [0.18, 0.12, 0.7], [0, 0.46, 0.92], materials.dark, car);
     cyl("coaster-wheel-left", 0.16, 0.12, [-0.64, 0.15, -0.42], materials.dark, car, 10).rotation.z = Math.PI / 2;
     cyl("coaster-wheel-right", 0.16, 0.12, [0.64, 0.15, -0.42], materials.dark, car, 10).rotation.z = Math.PI / 2;
-    addSeatedRider(cabin, [-0.31, 0.68, 0.02], 0.72, i % 2 ? 0xffffff : 0x245b8f);
-    addSeatedRider(cabin, [0.31, 0.68, 0.02], 0.72, i % 2 ? 0x39a657 : 0xf06aa3);
+    const leftRider = addSeatedRider(cabin, [-0.31, 0.68, 0.02], 0.72, i % 2 ? 0xffffff : 0x245b8f);
+    const rightRider = addSeatedRider(cabin, [0.31, 0.68, 0.02], 0.72, i % 2 ? 0x39a657 : 0xf06aa3);
     car.add(cabin);
     car.userData.carOffset = i * 0.018;
     car.userData.cabin = cabin;
@@ -808,7 +889,8 @@ function buildCoaster(group, ride) {
     car.userData.spinRate = i % 2 ? -1 : 1;
     group.add(car);
     trainCars.push(car);
-    if (i === 0) group.userData.seats.push(addPlayerSeat(cabin, [0, 0.58, -0.18], 0, 0.32));
+    addSelectableSeat(group, cabin, [-0.31, 0.58, -0.18], 0, 0.32, leftRider);
+    addSelectableSeat(group, cabin, [0.31, 0.58, -0.18], 0, 0.32, rightRider);
   }
   group.userData.coasterTrain = { curve, cars: trainCars, elapsed: 0, phaseName: "" };
 }
@@ -859,9 +941,10 @@ function buildSpinBump(group, ride) {
     box("spin-pod-turquoise-back", [1.35, 1.05, 0.76], [0, 0.38, 0.35], makeMat(0x75c9bf), seatGroup);
     box("spin-black-seat", [1, 0.88, 0.2], [0, 0.58, 0.76], materials.dark, seatGroup);
     box("spin-safety-bar", [1.25, 0.12, 0.12], [0, 0.88, -0.48], materials.dark, seatGroup);
-    addSeatedRider(seatGroup, [-0.32, 0.76, 0.08], 0.82, 0xffffff);
-    addSeatedRider(seatGroup, [0.32, 0.76, 0.08], 0.82, 0x245b8f);
-    if (i === 0) group.userData.seats.push(addPlayerSeat(seatGroup, [0, 0.76, -0.08], 0, 0.34));
+    const leftRider = addSeatedRider(seatGroup, [-0.32, 0.76, 0.08], 0.82, 0xffffff);
+    const rightRider = addSeatedRider(seatGroup, [0.32, 0.76, 0.08], 0.82, 0x245b8f);
+    addSelectableSeat(group, seatGroup, [-0.32, 0.76, -0.08], 0, 0.34, leftRider);
+    addSelectableSeat(group, seatGroup, [0.32, 0.76, -0.08], 0, 0.34, rightRider);
     arm.add(seatGroup);
   }
   group.add(arm);
@@ -1161,11 +1244,18 @@ function updateRideList() {
 function focusRide(index) {
   if (riding) leaveRide();
   selectedIndex = index;
+  selectedSeatRideId = null;
+  selectedSeatIndex = 0;
   const ride = rideData[index];
   player.position.set(ride.position[0], 0, ride.position[2] + 9);
   player.rotation.y = Math.PI;
-  statusText.textContent = `已经走到 ${ride.name} 前面。点“乘坐最近项目”就可以体验。`;
+  const focused = interactive[index];
+  const count = syncSeatSelection(focused);
+  statusText.textContent = count > 1
+    ? `已经走到 ${ride.name} 前面。可以先点“选座”挑 1/${count} 号座位，再点“乘坐最近项目”。`
+    : `已经走到 ${ride.name} 前面。点“乘坐最近项目”就可以体验。`;
   updateRideList();
+  updateSeatButton(focused);
 }
 
 function rideNearest() {
@@ -1174,9 +1264,12 @@ function rideNearest() {
     return;
   }
   if (!nearest) return;
-  const seat = nearest.userData.seats?.[0];
+  const seats = nearest.userData.seats || [];
+  const count = syncSeatSelection(nearest);
+  const seat = count ? seats[selectedSeatIndex] : null;
   if (!seat) {
     statusText.textContent = `${nearest.userData.ride.name} 现在只能参观，还没有可坐的座椅。`;
+    updateSeatButton(nearest);
     return;
   }
   riding = nearest;
@@ -1187,12 +1280,14 @@ function rideNearest() {
     startCoasterSound();
   }
   startRideSound(riding.userData.coasterTrain || riding.userData.spinBumpArm ? "wild" : "gentle");
+  if (rideSeat.userData.dummyRider) rideSeat.userData.dummyRider.visible = false;
   rideSeat.add(player);
   player.position.set(0, 0, 0);
   player.rotation.set(0, 0, 0);
   player.scale.setScalar(rideSeat.userData.playerScale || 0.34);
   playerLabel.visible = false;
-  statusText.textContent = `你已经坐进 ${riding.userData.ride.name} 的座椅里了，安全杆在前面，镜头会跟着座位动。点“下车”回到出口。`;
+  statusText.textContent = `你已经坐进 ${riding.userData.ride.name} 的第 ${rideSeat.userData.seatNumber || selectedSeatIndex + 1}/${count} 号座位了，安全杆在前面，镜头会跟着座位动。点“下车”回到出口。`;
+  updateSeatButton(riding);
 }
 
 function checkTicket() {
@@ -1215,6 +1310,7 @@ function leaveRide() {
   const ride = riding.userData.ride;
   if (riding.userData.coasterTrain) stopCoasterSound();
   stopRideSound();
+  restoreSeatDummy();
   scene.add(player);
   player.position.set(ride.position[0] + 7, 0, ride.position[2] + 7);
   player.rotation.set(0, Math.PI, 0);
@@ -1223,6 +1319,7 @@ function leaveRide() {
   rideSeat = null;
   riding = null;
   statusText.textContent = "已经下车了，可以继续在乐园里面走。";
+  updateSeatButton(nearest);
 }
 
 function moveNextRide() {
@@ -1234,9 +1331,12 @@ function moveNextRide() {
 function resetPlayer() {
   stopCoasterSound();
   stopRideSound();
+  restoreSeatDummy();
   scene.add(player);
   riding = null;
   rideSeat = null;
+  selectedSeatIndex = 0;
+  selectedSeatRideId = null;
   player.scale.setScalar(playerGroundScale);
   playerLabel.visible = true;
   player.position.set(0, 0, 61);
@@ -1248,16 +1348,19 @@ function resetPlayer() {
   });
   buttons.ticket.textContent = "检票入园";
   statusText.textContent = "回到入口。你和朋友站在检票口前，先找检票员检票。";
+  updateSeatButton(null);
 }
 
 function updateNearest() {
   if (riding) {
     nearest = riding;
     const ride = riding.userData.ride;
+    const count = riding.userData.seats?.length || 1;
     nearName.textContent = ride.name;
-    nearInfo.textContent = `${ride.zone} · 你正坐在座椅里，安全杆在前面，项目和乘客一起动。`;
+    nearInfo.textContent = `${ride.zone} · 你正坐在第 ${rideSeat?.userData.seatNumber || selectedSeatIndex + 1}/${count} 号座位里，安全杆在前面，项目和乘客一起动。`;
     selectedIndex = rideData.findIndex((item) => item.id === ride.id);
     updateRideList();
+    updateSeatButton(riding);
     return;
   }
 
@@ -1266,6 +1369,7 @@ function updateNearest() {
     nearName.textContent = "入口检票口";
     nearInfo.textContent = "检票员在右边，点“检票入园”后闸机会打开。";
     updateRideList();
+    updateSeatButton(null);
     return;
   }
 
@@ -1281,15 +1385,20 @@ function updateNearest() {
   nearest = bestDistance < 15 ? best : null;
   if (nearest) {
     const ride = nearest.userData.ride;
+    const count = syncSeatSelection(nearest);
     nearName.textContent = ride.name;
-    nearInfo.textContent = `${ride.zone} · ${ride.info}`;
+    nearInfo.textContent = count > 1
+      ? `${ride.zone} · ${ride.info} · 当前选座 ${selectedSeatIndex + 1}/${count}`
+      : `${ride.zone} · ${ride.info}`;
     selectedIndex = rideData.findIndex((item) => item.id === ride.id);
   } else {
     const atGate = player.position.z > 51;
     nearName.textContent = atGate ? "入口检票口" : "附近没有项目";
     nearInfo.textContent = atGate ? "检票员在右边，点“检票入园”后闸机会打开。" : "沿着黄色道路走，靠近设施后就能乘坐。";
+    selectedSeatRideId = null;
   }
   updateRideList();
+  updateSeatButton(nearest);
 }
 
 function updateCompanion(elapsed) {
@@ -1612,6 +1721,7 @@ function setupInput() {
   window.addEventListener("touchend", endStick);
 
   buttons.ride.addEventListener("click", rideNearest);
+  buttons.seat.addEventListener("click", chooseSeat);
   buttons.ticket.addEventListener("click", checkTicket);
   buttons.leave.addEventListener("click", leaveRide);
   buttons.next.addEventListener("click", moveNextRide);
@@ -1621,4 +1731,5 @@ function setupInput() {
 buildWorld();
 setupInput();
 updateRideList();
+updateSeatButton(null);
 animate();
