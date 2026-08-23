@@ -121,6 +121,7 @@ const clock = new THREE.Clock();
 const interactive = [];
 let nearest = null;
 let riding = null;
+let rideSeat = null;
 let selectedIndex = 0;
 const entrance = {
   ticketChecked: false,
@@ -523,6 +524,16 @@ function addSeatedRider(parent, position, scale = 1, shirt = 0x245b8f) {
   return rider;
 }
 
+function addPlayerSeat(parent, position, rotationY = 0, scale = 0.34) {
+  const seat = new THREE.Group();
+  seat.name = "player-seat-anchor";
+  seat.position.set(position[0], position[1], position[2]);
+  seat.rotation.y = rotationY;
+  seat.userData.playerScale = scale;
+  parent.add(seat);
+  return seat;
+}
+
 function addAttraction(ride, index) {
   const group = new THREE.Group();
   group.position.set(ride.position[0], 0, ride.position[2]);
@@ -602,7 +613,7 @@ function buildCoaster(group, ride) {
     car.userData.carOffset = i * 0.028;
     group.add(car);
     trainCars.push(car);
-    group.userData.seats.push(car);
+    if (i === 0) group.userData.seats.push(addPlayerSeat(car, [0, 0.58, -0.18], 0, 0.32));
   }
   group.userData.coasterTrain = { curve, cars: trainCars };
 }
@@ -632,6 +643,7 @@ function buildSpinBump(group, ride) {
     box("spin-safety-bar", [1.25, 0.12, 0.12], [0, 0.88, -0.48], materials.dark, seatGroup);
     addSeatedRider(seatGroup, [-0.32, 0.76, 0.08], 0.82, 0xffffff);
     addSeatedRider(seatGroup, [0.32, 0.76, 0.08], 0.82, 0x245b8f);
+    if (i === 0) group.userData.seats.push(addPlayerSeat(seatGroup, [0, 0.76, -0.08], 0, 0.34));
     arm.add(seatGroup);
   }
   group.add(arm);
@@ -648,6 +660,7 @@ function buildDragon(group, ride) {
     const head = sphere("dragon-head", 0.45, [Math.cos(angle) * 5.8, 3.85, Math.sin(angle) * 5.8], makeMat(0x58c9ef), rotor);
     body.lookAt(0, 3.6, 0);
     head.lookAt(0, 3.85, 0);
+    if (i === 0) group.userData.seats.push(addPlayerSeat(rotor, [Math.cos(angle) * 4.8, 3.95, Math.sin(angle) * 4.8], -angle + Math.PI, 0.32));
   }
   group.add(rotor);
 }
@@ -662,6 +675,7 @@ function buildWhirl(group, ride) {
     arm.rotation.y = -angle;
     const seat = box("flying-chair", [1, 0.75, 0.8], [Math.cos(angle) * 5.2, 4.7, Math.sin(angle) * 5.2], makeMat(ride.color), rotor);
     seat.lookAt(0, 4.7, 0);
+    if (i === 0) group.userData.seats.push(addPlayerSeat(rotor, [Math.cos(angle) * 5.2, 4.95, Math.sin(angle) * 5.2], -angle + Math.PI, 0.3));
   }
   group.add(rotor);
 }
@@ -719,6 +733,7 @@ function buildCarousel(group, ride) {
     cyl("carousel-pole-small", 0.07, 4, [x, 3.15, z], materials.steel, rotor, 8);
     const seat = sphere("sweet-seat", 0.55, [x, 2.15 + (i % 2) * 0.35, z], makeMat(i % 2 ? 0xf06aa3 : 0xffd15f), rotor);
     seat.scale.set(1.45, 0.75, 0.7);
+    if (i === 0) group.userData.seats.push(addPlayerSeat(rotor, [x, 2.42, z], -angle + Math.PI, 0.32));
   }
   group.add(rotor);
 }
@@ -745,6 +760,7 @@ function buildDance(group, ride) {
     box("dance-saddle-seat", [1.1, 0.5, 1.35], [0, 0.32, 0], makeMat(0xb46d58), seat);
     box("dance-safety-grip", [0.95, 0.1, 0.1], [0, 0.9, -0.62], materials.dark, seat);
     addSeatedRider(seat, [0, 0.73, 0], 0.86, i % 2 ? 0xffffff : 0x245b8f);
+    if (i === 3) group.userData.seats.push(addPlayerSeat(seat, [0, 0.73, -0.08], 0, 0.34));
     platform.add(seat);
   }
   group.add(platform);
@@ -758,7 +774,8 @@ function buildTrain(group, ride) {
   const train = new THREE.Group();
   group.userData.train = train;
   for (let i = 0; i < 4; i += 1) {
-    box("train-car", [1.3, 1.1, 1.7], [-i * 1.45, 1, 0], makeMat(i === 0 ? ride.color : 0xffd15f), train);
+    const car = box("train-car", [1.3, 1.1, 1.7], [-i * 1.45, 1, 0], makeMat(i === 0 ? ride.color : 0xffd15f), train);
+    if (i === 0) group.userData.seats.push(addPlayerSeat(train, [car.position.x, 1.34, 0], 0, 0.32));
   }
   group.add(train);
 }
@@ -784,9 +801,10 @@ sphere("player-head", 0.56, [0, 2.28, 0], makeMat(0xf1bd8c), player);
 box("player-hair", [0.9, 0.22, 0.78], [0, 2.72, 0.05], makeMat(0x2b2118), player);
 addSimpleFace(player, "player", 1.55, 2.28, -0.52, "happy");
 box("player-bag", [1.15, 1, 0.22], [0, 1.35, 0.62], makeMat(0x172632), player);
-player.scale.setScalar(0.78);
+const playerGroundScale = 0.78;
+player.scale.setScalar(playerGroundScale);
 scene.add(player);
-label("我", [0, 3.35, 61], 42, 1.25, 0.78);
+const playerLabel = label("我", [0, 3.35, 61], 42, 1.25, 0.78);
 
 function addSimpleFace(parent, prefix, scale, baseY, frontZ, mood = "calm") {
   const eyeW = 0.04 * scale;
@@ -923,6 +941,7 @@ function updateRideList() {
 }
 
 function focusRide(index) {
+  if (riding) leaveRide();
   selectedIndex = index;
   const ride = rideData[index];
   player.position.set(ride.position[0], 0, ride.position[2] + 9);
@@ -937,8 +956,19 @@ function rideNearest() {
     return;
   }
   if (!nearest) return;
+  const seat = nearest.userData.seats?.[0];
+  if (!seat) {
+    statusText.textContent = `${nearest.userData.ride.name} 现在只能参观，还没有可坐的座椅。`;
+    return;
+  }
   riding = nearest;
-  statusText.textContent = `正在乘坐 ${riding.userData.ride.name}。镜头会跟着项目动，点“下车”回到地面。`;
+  rideSeat = seat;
+  rideSeat.add(player);
+  player.position.set(0, 0, 0);
+  player.rotation.set(0, 0, 0);
+  player.scale.setScalar(rideSeat.userData.playerScale || 0.34);
+  playerLabel.visible = false;
+  statusText.textContent = `你已经坐进 ${riding.userData.ride.name} 的座椅里了，安全杆在前面，镜头会跟着座位动。点“下车”回到出口。`;
 }
 
 function checkTicket() {
@@ -959,18 +989,28 @@ function checkTicket() {
 function leaveRide() {
   if (!riding) return;
   const ride = riding.userData.ride;
+  scene.add(player);
   player.position.set(ride.position[0] + 7, 0, ride.position[2] + 7);
+  player.rotation.set(0, Math.PI, 0);
+  player.scale.setScalar(playerGroundScale);
+  playerLabel.visible = true;
+  rideSeat = null;
   riding = null;
   statusText.textContent = "已经下车了，可以继续在乐园里面走。";
 }
 
 function moveNextRide() {
+  if (riding) leaveRide();
   selectedIndex = (selectedIndex + 1) % rideData.length;
   focusRide(selectedIndex);
 }
 
 function resetPlayer() {
+  scene.add(player);
   riding = null;
+  rideSeat = null;
+  player.scale.setScalar(playerGroundScale);
+  playerLabel.visible = true;
   player.position.set(0, 0, 61);
   player.rotation.y = Math.PI;
   entrance.ticketChecked = false;
@@ -983,6 +1023,16 @@ function resetPlayer() {
 }
 
 function updateNearest() {
+  if (riding) {
+    nearest = riding;
+    const ride = riding.userData.ride;
+    nearName.textContent = ride.name;
+    nearInfo.textContent = `${ride.zone} · 你正坐在座椅里，安全杆在前面，项目和乘客一起动。`;
+    selectedIndex = rideData.findIndex((item) => item.id === ride.id);
+    updateRideList();
+    return;
+  }
+
   if (player.position.z > 51 && !entrance.ticketChecked) {
     nearest = null;
     nearName.textContent = "入口检票口";
@@ -1139,11 +1189,36 @@ function updateCamera(elapsed) {
   viewState.distance = THREE.MathUtils.lerp(viewState.distance, viewState.targetDistance, 0.08);
   const lookHeight = THREE.MathUtils.clamp(2 + viewState.pitch * 18, 0.8, 18);
   const target = new THREE.Vector3();
-  if (riding) {
-    const ride = riding.userData.ride;
-    const circle = elapsed * 1.2;
-    target.set(ride.position[0], 3 + viewState.pitch * 9, ride.position[2]);
-    camera.position.lerp(new THREE.Vector3(ride.position[0] + Math.cos(circle) * 11, 8 + viewState.pitch * 5 + Math.sin(circle * 1.7) * 2, ride.position[2] + Math.sin(circle) * 11), 0.08);
+  if (riding && rideSeat) {
+    const seatWorld = new THREE.Vector3();
+    rideSeat.getWorldPosition(seatWorld);
+    const seatDir = new THREE.Vector3(0, 0, -1).applyQuaternion(rideSeat.getWorldQuaternion(new THREE.Quaternion())).normalize();
+    const sideDir = new THREE.Vector3(1, 0, 0).applyQuaternion(rideSeat.getWorldQuaternion(new THREE.Quaternion())).normalize();
+    target.copy(seatWorld).add(new THREE.Vector3(0, 0.75 + viewState.pitch * 2.2, 0));
+    let rideCam;
+    if (riding.userData.ride.model === "spinBump") {
+      rideCam = riding.position
+        .clone()
+        .add(new THREE.Vector3(10.5, 7.2 + viewState.pitch * 3, 10.5));
+    } else if (["dragon", "whirl", "carousel", "flying"].includes(riding.userData.ride.model)) {
+      const center = riding.position.clone();
+      const outward = seatWorld.clone().sub(center);
+      outward.y = 0;
+      outward.normalize();
+      const tangent = new THREE.Vector3(-outward.z, 0, outward.x);
+      rideCam = seatWorld
+        .clone()
+        .add(outward.multiplyScalar(6.6))
+        .add(tangent.multiplyScalar(1.4))
+        .add(new THREE.Vector3(0, 3.5 + viewState.pitch * 3, 0));
+    } else {
+      rideCam = seatWorld
+        .clone()
+        .add(seatDir.multiplyScalar(-5.8))
+        .add(sideDir.multiplyScalar(1.8))
+        .add(new THREE.Vector3(0, 3.1 + viewState.pitch * 3, 0));
+    }
+    camera.position.lerp(rideCam, 0.14);
     camera.lookAt(target);
     return;
   }
@@ -1163,6 +1238,11 @@ function updateCamera(elapsed) {
   target.copy(player.position);
   target.y = lookHeight;
   camera.lookAt(target);
+}
+
+function updatePlayerLabel() {
+  if (riding) return;
+  playerLabel.position.set(player.position.x, player.position.y + 3.35, player.position.z);
 }
 
 function nudgeView(action) {
@@ -1190,6 +1270,7 @@ function animate() {
   updateCrowd(elapsed);
   updateRides(elapsed, delta);
   updateNearest();
+  updatePlayerLabel();
   updateCamera(elapsed);
   renderer.render(scene, camera);
   requestAnimationFrame(animate);
