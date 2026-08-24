@@ -62,7 +62,7 @@ const rideData = [
     model: "darkRide",
     position: [-6, 0, 2],
     color: 0x172632,
-    info: "戴 3D 眼镜的室内射击馆，坐小车找隐藏目标。"
+    info: "坐在室内小汽车里，车会沿轨道前进，前面有小枪，可以按 F 或 J 打发光目标。"
   },
   {
     id: "flying",
@@ -1079,31 +1079,86 @@ function buildWhirl(group, ride) {
   group.add(rotor);
 }
 
+function makeDarkRideCurve() {
+  return new THREE.CatmullRomCurve3([
+    new THREE.Vector3(-4.5, 0.55, 3.3),
+    new THREE.Vector3(-5.1, 0.58, 0.6),
+    new THREE.Vector3(-3.5, 0.62, -2.5),
+    new THREE.Vector3(-0.7, 0.58, -3.35),
+    new THREE.Vector3(2.8, 0.62, -2.4),
+    new THREE.Vector3(4.7, 0.58, 0.7),
+    new THREE.Vector3(3.1, 0.55, 3.4),
+    new THREE.Vector3(-0.8, 0.55, 4.05),
+    new THREE.Vector3(-4.5, 0.55, 3.3)
+  ], true, "catmullrom", 0.24);
+}
+
 function buildDarkRide(group, ride) {
   const wallMat = makeMat(0x222b35);
   const roofMat = new THREE.MeshStandardMaterial({ color: 0x172632, roughness: 0.36, metalness: 0.1, transparent: true, opacity: 0.78 });
   const lightMat = new THREE.MeshStandardMaterial({ color: 0x80f5ff, emissive: 0x38d5ff, emissiveIntensity: 0.65, roughness: 0.18 });
+  const targetMat = new THREE.MeshStandardMaterial({ color: 0xffd15f, emissive: 0xff5a3d, emissiveIntensity: 0.55, roughness: 0.24 });
+  const beamMat = new THREE.MeshStandardMaterial({ color: 0xff3b30, emissive: 0xff3b30, emissiveIntensity: 1, roughness: 0.2, transparent: true, opacity: 0.86 });
   box("dark-ride-back-wall", [12, 6, 0.45], [0, 3, -4.5], wallMat, group);
   box("dark-ride-left-wall", [0.45, 6, 9], [-6, 3, 0], wallMat, group);
   box("dark-ride-right-glass-wall", [0.24, 5.4, 9], [6, 3, 0], materials.glass, group);
   box("dark-ride-cutaway-roof", [12.8, 0.45, 9.6], [0, 6.25, 0], roofMat, group);
   box("dark-ride-floor", [11.4, 0.2, 8.4], [0, 0.3, 0], makeMat(0x303b45), group);
   box("dark-ride-door", [4, 3.4, 0.25], [0, 1.7, 4.65], makeMat(0xffd15f), group);
-  box("dome-screen", [7, 3.3, 0.2], [0, 4.2, -4.65], materials.glass, group);
-  label("室内项目 · 3D THEATER", [ride.position[0], 7.6, ride.position[2] + 2.2], 36, 6.8, 1.0);
-  for (let row = 0; row < 3; row += 1) {
-    for (let col = 0; col < 3; col += 1) {
-      const cart = box("dark-ride-car", [1.15, 0.75, 1.2], [-2.6 + col * 2.6, 0.9, 1.9 - row * 1.55], makeMat(col % 2 ? 0xd93a32 : 0x245b8f), group);
-      box("dark-ride-seat-back", [1, 0.85, 0.15], [0, 0.6, 0.45], materials.dark, cart);
-    }
-  }
+  box("dark-ride-screen", [7, 3.3, 0.2], [0, 4.2, -4.65], materials.glass, group);
+  label("坐小汽车打枪", [ride.position[0], 7.6, ride.position[2] + 2.2], 36, 5.8, 1.0);
+
+  const curve = makeDarkRideCurve();
+  const track = new THREE.Mesh(new THREE.TubeGeometry(curve, 150, 0.08, 8, true), materials.steel);
+  track.name = "dark-ride-car-track";
+  group.add(track);
+
+  const car = new THREE.Group();
+  group.userData.darkRide = { curve, car, phaseName: "", score: 0, shots: [], targets: [], lastShotAt: -1 };
+  box("shooting-car-body", [2.35, 0.75, 1.7], [0, 0.85, 0], makeMat(0xd93a32), car);
+  box("shooting-car-nose", [1.55, 0.38, 0.5], [0, 0.88, -1], makeMat(0xffd15f), car);
+  box("shooting-car-seat-left", [0.68, 0.58, 0.35], [-0.44, 1.22, 0.18], materials.dark, car);
+  box("shooting-car-seat-right", [0.68, 0.58, 0.35], [0.44, 1.22, 0.18], materials.dark, car);
+  const leftRider = addSeatedRider(car, [-0.44, 1.32, 0.05], 0.66, 0xffffff);
+  const rightRider = addSeatedRider(car, [0.44, 1.32, 0.05], 0.66, 0x245b8f);
+  addSelectableSeat(group, car, [-0.44, 1.22, -0.18], 0, 0.32, leftRider);
+  addSelectableSeat(group, car, [0.44, 1.22, -0.18], 0, 0.32, rightRider);
+  const gunLeft = cyl("shooting-gun-left", 0.07, 0.95, [-0.43, 1.45, -0.78], materials.dark, car, 10);
+  const gunRight = cyl("shooting-gun-right", 0.07, 0.95, [0.43, 1.45, -0.78], materials.dark, car, 10);
+  gunLeft.rotation.x = Math.PI / 2;
+  gunRight.rotation.x = Math.PI / 2;
+  box("shooting-gun-glow-left", [0.2, 0.2, 0.12], [-0.43, 1.45, -1.25], lightMat, car);
+  box("shooting-gun-glow-right", [0.2, 0.2, 0.12], [0.43, 1.45, -1.25], lightMat, car);
+  group.add(car);
+
   for (let i = 0; i < 6; i += 1) {
     sphere("dark-ride-ceiling-light", 0.2, [-4.5 + i * 1.8, 5.72, -1.8 + (i % 2) * 2.4], lightMat, group, 10);
   }
-  for (let i = 0; i < 5; i += 1) {
-    const target = sphere("shooting-target", 0.35, [-4 + i * 2, 3.2 + (i % 2), 4.9], makeMat(i % 2 ? 0xf06aa3 : 0x39a657), group);
+  const targetPositions = [
+    [-4.6, 2.3, -4.2],
+    [-2.2, 3.45, -4.35],
+    [0.4, 2.75, -4.25],
+    [3.2, 3.65, -4.3],
+    [5.35, 2.4, -1.2],
+    [5.25, 3.35, 1.8],
+    [-5.25, 2.85, 1.6],
+    [-4.8, 3.7, -1.5]
+  ];
+  targetPositions.forEach((position, i) => {
+    const target = new THREE.Group();
+    target.position.set(position[0], position[1], position[2]);
+    sphere("shooting-target-ring", 0.36, [0, 0, 0], targetMat, target, 18);
+    sphere("shooting-target-center", 0.18, [0, 0, -0.08], makeMat(i % 2 ? 0xf06aa3 : 0x39a657), target, 16);
+    box("shooting-target-stand", [0.1, 1.2, 0.1], [0, -0.82, 0.08], materials.steel, target);
     target.userData.float = i;
+    target.userData.hit = false;
+    group.userData.darkRide.targets.push(target);
+    group.add(target);
+  });
+  for (let i = 0; i < 3; i += 1) {
+    box("dark-ride-prop-wall", [1.2, 1.8, 0.2], [-3 + i * 3, 1.2, -2.2 + (i % 2) * 1.8], makeMat(i % 2 ? 0x5b3ea6 : 0x39a657), group);
   }
+  group.userData.darkRide.beamMat = beamMat;
 }
 
 function buildFlying(group, ride) {
@@ -1496,6 +1551,19 @@ function rideNearest() {
     if (riding.userData.ghostTrain) riding.userData.ghostTrain.phaseName = "";
     if (riding.userData.penguinSplash) riding.userData.penguinSplash.phaseName = "";
   }
+  if (riding.userData.darkRide) {
+    riding.userData.motion = 0;
+    riding.userData.darkRide.phaseName = "";
+    riding.userData.darkRide.score = 0;
+    riding.userData.darkRide.lastShotAt = -1;
+    riding.userData.darkRide.targets.forEach((target) => {
+      target.userData.hit = false;
+      target.scale.setScalar(1);
+      target.visible = true;
+    });
+    riding.userData.darkRide.shots.forEach((shot) => shot.parent?.remove(shot));
+    riding.userData.darkRide.shots = [];
+  }
   startRideSound(riding.userData.coasterTrain || riding.userData.spinBumpArm || riding.userData.ghostTrain || riding.userData.penguinSplash ? "wild" : "gentle");
   if (rideSeat.userData.dummyRider) rideSeat.userData.dummyRider.visible = false;
   rideSeat.add(player);
@@ -1504,6 +1572,9 @@ function rideNearest() {
   player.scale.setScalar(rideSeat.userData.playerScale || 0.34);
   playerLabel.visible = false;
   statusText.textContent = `你已经坐进 ${riding.userData.ride.name} 的第 ${rideSeat.userData.seatNumber || selectedSeatIndex + 1}/${count} 号座位了，安全杆在前面，镜头会跟着座位动。点“下车”回到出口。`;
+  if (riding.userData.darkRide) {
+    statusText.textContent = `你已经坐进 ${riding.userData.ride.name} 的射击小汽车第 ${rideSeat.userData.seatNumber || selectedSeatIndex + 1}/${count} 号座位。按 F 或 J 可以开枪打目标。`;
+  }
   updateSeatButton(riding);
   updateRideControlButtons();
 }
@@ -1734,6 +1805,48 @@ function updateRides(elapsed, delta) {
       const angle = t * Math.PI * 2;
       group.userData.train.position.set(Math.cos(angle) * 7.4, 0.75, Math.sin(angle) * 4.7);
       group.userData.train.rotation.y = -angle + Math.PI / 2;
+    }
+    if (group.userData.darkRide) {
+      const ride = group.userData.darkRide;
+      const curve = ride.curve;
+      const duration = 32;
+      const baseT = controlled ? Math.min(group.userData.motion / duration, 0.995) : (elapsed * 0.04) % 1;
+      const point = curve.getPoint(baseT);
+      const next = curve.getPoint((baseT + 0.012) % 1);
+      ride.car.position.copy(point);
+      ride.car.rotation.y = Math.atan2(next.x - point.x, next.z - point.z);
+      ride.car.rotation.z = Math.sin(baseT * Math.PI * 7) * 0.035;
+      ride.targets.forEach((target, index) => {
+        if (!target.userData.hit) {
+          target.position.y += Math.sin(elapsed * 2.2 + index) * 0.0025;
+          target.rotation.y += delta * (0.45 + index * 0.04);
+        } else {
+          target.scale.lerp(new THREE.Vector3(0.35, 0.35, 0.35), 0.12);
+        }
+      });
+      ride.shots = ride.shots.filter((shot) => {
+        shot.userData.life -= delta;
+        shot.material.opacity = Math.max(0, shot.userData.life * 2.8);
+        if (shot.userData.life <= 0) {
+          shot.parent?.remove(shot);
+          return false;
+        }
+        return true;
+      });
+      if (controlled) {
+        const message = baseT < 0.22
+          ? "射击小车正在进入室内轨道，前面有发光目标。"
+          : baseT < 0.58
+            ? "小汽车正在拐弯，按 F 或 J 可以开枪。"
+            : baseT < 0.86
+              ? `继续打目标，当前打中 ${ride.score} 个。`
+              : `快到出口了，一共打中 ${ride.score} 个目标。`;
+        if (!rideControl.paused && ride.phaseName !== message) {
+          ride.phaseName = message;
+          statusText.textContent = `${message} 速度 ${rideControl.speed.toFixed(1).replace(".0", "")} 倍。`;
+        }
+        updateRideSound(0.3 + Math.min(ride.score, 5) * 0.08);
+      }
     }
     if (group.userData.ghostTrain) {
       const ride = group.userData.ghostTrain;
@@ -1968,6 +2081,68 @@ function nudgeView(action) {
   if (action === "zoomOut") viewState.targetDistance = THREE.MathUtils.clamp(viewState.targetDistance + 1.7, 7.5, 22);
 }
 
+function makeBeamBetween(start, end, material) {
+  const direction = end.clone().sub(start);
+  const length = Math.max(direction.length(), 0.1);
+  const beam = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, length, 8), material);
+  beam.position.copy(start).add(end).multiplyScalar(0.5);
+  beam.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction.normalize());
+  beam.userData.life = 0.28;
+  return beam;
+}
+
+function playShotSound() {
+  const context = ensureAudio();
+  if (!context) return;
+  const oscillator = context.createOscillator();
+  const gain = context.createGain();
+  oscillator.type = "square";
+  oscillator.frequency.value = 820;
+  gain.gain.value = 0.035;
+  oscillator.connect(gain);
+  gain.connect(context.destination);
+  oscillator.start();
+  gain.gain.exponentialRampToValueAtTime(0.001, context.currentTime + 0.1);
+  oscillator.stop(context.currentTime + 0.12);
+}
+
+function shootDarkRide() {
+  if (!riding?.userData.darkRide) {
+    statusText.textContent = "只有坐进射击小汽车时，F 或 J 才是开枪。";
+    return;
+  }
+  const ride = riding.userData.darkRide;
+  const now = clock.elapsedTime;
+  if (now - ride.lastShotAt < 0.18) return;
+  ride.lastShotAt = now;
+  const car = ride.car;
+  const forward = new THREE.Vector3(Math.sin(car.rotation.y), 0, Math.cos(car.rotation.y)).normalize();
+  const muzzle = car.position.clone().add(forward.clone().multiplyScalar(1.25)).add(new THREE.Vector3(0, 1.45, 0));
+  const target = ride.targets
+    .filter((candidate) => !candidate.userData.hit)
+    .map((candidate) => {
+      const toTarget = candidate.position.clone().sub(muzzle);
+      const aim = toTarget.clone();
+      aim.y = 0;
+      const front = aim.lengthSq() > 0.001 ? forward.dot(aim.normalize()) : 0;
+      return { candidate, score: front * 12 - toTarget.length() };
+    })
+    .filter((item) => item.score > -6)
+    .sort((a, b) => b.score - a.score)[0]?.candidate;
+  const end = target ? target.position.clone() : muzzle.clone().add(forward.multiplyScalar(6));
+  if (target) {
+    target.userData.hit = true;
+    ride.score += 1;
+    statusText.textContent = `打中了！Finding Larva 射击小车：已经打中 ${ride.score} 个目标。`;
+  } else {
+    statusText.textContent = "开枪了，不过这一下没有打中目标，再瞄准前面的发光圆牌。";
+  }
+  const beam = makeBeamBetween(muzzle, end, ride.beamMat.clone());
+  riding.add(beam);
+  ride.shots.push(beam);
+  playShotSound();
+}
+
 function resize() {
   const rect = canvas.getBoundingClientRect();
   const width = Math.max(1, Math.floor(rect.width));
@@ -2037,6 +2212,11 @@ function setupInput() {
     }
     if (key === "p") {
       toggleRidePause();
+      event.preventDefault();
+      return;
+    }
+    if (key === "f" || key === "j") {
+      shootDarkRide();
       event.preventDefault();
       return;
     }
