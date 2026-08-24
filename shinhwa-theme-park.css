@@ -194,6 +194,26 @@ button {
   width: min(250px, calc(100% - 460px));
 }
 
+.keyboard-help {
+  position: absolute;
+  left: 50%;
+  bottom: 24px;
+  z-index: 8;
+  width: min(620px, calc(100% - 470px));
+  padding: 10px 12px;
+  border: 1px solid rgba(23, 38, 50, 0.16);
+  border-radius: 8px;
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.76);
+  box-shadow: 0 8px 24px rgba(23, 38, 50, 0.14);
+  font-size: 0.82rem;
+  font-weight: 950;
+  line-height: 1.28;
+  text-align: center;
+  transform: translateX(-50%);
+  backdrop-filter: blur(8px);
+}
+
 .quick-actions button,
 .view-actions button,
 .screen-actions button,
@@ -405,6 +425,10 @@ button {
     width: 190px;
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 5px;
+  }
+
+  .keyboard-help {
+    display: none;
   }
 
   .quick-actions button {

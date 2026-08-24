@@ -1994,9 +1994,66 @@ function animate() {
 
 function setupInput() {
   window.addEventListener("keydown", (event) => {
-    keys.add(event.key.toLowerCase());
-    if (event.key === "Enter") rideNearest();
-    if (event.key === "Escape") leaveRide();
+    const key = event.key.toLowerCase();
+    keys.add(key);
+    if (event.repeat && !["w", "a", "s", "d", "arrowup", "arrowleft", "arrowdown", "arrowright", "shift", "q", "e", "z", "x"].includes(key)) return;
+    const screenShortcuts = {
+      "1": "follow",
+      "2": "first",
+      "3": "seat",
+      "4": "wide",
+      "5": "ride",
+      "6": "gate"
+    };
+    if (screenShortcuts[key]) {
+      setScreenMode(screenShortcuts[key]);
+      event.preventDefault();
+      return;
+    }
+    if (key === "enter" || key === "r") {
+      rideNearest();
+      event.preventDefault();
+      return;
+    }
+    if (key === "escape") {
+      leaveRide();
+      event.preventDefault();
+      return;
+    }
+    if (key === "t") {
+      checkTicket();
+      event.preventDefault();
+      return;
+    }
+    if (key === "c") {
+      chooseSeat();
+      event.preventDefault();
+      return;
+    }
+    if (key === "n") {
+      moveNextRide();
+      event.preventDefault();
+      return;
+    }
+    if (key === "p") {
+      toggleRidePause();
+      event.preventDefault();
+      return;
+    }
+    if (key === "-" || key === "_") {
+      changeRideSpeed(-1);
+      event.preventDefault();
+      return;
+    }
+    if (key === "=" || key === "+") {
+      changeRideSpeed(1);
+      event.preventDefault();
+      return;
+    }
+    if (key === "0") {
+      resetPlayer();
+      event.preventDefault();
+    }
   });
   window.addEventListener("keyup", (event) => keys.delete(event.key.toLowerCase()));
 
