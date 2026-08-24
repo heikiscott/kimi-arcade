@@ -154,7 +154,7 @@ button {
   position: absolute;
   right: 22px;
   bottom: 22px;
-  z-index: 7;
+  z-index: 10;
   display: grid;
   grid-template-columns: repeat(2, minmax(112px, 1fr));
   gap: 8px;
@@ -268,18 +268,23 @@ button {
   background: var(--blue);
 }
 
-.quick-actions button:nth-child(3),
 .quick-actions button:nth-child(4),
+.quick-actions button:nth-child(6),
 .button-grid button:nth-child(4) {
   background: var(--blue);
 }
 
 .quick-actions button:nth-child(2) {
+  background: #22c55e;
+}
+
+.quick-actions button:nth-child(3),
+.quick-actions button:nth-child(5) {
   color: var(--ink);
   background: var(--gold);
 }
 
-.quick-actions button:nth-child(5) {
+.quick-actions button:nth-child(7) {
   background: #2c9f66;
 }
 
@@ -374,7 +379,7 @@ button {
 
   .stage,
   #parkCanvas {
-    min-height: 600px;
+    min-height: 720px;
   }
 
   .hud {

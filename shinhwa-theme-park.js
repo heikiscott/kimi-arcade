@@ -11,6 +11,8 @@ const screenButtons = Array.from(document.querySelectorAll("[data-screen]"));
 const rideControlButtons = Array.from(document.querySelectorAll("[data-ride-control]"));
 const buttons = {
   ride: document.querySelector("#rideBtn"),
+  manualStart: document.querySelector("#manualStartBtn"),
+  manualCheck: document.querySelector("#manualCheckBtn"),
   seat: document.querySelector("#seatBtn"),
   ticket: document.querySelector("#ticketBtn"),
   leave: document.querySelector("#leaveRideBtn"),
@@ -1108,6 +1110,23 @@ function buildDarkRide(group, ride) {
   box("dark-ride-screen", [7, 3.3, 0.2], [0, 4.2, -4.65], materials.glass, group);
   label("坐小汽车打枪", [ride.position[0], 7.6, ride.position[2] + 2.2], 36, 5.8, 1.0);
 
+  const controlPanel = new THREE.Group();
+  controlPanel.position.set(4.6, 0, 4.05);
+  controlPanel.rotation.y = -0.35;
+  box("manual-control-post", [0.32, 1.65, 0.32], [0, 0.82, 0], materials.steel, controlPanel);
+  box("manual-control-box", [2.35, 0.7, 1.45], [0, 1.7, 0], makeMat(0x303b45), controlPanel);
+  const cover = box("manual-control-open-cover", [2.45, 0.08, 1.55], [0, 2.32, -0.62], materials.glass, controlPanel);
+  cover.rotation.x = -0.72;
+  const greenButton = cyl("manual-green-start-button", 0.28, 0.16, [-0.54, 2.1, -0.35], makeMat(0x22c55e), controlPanel, 24);
+  greenButton.rotation.x = Math.PI / 2;
+  const checkButton = box("manual-check-in-button", [0.8, 0.18, 0.42], [0.52, 2.1, -0.35], makeMat(0xffd15f), controlPanel);
+  checkButton.rotation.x = -0.18;
+  box("manual-control-red-light", [0.28, 0.12, 0.2], [-0.54, 2.08, 0.36], makeMat(0xd93a32), controlPanel);
+  box("manual-control-screen", [1.58, 0.34, 0.08], [0.05, 1.84, -0.72], materials.glass, controlPanel);
+  group.add(controlPanel);
+  label("手动控制台", [ride.position[0] + 4.6, 3.35, ride.position[2] + 4.05], 28, 3.8, 0.8);
+  label("绿键启动 · 检查进入", [ride.position[0] + 4.6, 2.72, ride.position[2] + 4.05], 24, 4.8, 0.72);
+
   const curve = makeDarkRideCurve();
   const track = new THREE.Mesh(new THREE.TubeGeometry(curve, 150, 0.08, 8, true), materials.steel);
   track.name = "dark-ride-car-track";
@@ -1579,19 +1598,40 @@ function rideNearest() {
   updateRideControlButtons();
 }
 
-function checkTicket() {
-  const distance = player.position.distanceTo(new THREE.Vector3(0, 0, 57));
-  if (distance > 9) {
-    statusText.textContent = "先走到大门检票口旁边，检票员才能帮你刷票。";
-    return;
-  }
+function openTicketGate(message) {
   entrance.ticketChecked = true;
   entrance.gateArms.forEach((arm, index) => {
     arm.rotation.y = index === 0 ? Math.PI / 2 : -Math.PI / 2;
     arm.material = makeMat(0x39a657);
   });
   buttons.ticket.textContent = "已检票";
-  statusText.textContent = "检票员已经刷票，闸机打开了。你和朋友可以一起进园。";
+  statusText.textContent = message;
+}
+
+function checkTicket() {
+  const distance = player.position.distanceTo(new THREE.Vector3(0, 0, 57));
+  if (distance > 9) {
+    statusText.textContent = "先走到大门检票口旁边，检票员才能帮你刷票。";
+    return;
+  }
+  openTicketGate("检票员已经刷票，闸机打开了。你和朋友可以一起进园。");
+}
+
+function manualCheckIn() {
+  if (!entrance.ticketChecked) {
+    openTicketGate("检查进入完成，闸机已经打开；Finding Larva 旁边的手动控制台可以用了。");
+    return;
+  }
+  statusText.textContent = nearest?.userData.ride.model === "darkRide"
+    ? "Finding Larva 手动控制台检查完成，可以按绿色启动键让射击小车出发。"
+    : "检查进入完成，靠近 Finding Larva 入口就能使用旁边的手动控制台。";
+}
+
+function manualStartRide() {
+  if (nearest?.userData.ride.model === "darkRide") {
+    statusText.textContent = "绿色启动键已按下，Finding Larva 射击小车准备出发。";
+  }
+  rideNearest();
 }
 
 function leaveRide() {
@@ -2330,6 +2370,8 @@ function setupInput() {
   window.addEventListener("touchend", endStick);
 
   buttons.ride.addEventListener("click", rideNearest);
+  buttons.manualStart.addEventListener("click", manualStartRide);
+  buttons.manualCheck.addEventListener("click", manualCheckIn);
   buttons.seat.addEventListener("click", chooseSeat);
   buttons.ticket.addEventListener("click", checkTicket);
   buttons.leave.addEventListener("click", leaveRide);
