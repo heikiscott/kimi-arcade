@@ -194,6 +194,56 @@ function makeDecalTexture(lines, options = {}) {
   return texture;
 }
 
+function makeTailMarkTexture(livery) {
+  const canvasEl = document.createElement("canvas");
+  canvasEl.width = 320;
+  canvasEl.height = 260;
+  const ctx = canvasEl.getContext("2d");
+  ctx.clearRect(0, 0, canvasEl.width, canvasEl.height);
+
+  if (livery.id === "cz") {
+    ctx.save();
+    ctx.translate(160, 132);
+    ctx.lineJoin = "round";
+    ctx.strokeStyle = "#ffffff";
+    ctx.lineWidth = 13;
+    ctx.fillStyle = "#d83232";
+    for (let i = 0; i < 5; i++) {
+      ctx.save();
+      ctx.rotate((Math.PI * 2 * i) / 5 - Math.PI / 2);
+      ctx.beginPath();
+      ctx.moveTo(0, -18);
+      ctx.bezierCurveTo(34, -76, 78, -88, 92, -40);
+      ctx.bezierCurveTo(62, -34, 44, -20, 30, 4);
+      ctx.closePath();
+      ctx.stroke();
+      ctx.fill();
+      ctx.restore();
+    }
+    ctx.beginPath();
+    ctx.arc(0, 0, 22, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.fill();
+    ctx.restore();
+  } else {
+    ctx.fillStyle = `#${livery.color.toString(16).padStart(6, "0")}`;
+    roundRect(ctx, 28, 30, 264, 200, 28);
+    ctx.fill();
+    ctx.strokeStyle = "#ffffff";
+    ctx.lineWidth = 10;
+    ctx.stroke();
+    ctx.fillStyle = "#ffffff";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.font = "900 76px system-ui, sans-serif";
+    ctx.fillText(livery.short, 160, 130);
+  }
+
+  const texture = new THREE.CanvasTexture(canvasEl);
+  texture.anisotropy = 4;
+  return texture;
+}
+
 function addSideDecal(name, texture, side, pos, size, parent) {
   const mat = new THREE.MeshBasicMaterial({
     map: texture,
@@ -307,6 +357,19 @@ function makeWingGeometry(span, chord, sweep = 2.2) {
   return geom;
 }
 
+function makeVerticalFinGeometry(base, height) {
+  const verts = new Float32Array([
+    0, 0, base * 0.58,
+    0, height, base * 0.12,
+    0, 0, -base * 0.58
+  ]);
+  const geom = new THREE.BufferGeometry();
+  geom.setAttribute("position", new THREE.BufferAttribute(verts, 3));
+  geom.setIndex([0, 1, 2]);
+  geom.computeVertexNormals();
+  return geom;
+}
+
 function createPlaneModel(livery, options = {}) {
   const scale = options.scale || 1;
   const group = new THREE.Group();
@@ -314,6 +377,8 @@ function createPlaneModel(livery, options = {}) {
   const colorMat = makeMat(livery.color, 0.42, 0.28);
   const accentMat = makeMat(livery.accent, 0.42, 0.24);
   const glassMat = makeMat(0x172632, 0.28, 0.05);
+  const stripeBlueMat = livery.id === "cz" ? makeMat(0x1d5fa8, 0.42, 0.24) : colorMat;
+  const stripeGreenMat = livery.id === "cz" ? makeMat(0x19a99a, 0.36, 0.22) : accentMat;
   const engineCount = livery.model.includes("380") || livery.model.includes("747") ? 4 : 2;
   const wideBody = livery.model.includes("380") || livery.model.includes("747") || livery.model.includes("777") || livery.model.includes("A350");
   const length = (wideBody ? 14.5 : 12.2) * scale;
@@ -331,8 +396,9 @@ function createPlaneModel(livery, options = {}) {
   stripe.rotation.x = 0;
   for (const side of [-1, 1]) {
     const sideX = side * radius * 1.04;
-    box("aircraft-side-blue-stripe", [0.035 * scale, 0.09 * scale, length * 0.82], [sideX, radius * 1.35, 0.28 * scale], colorMat, group);
-    box("aircraft-side-accent-stripe", [0.036 * scale, 0.045 * scale, length * 0.78], [sideX, radius * 1.22, 0.42 * scale], accentMat, group);
+    box("aircraft-side-blue-stripe", [0.035 * scale, 0.11 * scale, length * 0.86], [sideX, radius * 1.36, 0.24 * scale], stripeBlueMat, group);
+    box("aircraft-side-green-stripe", [0.036 * scale, 0.045 * scale, length * 0.8], [sideX, radius * 1.2, 0.4 * scale], stripeGreenMat, group);
+    box("aircraft-side-dark-cheatline", [0.038 * scale, 0.032 * scale, length * 0.83], [sideX, radius * 1.29, 0.32 * scale], glassMat, group);
   }
   const cockpit = box("aircraft-cockpit-window", [radius * 1.05, 0.12 * scale, 0.55 * scale], [0, radius * 1.75, length / 2 + 0.16 * scale], glassMat, group);
   cockpit.rotation.x = -0.34;
@@ -350,10 +416,21 @@ function createPlaneModel(livery, options = {}) {
     }
     addSideDecal(
       "airline-side-name",
-      makeDecalTexture([livery.local, livery.name], { width: 840, height: 210, color: "#172632", big: 43, small: 27 }),
+      makeDecalTexture(
+        livery.id === "cz" ? ["中国南方航空", "CHINA SOUTHERN"] : [livery.local, livery.name],
+        { width: 940, height: 210, color: "#172632", big: livery.id === "cz" ? 39 : 43, small: 30 }
+      ),
       side,
-      [sideX + side * 0.01 * scale, radius * 1.78, length * 0.08],
-      [3.45 * scale, 0.86 * scale],
+      [sideX + side * 0.01 * scale, radius * 1.78, length * 0.05],
+      [4.12 * scale, 0.86 * scale],
+      group
+    );
+    addSideDecal(
+      "aircraft-registration",
+      makeDecalTexture([livery.id === "cz" ? "B-5762" : livery.model], { width: 300, height: 120, color: "#203142", big: 42 }),
+      side,
+      [sideX + side * 0.012 * scale, radius * 1.66, -length * 0.39],
+      [0.72 * scale, 0.28 * scale],
       group
     );
   }
@@ -365,29 +442,36 @@ function createPlaneModel(livery, options = {}) {
   wing.receiveShadow = true;
   group.add(wing);
   box("continuous-wing-root", [radius * 2.55, 0.14 * scale, 1.55 * scale], [0, radius * 1.22, -0.15 * scale], bodyMat, group);
-  box("left-wing-letter", [1.05 * scale, 0.035 * scale, 0.18 * scale], [-span * 0.25, radius * 1.24, -0.75 * scale], colorMat, group);
-  box("right-wing-letter", [1.05 * scale, 0.035 * scale, 0.18 * scale], [span * 0.25, radius * 1.24, -0.75 * scale], colorMat, group);
+  for (const side of [-1, 1]) {
+    for (let i = 0; i < 5; i++) {
+      const x = side * span * (0.16 + i * 0.055);
+      const line = box("wing-panel-line", [0.035 * scale, 0.028 * scale, 1.85 * scale], [x, radius * 1.245, -0.38 * scale], makeMat(0xc7d1da, 0.32, 0.18), group);
+      line.rotation.y = side * 0.13;
+    }
+    box("wing-small-lettering", [0.28 * scale, 0.032 * scale, 1.2 * scale], [side * span * 0.29, radius * 1.252, -0.64 * scale], glassMat, group);
+  }
 
   const leftTip = box("left-wing-tip", [0.18 * scale, 0.72 * scale, 1.35 * scale], [-span / 2 + 0.28 * scale, radius * 1.62, -0.42 * scale], accentMat, group);
   leftTip.rotation.z = -0.24;
   const rightTip = box("right-wing-tip", [0.18 * scale, 0.72 * scale, 1.35 * scale], [span / 2 - 0.28 * scale, radius * 1.62, -0.42 * scale], accentMat, group);
   rightTip.rotation.z = 0.24;
   box("horizontal-tail", [span * 0.36, 0.08 * scale, 1.4 * scale], [0, radius * 1.72, -length / 2 - 0.16 * scale], bodyMat, group);
-  const fin = box("vertical-tail", [0.16 * scale, 2.2 * scale, 1.35 * scale], [0, radius * 2.25, -length / 2 - 0.35 * scale], colorMat, group);
-  fin.rotation.x = -0.12;
+  const finMat = colorMat.clone();
+  finMat.side = THREE.DoubleSide;
+  const fin = new THREE.Mesh(makeVerticalFinGeometry(1.75 * scale, 2.55 * scale), finMat);
+  fin.name = "sloped-blue-vertical-tail";
+  fin.position.set(0, radius * 1.74, -length / 2 - 0.46 * scale);
+  fin.castShadow = true;
+  fin.receiveShadow = true;
+  group.add(fin);
+  box("vertical-tail-thickness", [0.12 * scale, 1.85 * scale, 1.08 * scale], [0, radius * 2.34, -length / 2 - 0.45 * scale], colorMat, group);
   for (const side of [-1, 1]) {
     addSideDecal(
       "tail-airline-mark",
-      makeDecalTexture([livery.short], {
-        width: 260,
-        height: 220,
-        color: "#ffffff",
-        bg: `#${livery.color.toString(16).padStart(6, "0")}`,
-        big: 86
-      }),
+      makeTailMarkTexture(livery),
       side,
-      [side * 0.1 * scale, radius * 2.48, -length / 2 - 0.38 * scale],
-      [0.95 * scale, 0.78 * scale],
+      [side * 0.075 * scale, radius * 2.55, -length / 2 - 0.32 * scale],
+      [1.02 * scale, 0.84 * scale],
       group
     );
   }
