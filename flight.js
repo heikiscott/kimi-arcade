@@ -120,6 +120,7 @@ const countries = [
 
 const runwayStart = new THREE.Vector3(0, 0.62, -220);
 const playerPlaneScale = 1;
+const spaceAltitude = 500;
 
 const runwayPath = [
   new THREE.Vector3(0, 0.08, -220),
@@ -171,6 +172,7 @@ const state = {
   landed: false,
   offRouteTime: 0,
   autopilot: false,
+  autoTakeoffOnly: false,
   autopilotWaypoint: 1,
   autopilotRoute: "takeoff",
   autopilotStage: "",
@@ -193,13 +195,15 @@ renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
 const clock = new THREE.Clock();
 const world = new THREE.Group();
+const earthScenery = new THREE.Group();
 const airport = new THREE.Group();
 const parked = new THREE.Group();
 const routeLights = new THREE.Group();
 const countryScenery = new THREE.Group();
+const spaceScenery = new THREE.Group();
 const explosionGroup = new THREE.Group();
 const twinTowerTest = new THREE.Group();
-scene.add(world, airport, parked, routeLights, countryScenery, twinTowerTest, explosionGroup);
+scene.add(world, earthScenery, airport, parked, routeLights, countryScenery, spaceScenery, twinTowerTest, explosionGroup);
 
 const mats = {
   concrete: makeMat(0xb8bcc0, 0.72, 0.42),
@@ -209,6 +213,13 @@ const mats = {
   white: makeMat(0xf7fbff, 0.35, 0.45),
   steel: makeMat(0x7d8890, 0.55, 0.42),
   yellow: makeMat(0xf2c84b, 0.68, 0.35),
+  earth: makeMat(0x4f9b58, 0.94, 0.2),
+  water: new THREE.MeshStandardMaterial({ color: 0x2178bd, emissive: 0x043f6a, emissiveIntensity: 0.22, roughness: 0.52, metalness: 0.02 }),
+  mountain: makeMat(0x7a6a55, 0.86, 0.14),
+  mountainSnow: makeMat(0xf1f7ff, 0.58, 0.04),
+  cityGlass: new THREE.MeshStandardMaterial({ color: 0x4b6475, emissive: 0x11283a, emissiveIntensity: 0.35, roughness: 0.42, metalness: 0.18 }),
+  cityLight: new THREE.MeshStandardMaterial({ color: 0xffd66b, emissive: 0xffb23a, emissiveIntensity: 1.65, roughness: 0.48, metalness: 0.08 }),
+  roadDark: makeMat(0x202931, 0.78, 0.18),
   runwayYellowLight: new THREE.MeshStandardMaterial({ color: 0xffd65a, emissive: 0xffb300, emissiveIntensity: 1.8, roughness: 0.34, metalness: 0.12 }),
   greenLight: new THREE.MeshStandardMaterial({ color: 0x62ff8b, emissive: 0x1fe568, emissiveIntensity: 1.7 }),
   redLight: new THREE.MeshStandardMaterial({ color: 0xff4a3a, emissive: 0xd91f12, emissiveIntensity: 1.5 })
@@ -217,6 +228,7 @@ const mats = {
 let playerPlane;
 let playerAircraftParts = {};
 let hazardBuildings = [];
+let scenicHazardBuildings = [];
 const keys = new Set();
 let audioCtx;
 let engineOsc;
@@ -496,12 +508,9 @@ function updateCountryScenery() {
 
 function setTimeMode(mode) {
   state.timeMode = mode;
-  const isNight = mode === "night";
-  const isDusk = mode === "dusk";
-  scene.background = new THREE.Color(isNight ? 0x071326 : isDusk ? 0xffb36b : 0x9fd8ff);
-  scene.fog.color.set(isNight ? 0x071326 : isDusk ? 0xffc082 : 0x9fd8ff);
-  document.body.classList.toggle("night-flight", isNight);
-  document.body.classList.toggle("dusk-flight", isDusk);
+  document.body.classList.toggle("night-flight", mode === "night");
+  document.body.classList.toggle("dusk-flight", mode === "dusk");
+  updateWorldAtmosphere();
 }
 
 function addGround() {
@@ -615,6 +624,138 @@ function addControlTower() {
   addSpriteLabel("塔台", "ATC", [58, 20.2, -45], 4, 1.6);
 }
 
+function addEarthScenery() {
+  clearGroup(earthScenery);
+  scenicHazardBuildings = [];
+  box("earth-wide-ground", [1600, 0.12, 2300], [120, -0.22, 390], mats.earth, earthScenery);
+  box("earth-desert-zone", [360, 0.08, 520], [-520, -0.16, 120], makeMat(0xd5bc75, 0.92, 0.08), earthScenery);
+  box("earth-farmland-zone", [420, 0.08, 380], [590, -0.15, 120], makeMat(0x77aa52, 0.9, 0.08), earthScenery);
+  box("earth-night-city-zone", [430, 0.09, 410], [540, -0.14, 760], makeMat(0x304052, 0.82, 0.16), earthScenery);
+  addRiverRibbon([
+    [-690, -230],
+    [-460, -90],
+    [-250, 125],
+    [80, 310],
+    [330, 575],
+    [690, 825]
+  ], 16);
+  addRiverRibbon([
+    [-620, 820],
+    [-350, 760],
+    [-90, 690],
+    [190, 710],
+    [520, 640]
+  ], 11);
+  addMountainRange(-640, 430, 7, 34);
+  addMountainRange(560, -230, 6, 28);
+  addNightCity("海湾夜景城市", 465, 760, 5, 6);
+  addNightCity("高楼大厦城区", -415, 650, 4, 5);
+  addCityRoadNetwork();
+  addSpriteLabel("地球场景", "机场外有山脉、河流和城市", [-250, 28, 300], 9, 2.4, earthScenery);
+  addSpriteLabel("夜景大城市", "起飞后下面能看到灯光", [540, 42, 745], 8, 2.2, earthScenery);
+}
+
+function addRiverRibbon(points, width) {
+  for (let i = 0; i < points.length - 1; i++) {
+    const [ax, az] = points[i];
+    const [bx, bz] = points[i + 1];
+    const midX = (ax + bx) / 2;
+    const midZ = (az + bz) / 2;
+    const len = Math.hypot(bx - ax, bz - az);
+    const segment = box("earth-blue-river", [width, 0.05, len], [midX, 0.005, midZ], mats.water, earthScenery);
+    segment.rotation.y = Math.atan2(bx - ax, bz - az);
+  }
+}
+
+function addMountainRange(baseX, baseZ, count, heightBase) {
+  for (let i = 0; i < count; i++) {
+    const x = baseX + i * 58 + Math.sin(i * 1.7) * 16;
+    const z = baseZ + Math.cos(i * 1.3) * 36;
+    const h = heightBase + (i % 3) * 9;
+    const radius = 28 + (i % 2) * 8;
+    const mountain = cone("earth-mountain", radius, h, [x, h / 2 - 0.08, z], mats.mountain, earthScenery, 5);
+    mountain.rotation.y = i * 0.34;
+    const cap = cone("earth-mountain-snow", radius * 0.34, h * 0.26, [x, h - h * 0.13, z], mats.mountainSnow, earthScenery, 5);
+    cap.rotation.y = mountain.rotation.y;
+  }
+}
+
+function addNightCity(label, baseX, baseZ, cols, rows) {
+  for (let row = 0; row < rows; row++) {
+    for (let col = 0; col < cols; col++) {
+      const x = baseX + (col - cols / 2) * 24;
+      const z = baseZ + (row - rows / 2) * 25;
+      const h = 11 + ((row * 3 + col * 5) % 8) * 4;
+      box("earth-city-tower", [12, h, 11], [x, h / 2, z], mats.cityGlass, earthScenery);
+      box("earth-city-rooftop-light", [8, 0.25, 7], [x, h + 0.25, z], mats.cityLight, earthScenery);
+      for (let floor = 2; floor < h - 2; floor += 4) {
+        box("earth-city-window-strip", [12.2, 0.32, 0.16], [x, floor, z - 5.62], mats.cityLight, earthScenery);
+      }
+      scenicHazardBuildings.push({ x, z, width: 14, depth: 13, height: h + 1.2, label });
+    }
+  }
+  addSpriteLabel(label, "CITY LIGHTS", [baseX, 38, baseZ - rows * 12 - 16], 7.2, 2, earthScenery);
+}
+
+function addCityRoadNetwork() {
+  const cityCenters = [
+    [540, 760],
+    [-415, 650]
+  ];
+  cityCenters.forEach(([cx, cz]) => {
+    for (let i = -2; i <= 2; i++) {
+      box("earth-city-road-x", [150, 0.06, 2.4], [cx, 0.02, cz + i * 25], mats.roadDark, earthScenery);
+      box("earth-city-road-z", [2.4, 0.06, 155], [cx + i * 24, 0.025, cz], mats.roadDark, earthScenery);
+    }
+    for (let i = -3; i <= 3; i++) {
+      const lightA = new THREE.Mesh(new THREE.SphereGeometry(0.6, 12, 12), mats.cityLight);
+      lightA.position.set(cx + i * 22, 0.7, cz - 72);
+      earthScenery.add(lightA);
+      const lightB = new THREE.Mesh(new THREE.SphereGeometry(0.6, 12, 12), mats.cityLight);
+      lightB.position.set(cx - 68, 0.7, cz + i * 20);
+      earthScenery.add(lightB);
+    }
+  });
+}
+
+function addSpaceScenery() {
+  clearGroup(spaceScenery);
+  const starMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+  for (let i = 0; i < 140; i++) {
+    const star = new THREE.Mesh(new THREE.SphereGeometry(0.36 + (i % 5) * 0.08, 8, 8), starMat);
+    const x = Math.sin(i * 12.9898) * 760;
+    const z = Math.cos(i * 78.233) * 920;
+    const y = 150 + (i % 37) * 8;
+    star.position.set(x, y, z);
+    spaceScenery.add(star);
+  }
+  const earthArcMat = new THREE.MeshBasicMaterial({ color: 0x245bb8, transparent: true, opacity: 0.18, side: THREE.DoubleSide });
+  const arc = new THREE.Mesh(new THREE.RingGeometry(460, 470, 96), earthArcMat);
+  arc.name = "space-earth-arc";
+  arc.position.set(70, 130, 520);
+  arc.rotation.x = Math.PI / 2;
+  spaceScenery.add(arc);
+  spaceScenery.visible = false;
+}
+
+function updateWorldAtmosphere() {
+  const inSpace = state.phase === "airborne" && state.altitude > spaceAltitude;
+  spaceScenery.visible = inSpace;
+  if (inSpace) {
+    scene.background.set(0x030812);
+    scene.fog.color.set(0x030812);
+    scene.fog.near = 780;
+    scene.fog.far = 2100;
+  } else {
+    const isNight = state.timeMode === "night";
+    const isDusk = state.timeMode === "dusk";
+    scene.background.set(isNight ? 0x071326 : isDusk ? 0xffb36b : 0x9fd8ff);
+    scene.fog.color.set(isNight ? 0x071326 : isDusk ? 0xffc082 : 0x9fd8ff);
+    scene.fog.near = 260;
+    scene.fog.far = 1200;
+  }
+}
+
 function makeWingGeometry(span, chord, sweep = 2.2) {
   const half = span / 2;
   const verts = new Float32Array([
@@ -684,6 +825,15 @@ function createPlaneModel(livery, options = {}) {
     for (let i = 0; i < 22; i++) {
       const z = -length * 0.34 + i * (length * 0.68 / 21);
       box("aircraft-window-row", [0.032 * scale, 0.075 * scale, 0.105 * scale], [sideX, radius * 1.62, z], glassMat, group);
+    }
+    for (let i = 0; i < 8; i++) {
+      const z = -length * 0.26 + i * (length * 0.52 / 7);
+      const head = new THREE.Mesh(new THREE.SphereGeometry(0.105 * scale, 12, 12), makeMat(i % 2 ? 0xf3c59f : 0xd9a47c, 0.58, 0.02));
+      head.name = "passenger-head-at-window";
+      head.position.set(sideX + side * 0.035 * scale, radius * 1.51, z);
+      group.add(head);
+      const bodyDot = box("passenger-seat-silhouette", [0.045 * scale, 0.12 * scale, 0.16 * scale], [sideX + side * 0.038 * scale, radius * 1.35, z], makeMat(0x24415f, 0.66, 0.05), group);
+      bodyDot.castShadow = false;
     }
     for (const z of [length * 0.33, -length * 0.29]) {
       box("aircraft-passenger-door", [0.035 * scale, 0.46 * scale, 0.22 * scale], [sideX, radius * 1.48, z], makeMat(0xeef5f9, 0.36, 0.18), group);
@@ -818,6 +968,8 @@ function buildWorld() {
   scene.add(sun);
 
   addGround();
+  addEarthScenery();
+  addSpaceScenery();
   rebuildRouteLights();
 
   playerPlane = createPlaneModel(airlines[state.airlineIndex], { scale: playerPlaneScale, player: true });
@@ -1105,6 +1257,7 @@ function updateAutopilot() {
     state.phase = "landing";
     state.route = "landing";
     rebuildRouteLights();
+    routeLabel.textContent = `无人驾驶：沿绿色灯线飞往${currentDestinationAirportName()}`;
     announceAutopilotStage("city-route", `无人驾驶转入航线：先飞过${currentDestinationCountry().cities[0]}上空，再去${currentDestinationAirportName()}。`);
   }
   if (state.autopilotRoute !== state.route) {
@@ -1130,7 +1283,7 @@ function updateAutopilot() {
     state.route = "takeoff";
     state.throttle = 0.96;
     state.gear = 0;
-    state.yokeY = playerPlane.position.z > 95 && state.speed > 90 ? 0.78 : 0;
+    state.yokeY = playerPlane.position.z > -100 && state.speed > 90 ? 0.78 : 0;
     announceAutopilotStage("takeoff-roll", `无人驾驶滑行：沿${currentOriginCountry().name}起飞跑道绿色灯线加速。`);
   } else if (state.phase === "landing") {
     state.route = "landing";
@@ -1169,6 +1322,7 @@ function resetGame() {
   state.crashed = false;
   state.landed = false;
   state.offRouteTime = 0;
+  state.autoTakeoffOnly = false;
   setAutopilot(false);
   throttleLever.value = "0";
   gearLever.value = "0";
@@ -1190,12 +1344,15 @@ function resetGame() {
 
 function followGreenLights() {
   if (state.crashed || state.landed) return;
+  ensureAudio();
   state.phase = "takeoff";
   state.route = "takeoff";
   rebuildRouteLights();
+  state.autoTakeoffOnly = true;
+  setAutopilot(true);
   routeLabel.textContent = `绿色灯线：起飞跑道 · ${currentRouteName()}`;
-  statusText.textContent = `绿色灯线现在显示${currentOriginCountry().name}起飞跑道，飞机不用再从停机坪开过去。`;
-  addLog("已显示跑道中心绿色灯线。");
+  statusText.textContent = `绿色灯线现在显示${currentOriginCountry().name}起飞跑道，无人驾驶会沿灯线滑行到足够长的位置再起飞。`;
+  addLog("已显示跑道中心绿色灯线，并开启自动滑行。");
 }
 
 function takeoff() {
@@ -1203,9 +1360,12 @@ function takeoff() {
   ensureAudio();
   state.phase = "takeoff";
   state.route = "takeoff";
-  routeLabel.textContent = "起飞：对准跑道中心线，加速到 95 kt 以上。";
-  statusText.textContent = "起飞模式：先沿着整条跑道滑行，发动机会轰鸣，过了跑道中段后速度够了才会抬头。离地后把起落架拉到 Up。";
-  addLog("塔台允许起飞，发动机开始轰鸣。");
+  rebuildRouteLights();
+  state.autoTakeoffOnly = true;
+  setAutopilot(true);
+  routeLabel.textContent = "自动起飞：沿绿色跑道灯线滑行，加速到 95 kt 以上。";
+  statusText.textContent = "自动起飞开始：飞机会自己沿跑道滑行，发动机轰鸣，过了跑道中段后速度够了就会抬头飞起来。";
+  addLog("塔台允许起飞，自动滑行和发动机轰鸣开始。");
 }
 
 function startLanding() {
@@ -1437,7 +1597,7 @@ function updateExplosion(dt) {
 
 function checkHazardCollisions() {
   if (state.crashed || state.landed || state.altitude > 18) return;
-  for (const building of hazardBuildings) {
+  for (const building of [...hazardBuildings, ...scenicHazardBuildings]) {
     const dx = Math.abs(playerPlane.position.x - building.x);
     const dz = Math.abs(playerPlane.position.z - building.z);
     if (dx < building.width * 0.62 && dz < building.depth * 0.7 && playerPlane.position.y < building.height + 2.2) {
@@ -1521,7 +1681,7 @@ function updatePhysics(dt) {
   playerPlane.rotation.y = state.heading;
   playerPlane.rotation.z = -state.yokeX * 0.28;
 
-  const takeoffRollReady = playerPlane.position.z > 90;
+  const takeoffRollReady = playerPlane.position.z > -100;
   if (state.phase === "takeoff" && state.speed > 92 && takeoffRollReady) {
     state.altitude += (state.speed - 88) * dt * 0.42 + Math.max(0, state.yokeY) * dt * 16;
     if (state.altitude > 8) {
@@ -1536,6 +1696,13 @@ function updatePhysics(dt) {
       missionTitle.textContent = "已经起飞";
       playTakeoffWhoosh();
       addLog("机头抬起，飞机离地飞上去了。");
+      if (state.autoTakeoffOnly) {
+        state.autoTakeoffOnly = false;
+        setAutopilot(false);
+        routeLabel.textContent = "自由飞行：拖动屏幕看山脉、河流、城市夜景，继续拉升可以到太空边缘。";
+        statusText.textContent = "已经自动起飞，现在交给你控制。可以飞出机场外面，看地球上的山脉、河流、高楼和夜景，也可以一直爬升到太空边缘。";
+        addLog("自动起飞完成，玩家接管自由飞行。");
+      }
     }
   } else if (state.phase === "takeoff" && state.speed > 92 && !takeoffRollReady) {
     state.altitude = 0;
@@ -1544,7 +1711,7 @@ function updatePhysics(dt) {
       : "速度够了，但跑道还没滑够长。继续沿绿色灯线往前跑，过了中段才会抬头。";
   } else if (state.phase === "airborne") {
     state.altitude += state.yokeY * dt * 28;
-    state.altitude = THREE.MathUtils.clamp(state.altitude, 8, 90);
+    state.altitude = THREE.MathUtils.clamp(state.altitude, 8, 900);
   } else if (state.phase === "landing") {
     const descent = state.yokeY < 0 ? 26 : 10;
     state.altitude -= descent * dt;
@@ -1587,7 +1754,7 @@ function updatePhysics(dt) {
 
   checkHazardCollisions();
 
-  if (playerPlane.position.x < -160 || playerPlane.position.x > 220 || playerPlane.position.z < -300 || playerPlane.position.z > 1010) {
+  if (state.phase !== "airborne" && state.phase !== "landing" && (playerPlane.position.x < -160 || playerPlane.position.x > 220 || playerPlane.position.z < -300 || playerPlane.position.z > 1010)) {
     crash("飞出两个机场的超大范围，看不见跑道了，任务失败。");
   }
 }
@@ -1620,7 +1787,7 @@ function updateCamera() {
 
 function updateHud() {
   speedText.textContent = `${Math.round(state.speed)} kt`;
-  altitudeText.textContent = `${Math.round(state.altitude * 10)} m`;
+  altitudeText.textContent = state.altitude > spaceAltitude ? `${Math.round(state.altitude * 10)} m · 太空边缘` : `${Math.round(state.altitude * 10)} m`;
   gearText.textContent = state.gear < 0.62 ? "Down" : "Up";
   airlineText.textContent = airlines[state.airlineIndex].short;
   if (!state.crashed && !state.landed) {
@@ -1645,6 +1812,7 @@ function tick() {
     updatePhysics(dt);
   }
   updateExplosion(dt);
+  updateWorldAtmosphere();
   updateFlightSound();
   updateHud();
   updateCamera();
