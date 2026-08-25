@@ -324,6 +324,14 @@ button {
   background: var(--gold);
 }
 
+#soundBtn {
+  background: #6f55b8;
+}
+
+#soundBtn.muted {
+  background: #6f7880;
+}
+
 .airline-buttons {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

@@ -16,6 +16,7 @@ const yoke = document.querySelector("#yoke");
 const yokeKnob = document.querySelector("#yokeKnob");
 const mobileYoke = document.querySelector("#mobileYoke");
 const mobileKnob = document.querySelector("#mobileKnob");
+const soundBtn = document.querySelector("#soundBtn");
 
 const airlines = [
   { id: "cz", short: "南航", name: "China Southern", local: "中国南方航空", color: 0x1f5fb8, accent: 0xd83232, model: "Boeing 737" },
@@ -108,6 +109,14 @@ const mats = {
 let playerPlane;
 let playerAircraftParts = {};
 const keys = new Set();
+let audioCtx;
+let engineOsc;
+let engineGain;
+let noiseSource;
+let noiseGain;
+let noiseFilter;
+let soundEnabled = true;
+let soundReady = false;
 
 function makeMat(color, roughness = 0.55, metalness = 0.18) {
   return new THREE.MeshStandardMaterial({ color, roughness, metalness });
@@ -626,6 +635,84 @@ function addLog(text) {
   while (flightLog.children.length > 8) flightLog.lastChild.remove();
 }
 
+function buildNoiseBuffer(ctx) {
+  const buffer = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate);
+  const data = buffer.getChannelData(0);
+  for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
+  return buffer;
+}
+
+function ensureAudio() {
+  if (!soundEnabled) return;
+  if (!audioCtx) {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    engineOsc = audioCtx.createOscillator();
+    engineGain = audioCtx.createGain();
+    noiseSource = audioCtx.createBufferSource();
+    noiseGain = audioCtx.createGain();
+    noiseFilter = audioCtx.createBiquadFilter();
+
+    engineOsc.type = "sawtooth";
+    engineOsc.frequency.value = 54;
+    engineGain.gain.value = 0;
+
+    noiseSource.buffer = buildNoiseBuffer(audioCtx);
+    noiseSource.loop = true;
+    noiseFilter.type = "bandpass";
+    noiseFilter.frequency.value = 380;
+    noiseFilter.Q.value = 0.8;
+    noiseGain.gain.value = 0;
+
+    engineOsc.connect(engineGain).connect(audioCtx.destination);
+    noiseSource.connect(noiseFilter).connect(noiseGain).connect(audioCtx.destination);
+    engineOsc.start();
+    noiseSource.start();
+    soundReady = true;
+  }
+  if (audioCtx.state === "suspended") audioCtx.resume();
+}
+
+function playTakeoffWhoosh() {
+  if (!soundEnabled || !soundReady || !audioCtx) return;
+  const now = audioCtx.currentTime;
+  const whoosh = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  whoosh.type = "triangle";
+  whoosh.frequency.setValueAtTime(180, now);
+  whoosh.frequency.exponentialRampToValueAtTime(520, now + 0.45);
+  gain.gain.setValueAtTime(0.001, now);
+  gain.gain.exponentialRampToValueAtTime(0.18, now + 0.08);
+  gain.gain.exponentialRampToValueAtTime(0.001, now + 0.55);
+  whoosh.connect(gain).connect(audioCtx.destination);
+  whoosh.start(now);
+  whoosh.stop(now + 0.6);
+}
+
+function updateFlightSound() {
+  if (!soundReady || !audioCtx || !engineGain || !noiseGain) return;
+  const now = audioCtx.currentTime;
+  if (!soundEnabled || state.crashed || state.landed) {
+    engineGain.gain.setTargetAtTime(0, now, 0.08);
+    noiseGain.gain.setTargetAtTime(0, now, 0.08);
+    return;
+  }
+  const throttlePower = Math.max(0, state.throttle);
+  const speedPower = THREE.MathUtils.clamp(state.speed / 140, 0, 1);
+  const airborneBoost = state.altitude > 2 ? 0.08 : 0;
+  engineOsc.frequency.setTargetAtTime(52 + throttlePower * 86 + speedPower * 34, now, 0.05);
+  noiseFilter.frequency.setTargetAtTime(260 + speedPower * 850 + throttlePower * 420, now, 0.08);
+  engineGain.gain.setTargetAtTime((0.03 + throttlePower * 0.12 + airborneBoost) * (soundEnabled ? 1 : 0), now, 0.08);
+  noiseGain.gain.setTargetAtTime((throttlePower * 0.18 + speedPower * 0.1) * (soundEnabled ? 1 : 0), now, 0.08);
+}
+
+function setSoundEnabled(enabled) {
+  soundEnabled = enabled;
+  soundBtn.textContent = enabled ? "声音开" : "静音";
+  soundBtn.classList.toggle("muted", !enabled);
+  if (enabled) ensureAudio();
+  updateFlightSound();
+}
+
 function setAirline(index) {
   state.airlineIndex = index;
   const oldPos = playerPlane.position.clone();
@@ -682,6 +769,7 @@ function resetGame() {
   routeLabel.textContent = "绿色灯线：起飞跑道";
   addLog("飞机在跑道一头，准备滑完整条跑道起飞。");
   updateYokeKnob();
+  updateFlightSound();
 }
 
 function followGreenLights() {
@@ -696,11 +784,12 @@ function followGreenLights() {
 
 function takeoff() {
   if (state.crashed || state.landed) return;
+  ensureAudio();
   state.phase = "takeoff";
   state.route = "takeoff";
   routeLabel.textContent = "起飞：对准跑道中心线，加速到 95 kt 以上。";
-  statusText.textContent = "起飞模式：先沿着整条跑道滑行，过了跑道中段后速度够了才会抬头。离地后把起落架拉到 Up。";
-  addLog("塔台允许起飞。");
+  statusText.textContent = "起飞模式：先沿着整条跑道滑行，发动机会轰鸣，过了跑道中段后速度够了才会抬头。离地后把起落架拉到 Up。";
+  addLog("塔台允许起飞，发动机开始轰鸣。");
 }
 
 function startLanding() {
@@ -794,6 +883,8 @@ function updatePhysics(dt) {
       state.phase = "airborne";
       routeLabel.textContent = "空中：可以拖动屏幕看四周，点降落导航飞往另一个机场。";
       missionTitle.textContent = "已经起飞";
+      playTakeoffWhoosh();
+      addLog("机头抬起，飞机离地飞上去了。");
     }
   } else if (state.phase === "takeoff" && state.speed > 92 && !takeoffRollReady) {
     state.altitude = 0;
@@ -811,7 +902,15 @@ function updatePhysics(dt) {
   }
 
   playerPlane.position.y = 0.62 + state.altitude * 0.22;
-  playerPlane.rotation.x = state.altitude > 1 ? state.yokeY * 0.18 : 0;
+  let nosePitch = 0;
+  if (state.altitude > 1 || state.phase === "takeoff") {
+    const commandedPitch = -state.yokeY * 0.18;
+    const takeoffLiftPitch = state.phase === "takeoff" && state.speed > 82 && takeoffRollReady ? -0.16 : 0;
+    const cruisePitch = state.phase === "airborne" ? -0.07 : 0;
+    const landingPitch = state.phase === "landing" ? 0.04 : 0;
+    nosePitch = THREE.MathUtils.clamp(commandedPitch + takeoffLiftPitch + cruisePitch + landingPitch, -0.32, 0.18);
+  }
+  playerPlane.rotation.x = nosePitch;
   if (playerAircraftParts.gearParts) {
     playerAircraftParts.gearParts.visible = state.gear < 0.62;
   }
@@ -877,6 +976,7 @@ function tick() {
   const dt = Math.min(0.04, clock.getDelta());
   updateControlsFromInputs();
   updatePhysics(dt);
+  updateFlightSound();
   updateHud();
   updateCamera();
   renderer.render(scene, camera);
@@ -952,6 +1052,7 @@ function setupCameraDrag() {
 
 function setupEvents() {
   throttleLever.addEventListener("input", () => {
+    ensureAudio();
     state.throttle = Number(throttleLever.value) / 100;
   });
   gearLever.addEventListener("input", () => {
@@ -965,11 +1066,13 @@ function setupEvents() {
     state.cameraMode = (state.cameraMode + 1) % 4;
     statusText.textContent = "视角已切换，也可以直接拖动屏幕往左、往右、往上、往下看。";
   });
+  soundBtn.addEventListener("click", () => setSoundEnabled(!soundEnabled));
   document.querySelector("#resetBtn").addEventListener("click", resetGame);
   window.addEventListener("keydown", (event) => {
     const code = event.code.toUpperCase();
     if (["KEYW", "KEYA", "KEYS", "KEYD", "ARROWUP", "ARROWDOWN", "ARROWLEFT", "ARROWRIGHT"].includes(code)) {
       event.preventDefault();
+      ensureAudio();
       keys.add(code);
     }
     if (code === "SPACE") {
