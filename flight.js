@@ -638,6 +638,7 @@ function addEarthScenery() {
     [950, 620],
     [1350, 520]
   ], 20);
+  addRiverbankRescueScene();
   addMountainRange(-1420, 340, 11, 34);
   addMountainRange(900, -520, 9, 28);
   addMountainRange(1320, 980, 7, 30);
@@ -662,6 +663,53 @@ function addRiverRibbon(points, width) {
     segment.rotation.y = Math.atan2(bx - ax, bz - az);
     waterLandingSegments.push({ ax, az, bx, bz, width });
   }
+}
+
+function addRiverbankRescueScene() {
+  const shirtMats = [
+    makeMat(0xffd75a, 0.64, 0.08),
+    makeMat(0x2f82ff, 0.64, 0.08),
+    makeMat(0xff6b6b, 0.64, 0.08),
+    makeMat(0xffffff, 0.64, 0.08)
+  ];
+  const skinMat = makeMat(0xe0aa7a, 0.58, 0.02);
+  const darkMat = makeMat(0x26323a, 0.66, 0.08);
+  const rescueMat = makeMat(0xfff4a8, 0.58, 0.08);
+  const people = [
+    [-35, 318], [-22, 326], [-8, 315], [14, 333], [34, 322],
+    [302, 560], [320, 576], [342, 566], [368, 582],
+    [665, 810], [690, 828], [714, 818], [742, 836]
+  ];
+  people.forEach(([x, z], index) => {
+    const group = new THREE.Group();
+    group.name = "riverbank-rescue-person";
+    cyl("person-body", 0.42, 1.35, [0, 0.78, 0], shirtMats[index % shirtMats.length], group, 12);
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.34, 14, 14), skinMat);
+    head.name = "person-head";
+    head.position.set(0, 1.64, 0);
+    head.castShadow = true;
+    group.add(head);
+    box("person-arm-left", [0.18, 0.7, 0.16], [-0.48, 1.05, 0], skinMat, group).rotation.z = 0.28;
+    box("person-arm-right", [0.18, 0.7, 0.16], [0.48, 1.05, 0], skinMat, group).rotation.z = -0.28;
+    box("person-leg-left", [0.18, 0.62, 0.18], [-0.16, 0.18, 0], darkMat, group);
+    box("person-leg-right", [0.18, 0.62, 0.18], [0.16, 0.18, 0], darkMat, group);
+    group.position.set(x, 0.05, z);
+    group.rotation.y = index % 2 ? -0.35 : 0.35;
+    earthScenery.add(group);
+  });
+  for (const [x, z] of [[24, 306], [338, 548], [704, 795]]) {
+    const buoy = new THREE.Mesh(new THREE.TorusGeometry(1.4, 0.16, 12, 32), rescueMat);
+    buoy.name = "river-rescue-ring";
+    buoy.position.set(x, 0.18, z);
+    buoy.rotation.x = Math.PI / 2;
+    buoy.castShadow = true;
+    earthScenery.add(buoy);
+    const lamp = new THREE.Mesh(new THREE.SphereGeometry(0.5, 14, 14), mats.runwayYellowLight);
+    lamp.name = "river-rescue-light";
+    lamp.position.set(x + 2.4, 1.1, z - 1.6);
+    earthScenery.add(lamp);
+  }
+  addSpriteLabel("河岸救援区", "有人在岸边看水上迫降", [55, 8.5, 290], 8.4, 2.1, earthScenery);
 }
 
 function addMountainRange(baseX, baseZ, count, heightBase) {
@@ -1447,8 +1495,8 @@ function startEngineFireEmergency() {
   rebuildRouteLights();
   missionTitle.textContent = "引擎着火迫降";
   routeLabel.textContent = "空中故障：关闭引擎后还可以滑翔 10 分钟";
-  statusText.textContent = "引擎着火了：点“关闭引擎”，最好对准穿过大城市的河流迫降；如果降到地面上也可以成功，不会爆炸。";
-  addLog("空中故障开局：引擎着火，飞机仍在滑翔高度。");
+  statusText.textContent = "引擎着火了：点“关闭引擎”，最好驾驶到有岸边救援人员的河道做水上迫降；如果降到地面上也可以成功，不会爆炸。";
+  addLog("空中故障开局：引擎着火，目标是驾驶到穿城河流做水上迫降。");
   updateYokeKnob();
   updateFlightSound();
 }
@@ -1460,7 +1508,7 @@ function shutEngine() {
   throttleLever.value = "0";
   if (state.engineFire && state.phase !== "emergency") state.phase = "emergency";
   routeLabel.textContent = "引擎已关闭：保持机头平稳，继续滑翔";
-  statusText.textContent = "引擎已经关闭，火焰变小。飞机还可以滑翔约 10 分钟，优先找河流迫降；落到城市地面也可以成功。";
+  statusText.textContent = "引擎已经关闭，火焰变小。飞机还可以滑翔约 10 分钟，优先找河岸有人等待的河流做水上迫降；落到城市地面也可以成功。";
   addLog("引擎关闭，进入滑翔迫降。");
   updateFlightSound();
 }
@@ -1776,7 +1824,9 @@ function emergencyLandSuccess(surface) {
   state.throttle = 0;
   throttleLever.value = "0";
   missionTitle.textContent = "迫降成功";
-  statusText.textContent = `飞机已经安全落到${surface}，没有爆炸。引擎故障测试完成。`;
+  statusText.textContent = surface === "水面"
+    ? "飞机已经安全水上迫降，河岸边的人看到了，救援灯亮起来，没有爆炸。引擎故障测试完成。"
+    : "飞机已经安全落到地面，没有爆炸。引擎故障测试完成。";
   addLog(`引擎故障迫降成功：落到${surface}，飞机停下来了。`);
 }
 
