@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>3D 航空驾驶</title>
-    <link rel="stylesheet" href="flight.css?v=airline-3d-20260824" />
+    <link rel="stylesheet" href="flight.css?v=runway-start-20260824" />
   </head>
   <body>
     <main class="flight-shell">
@@ -14,9 +14,9 @@
         <div class="hud">
           <p>3D Flight Simulator</p>
           <h1>3D 航空驾驶</h1>
-          <span id="statusText">选择航空公司，沿绿色导航灯滑行到跑道。右边油门往前更快，往后减速；起落架拉杆左 Down、右 Up。</span>
+          <span id="statusText">飞机一开始就在跑道上准备起飞。右边油门往前更快，往后减速；起落架拉杆左 Down、右 Up。</span>
         </div>
-        <div class="route-label" id="routeLabel">绿色灯线：滑行路线</div>
+        <div class="route-label" id="routeLabel">绿色灯线：起飞跑道</div>
         <div class="mobile-yoke" id="mobileYoke" aria-label="手机操纵杆">
           <span id="mobileKnob"></span>
         </div>
@@ -25,7 +25,7 @@
       <aside class="cockpit">
         <section class="panel status">
           <p class="label">驾驶仪表</p>
-          <h2 id="missionTitle">准备滑行</h2>
+          <h2 id="missionTitle">跑道起飞准备</h2>
           <div class="metrics">
             <div><span>速度</span><strong id="speedText">0 kt</strong></div>
             <div><span>高度</span><strong id="altitudeText">0 m</strong></div>
@@ -53,7 +53,7 @@
         </section>
 
         <section class="panel buttons">
-          <button id="taxiBtn" type="button">沿绿灯滑行</button>
+          <button id="taxiBtn" type="button">跑道灯线</button>
           <button id="takeoffBtn" type="button">起飞</button>
           <button id="landingBtn" type="button">降落导航</button>
           <button id="brakeBtn" type="button">刹车停下</button>
@@ -73,7 +73,7 @@
       </aside>
     </main>
 
-    <script type="module" src="flight.js?v=airline-3d-20260824"></script>
+    <script type="module" src="flight.js?v=runway-start-20260824"></script>
     <script src="arcade-stats.js?v=visitor-table-20260728"></script>
   </body>
 </html>

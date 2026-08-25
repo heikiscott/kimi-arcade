@@ -36,13 +36,14 @@ const airlines = [
   { id: "ak", short: "亚洲", name: "AirAsia", local: "AirAsia", color: 0xd82727, accent: 0xffffff, model: "Airbus A320" }
 ];
 
+const runwayStart = new THREE.Vector3(0, 0.62, 8);
+
 const runwayPath = [
-  new THREE.Vector3(-44, 0.08, -46),
-  new THREE.Vector3(-44, 0.08, -22),
-  new THREE.Vector3(-34, 0.08, -10),
-  new THREE.Vector3(-18, 0.08, -2),
-  new THREE.Vector3(-8, 0.08, 15),
-  new THREE.Vector3(0, 0.08, 34)
+  new THREE.Vector3(0, 0.08, 6),
+  new THREE.Vector3(0, 0.08, 24),
+  new THREE.Vector3(0, 0.08, 44),
+  new THREE.Vector3(0, 0.08, 66),
+  new THREE.Vector3(0, 0.08, 82)
 ];
 
 const landingPath = [
@@ -55,7 +56,7 @@ const landingPath = [
 
 const state = {
   airlineIndex: 0,
-  phase: "taxi",
+  phase: "takeoff",
   speed: 0,
   altitude: 0,
   throttle: 0,
@@ -66,7 +67,7 @@ const state = {
   cameraMode: 0,
   cameraYaw: 0,
   cameraPitch: 0.12,
-  route: "taxi",
+  route: "takeoff",
   crashed: false,
   landed: false,
   lastTime: 0,
@@ -251,15 +252,15 @@ function makeWingGeometry(span, chord, sweep = 2.2) {
   const half = span / 2;
   const verts = new Float32Array([
     -half, 0, -chord * 0.34,
-    0, 0, -chord * 0.54,
-    -half + sweep, 0, chord * 0.46,
+    -half + sweep, 0, chord * 0.48,
+    0, 0, chord * 0.34,
+    half - sweep, 0, chord * 0.48,
     half, 0, -chord * 0.34,
-    half - sweep, 0, chord * 0.46,
-    0, 0, -chord * 0.54
+    0, 0, -chord * 0.58
   ]);
   const geom = new THREE.BufferGeometry();
   geom.setAttribute("position", new THREE.BufferAttribute(verts, 3));
-  geom.setIndex([0, 1, 2, 3, 4, 5]);
+  geom.setIndex([0, 5, 1, 1, 5, 2, 2, 5, 3, 3, 5, 4]);
   geom.computeVertexNormals();
   return geom;
 }
@@ -295,6 +296,7 @@ function createPlaneModel(livery, options = {}) {
   wing.castShadow = true;
   wing.receiveShadow = true;
   group.add(wing);
+  box("continuous-wing-root", [radius * 2.55, 0.14 * scale, 1.55 * scale], [0, radius * 1.22, -0.15 * scale], bodyMat, group);
 
   box("left-wing-tip", [0.16 * scale, 0.38 * scale, 1.4 * scale], [-span / 2 + 0.4 * scale, radius * 1.55, -0.38 * scale], accentMat, group).rotation.z = -0.12;
   box("right-wing-tip", [0.16 * scale, 0.38 * scale, 1.4 * scale], [span / 2 - 0.4 * scale, radius * 1.55, -0.38 * scale], accentMat, group).rotation.z = 0.12;
@@ -380,7 +382,7 @@ function buildWorld() {
   rebuildRouteLights();
 
   playerPlane = createPlaneModel(airlines[state.airlineIndex], { scale: 0.8, player: true });
-  playerPlane.position.set(-44, 0.62, -46);
+  playerPlane.position.copy(runwayStart);
   playerPlane.rotation.y = 0;
   scene.add(playerPlane);
 
@@ -397,7 +399,7 @@ function buildWorld() {
     addSpriteLabel(airline.short, airline.name, [pos[0], 4.6, pos[1] + (index < 8 ? -4 : 4)], 4.2, 1.55);
   });
 
-  addSpriteLabel("绿色导航灯", "沿着灯线转弯滑行", [-28, 3, -8], 6.5, 1.8);
+  addSpriteLabel("绿色导航灯", "沿着跑道灯线起飞", [-6, 3, 42], 6.5, 1.8);
   addSpriteLabel("降落跑道", "放下起落架后着陆", [28, 4, 28], 6.2, 1.8);
 }
 
@@ -440,7 +442,7 @@ function buildAirlineButtons() {
 }
 
 function resetGame() {
-  state.phase = "taxi";
+  state.phase = "takeoff";
   state.speed = 0;
   state.altitude = 0;
   state.throttle = 0;
@@ -448,38 +450,38 @@ function resetGame() {
   state.yokeX = 0;
   state.yokeY = 0;
   state.heading = 0;
-  state.route = "taxi";
+  state.route = "takeoff";
   state.crashed = false;
   state.landed = false;
   state.offRouteTime = 0;
   throttleLever.value = "0";
   gearLever.value = "0";
   document.body.classList.remove("crashed");
-  playerPlane.position.set(-44, 0.62, -46);
+  playerPlane.position.copy(runwayStart);
   playerPlane.rotation.set(0, 0, 0);
   flightLog.innerHTML = "";
   rebuildRouteLights();
-  missionTitle.textContent = "准备滑行";
-  statusText.textContent = "沿绿色导航灯滑行到起飞跑道。油门往前推会加速，太快偏离灯线会坠毁。";
-  routeLabel.textContent = "绿色灯线：滑行到起飞跑道";
-  addLog("飞机在停机坪准备出发。");
+  missionTitle.textContent = "跑道起飞准备";
+  statusText.textContent = "飞机已经在起飞跑道上。油门往前推，加速到 95 kt 以上就会抬头起飞。";
+  routeLabel.textContent = "绿色灯线：起飞跑道";
+  addLog("飞机在跑道上，准备起飞。");
   updateYokeKnob();
 }
 
 function followGreenLights() {
   if (state.crashed || state.landed) return;
-  state.phase = "taxi";
-  state.route = "taxi";
+  state.phase = "takeoff";
+  state.route = "takeoff";
   rebuildRouteLights();
-  routeLabel.textContent = "绿色灯线：滑行到起飞跑道";
-  statusText.textContent = "现在沿绿色灯线滑行，转弯时慢一点更稳。";
-  addLog("已显示去起飞跑道的绿色导航灯。");
+  routeLabel.textContent = "绿色灯线：起飞跑道";
+  statusText.textContent = "绿色灯线现在显示起飞跑道，飞机不用再从停机坪开过去。";
+  addLog("已显示跑道中心绿色灯线。");
 }
 
 function takeoff() {
   if (state.crashed || state.landed) return;
   state.phase = "takeoff";
-  state.route = "taxi";
+  state.route = "takeoff";
   routeLabel.textContent = "起飞：对准跑道中心线，加速到 95 kt 以上。";
   statusText.textContent = "起飞模式：对准跑道，油门推到前面。离地后可以把起落架拉到 Up。";
   addLog("塔台允许起飞。");
