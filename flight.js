@@ -450,9 +450,9 @@ function createPlaneModel(livery, options = {}) {
   const body = cyl("aircraft-fuselage", radius, length, [0, radius * 1.3, 0], bodyMat, group, 32);
   body.rotation.x = Math.PI / 2;
   const nose = cone("aircraft-nose", radius, radius * 1.85, [0, radius * 1.3, length / 2 + radius * 0.9], bodyMat, group, 32);
-  nose.rotation.x = -Math.PI / 2;
+  nose.rotation.x = Math.PI / 2;
   const tailCone = cone("aircraft-tail-cone", radius * 0.9, radius * 1.75, [0, radius * 1.3, -length / 2 - radius * 0.82], bodyMat, group, 32);
-  tailCone.rotation.x = Math.PI / 2;
+  tailCone.rotation.x = -Math.PI / 2;
 
   const stripe = box("aircraft-color-stripe", [radius * 2.04, 0.06 * scale, length * 0.76], [0, radius * 1.72, 0.6 * scale], colorMat, group);
   stripe.rotation.x = 0;
