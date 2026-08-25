@@ -36,23 +36,23 @@ const airlines = [
   { id: "ak", short: "亚洲", name: "AirAsia", local: "AirAsia", color: 0xd82727, accent: 0xffffff, model: "Airbus A320" }
 ];
 
-const runwayStart = new THREE.Vector3(0, 0.62, 8);
+const runwayStart = new THREE.Vector3(0, 0.62, -44);
 const playerPlaneScale = 1;
 
 const runwayPath = [
-  new THREE.Vector3(0, 0.08, 6),
-  new THREE.Vector3(0, 0.08, 24),
+  new THREE.Vector3(0, 0.08, -44),
+  new THREE.Vector3(0, 0.08, -18),
+  new THREE.Vector3(0, 0.08, 12),
   new THREE.Vector3(0, 0.08, 44),
-  new THREE.Vector3(0, 0.08, 66),
   new THREE.Vector3(0, 0.08, 82)
 ];
 
 const landingPath = [
-  new THREE.Vector3(16, 36, 86),
-  new THREE.Vector3(24, 24, 62),
-  new THREE.Vector3(28, 12, 38),
-  new THREE.Vector3(28, 1.2, 6),
-  new THREE.Vector3(28, 0.85, -32)
+  new THREE.Vector3(18, 42, 88),
+  new THREE.Vector3(42, 34, 112),
+  new THREE.Vector3(62, 20, 136),
+  new THREE.Vector3(70, 7, 156),
+  new THREE.Vector3(70, 0.85, 174)
 ];
 
 const state = {
@@ -282,24 +282,30 @@ function addSpriteLabel(text, subtext, pos, width = 8, height = 2.6) {
 }
 
 function addGround() {
-  const ground = box("airport-apron", [170, 0.16, 180], [0, -0.08, 0], mats.concrete, airport);
+  const ground = box("two-airport-apron", [220, 0.16, 300], [25, -0.08, 55], mats.concrete, airport);
   ground.receiveShadow = true;
-  box("north-grass", [170, 0.08, 28], [0, -0.03, 92], mats.grass, airport);
-  box("south-grass", [170, 0.08, 28], [0, -0.03, -92], mats.grass, airport);
-  addRunway("起飞跑道 18", [0, 0.02, 12], [12, 0.05, 120]);
-  addRunway("降落跑道 27", [28, 0.03, 10], [12, 0.05, 116]);
+  box("departure-grass", [220, 0.08, 26], [25, -0.03, -96], mats.grass, airport);
+  box("middle-grass", [36, 0.08, 120], [98, -0.03, 50], mats.grass, airport);
+  box("arrival-grass", [220, 0.08, 26], [25, -0.03, 205], mats.grass, airport);
+  addRunway("起飞机场 · 起飞跑道 18", [0, 0.02, 12], [12, 0.05, 120]);
+  addRunway("目的机场 · 降落跑道 27", [70, 0.03, 120], [12, 0.05, 116]);
   addTaxiway([-44, -46], [-44, -22]);
   addTaxiway([-44, -22], [-34, -10]);
   addTaxiway([-34, -10], [-18, -2]);
   addTaxiway([-18, -2], [-8, 15]);
   addTaxiway([-8, 15], [0, 34]);
+  addTaxiway([48, 84], [60, 100]);
+  addTaxiway([60, 100], [70, 118]);
 
-  for (let i = -75; i <= 75; i += 12) {
-    box("concrete-joint-x", [0.045, 0.012, 180], [i, 0.02, 0], makeMat(0x9ea4a9), airport).receiveShadow = true;
-    box("concrete-joint-z", [170, 0.012, 0.045], [0, 0.021, i], makeMat(0x9ea4a9), airport).receiveShadow = true;
+  for (let i = -80; i <= 130; i += 12) {
+    box("concrete-joint-x", [0.045, 0.012, 300], [i, 0.02, 55], makeMat(0x9ea4a9), airport).receiveShadow = true;
+  }
+  for (let i = -90; i <= 200; i += 12) {
+    box("concrete-joint-z", [220, 0.012, 0.045], [25, 0.021, i], makeMat(0x9ea4a9), airport).receiveShadow = true;
   }
 
   addTerminal();
+  addDestinationTerminal();
   addControlTower();
 }
 
@@ -367,6 +373,16 @@ function addTerminal() {
     box("gate-bridge", [1.6, 1.8, 9], [gateX, 2.1, -51.2], makeMat(0xdde4e8), airport);
     addSpriteLabel(`G${i + 1}`, "登机口", [gateX, 5.3, -48], 3.2, 1.4);
   }
+}
+
+function addDestinationTerminal() {
+  box("destination-terminal-main", [36, 5.5, 8], [92, 2.75, 78], makeMat(0xdfe7eb), airport);
+  box("destination-terminal-glass", [34, 3.1, 0.2], [92, 3.3, 82.1], makeMat(0x8bc4dd, 0.3, 0.08), airport);
+  for (let i = 0; i < 4; i++) {
+    const gateX = 82 + i * 6;
+    box("destination-gate-bridge", [1.4, 1.6, 7.5], [gateX, 2.05, 87.3], makeMat(0xdde4e8), airport);
+  }
+  addSpriteLabel("另一个机场", "降落到这里", [92, 7.2, 88], 5.8, 1.8);
 }
 
 function addControlTower() {
@@ -599,8 +615,8 @@ function buildWorld() {
     addSpriteLabel(airline.short, airline.name, [pos[0], 4.6, pos[1] + (index < 8 ? -4 : 4)], 4.2, 1.55);
   });
 
-  addSpriteLabel("绿色导航灯", "沿着跑道灯线起飞", [-6, 3, 42], 6.5, 1.8);
-  addSpriteLabel("降落跑道", "放下起落架后着陆", [28, 4, 28], 6.2, 1.8);
+  addSpriteLabel("从跑道一头出发", "滑完整条跑道才够速度", [-10, 3, -38], 7.4, 1.9);
+  addSpriteLabel("目的机场跑道", "飞到旁边机场降落", [70, 4, 120], 6.8, 1.9);
 }
 
 function addLog(text) {
@@ -662,9 +678,9 @@ function resetGame() {
   flightLog.innerHTML = "";
   rebuildRouteLights();
   missionTitle.textContent = "跑道起飞准备";
-  statusText.textContent = "飞机已经在起飞跑道上。油门往前推，加速到 95 kt 以上就会抬头起飞。";
+  statusText.textContent = "飞机在起飞跑道最尾端。油门往前推，从这一头滑到另一头，速度够了才会抬头起飞。";
   routeLabel.textContent = "绿色灯线：起飞跑道";
-  addLog("飞机在跑道上，准备起飞。");
+  addLog("飞机在跑道一头，准备滑完整条跑道起飞。");
   updateYokeKnob();
 }
 
@@ -683,7 +699,7 @@ function takeoff() {
   state.phase = "takeoff";
   state.route = "takeoff";
   routeLabel.textContent = "起飞：对准跑道中心线，加速到 95 kt 以上。";
-  statusText.textContent = "起飞模式：对准跑道，油门推到前面。离地后可以把起落架拉到 Up。";
+  statusText.textContent = "起飞模式：先沿着整条跑道滑行，过了跑道中段后速度够了才会抬头。离地后把起落架拉到 Up。";
   addLog("塔台允许起飞。");
 }
 
@@ -692,9 +708,9 @@ function startLanding() {
   state.phase = "landing";
   state.route = "landing";
   rebuildRouteLights();
-  routeLabel.textContent = "绿色灯线：降落进近路线";
-  statusText.textContent = "降落导航开启：跟着空中的绿色灯线下降，起落架要 Down，速度低于 72 kt。";
-  addLog("进入降落导航，绿色灯线会引到降落跑道。");
+  routeLabel.textContent = "绿色灯线：飞往另一个机场";
+  statusText.textContent = "降落导航开启：绿色灯线会带你飞到旁边的目的机场跑道，起落架 Down，速度低于 72 kt。";
+  addLog("进入降落导航，目标是旁边的另一个机场。");
 }
 
 function brake() {
@@ -723,8 +739,8 @@ function landSuccess() {
   state.throttle = 0;
   throttleLever.value = "0";
   missionTitle.textContent = "安全降落";
-  statusText.textContent = "飞机沿降落跑道减速停下，起落架正常，任务成功。";
-  addLog("安全降落，飞机停在白线前。");
+  statusText.textContent = "飞机飞到旁边的目的机场，沿降落跑道减速停下，任务成功。";
+  addLog("安全降落在另一个机场，飞机停在白线前。");
 }
 
 function nearestDistanceToPath(points) {
@@ -771,13 +787,17 @@ function updatePhysics(dt) {
   playerPlane.rotation.y = state.heading;
   playerPlane.rotation.z = -state.yokeX * 0.28;
 
-  if (state.phase === "takeoff" && state.speed > 92) {
+  const takeoffRollReady = playerPlane.position.z > 18;
+  if (state.phase === "takeoff" && state.speed > 92 && takeoffRollReady) {
     state.altitude += (state.speed - 88) * dt * 0.42 + Math.max(0, state.yokeY) * dt * 16;
     if (state.altitude > 8) {
       state.phase = "airborne";
-      routeLabel.textContent = "空中：可以拖动屏幕看四周，点降落导航返航。";
+      routeLabel.textContent = "空中：可以拖动屏幕看四周，点降落导航飞往另一个机场。";
       missionTitle.textContent = "已经起飞";
     }
+  } else if (state.phase === "takeoff" && state.speed > 92 && !takeoffRollReady) {
+    state.altitude = 0;
+    statusText.textContent = "速度够了，但跑道还没滑够长。继续沿绿色灯线往前跑，过了中段才会抬头。";
   } else if (state.phase === "airborne") {
     state.altitude += state.yokeY * dt * 28;
     state.altitude = THREE.MathUtils.clamp(state.altitude, 8, 90);
@@ -802,19 +822,19 @@ function updatePhysics(dt) {
   else state.offRouteTime = Math.max(0, state.offRouteTime - dt * 2);
   if (state.offRouteTime > 1.3) crash("滑行太快又偏离绿色导航灯，飞机冲出路线了。");
 
-  const onTakeoffRunway = Math.abs(playerPlane.position.x) < 7 && playerPlane.position.z > 4 && playerPlane.position.z < 72;
+  const onTakeoffRunway = Math.abs(playerPlane.position.x) < 7 && playerPlane.position.z > -52 && playerPlane.position.z < 82;
   if (state.phase === "takeoff" && state.speed > 68 && !onTakeoffRunway && state.altitude < 2) crash("起飞时没有对准跑道，飞机冲出跑道。");
 
-  const onLandingRunway = Math.abs(playerPlane.position.x - 28) < 6.5 && playerPlane.position.z < 32 && playerPlane.position.z > -48;
+  const onLandingRunway = Math.abs(playerPlane.position.x - 70) < 6.5 && playerPlane.position.z < 180 && playerPlane.position.z > 66;
   if (state.phase === "landing" && state.altitude <= 0.2) {
-    if (!onLandingRunway) crash("降落没有对准降落跑道，落到跑道外面了。");
+    if (!onLandingRunway) crash("降落没有对准目的机场跑道，落到跑道外面了。");
     else if (state.gear > 0.55) crash("起落架还在 Up，不能安全落地。");
     else if (state.speed > 78) crash("落地速度太快，飞机没有刹住。");
     else landSuccess();
   }
 
-  if (Math.abs(playerPlane.position.x) > 82 || Math.abs(playerPlane.position.z) > 95) {
-    crash("飞出机场边界，看不见跑道了。");
+  if (playerPlane.position.x < -92 || playerPlane.position.x > 132 || playerPlane.position.z < -98 || playerPlane.position.z > 210) {
+    crash("飞出两个机场的范围，看不见跑道了。");
   }
 }
 
