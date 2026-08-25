@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>3D 航空驾驶</title>
-    <link rel="stylesheet" href="flight.css?v=takeoff-sound-20260825" />
+    <link rel="stylesheet" href="flight.css?v=long-runway-air-20260825" />
   </head>
   <body>
     <main class="flight-shell">
@@ -14,7 +14,7 @@
         <div class="hud">
           <p>3D Flight Simulator</p>
           <h1>3D 航空驾驶</h1>
-          <span id="statusText">飞机一开始就在跑道上准备起飞。右边油门往前更快，往后减速；起落架拉杆左 Down、右 Up。</span>
+          <span id="statusText">飞机一开始就在 3000 km 训练跑道上准备起飞，也可以点“空中开局”直接练习降落。</span>
         </div>
         <div class="route-label" id="routeLabel">绿色灯线：起飞跑道</div>
         <div class="mobile-yoke" id="mobileYoke" aria-label="手机操纵杆">
@@ -56,6 +56,7 @@
           <button id="taxiBtn" type="button">跑道灯线</button>
           <button id="takeoffBtn" type="button">起飞</button>
           <button id="landingBtn" type="button">降落导航</button>
+          <button id="skyStartBtn" type="button">空中开局</button>
           <button id="brakeBtn" type="button">刹车停下</button>
           <button id="cameraBtn" type="button">切换视角</button>
           <button id="soundBtn" type="button">声音开</button>
@@ -74,7 +75,7 @@
       </aside>
     </main>
 
-    <script type="module" src="flight.js?v=takeoff-sound-20260825"></script>
+    <script type="module" src="flight.js?v=long-runway-air-20260825"></script>
     <script src="arcade-stats.js?v=visitor-table-20260728"></script>
   </body>
 </html>

@@ -17,6 +17,7 @@ const yokeKnob = document.querySelector("#yokeKnob");
 const mobileYoke = document.querySelector("#mobileYoke");
 const mobileKnob = document.querySelector("#mobileKnob");
 const soundBtn = document.querySelector("#soundBtn");
+const skyStartBtn = document.querySelector("#skyStartBtn");
 
 const airlines = [
   { id: "cz", short: "南航", name: "China Southern", local: "中国南方航空", color: 0x1f5fb8, accent: 0xd83232, model: "Boeing 737" },
@@ -37,23 +38,23 @@ const airlines = [
   { id: "ak", short: "亚洲", name: "AirAsia", local: "AirAsia", color: 0xd82727, accent: 0xffffff, model: "Airbus A320" }
 ];
 
-const runwayStart = new THREE.Vector3(0, 0.62, -44);
+const runwayStart = new THREE.Vector3(0, 0.62, -220);
 const playerPlaneScale = 1;
 
 const runwayPath = [
-  new THREE.Vector3(0, 0.08, -44),
-  new THREE.Vector3(0, 0.08, -18),
-  new THREE.Vector3(0, 0.08, 12),
-  new THREE.Vector3(0, 0.08, 44),
-  new THREE.Vector3(0, 0.08, 82)
+  new THREE.Vector3(0, 0.08, -220),
+  new THREE.Vector3(0, 0.08, -120),
+  new THREE.Vector3(0, 0.08, 0),
+  new THREE.Vector3(0, 0.08, 120),
+  new THREE.Vector3(0, 0.08, 220)
 ];
 
 const landingPath = [
-  new THREE.Vector3(18, 42, 88),
-  new THREE.Vector3(42, 34, 112),
-  new THREE.Vector3(62, 20, 136),
-  new THREE.Vector3(70, 7, 156),
-  new THREE.Vector3(70, 0.85, 174)
+  new THREE.Vector3(18, 56, 250),
+  new THREE.Vector3(46, 48, 360),
+  new THREE.Vector3(78, 28, 500),
+  new THREE.Vector3(100, 8, 650),
+  new THREE.Vector3(100, 0.85, 860)
 ];
 
 const state = {
@@ -78,9 +79,9 @@ const state = {
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x9fd8ff);
-scene.fog = new THREE.Fog(0x9fd8ff, 120, 310);
+scene.fog = new THREE.Fog(0x9fd8ff, 260, 1200);
 
-const camera = new THREE.PerspectiveCamera(55, 1, 0.1, 500);
+const camera = new THREE.PerspectiveCamera(55, 1, 0.1, 1800);
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, preserveDrawingBuffer: true });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.shadowMap.enabled = true;
@@ -291,26 +292,26 @@ function addSpriteLabel(text, subtext, pos, width = 8, height = 2.6) {
 }
 
 function addGround() {
-  const ground = box("two-airport-apron", [220, 0.16, 300], [25, -0.08, 55], mats.concrete, airport);
+  const ground = box("two-airport-apron", [360, 0.16, 1230], [45, -0.08, 340], mats.concrete, airport);
   ground.receiveShadow = true;
-  box("departure-grass", [220, 0.08, 26], [25, -0.03, -96], mats.grass, airport);
-  box("middle-grass", [36, 0.08, 120], [98, -0.03, 50], mats.grass, airport);
-  box("arrival-grass", [220, 0.08, 26], [25, -0.03, 205], mats.grass, airport);
-  addRunway("起飞机场 · 起飞跑道 18", [0, 0.02, 12], [12, 0.05, 120]);
-  addRunway("目的机场 · 降落跑道 27", [70, 0.03, 120], [12, 0.05, 116]);
+  box("departure-grass", [360, 0.08, 42], [45, -0.03, -292], mats.grass, airport);
+  box("middle-grass", [54, 0.08, 560], [146, -0.03, 250], mats.grass, airport);
+  box("arrival-grass", [360, 0.08, 42], [45, -0.03, 975], mats.grass, airport);
+  addRunway("起飞机场 · 3000 km 起飞跑道 18", [0, 0.02, 0], [16, 0.05, 460]);
+  addRunway("目的机场 · 3000 km 降落跑道 27", [100, 0.03, 650], [16, 0.05, 520]);
   addTaxiway([-44, -46], [-44, -22]);
   addTaxiway([-44, -22], [-34, -10]);
   addTaxiway([-34, -10], [-18, -2]);
   addTaxiway([-18, -2], [-8, 15]);
   addTaxiway([-8, 15], [0, 34]);
-  addTaxiway([48, 84], [60, 100]);
-  addTaxiway([60, 100], [70, 118]);
+  addTaxiway([62, 420], [82, 500]);
+  addTaxiway([82, 500], [100, 610]);
 
-  for (let i = -80; i <= 130; i += 12) {
-    box("concrete-joint-x", [0.045, 0.012, 300], [i, 0.02, 55], makeMat(0x9ea4a9), airport).receiveShadow = true;
+  for (let i = -120; i <= 210; i += 18) {
+    box("concrete-joint-x", [0.045, 0.012, 1230], [i, 0.02, 340], makeMat(0x9ea4a9), airport).receiveShadow = true;
   }
-  for (let i = -90; i <= 200; i += 12) {
-    box("concrete-joint-z", [220, 0.012, 0.045], [25, 0.021, i], makeMat(0x9ea4a9), airport).receiveShadow = true;
+  for (let i = -260; i <= 940; i += 18) {
+    box("concrete-joint-z", [360, 0.012, 0.045], [45, 0.021, i], makeMat(0x9ea4a9), airport).receiveShadow = true;
   }
 
   addTerminal();
@@ -322,7 +323,7 @@ function addRunway(label, pos, size) {
   box("runway", size, pos, mats.runway, airport);
   box("runway-left-outline", [0.42, 0.09, size[2] + 4], [pos[0] - size[0] / 2 - 0.45, 0.105, pos[2]], mats.white, airport);
   box("runway-right-outline", [0.42, 0.09, size[2] + 4], [pos[0] + size[0] / 2 + 0.45, 0.105, pos[2]], mats.white, airport);
-  for (let i = -48; i <= 48; i += 14) {
+  for (let i = -size[2] / 2 + 18; i <= size[2] / 2 - 18; i += 22) {
     box("runway-centerline", [0.42, 0.07, 6], [pos[0], 0.08, pos[2] + i], mats.white, airport);
   }
   for (const side of [-4.2, 4.2]) {
@@ -385,13 +386,13 @@ function addTerminal() {
 }
 
 function addDestinationTerminal() {
-  box("destination-terminal-main", [36, 5.5, 8], [92, 2.75, 78], makeMat(0xdfe7eb), airport);
-  box("destination-terminal-glass", [34, 3.1, 0.2], [92, 3.3, 82.1], makeMat(0x8bc4dd, 0.3, 0.08), airport);
+  box("destination-terminal-main", [42, 5.5, 8], [134, 2.75, 590], makeMat(0xdfe7eb), airport);
+  box("destination-terminal-glass", [40, 3.1, 0.2], [134, 3.3, 594.1], makeMat(0x8bc4dd, 0.3, 0.08), airport);
   for (let i = 0; i < 4; i++) {
-    const gateX = 82 + i * 6;
-    box("destination-gate-bridge", [1.4, 1.6, 7.5], [gateX, 2.05, 87.3], makeMat(0xdde4e8), airport);
+    const gateX = 122 + i * 7;
+    box("destination-gate-bridge", [1.4, 1.6, 7.5], [gateX, 2.05, 599.3], makeMat(0xdde4e8), airport);
   }
-  addSpriteLabel("另一个机场", "降落到这里", [92, 7.2, 88], 5.8, 1.8);
+  addSpriteLabel("远处机场", "降落到这里", [134, 7.2, 601], 5.8, 1.8);
 }
 
 function addControlTower() {
@@ -624,8 +625,8 @@ function buildWorld() {
     addSpriteLabel(airline.short, airline.name, [pos[0], 4.6, pos[1] + (index < 8 ? -4 : 4)], 4.2, 1.55);
   });
 
-  addSpriteLabel("从跑道一头出发", "滑完整条跑道才够速度", [-10, 3, -38], 7.4, 1.9);
-  addSpriteLabel("目的机场跑道", "飞到旁边机场降落", [70, 4, 120], 6.8, 1.9);
+  addSpriteLabel("从超长跑道一头出发", "滑完整条跑道才够速度", [-10, 3, -218], 8.4, 1.9);
+  addSpriteLabel("远处机场跑道", "从天空飞过去降落", [100, 4, 650], 7.2, 1.9);
 }
 
 function addLog(text) {
@@ -765,9 +766,9 @@ function resetGame() {
   flightLog.innerHTML = "";
   rebuildRouteLights();
   missionTitle.textContent = "跑道起飞准备";
-  statusText.textContent = "飞机在起飞跑道最尾端。油门往前推，从这一头滑到另一头，速度够了才会抬头起飞。";
+  statusText.textContent = "飞机在 3000 km 训练跑道最尾端。油门往前推，从这一头滑到另一头，速度够了才会抬头起飞。";
   routeLabel.textContent = "绿色灯线：起飞跑道";
-  addLog("飞机在跑道一头，准备滑完整条跑道起飞。");
+  addLog("飞机在超长跑道一头，准备滑完整条跑道起飞。");
   updateYokeKnob();
   updateFlightSound();
 }
@@ -797,9 +798,37 @@ function startLanding() {
   state.phase = "landing";
   state.route = "landing";
   rebuildRouteLights();
-  routeLabel.textContent = "绿色灯线：飞往另一个机场";
-  statusText.textContent = "降落导航开启：绿色灯线会带你飞到旁边的目的机场跑道，起落架 Down，速度低于 72 kt。";
-  addLog("进入降落导航，目标是旁边的另一个机场。");
+  routeLabel.textContent = "绿色灯线：飞往远处机场";
+  statusText.textContent = "降落导航开启：绿色灯线会带你飞到远处的 3000 km 降落跑道，起落架 Down，速度低于 72 kt。";
+  addLog("进入降落导航，目标是远处的超长降落跑道。");
+}
+
+function startAirLanding() {
+  if (state.crashed || state.landed) resetGame();
+  ensureAudio();
+  state.phase = "landing";
+  state.route = "landing";
+  state.speed = 105;
+  state.altitude = 56;
+  state.throttle = 0.58;
+  state.gear = 0;
+  state.yokeX = 0;
+  state.yokeY = 0;
+  state.crashed = false;
+  state.landed = false;
+  state.offRouteTime = 0;
+  throttleLever.value = "58";
+  gearLever.value = "0";
+  playerPlane.position.set(18, 0.62 + state.altitude * 0.22, 250);
+  state.heading = Math.atan2(landingPath[1].x - landingPath[0].x, landingPath[1].z - landingPath[0].z);
+  playerPlane.rotation.set(0, state.heading, 0);
+  rebuildRouteLights();
+  missionTitle.textContent = "空中降落开局";
+  routeLabel.textContent = "空中开局：沿绿色灯线降落";
+  statusText.textContent = "你已经在天空上飞了。沿绿色灯线飞向机场，快到跑道时减速，起落架保持 Down。";
+  addLog("空中开局：飞机已经在天上，准备降落到远处机场。");
+  updateYokeKnob();
+  updateFlightSound();
 }
 
 function brake() {
@@ -828,7 +857,7 @@ function landSuccess() {
   state.throttle = 0;
   throttleLever.value = "0";
   missionTitle.textContent = "安全降落";
-  statusText.textContent = "飞机飞到旁边的目的机场，沿降落跑道减速停下，任务成功。";
+  statusText.textContent = "飞机飞到远处的目的机场，沿降落跑道减速停下，任务成功。";
   addLog("安全降落在另一个机场，飞机停在白线前。");
 }
 
@@ -876,7 +905,7 @@ function updatePhysics(dt) {
   playerPlane.rotation.y = state.heading;
   playerPlane.rotation.z = -state.yokeX * 0.28;
 
-  const takeoffRollReady = playerPlane.position.z > 18;
+  const takeoffRollReady = playerPlane.position.z > 90;
   if (state.phase === "takeoff" && state.speed > 92 && takeoffRollReady) {
     state.altitude += (state.speed - 88) * dt * 0.42 + Math.max(0, state.yokeY) * dt * 16;
     if (state.altitude > 8) {
@@ -921,10 +950,10 @@ function updatePhysics(dt) {
   else state.offRouteTime = Math.max(0, state.offRouteTime - dt * 2);
   if (state.offRouteTime > 1.3) crash("滑行太快又偏离绿色导航灯，飞机冲出路线了。");
 
-  const onTakeoffRunway = Math.abs(playerPlane.position.x) < 7 && playerPlane.position.z > -52 && playerPlane.position.z < 82;
+  const onTakeoffRunway = Math.abs(playerPlane.position.x) < 9 && playerPlane.position.z > -230 && playerPlane.position.z < 230;
   if (state.phase === "takeoff" && state.speed > 68 && !onTakeoffRunway && state.altitude < 2) crash("起飞时没有对准跑道，飞机冲出跑道。");
 
-  const onLandingRunway = Math.abs(playerPlane.position.x - 70) < 6.5 && playerPlane.position.z < 180 && playerPlane.position.z > 66;
+  const onLandingRunway = Math.abs(playerPlane.position.x - 100) < 9 && playerPlane.position.z < 910 && playerPlane.position.z > 390;
   if (state.phase === "landing" && state.altitude <= 0.2) {
     if (!onLandingRunway) crash("降落没有对准目的机场跑道，落到跑道外面了。");
     else if (state.gear > 0.55) crash("起落架还在 Up，不能安全落地。");
@@ -932,8 +961,8 @@ function updatePhysics(dt) {
     else landSuccess();
   }
 
-  if (playerPlane.position.x < -92 || playerPlane.position.x > 132 || playerPlane.position.z < -98 || playerPlane.position.z > 210) {
-    crash("飞出两个机场的范围，看不见跑道了。");
+  if (playerPlane.position.x < -160 || playerPlane.position.x > 220 || playerPlane.position.z < -300 || playerPlane.position.z > 1010) {
+    crash("飞出两个机场的超大范围，看不见跑道了。");
   }
 }
 
@@ -1061,6 +1090,7 @@ function setupEvents() {
   document.querySelector("#taxiBtn").addEventListener("click", followGreenLights);
   document.querySelector("#takeoffBtn").addEventListener("click", takeoff);
   document.querySelector("#landingBtn").addEventListener("click", startLanding);
+  skyStartBtn.addEventListener("click", startAirLanding);
   document.querySelector("#brakeBtn").addEventListener("click", brake);
   document.querySelector("#cameraBtn").addEventListener("click", () => {
     state.cameraMode = (state.cameraMode + 1) % 4;

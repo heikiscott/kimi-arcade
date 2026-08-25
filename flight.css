@@ -328,6 +328,11 @@ button {
   background: #6f55b8;
 }
 
+#skyStartBtn {
+  color: #fff;
+  background: #1f9d91;
+}
+
 #soundBtn.muted {
   background: #6f7880;
 }
