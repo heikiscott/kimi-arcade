@@ -20,6 +20,7 @@ const soundBtn = document.querySelector("#soundBtn");
 const skyStartBtn = document.querySelector("#skyStartBtn");
 const countryButtons = document.querySelector("#countryButtons");
 const internationalBtn = document.querySelector("#internationalBtn");
+const autopilotBtn = document.querySelector("#autopilotBtn");
 
 const airlines = [
   { id: "cz", short: "南航", name: "China Southern", local: "中国南方航空", color: 0x1f5fb8, accent: 0xd83232, model: "Boeing 737" },
@@ -151,8 +152,11 @@ const state = {
   route: "takeoff",
   crashed: false,
   landed: false,
-  lastTime: 0,
-  offRouteTime: 0
+  offRouteTime: 0,
+  autopilot: false,
+  autopilotWaypoint: 1,
+  autopilotRoute: "takeoff",
+  autopilotStage: ""
 };
 
 const scene = new THREE.Scene();
@@ -399,6 +403,13 @@ function currentDestinationAirportName() {
   const origin = currentOriginCountry();
   const destination = currentDestinationCountry();
   return state.international ? destination.origin : origin.destination;
+}
+
+function normalizeAngle(angle) {
+  let result = angle;
+  while (result > Math.PI) result -= Math.PI * 2;
+  while (result < -Math.PI) result += Math.PI * 2;
+  return result;
 }
 
 function getInternationalPath() {
@@ -960,6 +971,98 @@ function buildCountryButtons() {
   updateCountryButtons();
 }
 
+function setAutopilot(enabled) {
+  state.autopilot = enabled;
+  state.autopilotWaypoint = 1;
+  state.autopilotRoute = state.route;
+  state.autopilotStage = "";
+  autopilotBtn.textContent = enabled ? "手动驾驶" : "无人驾驶";
+  autopilotBtn.classList.toggle("active", enabled);
+}
+
+function announceAutopilotStage(stage, text) {
+  if (state.autopilotStage === stage) return;
+  state.autopilotStage = stage;
+  statusText.textContent = text;
+  addLog(text);
+}
+
+function toggleAutopilot() {
+  if (state.crashed || state.landed) resetGame();
+  ensureAudio();
+  setAutopilot(!state.autopilot);
+  if (!state.autopilot) {
+    statusText.textContent = "已切回手动驾驶，你可以自己推油门、拉操纵杆和收放起落架。";
+    addLog("无人驾驶关闭，玩家接管飞机。");
+    return;
+  }
+  if (state.phase === "airborne") {
+    state.phase = "landing";
+    state.route = "landing";
+    rebuildRouteLights();
+  }
+  statusText.textContent = "无人驾驶开启：飞机会自动沿绿色灯线飞，经过城市上空，再飞到目的机场。";
+  routeLabel.textContent = `无人驾驶：${currentRouteName()}`;
+  addLog("无人驾驶开启，自动跟随绿色航线。");
+}
+
+function updateAutopilot() {
+  if (!state.autopilot || state.crashed || state.landed) return;
+  if (state.phase === "airborne") {
+    state.phase = "landing";
+    state.route = "landing";
+    rebuildRouteLights();
+    announceAutopilotStage("city-route", `无人驾驶转入航线：先飞过${currentDestinationCountry().cities[0]}上空，再去${currentDestinationAirportName()}。`);
+  }
+  if (state.autopilotRoute !== state.route) {
+    state.autopilotRoute = state.route;
+    state.autopilotWaypoint = 1;
+  }
+
+  const path = getActiveRoutePath();
+  const targetIndex = Math.min(state.autopilotWaypoint, path.length - 1);
+  const target = path[targetIndex];
+  const dx = target.x - playerPlane.position.x;
+  const dz = target.z - playerPlane.position.z;
+  const distance = Math.hypot(dx, dz);
+  if (distance < (state.route === "takeoff" ? 24 : 36) && state.autopilotWaypoint < path.length - 1) {
+    state.autopilotWaypoint += 1;
+  }
+
+  const desiredHeading = Math.atan2(dx, dz);
+  const headingError = normalizeAngle(desiredHeading - state.heading);
+  state.yokeX = THREE.MathUtils.clamp(-headingError * 1.65, -0.85, 0.85);
+
+  if (state.phase === "takeoff") {
+    state.route = "takeoff";
+    state.throttle = 0.96;
+    state.gear = 0;
+    state.yokeY = playerPlane.position.z > 95 && state.speed > 90 ? 0.78 : 0;
+    announceAutopilotStage("takeoff-roll", `无人驾驶滑行：沿${currentOriginCountry().name}起飞跑道绿色灯线加速。`);
+  } else if (state.phase === "landing") {
+    state.route = "landing";
+    const z = playerPlane.position.z;
+    const desiredAltitude = z < 520 ? 58 : z < 735 ? THREE.MathUtils.mapLinear(z, 520, 735, 58, 12) : z < 850 ? THREE.MathUtils.mapLinear(z, 735, 850, 12, 0) : 0;
+    const altitudeError = desiredAltitude - state.altitude;
+    state.yokeY = THREE.MathUtils.clamp(altitudeError * 0.055, -0.55, 0.72);
+    const targetSpeed = z < 650 ? 104 : z < 810 ? 74 : 58;
+    state.throttle = THREE.MathUtils.clamp(targetSpeed / 142, 0.28, 0.78);
+    state.gear = z > 700 ? 0 : 0.18;
+    if (z < 590) {
+      announceAutopilotStage("over-city", `无人驾驶正在飞过${currentDestinationCountry().cities[0]}城市上空，继续沿绿色灯线去机场。`);
+    } else if (z < 815) {
+      announceAutopilotStage("approach", `无人驾驶开始对准${currentDestinationAirportName()}降落跑道。`);
+    } else {
+      announceAutopilotStage("flare", "无人驾驶正在减速接地，飞机会停在跑道白线前。");
+      state.gear = 0;
+    }
+  }
+
+  throttleLever.value = String(Math.round(state.throttle * 100));
+  gearLever.value = String(Math.round(state.gear * 100));
+  updateYokeKnob();
+}
+
 function resetGame() {
   state.phase = "takeoff";
   state.speed = 0;
@@ -973,6 +1076,7 @@ function resetGame() {
   state.crashed = false;
   state.landed = false;
   state.offRouteTime = 0;
+  setAutopilot(false);
   throttleLever.value = "0";
   gearLever.value = "0";
   document.body.classList.remove("crashed");
@@ -1055,6 +1159,7 @@ function brake() {
 
 function crash(reason) {
   if (state.crashed || state.landed) return;
+  setAutopilot(false);
   state.crashed = true;
   state.speed = 0;
   state.throttle = 0;
@@ -1066,6 +1171,7 @@ function crash(reason) {
 }
 
 function landSuccess() {
+  setAutopilot(false);
   state.landed = true;
   state.phase = "landed";
   state.speed = 0;
@@ -1138,7 +1244,9 @@ function updatePhysics(dt) {
     }
   } else if (state.phase === "takeoff" && state.speed > 92 && !takeoffRollReady) {
     state.altitude = 0;
-    statusText.textContent = "速度够了，但跑道还没滑够长。继续沿绿色灯线往前跑，过了中段才会抬头。";
+    statusText.textContent = state.autopilot
+      ? "无人驾驶正在继续沿绿色灯线滑行，跑道距离够了才会自动抬头。"
+      : "速度够了，但跑道还没滑够长。继续沿绿色灯线往前跑，过了中段才会抬头。";
   } else if (state.phase === "airborne") {
     state.altitude += state.yokeY * dt * 28;
     state.altitude = THREE.MathUtils.clamp(state.altitude, 8, 90);
@@ -1225,6 +1333,7 @@ function updateHud() {
 function tick() {
   const dt = Math.min(0.04, clock.getDelta());
   updateControlsFromInputs();
+  updateAutopilot();
   updatePhysics(dt);
   updateFlightSound();
   updateHud();
@@ -1312,6 +1421,7 @@ function setupEvents() {
   document.querySelector("#takeoffBtn").addEventListener("click", takeoff);
   document.querySelector("#landingBtn").addEventListener("click", startLanding);
   skyStartBtn.addEventListener("click", startAirLanding);
+  autopilotBtn.addEventListener("click", toggleAutopilot);
   document.querySelector("#brakeBtn").addEventListener("click", brake);
   document.querySelector("#cameraBtn").addEventListener("click", () => {
     state.cameraMode = (state.cameraMode + 1) % 4;

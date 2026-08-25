@@ -333,6 +333,16 @@ button {
   background: #1f9d91;
 }
 
+#autopilotBtn {
+  color: #102333;
+  background: #9ff0c2;
+}
+
+#autopilotBtn.active {
+  color: #fff;
+  background: #0f8d65;
+}
+
 #soundBtn.muted {
   background: #6f7880;
 }
