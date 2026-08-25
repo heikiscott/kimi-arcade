@@ -18,6 +18,8 @@ const mobileYoke = document.querySelector("#mobileYoke");
 const mobileKnob = document.querySelector("#mobileKnob");
 const soundBtn = document.querySelector("#soundBtn");
 const skyStartBtn = document.querySelector("#skyStartBtn");
+const engineFireBtn = document.querySelector("#engineFireBtn");
+const engineOffBtn = document.querySelector("#engineOffBtn");
 const countryButtons = document.querySelector("#countryButtons");
 const internationalBtn = document.querySelector("#internationalBtn");
 const autopilotBtn = document.querySelector("#autopilotBtn");
@@ -47,71 +49,45 @@ const airlines = [
 
 const countries = [
   {
-    id: "us",
-    name: "美国",
-    local: "United States",
-    domestic: "美国国内航班",
-    cities: ["纽约", "洛杉矶", "西雅图", "芝加哥"],
-    origin: "纽约自由机场",
-    destination: "洛杉矶星光机场",
-    color: 0x335f9f
-  },
-  {
     id: "cn",
     name: "中国",
     local: "China",
     domestic: "中国国内航班",
-    cities: ["北京", "上海", "深圳", "成都"],
+    cities: ["北京", "深圳"],
+    airports: ["北京云港机场", "深圳宝安训练机场"],
     origin: "北京云港机场",
-    destination: "上海海湾机场",
+    destination: "深圳宝安训练机场",
     color: 0xd83a34
+  },
+  {
+    id: "us",
+    name: "美国",
+    local: "United States",
+    domestic: "美国国内航班",
+    cities: ["纽约", "洛杉矶"],
+    airports: ["纽约自由机场", "洛杉矶星光机场"],
+    origin: "纽约自由机场",
+    destination: "洛杉矶星光机场",
+    color: 0x335f9f
   },
   {
     id: "jp",
     name: "日本",
     local: "Japan",
     domestic: "日本国内航班",
-    cities: ["东京", "大阪", "札幌", "福冈"],
+    cities: ["东京", "大阪"],
+    airports: ["东京羽田训练机场", "大阪关西训练机场"],
     origin: "东京羽田训练机场",
     destination: "大阪关西训练机场",
     color: 0xe0e6ef
-  },
-  {
-    id: "kr",
-    name: "韩国",
-    local: "Korea",
-    domestic: "韩国国内航班",
-    cities: ["首尔", "釜山", "济州", "仁川"],
-    origin: "首尔天空机场",
-    destination: "济州海风机场",
-    color: 0x78b5d8
-  },
-  {
-    id: "kp",
-    name: "朝鲜",
-    local: "DPRK",
-    domestic: "朝鲜国内航班",
-    cities: ["平壤", "开城", "南浦", "元山"],
-    origin: "平壤蓝天机场",
-    destination: "元山海岸机场",
-    color: 0x6080a8
-  },
-  {
-    id: "th",
-    name: "泰国",
-    local: "Thailand",
-    domestic: "泰国国内航班",
-    cities: ["曼谷", "清迈", "普吉", "甲米"],
-    origin: "曼谷阳光机场",
-    destination: "普吉海岛机场",
-    color: 0xb37ad8
   },
   {
     id: "sg",
     name: "新加坡",
     local: "Singapore",
     domestic: "新加坡本地航班",
-    cities: ["樟宜", "滨海湾", "港湾", "牛车水"],
+    cities: ["樟宜", "滨海湾"],
+    airports: ["樟宜训练机场", "滨海湾水岸机场"],
     origin: "樟宜训练机场",
     destination: "滨海湾水岸机场",
     color: 0x55b987
@@ -139,14 +115,14 @@ const landingPath = [
 ];
 
 const flightLevels = [
-  { title: "第1关 白天训练起飞", country: 6, destination: 6, airline: 5, international: false, timeMode: "day", start: "takeoff", difficulty: 1, description: "最简单：白天、直跑道，先练滑行和抬头起飞。" },
-  { title: "第2关 白天城市降落", country: 1, destination: 1, airline: 0, international: false, timeMode: "day", start: "air", difficulty: 2, description: "从天空开局，沿绿色航线降落到国内机场。" },
+  { title: "第1关 白天训练起飞", country: 3, destination: 3, airline: 5, international: false, timeMode: "day", start: "takeoff", difficulty: 1, description: "最简单：白天、直跑道，先练滑行和抬头起飞。" },
+  { title: "第2关 白天城市降落", country: 0, destination: 0, airline: 0, international: false, timeMode: "day", start: "air", difficulty: 2, description: "从天空开局，沿绿色航线降落到国内机场。" },
   { title: "第3关 日本夜航", country: 2, destination: 2, airline: 4, international: false, timeMode: "night", start: "air", difficulty: 3, description: "夜间跑道灯更多，看灯线慢慢降落。" },
-  { title: "第4关 韩国海边机场", country: 3, destination: 3, airline: 6, international: false, timeMode: "day", start: "air", difficulty: 4, description: "飞过城市上空，注意不要贴着楼房飞。" },
-  { title: "第5关 中国到日本国际航班", country: 1, destination: 2, airline: 2, international: true, timeMode: "day", start: "takeoff", difficulty: 5, description: "先滑行起飞，再接上国际绿色航线。" },
-  { title: "第6关 泰国夜航国际线", country: 5, destination: 6, airline: 7, international: true, timeMode: "night", start: "air", difficulty: 6, description: "夜航跨国飞行，速度和高度都要稳。" },
-  { title: "第7关 大城市避障", country: 0, destination: 0, airline: 3, international: false, timeMode: "dusk", start: "air", difficulty: 7, description: "傍晚进近，大楼更近，撞到楼就失败。" },
-  { title: "第8关 超远国际夜航", country: 6, destination: 0, airline: 8, international: true, timeMode: "night", start: "air", difficulty: 8, description: "最难：夜航、跨国、最后还要稳稳落到跑道。" }
+  { title: "第4关 新加坡海边机场", country: 3, destination: 3, airline: 5, international: false, timeMode: "day", start: "air", difficulty: 4, description: "飞过海湾和低矮城市，远处才有大高楼。" },
+  { title: "第5关 中国到日本国际航班", country: 0, destination: 2, airline: 2, international: true, timeMode: "day", start: "takeoff", difficulty: 5, description: "先滑行起飞，再接上国际绿色航线。" },
+  { title: "第6关 日本到新加坡夜航", country: 2, destination: 3, airline: 4, international: true, timeMode: "night", start: "air", difficulty: 6, description: "夜航跨国飞行，速度和高度都要稳。" },
+  { title: "第7关 美国远城降落", country: 1, destination: 1, airline: 3, international: false, timeMode: "dusk", start: "air", difficulty: 7, description: "傍晚进近，远处能看到大城市天际线。" },
+  { title: "第8关 引擎着火迫降", country: 0, destination: 1, airline: 0, international: true, timeMode: "dusk", start: "emergency", difficulty: 8, description: "最难：空中引擎着火，关引擎后滑翔到水面或地面。" }
 ];
 
 const state = {
@@ -180,7 +156,11 @@ const state = {
   twinTowerDemo: false,
   towerDemoTime: 0,
   towerCollapseTime: 0,
-  towerImpacts: {}
+  towerImpacts: {},
+  engineFire: false,
+  engineOff: false,
+  glideTimeLeft: 0,
+  emergencySurface: ""
 };
 
 const scene = new THREE.Scene();
@@ -202,8 +182,9 @@ const routeLights = new THREE.Group();
 const countryScenery = new THREE.Group();
 const spaceScenery = new THREE.Group();
 const explosionGroup = new THREE.Group();
+const engineFireGroup = new THREE.Group();
 const twinTowerTest = new THREE.Group();
-scene.add(world, earthScenery, airport, parked, routeLights, countryScenery, spaceScenery, twinTowerTest, explosionGroup);
+scene.add(world, earthScenery, airport, parked, routeLights, countryScenery, spaceScenery, twinTowerTest, explosionGroup, engineFireGroup);
 
 const mats = {
   concrete: makeMat(0xb8bcc0, 0.72, 0.42),
@@ -229,6 +210,7 @@ let playerPlane;
 let playerAircraftParts = {};
 let hazardBuildings = [];
 let scenicHazardBuildings = [];
+let waterLandingSegments = [];
 const keys = new Set();
 let audioCtx;
 let engineOsc;
@@ -469,13 +451,13 @@ function addCityCluster(country, cityNames, baseX, baseZ, signText) {
   const mat = makeMat(country.color, 0.62, 0.24);
   const roofMat = makeMat(0x27313b, 0.56, 0.18);
   cityNames.forEach((city, index) => {
-    const x = baseX + (index % 2) * 20;
-    const z = baseZ + Math.floor(index / 2) * 28;
-    const h = 5 + index * 2.4;
-    box("country-city-building", [9, h, 7], [x, h / 2, z], mat, countryScenery);
-    box("country-city-roof", [10, 0.55, 8], [x, h + 0.35, z], roofMat, countryScenery);
+    const x = baseX + (index % 2) * 24;
+    const z = baseZ + Math.floor(index / 2) * 26;
+    const h = 3.6 + index * 0.9;
+    box("country-low-airport-building", [16, h, 9], [x, h / 2, z], mat, countryScenery);
+    box("country-low-airport-roof", [17, 0.5, 10], [x, h + 0.3, z], roofMat, countryScenery);
+    box("country-airport-apron-strip", [20, 0.08, 4], [x, 0.06, z + 8], mats.concrete, countryScenery);
     addSpriteLabel(city, country.name, [x, h + 4.2, z], 4.7, 1.45, countryScenery);
-    hazardBuildings.push({ x, z, width: 11, depth: 9, height: h + 0.55, label: `${country.name}${city}` });
   });
   addSpriteLabel(country.name, signText, [baseX + 10, 15, baseZ - 18], 7.2, 2, countryScenery);
 }
@@ -627,32 +609,43 @@ function addControlTower() {
 function addEarthScenery() {
   clearGroup(earthScenery);
   scenicHazardBuildings = [];
-  box("earth-wide-ground", [1600, 0.12, 2300], [120, -0.22, 390], mats.earth, earthScenery);
-  box("earth-desert-zone", [360, 0.08, 520], [-520, -0.16, 120], makeMat(0xd5bc75, 0.92, 0.08), earthScenery);
-  box("earth-farmland-zone", [420, 0.08, 380], [590, -0.15, 120], makeMat(0x77aa52, 0.9, 0.08), earthScenery);
-  box("earth-night-city-zone", [430, 0.09, 410], [540, -0.14, 760], makeMat(0x304052, 0.82, 0.16), earthScenery);
+  waterLandingSegments = [];
+  box("earth-wide-ground", [4200, 0.12, 5200], [120, -0.22, 420], mats.earth, earthScenery);
+  box("earth-desert-zone", [760, 0.08, 820], [-980, -0.16, -120], makeMat(0xd5bc75, 0.92, 0.08), earthScenery);
+  box("earth-farmland-zone", [820, 0.08, 640], [1060, -0.15, 130], makeMat(0x77aa52, 0.9, 0.08), earthScenery);
+  box("earth-coast-zone", [980, 0.08, 540], [-790, -0.14, 1180], makeMat(0x61a46d, 0.9, 0.08), earthScenery);
+  box("earth-night-city-zone", [650, 0.09, 560], [840, -0.14, 1280], makeMat(0x304052, 0.82, 0.16), earthScenery);
   addRiverRibbon([
+    [-1560, -580],
+    [-1020, -370],
     [-690, -230],
     [-460, -90],
     [-250, 125],
     [80, 310],
     [330, 575],
-    [690, 825]
+    [690, 825],
+    [1080, 1110],
+    [1580, 1350]
   ], 16);
   addRiverRibbon([
+    [-1470, 1080],
+    [-1040, 930],
     [-620, 820],
     [-350, 760],
     [-90, 690],
     [190, 710],
-    [520, 640]
+    [520, 640],
+    [950, 620],
+    [1350, 520]
   ], 11);
-  addMountainRange(-640, 430, 7, 34);
-  addMountainRange(560, -230, 6, 28);
-  addNightCity("海湾夜景城市", 465, 760, 5, 6);
-  addNightCity("高楼大厦城区", -415, 650, 4, 5);
+  addMountainRange(-1420, 340, 11, 34);
+  addMountainRange(900, -520, 9, 28);
+  addMountainRange(1320, 980, 7, 30);
+  addNightCity("远处海湾夜景城市", 840, 1280, 5, 6);
+  addNightCity("很远的高楼大厦城区", -720, 1450, 4, 5);
   addCityRoadNetwork();
-  addSpriteLabel("地球场景", "机场外有山脉、河流和城市", [-250, 28, 300], 9, 2.4, earthScenery);
-  addSpriteLabel("夜景大城市", "起飞后下面能看到灯光", [540, 42, 745], 8, 2.2, earthScenery);
+  addSpriteLabel("地球场景", "地面一直延伸，天空只在上方", [-250, 28, 300], 9, 2.4, earthScenery);
+  addSpriteLabel("远处夜景大城市", "大高楼在很远的地方", [840, 42, 1245], 8, 2.2, earthScenery);
 }
 
 function addRiverRibbon(points, width) {
@@ -664,6 +657,7 @@ function addRiverRibbon(points, width) {
     const len = Math.hypot(bx - ax, bz - az);
     const segment = box("earth-blue-river", [width, 0.05, len], [midX, 0.005, midZ], mats.water, earthScenery);
     segment.rotation.y = Math.atan2(bx - ax, bz - az);
+    waterLandingSegments.push({ ax, az, bx, bz, width });
   }
 }
 
@@ -699,8 +693,8 @@ function addNightCity(label, baseX, baseZ, cols, rows) {
 
 function addCityRoadNetwork() {
   const cityCenters = [
-    [540, 760],
-    [-415, 650]
+    [840, 1280],
+    [-720, 1450]
   ];
   cityCenters.forEach(([cx, cz]) => {
     for (let i = -2; i <= 2; i++) {
@@ -1063,9 +1057,9 @@ function updateFlightSound() {
     noiseGain.gain.setTargetAtTime(0, now, 0.08);
     return;
   }
-  const throttlePower = Math.max(0, state.throttle);
+  const throttlePower = state.engineOff ? 0 : Math.max(0, state.throttle);
   const speedPower = THREE.MathUtils.clamp(state.speed / 140, 0, 1);
-  const airborneBoost = state.altitude > 2 ? 0.08 : 0;
+  const airborneBoost = state.engineOff ? 0.02 : state.altitude > 2 ? 0.08 : 0;
   engineOsc.frequency.setTargetAtTime(52 + throttlePower * 86 + speedPower * 34, now, 0.05);
   noiseFilter.frequency.setTargetAtTime(260 + speedPower * 850 + throttlePower * 420, now, 0.08);
   engineGain.gain.setTargetAtTime((0.03 + throttlePower * 0.12 + airborneBoost) * (soundEnabled ? 1 : 0), now, 0.08);
@@ -1210,6 +1204,11 @@ function applyFlightLevel(index) {
     missionTitle.textContent = level.title;
     routeLabel.textContent = `${level.timeMode === "night" ? "夜航" : level.timeMode === "dusk" ? "傍晚航班" : "白天航班"} · 沿绿色灯线降落 · 难度 ${level.difficulty}/8`;
     statusText.textContent = `${level.description} 这一关从天空开始，飞机会沿目的机场方向飞。`;
+  } else if (level.start === "emergency") {
+    startEngineFireEmergency();
+    missionTitle.textContent = level.title;
+    routeLabel.textContent = `引擎着火迫降 · 难度 ${level.difficulty}/8`;
+    statusText.textContent = `${level.description} 先关闭引擎，然后滑翔到河流、水面或平地。`;
   }
   addLog(`进入${level.title}。`);
   updateFlightLevelButtons();
@@ -1323,12 +1322,17 @@ function resetGame() {
   state.landed = false;
   state.offRouteTime = 0;
   state.autoTakeoffOnly = false;
+  state.engineFire = false;
+  state.engineOff = false;
+  state.glideTimeLeft = 0;
+  state.emergencySurface = "";
   setAutopilot(false);
   throttleLever.value = "0";
   gearLever.value = "0";
   document.body.classList.remove("crashed");
   clearTwinTowerScene();
   clearExplosion();
+  clearEngineFire();
   playerPlane.visible = true;
   playerPlane.position.copy(runwayStart);
   playerPlane.rotation.set(0, 0, 0);
@@ -1405,6 +1409,53 @@ function startAirLanding() {
   statusText.textContent = `你已经在天空上飞了。沿绿色灯线飞向${currentDestinationAirportName()}，快到跑道时减速，起落架保持 Down。`;
   addLog(`空中开局：飞机已经在天上，准备降落到${currentDestinationAirportName()}。`);
   updateYokeKnob();
+  updateFlightSound();
+}
+
+function startEngineFireEmergency() {
+  if (state.crashed || state.landed) resetGame();
+  ensureAudio();
+  setAutopilot(false);
+  state.phase = "emergency";
+  state.route = "landing";
+  state.speed = 130;
+  state.altitude = 600;
+  state.throttle = 0.28;
+  state.gear = 0;
+  state.yokeX = 0;
+  state.yokeY = 0;
+  state.crashed = false;
+  state.landed = false;
+  state.offRouteTime = 0;
+  state.engineFire = true;
+  state.engineOff = false;
+  state.glideTimeLeft = 600;
+  state.emergencySurface = "";
+  throttleLever.value = "28";
+  gearLever.value = "0";
+  const start = new THREE.Vector3(-260, 0.62 + state.altitude * 0.22, 420);
+  playerPlane.position.copy(start);
+  state.heading = Math.PI / 2.5;
+  playerPlane.rotation.set(-0.04, state.heading, 0);
+  createEngineFire();
+  rebuildRouteLights();
+  missionTitle.textContent = "引擎着火迫降";
+  routeLabel.textContent = "空中故障：关闭引擎后还可以滑翔 10 分钟";
+  statusText.textContent = "引擎着火了：点“关闭引擎”，再用操纵杆慢慢找河流、水面或平地迫降。落到水上或地上都不会爆炸。";
+  addLog("空中故障开局：引擎着火，飞机仍在滑翔高度。");
+  updateYokeKnob();
+  updateFlightSound();
+}
+
+function shutEngine() {
+  ensureAudio();
+  state.engineOff = true;
+  state.throttle = 0;
+  throttleLever.value = "0";
+  if (state.engineFire && state.phase !== "emergency") state.phase = "emergency";
+  routeLabel.textContent = "引擎已关闭：保持机头平稳，继续滑翔";
+  statusText.textContent = "引擎已经关闭，火焰变小。飞机还可以滑翔约 10 分钟，慢慢下降到水上或地面即可成功。";
+  addLog("引擎关闭，进入滑翔迫降。");
   updateFlightSound();
 }
 
@@ -1595,6 +1646,70 @@ function updateExplosion(dt) {
   if (state.explosionAge > 1.55) clearExplosion();
 }
 
+function clearEngineFire() {
+  while (engineFireGroup.children.length) {
+    const child = engineFireGroup.children.pop();
+    child.geometry?.dispose?.();
+    child.material?.dispose?.();
+  }
+  engineFireGroup.visible = false;
+}
+
+function createEngineFire() {
+  clearEngineFire();
+  const colors = [0xffcf4a, 0xff6a2a, 0xff2f1d, 0x2a2a2a];
+  for (let i = 0; i < 16; i++) {
+    const material = new THREE.MeshStandardMaterial({
+      color: colors[i % colors.length],
+      emissive: colors[i % colors.length],
+      emissiveIntensity: i % 4 === 3 ? 0.15 : 1.35,
+      roughness: 0.55,
+      transparent: true,
+      opacity: 0.82
+    });
+    const flame = new THREE.Mesh(new THREE.SphereGeometry(0.24 + (i % 3) * 0.08, 12, 12), material);
+    const side = i % 2 === 0 ? -1 : 1;
+    flame.position.set(side * (1.25 + Math.random() * 0.35), -0.18 + Math.random() * 0.35, -0.1 + Math.random() * 0.5);
+    flame.userData.base = flame.position.clone();
+    flame.userData.seed = Math.random() * 20;
+    engineFireGroup.add(flame);
+  }
+  engineFireGroup.visible = true;
+}
+
+function updateEngineFire(dt) {
+  if (!state.engineFire || state.engineOff || state.landed || state.crashed || !playerPlane.visible) {
+    engineFireGroup.visible = false;
+    return;
+  }
+  engineFireGroup.visible = true;
+  engineFireGroup.position.copy(playerPlane.position);
+  engineFireGroup.rotation.copy(playerPlane.rotation);
+  engineFireGroup.children.forEach((flame) => {
+    const pulse = 1 + Math.sin(clock.elapsedTime * 14 + flame.userData.seed) * 0.24;
+    flame.position.copy(flame.userData.base);
+    flame.position.y += Math.sin(clock.elapsedTime * 9 + flame.userData.seed) * 0.12;
+    flame.scale.setScalar(pulse);
+    flame.material.opacity = 0.62 + Math.sin(clock.elapsedTime * 12 + flame.userData.seed) * 0.18;
+  });
+}
+
+function distanceToSegment2D(px, pz, segment) {
+  const abx = segment.bx - segment.ax;
+  const abz = segment.bz - segment.az;
+  const apx = px - segment.ax;
+  const apz = pz - segment.az;
+  const denom = abx * abx + abz * abz || 1;
+  const t = THREE.MathUtils.clamp((apx * abx + apz * abz) / denom, 0, 1);
+  const x = segment.ax + abx * t;
+  const z = segment.az + abz * t;
+  return Math.hypot(px - x, pz - z);
+}
+
+function isOverWater() {
+  return waterLandingSegments.some((segment) => distanceToSegment2D(playerPlane.position.x, playerPlane.position.z, segment) <= segment.width * 0.85);
+}
+
 function checkHazardCollisions() {
   if (state.crashed || state.landed || state.altitude > 18) return;
   for (const building of [...hazardBuildings, ...scenicHazardBuildings]) {
@@ -1610,6 +1725,9 @@ function checkHazardCollisions() {
 function crash(reason) {
   if (state.crashed || state.landed) return;
   setAutopilot(false);
+  clearEngineFire();
+  state.engineFire = false;
+  state.engineOff = false;
   state.crashed = true;
   state.speed = 0;
   state.throttle = 0;
@@ -1627,6 +1745,9 @@ function crash(reason) {
 
 function landSuccess() {
   setAutopilot(false);
+  clearEngineFire();
+  state.engineFire = false;
+  state.engineOff = false;
   state.landed = true;
   state.phase = "landed";
   state.speed = 0;
@@ -1635,6 +1756,22 @@ function landSuccess() {
   missionTitle.textContent = "安全降落";
   statusText.textContent = `飞机飞到${currentDestinationAirportName()}，沿降落跑道减速停下，任务成功。`;
   addLog(`安全降落在${currentDestinationAirportName()}，飞机停在白线前。`);
+}
+
+function emergencyLandSuccess(surface) {
+  setAutopilot(false);
+  clearEngineFire();
+  state.engineFire = false;
+  state.engineOff = true;
+  state.landed = true;
+  state.phase = "emergency-landed";
+  state.emergencySurface = surface;
+  state.speed = 0;
+  state.throttle = 0;
+  throttleLever.value = "0";
+  missionTitle.textContent = "迫降成功";
+  statusText.textContent = `飞机已经安全落到${surface}，没有爆炸。引擎故障测试完成。`;
+  addLog(`引擎故障迫降成功：落到${surface}，飞机停下来了。`);
 }
 
 function nearestDistanceToPath(points) {
@@ -1669,7 +1806,10 @@ function updateControlsFromInputs() {
 
 function updatePhysics(dt) {
   if (state.crashed || state.landed) return;
-  const targetSpeed = state.throttle < -0.22 ? 0 : state.throttle * 142;
+  let targetSpeed = state.throttle < -0.22 ? 0 : state.throttle * 142;
+  if (state.phase === "emergency") {
+    targetSpeed = state.engineOff ? Math.max(56, state.speed * 0.996) : 86;
+  }
   state.speed = THREE.MathUtils.lerp(state.speed, Math.max(0, targetSpeed), 1 - Math.exp(-dt * 1.6));
   const ground = state.altitude < 1.1;
   const turnPower = ground ? 0.65 : 1.15;
@@ -1717,6 +1857,15 @@ function updatePhysics(dt) {
     state.altitude -= descent * dt;
     if (state.yokeY > 0.25) state.altitude += state.yokeY * 14 * dt;
     state.altitude = Math.max(0, state.altitude);
+  } else if (state.phase === "emergency") {
+    const glideBonus = state.engineOff ? 1 : 0;
+    const baseDescent = state.engineOff ? 1 : 4.4;
+    if (state.engineOff) state.glideTimeLeft = Math.max(0, state.glideTimeLeft - dt);
+    state.altitude -= baseDescent * dt;
+    if (state.yokeY > 0.2) state.altitude += (state.yokeY * (4.2 + glideBonus * 2.4)) * dt;
+    if (state.yokeY < -0.2) state.altitude += state.yokeY * 5.2 * dt;
+    if (state.glideTimeLeft <= 0 && state.altitude > 4) state.altitude -= 5.5 * dt;
+    state.altitude = Math.max(0, state.altitude);
   } else if (ground) {
     state.altitude = 0;
   }
@@ -1727,7 +1876,7 @@ function updatePhysics(dt) {
     const commandedPitch = -state.yokeY * 0.18;
     const takeoffLiftPitch = state.phase === "takeoff" && state.speed > 82 && takeoffRollReady ? -0.16 : 0;
     const cruisePitch = state.phase === "airborne" ? -0.07 : 0;
-    const landingPitch = state.phase === "landing" ? 0.04 : 0;
+    const landingPitch = state.phase === "landing" ? 0.04 : state.phase === "emergency" ? 0.07 : 0;
     nosePitch = THREE.MathUtils.clamp(commandedPitch + takeoffLiftPitch + cruisePitch + landingPitch, -0.32, 0.18);
   }
   playerPlane.rotation.x = nosePitch;
@@ -1752,9 +1901,13 @@ function updatePhysics(dt) {
     else landSuccess();
   }
 
-  checkHazardCollisions();
+  if (state.phase === "emergency" && state.altitude <= 0.2) {
+    emergencyLandSuccess(isOverWater() ? "水面" : "地面");
+  }
 
-  if (state.phase !== "airborne" && state.phase !== "landing" && (playerPlane.position.x < -160 || playerPlane.position.x > 220 || playerPlane.position.z < -300 || playerPlane.position.z > 1010)) {
+  if (state.phase !== "emergency") checkHazardCollisions();
+
+  if (!["airborne", "landing", "emergency"].includes(state.phase) && (playerPlane.position.x < -160 || playerPlane.position.x > 220 || playerPlane.position.z < -300 || playerPlane.position.z > 1010)) {
     crash("飞出两个机场的超大范围，看不见跑道了，任务失败。");
   }
 }
@@ -1796,6 +1949,7 @@ function updateHud() {
       takeoff: "起飞加速",
       airborne: "空中飞行",
       landing: "降落中",
+      emergency: state.engineOff ? `滑翔迫降 · ${Math.ceil(state.glideTimeLeft / 60)} 分钟` : "引擎着火",
       "tower-test": "双塔测试"
     }[state.phase] || "飞行中";
     missionTitle.textContent = phaseText;
@@ -1812,6 +1966,7 @@ function tick() {
     updatePhysics(dt);
   }
   updateExplosion(dt);
+  updateEngineFire(dt);
   updateWorldAtmosphere();
   updateFlightSound();
   updateHud();
@@ -1899,6 +2054,8 @@ function setupEvents() {
   document.querySelector("#takeoffBtn").addEventListener("click", takeoff);
   document.querySelector("#landingBtn").addEventListener("click", startLanding);
   skyStartBtn.addEventListener("click", startAirLanding);
+  engineFireBtn.addEventListener("click", startEngineFireEmergency);
+  engineOffBtn.addEventListener("click", shutEngine);
   autopilotBtn.addEventListener("click", toggleAutopilot);
   document.querySelector("#brakeBtn").addEventListener("click", brake);
   document.querySelector("#demoCrashBtn").addEventListener("click", demoCrash);
