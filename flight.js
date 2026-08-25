@@ -174,7 +174,11 @@ const state = {
   autopilotWaypoint: 1,
   autopilotRoute: "takeoff",
   autopilotStage: "",
-  explosionAge: 0
+  explosionAge: 0,
+  twinTowerDemo: false,
+  towerDemoTime: 0,
+  towerCollapseTime: 0,
+  towerImpacts: {}
 };
 
 const scene = new THREE.Scene();
@@ -194,7 +198,8 @@ const parked = new THREE.Group();
 const routeLights = new THREE.Group();
 const countryScenery = new THREE.Group();
 const explosionGroup = new THREE.Group();
-scene.add(world, airport, parked, routeLights, countryScenery, explosionGroup);
+const twinTowerTest = new THREE.Group();
+scene.add(world, airport, parked, routeLights, countryScenery, twinTowerTest, explosionGroup);
 
 const mats = {
   concrete: makeMat(0xb8bcc0, 0.72, 0.42),
@@ -1168,6 +1173,7 @@ function resetGame() {
   throttleLever.value = "0";
   gearLever.value = "0";
   document.body.classList.remove("crashed");
+  clearTwinTowerScene();
   clearExplosion();
   playerPlane.visible = true;
   playerPlane.position.copy(runwayStart);
@@ -1254,6 +1260,134 @@ function demoCrash() {
   ensureAudio();
   playerPlane.position.y = Math.max(playerPlane.position.y, 4);
   crash("事故演示：飞机失控，出现爆炸失败效果。正常游戏里要避开大楼、对准跑道安全降落。");
+}
+
+function addTestTower(name, x, z) {
+  const tower = new THREE.Group();
+  tower.name = name;
+  const glassMat = makeMat(0x8fb6c6, 0.46, 0.22);
+  const steelMat = makeMat(0x25323b, 0.5, 0.4);
+  const capMat = makeMat(0x182631, 0.5, 0.28);
+  const markPart = (part, floor, targetY) => {
+    part.userData.floor = floor;
+    part.userData.tower = name;
+    part.userData.originalY = part.position.y;
+    part.userData.targetY = targetY;
+    return part;
+  };
+  for (let floor = 0; floor < 20; floor++) {
+    const y = 5 + floor * 9.2;
+    const floorBlock = box("solid-test-tower-floor", [16, 8.7, 16], [0, y, 0], glassMat, tower);
+    markPart(floorBlock, floor, Math.max(1.4, y * 0.13));
+    const band = box("test-tower-steel-band", [17, 0.42, 17], [0, y + 4.55, 0], steelMat, tower);
+    markPart(band, floor, Math.max(1.8, y * 0.13 + 0.2));
+    for (const side of [-1, 1]) {
+      markPart(
+        box("test-tower-vertical-column", [0.45, 8.9, 0.45], [side * 8.2, y, side * 8.2], steelMat, tower),
+        floor,
+        Math.max(1.2, y * 0.13)
+      );
+      markPart(
+        box("test-tower-vertical-column", [0.45, 8.9, 0.45], [side * 8.2, y, -side * 8.2], steelMat, tower),
+        floor,
+        Math.max(1.2, y * 0.13)
+      );
+    }
+  }
+  markPart(box("test-tower-roof", [18, 1.4, 18], [0, 190, 0], capMat, tower), 20, 3.8);
+  addSpriteLabel("无人测试塔", "FAKE SAFETY TEST", [0, 199, 0], 8, 2, tower);
+  tower.position.set(x, 0, z);
+  twinTowerTest.add(tower);
+  return tower;
+}
+
+function clearTwinTowerScene() {
+  clearGroup(twinTowerTest);
+  state.twinTowerDemo = false;
+  state.towerDemoTime = 0;
+  state.towerCollapseTime = 0;
+  state.towerImpacts = {};
+}
+
+function createTwinTowerScene() {
+  clearTwinTowerScene();
+  box("test-city-ground", [120, 0.18, 85], [160, 0.04, 530], makeMat(0x6f7880, 0.82, 0.25), twinTowerTest);
+  box("test-city-road", [10, 0.22, 88], [160, 0.16, 530], makeMat(0x1f2933, 0.76, 0.25), twinTowerTest);
+  addTestTower("test-tower-a", 146, 530);
+  addTestTower("test-tower-b", 176, 530);
+  const secondPlane = createPlaneModel(airlines[2], { scale: 0.82 });
+  secondPlane.name = "second-unmanned-test-plane";
+  secondPlane.position.set(-52, 17.2, 544);
+  secondPlane.rotation.set(0, Math.PI / 2, 0);
+  secondPlane.visible = false;
+  twinTowerTest.add(secondPlane);
+  addSpriteLabel("无人双塔安全测试", "没有真人 · 只是测试场景", [160, 24, 474], 11, 2.4, twinTowerTest);
+}
+
+function startTwinTowerTest() {
+  resetGame();
+  ensureAudio();
+  setTimeMode("day");
+  createTwinTowerScene();
+  state.twinTowerDemo = true;
+  state.phase = "tower-test";
+  state.speed = 112;
+  state.throttle = 0.72;
+  state.altitude = 76;
+  state.heading = Math.PI / 2;
+  state.towerImpacts = {};
+  playerPlane.visible = true;
+  playerPlane.position.set(-82, 0.62 + state.altitude * 0.22, 530);
+  playerPlane.rotation.set(0, state.heading, 0);
+  missionTitle.textContent = "无人双塔安全测试";
+  routeLabel.textContent = "测试演示：无人飞机 · 假塔 · 非攻击玩法";
+  statusText.textContent = "这是一个假的 test 场景：两个超级高的无人测试塔，飞机按预设路线演示碰撞、火光和结构倒塌。";
+  addLog("进入无人双塔安全测试：没有真人，只是测试动画。");
+}
+
+function updateTwinTowerTest(dt) {
+  if (!state.twinTowerDemo) return;
+  state.towerDemoTime += dt;
+  if (!state.crashed) {
+    playerPlane.position.x += dt * 39;
+    playerPlane.position.y = 0.62 + state.altitude * 0.22 + Math.sin(state.towerDemoTime * 4) * 0.25;
+    playerPlane.rotation.y = Math.PI / 2;
+    playerPlane.rotation.x = -0.04;
+    if (playerPlane.position.x >= 145) {
+      crash("无人双塔安全测试：假飞机撞到无人测试塔，出现火光和烟雾，结构开始从上往下倒塌。");
+      state.towerCollapseTime = 0.001;
+      state.towerImpacts["test-tower-a"] = state.towerCollapseTime;
+    }
+  } else if (state.towerCollapseTime) {
+    state.towerCollapseTime += dt;
+    const secondPlane = twinTowerTest.getObjectByName("second-unmanned-test-plane");
+    if (secondPlane && !state.towerImpacts["test-tower-b"]) {
+      if (state.towerCollapseTime > 1.45) secondPlane.visible = true;
+      if (secondPlane.visible) {
+        secondPlane.position.x += dt * 82;
+        secondPlane.position.y = 17.2 + Math.sin(state.towerCollapseTime * 5) * 0.18;
+        secondPlane.rotation.y = Math.PI / 2;
+        if (secondPlane.position.x >= 176) {
+          createExplosion(new THREE.Vector3(176, 19, 544));
+          secondPlane.rotation.x = 0.34;
+          secondPlane.rotation.z = 0.58;
+          state.towerImpacts["test-tower-b"] = state.towerCollapseTime;
+          statusText.textContent = "第二架无人测试飞机完成预设碰撞测试，第二座假塔也开始从上往下倒塌。";
+          addLog("第二座无人测试塔开始结构倒塌。");
+        }
+      }
+    }
+    twinTowerTest.traverse((obj) => {
+      if (obj.userData.floor === undefined) return;
+      const impactTime = state.towerImpacts[obj.userData.tower];
+      if (!impactTime) return;
+      const localTime = state.towerCollapseTime - impactTime;
+      const delay = Math.max(0, 20 - obj.userData.floor) * 0.045;
+      if (localTime < delay) return;
+      obj.position.y = THREE.MathUtils.lerp(obj.position.y, obj.userData.targetY || 1.2, 1 - Math.exp(-dt * 2.7));
+      obj.rotation.z += dt * 0.08 * (obj.userData.floor % 2 ? 1 : -1);
+    });
+  }
 }
 
 function clearExplosion() {
@@ -1459,6 +1593,13 @@ function updatePhysics(dt) {
 }
 
 function updateCamera() {
+  if (state.twinTowerDemo) {
+    const testTarget = new THREE.Vector3(160, 72, 530);
+    const testCamera = new THREE.Vector3(34, 126, 242);
+    camera.position.lerp(testCamera, 0.08);
+    camera.lookAt(testTarget);
+    return;
+  }
   const modes = [
     { height: 7.5, back: 18, side: 8 },
     { height: 4.8, back: 10, side: 0 },
@@ -1487,7 +1628,8 @@ function updateHud() {
       taxi: "滑行中",
       takeoff: "起飞加速",
       airborne: "空中飞行",
-      landing: "降落中"
+      landing: "降落中",
+      "tower-test": "双塔测试"
     }[state.phase] || "飞行中";
     missionTitle.textContent = phaseText;
   }
@@ -1495,9 +1637,13 @@ function updateHud() {
 
 function tick() {
   const dt = Math.min(0.04, clock.getDelta());
-  updateControlsFromInputs();
-  updateAutopilot();
-  updatePhysics(dt);
+  if (state.twinTowerDemo) {
+    updateTwinTowerTest(dt);
+  } else {
+    updateControlsFromInputs();
+    updateAutopilot();
+    updatePhysics(dt);
+  }
   updateExplosion(dt);
   updateFlightSound();
   updateHud();
@@ -1588,6 +1734,7 @@ function setupEvents() {
   autopilotBtn.addEventListener("click", toggleAutopilot);
   document.querySelector("#brakeBtn").addEventListener("click", brake);
   document.querySelector("#demoCrashBtn").addEventListener("click", demoCrash);
+  document.querySelector("#twinTowerBtn").addEventListener("click", startTwinTowerTest);
   document.querySelector("#cameraBtn").addEventListener("click", () => {
     state.cameraMode = (state.cameraMode + 1) % 4;
     statusText.textContent = "视角已切换，也可以直接拖动屏幕往左、往右、往上、往下看。";
