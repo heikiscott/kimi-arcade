@@ -1249,6 +1249,13 @@ function brake() {
   statusText.textContent = "刹车，油门杆拉到最后面，飞机会慢慢停下来。";
 }
 
+function demoCrash() {
+  if (state.crashed || state.landed) resetGame();
+  ensureAudio();
+  playerPlane.position.y = Math.max(playerPlane.position.y, 4);
+  crash("事故演示：飞机失控，出现爆炸失败效果。正常游戏里要避开大楼、对准跑道安全降落。");
+}
+
 function clearExplosion() {
   while (explosionGroup.children.length) {
     const child = explosionGroup.children.pop();
@@ -1577,6 +1584,7 @@ function setupEvents() {
   skyStartBtn.addEventListener("click", startAirLanding);
   autopilotBtn.addEventListener("click", toggleAutopilot);
   document.querySelector("#brakeBtn").addEventListener("click", brake);
+  document.querySelector("#demoCrashBtn").addEventListener("click", demoCrash);
   document.querySelector("#cameraBtn").addEventListener("click", () => {
     state.cameraMode = (state.cameraMode + 1) % 4;
     statusText.textContent = "视角已切换，也可以直接拖动屏幕往左、往右、往上、往下看。";
