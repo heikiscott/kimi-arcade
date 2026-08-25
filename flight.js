@@ -611,10 +611,10 @@ function addEarthScenery() {
   scenicHazardBuildings = [];
   waterLandingSegments = [];
   box("earth-wide-ground", [4200, 0.12, 5200], [120, -0.22, 420], mats.earth, earthScenery);
-  box("earth-desert-zone", [760, 0.08, 820], [-980, -0.16, -120], makeMat(0xd5bc75, 0.92, 0.08), earthScenery);
-  box("earth-farmland-zone", [820, 0.08, 640], [1060, -0.15, 130], makeMat(0x77aa52, 0.9, 0.08), earthScenery);
-  box("earth-coast-zone", [980, 0.08, 540], [-790, -0.14, 1180], makeMat(0x61a46d, 0.9, 0.08), earthScenery);
-  box("earth-night-city-zone", [650, 0.09, 560], [840, -0.14, 1280], makeMat(0x304052, 0.82, 0.16), earthScenery);
+  box("earth-city-zone-west", [880, 0.09, 980], [-820, -0.14, 250], makeMat(0x334354, 0.82, 0.16), earthScenery);
+  box("earth-city-zone-east", [920, 0.09, 1060], [990, -0.14, 280], makeMat(0x304052, 0.82, 0.16), earthScenery);
+  box("earth-city-zone-south", [1260, 0.09, 760], [130, -0.14, 1320], makeMat(0x354a5a, 0.82, 0.16), earthScenery);
+  box("earth-city-zone-north", [1150, 0.09, 720], [120, -0.14, -780], makeMat(0x2f404f, 0.82, 0.16), earthScenery);
   addRiverRibbon([
     [-1560, -580],
     [-1020, -370],
@@ -626,7 +626,7 @@ function addEarthScenery() {
     [690, 825],
     [1080, 1110],
     [1580, 1350]
-  ], 16);
+  ], 26);
   addRiverRibbon([
     [-1470, 1080],
     [-1040, 930],
@@ -637,15 +637,18 @@ function addEarthScenery() {
     [520, 640],
     [950, 620],
     [1350, 520]
-  ], 11);
+  ], 20);
   addMountainRange(-1420, 340, 11, 34);
   addMountainRange(900, -520, 9, 28);
   addMountainRange(1320, 980, 7, 30);
-  addNightCity("远处海湾夜景城市", 840, 1280, 5, 6);
-  addNightCity("很远的高楼大厦城区", -720, 1450, 4, 5);
+  addNightCity("机场西侧大城市", -820, 240, 6, 6);
+  addNightCity("机场东侧大城市", 990, 270, 6, 6);
+  addNightCity("机场北侧大城市", 120, -770, 7, 4);
+  addNightCity("机场南侧大城市", 130, 1320, 7, 5);
+  addNightCity("河边高楼城区", -720, 1450, 4, 5);
   addCityRoadNetwork();
-  addSpriteLabel("地球场景", "地面一直延伸，天空只在上方", [-250, 28, 300], 9, 2.4, earthScenery);
-  addSpriteLabel("远处夜景大城市", "大高楼在很远的地方", [840, 42, 1245], 8, 2.2, earthScenery);
+  addSpriteLabel("地球场景", "机场外是大片城市，天空只在上方", [-250, 28, 300], 9, 2.4, earthScenery);
+  addSpriteLabel("穿城河流", "引擎着火时可以迫降河里，地面也可以", [460, 36, 700], 9, 2.3, earthScenery);
 }
 
 function addRiverRibbon(points, width) {
@@ -693,7 +696,10 @@ function addNightCity(label, baseX, baseZ, cols, rows) {
 
 function addCityRoadNetwork() {
   const cityCenters = [
-    [840, 1280],
+    [-820, 240],
+    [990, 270],
+    [120, -770],
+    [130, 1320],
     [-720, 1450]
   ];
   cityCenters.forEach(([cx, cz]) => {
@@ -1441,7 +1447,7 @@ function startEngineFireEmergency() {
   rebuildRouteLights();
   missionTitle.textContent = "引擎着火迫降";
   routeLabel.textContent = "空中故障：关闭引擎后还可以滑翔 10 分钟";
-  statusText.textContent = "引擎着火了：点“关闭引擎”，再用操纵杆慢慢找河流、水面或平地迫降。落到水上或地上都不会爆炸。";
+  statusText.textContent = "引擎着火了：点“关闭引擎”，最好对准穿过大城市的河流迫降；如果降到地面上也可以成功，不会爆炸。";
   addLog("空中故障开局：引擎着火，飞机仍在滑翔高度。");
   updateYokeKnob();
   updateFlightSound();
@@ -1454,7 +1460,7 @@ function shutEngine() {
   throttleLever.value = "0";
   if (state.engineFire && state.phase !== "emergency") state.phase = "emergency";
   routeLabel.textContent = "引擎已关闭：保持机头平稳，继续滑翔";
-  statusText.textContent = "引擎已经关闭，火焰变小。飞机还可以滑翔约 10 分钟，慢慢下降到水上或地面即可成功。";
+  statusText.textContent = "引擎已经关闭，火焰变小。飞机还可以滑翔约 10 分钟，优先找河流迫降；落到城市地面也可以成功。";
   addLog("引擎关闭，进入滑翔迫降。");
   updateFlightSound();
 }
