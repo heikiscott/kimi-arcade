@@ -37,6 +37,7 @@ const airlines = [
 ];
 
 const runwayStart = new THREE.Vector3(0, 0.62, 8);
+const playerPlaneScale = 1;
 
 const runwayPath = [
   new THREE.Vector3(0, 0.08, 6),
@@ -105,7 +106,6 @@ const mats = {
 
 let playerPlane;
 let playerAircraftParts = {};
-let selectedAircraftLabel = null;
 const keys = new Set();
 
 function makeMat(color, roughness = 0.55, metalness = 0.18) {
@@ -165,6 +165,48 @@ function makeTextTexture(lines, options = {}) {
   const texture = new THREE.CanvasTexture(canvasEl);
   texture.anisotropy = 4;
   return texture;
+}
+
+function makeDecalTexture(lines, options = {}) {
+  const canvasEl = document.createElement("canvas");
+  const width = options.width || 720;
+  const height = options.height || 220;
+  canvasEl.width = width;
+  canvasEl.height = height;
+  const ctx = canvasEl.getContext("2d");
+  ctx.clearRect(0, 0, width, height);
+  if (options.bg) {
+    ctx.fillStyle = options.bg;
+    roundRect(ctx, 8, 8, width - 16, height - 16, 18);
+    ctx.fill();
+  }
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillStyle = options.color || "#172632";
+  ctx.font = `900 ${options.big || 52}px system-ui, sans-serif`;
+  ctx.fillText(lines[0], width / 2, height * 0.42);
+  if (lines[1]) {
+    ctx.font = `800 ${options.small || 31}px system-ui, sans-serif`;
+    ctx.fillText(lines[1], width / 2, height * 0.67);
+  }
+  const texture = new THREE.CanvasTexture(canvasEl);
+  texture.anisotropy = 4;
+  return texture;
+}
+
+function addSideDecal(name, texture, side, pos, size, parent) {
+  const mat = new THREE.MeshBasicMaterial({
+    map: texture,
+    transparent: true,
+    side: THREE.DoubleSide,
+    depthWrite: false
+  });
+  const mesh = new THREE.Mesh(new THREE.PlaneGeometry(size[0], size[1]), mat);
+  mesh.name = name;
+  mesh.position.set(pos[0], pos[1], pos[2]);
+  mesh.rotation.y = side > 0 ? Math.PI / 2 : -Math.PI / 2;
+  parent.add(mesh);
+  return mesh;
 }
 
 function roundRect(ctx, x, y, w, h, r) {
@@ -287,8 +329,34 @@ function createPlaneModel(livery, options = {}) {
 
   const stripe = box("aircraft-color-stripe", [radius * 2.04, 0.06 * scale, length * 0.76], [0, radius * 1.72, 0.6 * scale], colorMat, group);
   stripe.rotation.x = 0;
+  for (const side of [-1, 1]) {
+    const sideX = side * radius * 1.04;
+    box("aircraft-side-blue-stripe", [0.035 * scale, 0.09 * scale, length * 0.82], [sideX, radius * 1.35, 0.28 * scale], colorMat, group);
+    box("aircraft-side-accent-stripe", [0.036 * scale, 0.045 * scale, length * 0.78], [sideX, radius * 1.22, 0.42 * scale], accentMat, group);
+  }
   const cockpit = box("aircraft-cockpit-window", [radius * 1.05, 0.12 * scale, 0.55 * scale], [0, radius * 1.75, length / 2 + 0.16 * scale], glassMat, group);
   cockpit.rotation.x = -0.34;
+  box("aircraft-nose-blue-band", [radius * 1.7, 0.12 * scale, 0.08 * scale], [0, radius * 1.22, length / 2 + 0.72 * scale], colorMat, group);
+
+  for (const side of [-1, 1]) {
+    const sideX = side * radius * 1.085;
+    for (let i = 0; i < 22; i++) {
+      const z = -length * 0.34 + i * (length * 0.68 / 21);
+      box("aircraft-window-row", [0.032 * scale, 0.075 * scale, 0.105 * scale], [sideX, radius * 1.62, z], glassMat, group);
+    }
+    for (const z of [length * 0.33, -length * 0.29]) {
+      box("aircraft-passenger-door", [0.035 * scale, 0.46 * scale, 0.22 * scale], [sideX, radius * 1.48, z], makeMat(0xeef5f9, 0.36, 0.18), group);
+      box("aircraft-door-outline", [0.038 * scale, 0.5 * scale, 0.028 * scale], [sideX, radius * 1.48, z - 0.13 * scale], glassMat, group);
+    }
+    addSideDecal(
+      "airline-side-name",
+      makeDecalTexture([livery.local, livery.name], { width: 840, height: 210, color: "#172632", big: 43, small: 27 }),
+      side,
+      [sideX + side * 0.01 * scale, radius * 1.78, length * 0.08],
+      [3.45 * scale, 0.86 * scale],
+      group
+    );
+  }
 
   const wing = new THREE.Mesh(makeWingGeometry(span, 3.6 * scale, 2.5 * scale), bodyMat);
   wing.name = "aircraft-symmetric-wing";
@@ -297,12 +365,32 @@ function createPlaneModel(livery, options = {}) {
   wing.receiveShadow = true;
   group.add(wing);
   box("continuous-wing-root", [radius * 2.55, 0.14 * scale, 1.55 * scale], [0, radius * 1.22, -0.15 * scale], bodyMat, group);
+  box("left-wing-letter", [1.05 * scale, 0.035 * scale, 0.18 * scale], [-span * 0.25, radius * 1.24, -0.75 * scale], colorMat, group);
+  box("right-wing-letter", [1.05 * scale, 0.035 * scale, 0.18 * scale], [span * 0.25, radius * 1.24, -0.75 * scale], colorMat, group);
 
-  box("left-wing-tip", [0.16 * scale, 0.38 * scale, 1.4 * scale], [-span / 2 + 0.4 * scale, radius * 1.55, -0.38 * scale], accentMat, group).rotation.z = -0.12;
-  box("right-wing-tip", [0.16 * scale, 0.38 * scale, 1.4 * scale], [span / 2 - 0.4 * scale, radius * 1.55, -0.38 * scale], accentMat, group).rotation.z = 0.12;
+  const leftTip = box("left-wing-tip", [0.18 * scale, 0.72 * scale, 1.35 * scale], [-span / 2 + 0.28 * scale, radius * 1.62, -0.42 * scale], accentMat, group);
+  leftTip.rotation.z = -0.24;
+  const rightTip = box("right-wing-tip", [0.18 * scale, 0.72 * scale, 1.35 * scale], [span / 2 - 0.28 * scale, radius * 1.62, -0.42 * scale], accentMat, group);
+  rightTip.rotation.z = 0.24;
   box("horizontal-tail", [span * 0.36, 0.08 * scale, 1.4 * scale], [0, radius * 1.72, -length / 2 - 0.16 * scale], bodyMat, group);
   const fin = box("vertical-tail", [0.16 * scale, 2.2 * scale, 1.35 * scale], [0, radius * 2.25, -length / 2 - 0.35 * scale], colorMat, group);
   fin.rotation.x = -0.12;
+  for (const side of [-1, 1]) {
+    addSideDecal(
+      "tail-airline-mark",
+      makeDecalTexture([livery.short], {
+        width: 260,
+        height: 220,
+        color: "#ffffff",
+        bg: `#${livery.color.toString(16).padStart(6, "0")}`,
+        big: 86
+      }),
+      side,
+      [side * 0.1 * scale, radius * 2.48, -length / 2 - 0.38 * scale],
+      [0.95 * scale, 0.78 * scale],
+      group
+    );
+  }
 
   const engineSlots = engineCount === 4 ? [-span * 0.31, -span * 0.18, span * 0.18, span * 0.31] : [-span * 0.27, span * 0.27];
   engineSlots.forEach((x) => {
@@ -310,6 +398,11 @@ function createPlaneModel(livery, options = {}) {
     engine.rotation.x = Math.PI / 2;
     const fan = cyl("engine-fan", radius * 0.31, 0.08 * scale, [x, radius * 0.78, 0.34 * scale], glassMat, group, 24);
     fan.rotation.x = Math.PI / 2;
+    for (let blade = 0; blade < 6; blade++) {
+      const fanBlade = box("engine-fan-blade", [0.035 * scale, 0.22 * scale, 0.03 * scale], [x, radius * 0.78, 0.39 * scale], mats.steel, group);
+      fanBlade.rotation.x = Math.PI / 2;
+      fanBlade.rotation.z = (Math.PI / 3) * blade;
+    }
   });
 
   const wheelMat = makeMat(0x0d1115, 0.72, 0.08);
@@ -320,27 +413,14 @@ function createPlaneModel(livery, options = {}) {
     strut.rotation.x = index === 2 ? 0.08 : 0;
     const wheel = cyl("landing-wheel", 0.24 * scale, 0.16 * scale, [x * scale, 0.08 * scale, z * scale], wheelMat, gearParts, 18);
     wheel.rotation.z = Math.PI / 2;
+    if (index < 2) {
+      const twinWheel = cyl("landing-wheel-twin", 0.21 * scale, 0.14 * scale, [(x + Math.sign(x) * 0.22) * scale, 0.08 * scale, z * scale], wheelMat, gearParts, 18);
+      twinWheel.rotation.z = Math.PI / 2;
+    }
   });
   group.add(gearParts);
 
-  const label = box("airline-side-label", [radius * 2.08, 0.04 * scale, 2.1 * scale], [0, radius * 1.78, length * 0.08], makeMat(livery.color), group);
-  label.userData.textLabel = true;
-  if (options.player) playerAircraftParts = { gearParts, label };
-
-  const sprite = new THREE.Sprite(new THREE.SpriteMaterial({
-    map: makeTextTexture([livery.short, livery.local], {
-      bg: `#${livery.color.toString(16).padStart(6, "0")}`,
-      color: "#ffffff",
-      big: 56,
-      small: 25
-    }),
-    transparent: true
-  }));
-  sprite.name = "airline-name-on-plane";
-  sprite.position.set(0, radius * 2.1, 1.6 * scale);
-  sprite.scale.set(3.2 * scale, 1.08 * scale, 1);
-  group.add(sprite);
-  if (options.player) selectedAircraftLabel = sprite;
+  if (options.player) playerAircraftParts = { gearParts };
 
   group.scale.setScalar(scale);
   return group;
@@ -381,7 +461,7 @@ function buildWorld() {
   addGround();
   rebuildRouteLights();
 
-  playerPlane = createPlaneModel(airlines[state.airlineIndex], { scale: 0.8, player: true });
+  playerPlane = createPlaneModel(airlines[state.airlineIndex], { scale: playerPlaneScale, player: true });
   playerPlane.position.copy(runwayStart);
   playerPlane.rotation.y = 0;
   scene.add(playerPlane);
@@ -415,7 +495,7 @@ function setAirline(index) {
   const oldPos = playerPlane.position.clone();
   const oldRot = playerPlane.rotation.y;
   scene.remove(playerPlane);
-  playerPlane = createPlaneModel(airlines[index], { scale: 0.8, player: true });
+  playerPlane = createPlaneModel(airlines[index], { scale: playerPlaneScale, player: true });
   playerPlane.position.copy(oldPos);
   playerPlane.rotation.y = oldRot;
   scene.add(playerPlane);
@@ -620,7 +700,7 @@ function updatePhysics(dt) {
 
 function updateCamera() {
   const modes = [
-    { height: 12, back: 23, side: 0 },
+    { height: 7.5, back: 18, side: 8 },
     { height: 4.8, back: 10, side: 0 },
     { height: 55, back: 4, side: 0 },
     { height: 18, back: 14, side: 18 }
