@@ -76,6 +76,111 @@ button {
   box-shadow: 0 8px 22px rgba(23, 38, 50, 0.12);
 }
 
+.flight-lobby-toggle {
+  position: absolute;
+  right: 18px;
+  top: 18px;
+  z-index: 6;
+  padding: 10px 14px;
+  border: 1px solid rgba(23, 38, 50, 0.16);
+  border-radius: 8px;
+  color: #fff;
+  background: #2f6faa;
+  font-weight: 950;
+  box-shadow: 0 8px 22px rgba(23, 38, 50, 0.18);
+}
+
+.flight-lobby {
+  position: absolute;
+  inset: 0;
+  z-index: 12;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(6, 15, 24, 0.48);
+  backdrop-filter: blur(7px);
+}
+
+.flight-lobby.open {
+  display: flex;
+}
+
+.flight-lobby-card {
+  width: min(780px, 100%);
+  max-height: calc(100% - 24px);
+  overflow: auto;
+  padding: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  border-radius: 8px;
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.93);
+  box-shadow: 0 22px 60px rgba(0, 0, 0, 0.24);
+}
+
+.flight-lobby-card h2 {
+  margin: 4px 0 8px;
+  font-size: clamp(2rem, 5vw, 4rem);
+  line-height: 0.96;
+}
+
+.flight-lobby-card p:not(.label) {
+  margin: 0 0 14px;
+  color: #314351;
+  font-weight: 820;
+  line-height: 1.45;
+}
+
+.flight-level-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 12px 0 14px;
+}
+
+.flight-level-grid button {
+  min-height: 84px;
+  padding: 11px 12px;
+  border: 1px solid rgba(23, 38, 50, 0.14);
+  border-radius: 8px;
+  color: var(--ink);
+  background: #eef4f4;
+  text-align: left;
+  box-shadow: 0 5px 0 rgba(23, 38, 50, 0.12);
+}
+
+.flight-level-grid button.active {
+  color: #fff;
+  background: var(--green);
+}
+
+.flight-level-grid strong,
+.flight-level-grid span {
+  display: block;
+}
+
+.flight-level-grid strong {
+  font-weight: 950;
+}
+
+.flight-level-grid span {
+  margin-top: 5px;
+  color: currentColor;
+  opacity: 0.78;
+  font-size: 0.78rem;
+  font-weight: 800;
+  line-height: 1.3;
+}
+
+#closeFlightLobbyBtn {
+  width: 100%;
+  min-height: 44px;
+  border-radius: 8px;
+  color: #fff;
+  background: var(--red);
+  font-weight: 950;
+}
+
 .hud {
   position: absolute;
   left: 18px;
@@ -425,6 +530,31 @@ body.crashed .sim {
   border-color: #8e1f18;
 }
 
+body.night-flight {
+  background: linear-gradient(135deg, #071326 0%, #172443 48%, #203327 100%);
+}
+
+body.dusk-flight {
+  background: linear-gradient(135deg, #ffd28a 0%, #ff9f78 44%, #425679 100%);
+}
+
+body.night-flight .sim {
+  background: #071326;
+}
+
+body.dusk-flight .sim {
+  background: #ffb36b;
+}
+
+body.night-flight .hud,
+body.night-flight .panel,
+body.night-flight .route-label,
+body.dusk-flight .hud,
+body.dusk-flight .panel,
+body.dusk-flight .route-label {
+  background: rgba(255, 255, 255, 0.9);
+}
+
 @media (max-width: 1120px) {
   .flight-shell {
     grid-template-columns: 1fr;
@@ -458,6 +588,19 @@ body.crashed .sim {
   .home-link {
     left: 10px;
     top: 10px;
+  }
+
+  .flight-lobby-toggle {
+    right: 10px;
+    top: 10px;
+  }
+
+  .flight-lobby {
+    padding: 12px;
+  }
+
+  .flight-level-grid {
+    grid-template-columns: 1fr;
   }
 
   .route-label {

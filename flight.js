@@ -21,6 +21,10 @@ const skyStartBtn = document.querySelector("#skyStartBtn");
 const countryButtons = document.querySelector("#countryButtons");
 const internationalBtn = document.querySelector("#internationalBtn");
 const autopilotBtn = document.querySelector("#autopilotBtn");
+const flightLobbyBtn = document.querySelector("#flightLobbyBtn");
+const flightLobby = document.querySelector("#flightLobby");
+const flightLevelGrid = document.querySelector("#flightLevelGrid");
+const closeFlightLobbyBtn = document.querySelector("#closeFlightLobbyBtn");
 
 const airlines = [
   { id: "cz", short: "南航", name: "China Southern", local: "中国南方航空", color: 0x1f5fb8, accent: 0xd83232, model: "Boeing 737" },
@@ -133,11 +137,24 @@ const landingPath = [
   new THREE.Vector3(100, 0.85, 860)
 ];
 
+const flightLevels = [
+  { title: "第1关 白天训练起飞", country: 6, destination: 6, airline: 5, international: false, timeMode: "day", start: "takeoff", difficulty: 1, description: "最简单：白天、直跑道，先练滑行和抬头起飞。" },
+  { title: "第2关 白天城市降落", country: 1, destination: 1, airline: 0, international: false, timeMode: "day", start: "air", difficulty: 2, description: "从天空开局，沿绿色航线降落到国内机场。" },
+  { title: "第3关 日本夜航", country: 2, destination: 2, airline: 4, international: false, timeMode: "night", start: "air", difficulty: 3, description: "夜间跑道灯更多，看灯线慢慢降落。" },
+  { title: "第4关 韩国海边机场", country: 3, destination: 3, airline: 6, international: false, timeMode: "day", start: "air", difficulty: 4, description: "飞过城市上空，注意不要贴着楼房飞。" },
+  { title: "第5关 中国到日本国际航班", country: 1, destination: 2, airline: 2, international: true, timeMode: "day", start: "takeoff", difficulty: 5, description: "先滑行起飞，再接上国际绿色航线。" },
+  { title: "第6关 泰国夜航国际线", country: 5, destination: 6, airline: 7, international: true, timeMode: "night", start: "air", difficulty: 6, description: "夜航跨国飞行，速度和高度都要稳。" },
+  { title: "第7关 大城市避障", country: 0, destination: 0, airline: 3, international: false, timeMode: "dusk", start: "air", difficulty: 7, description: "傍晚进近，大楼更近，撞到楼就失败。" },
+  { title: "第8关 超远国际夜航", country: 6, destination: 0, airline: 8, international: true, timeMode: "night", start: "air", difficulty: 8, description: "最难：夜航、跨国、最后还要稳稳落到跑道。" }
+];
+
 const state = {
   airlineIndex: 0,
   countryIndex: 0,
   destinationCountryIndex: 0,
   international: false,
+  levelIndex: 0,
+  timeMode: "day",
   phase: "takeoff",
   speed: 0,
   altitude: 0,
@@ -156,7 +173,8 @@ const state = {
   autopilot: false,
   autopilotWaypoint: 1,
   autopilotRoute: "takeoff",
-  autopilotStage: ""
+  autopilotStage: "",
+  explosionAge: 0
 };
 
 const scene = new THREE.Scene();
@@ -175,7 +193,8 @@ const airport = new THREE.Group();
 const parked = new THREE.Group();
 const routeLights = new THREE.Group();
 const countryScenery = new THREE.Group();
-scene.add(world, airport, parked, routeLights, countryScenery);
+const explosionGroup = new THREE.Group();
+scene.add(world, airport, parked, routeLights, countryScenery, explosionGroup);
 
 const mats = {
   concrete: makeMat(0xb8bcc0, 0.72, 0.42),
@@ -192,6 +211,7 @@ const mats = {
 
 let playerPlane;
 let playerAircraftParts = {};
+let hazardBuildings = [];
 const keys = new Set();
 let audioCtx;
 let engineOsc;
@@ -438,12 +458,14 @@ function addCityCluster(country, cityNames, baseX, baseZ, signText) {
     box("country-city-building", [9, h, 7], [x, h / 2, z], mat, countryScenery);
     box("country-city-roof", [10, 0.55, 8], [x, h + 0.35, z], roofMat, countryScenery);
     addSpriteLabel(city, country.name, [x, h + 4.2, z], 4.7, 1.45, countryScenery);
+    hazardBuildings.push({ x, z, width: 11, depth: 9, height: h + 0.55, label: `${country.name}${city}` });
   });
   addSpriteLabel(country.name, signText, [baseX + 10, 15, baseZ - 18], 7.2, 2, countryScenery);
 }
 
 function updateCountryScenery() {
   clearGroup(countryScenery);
+  hazardBuildings = [];
   const origin = currentOriginCountry();
   const destination = currentDestinationCountry();
   addCityCluster(origin, origin.cities, -142, -92, origin.local);
@@ -465,6 +487,16 @@ function updateCountryScenery() {
     2.4,
     countryScenery
   );
+}
+
+function setTimeMode(mode) {
+  state.timeMode = mode;
+  const isNight = mode === "night";
+  const isDusk = mode === "dusk";
+  scene.background = new THREE.Color(isNight ? 0x071326 : isDusk ? 0xffb36b : 0x9fd8ff);
+  scene.fog.color.set(isNight ? 0x071326 : isDusk ? 0xffc082 : 0x9fd8ff);
+  document.body.classList.toggle("night-flight", isNight);
+  document.body.classList.toggle("dusk-flight", isDusk);
 }
 
 function addGround() {
@@ -893,6 +925,11 @@ function setSoundEnabled(enabled) {
 
 function setAirline(index) {
   state.airlineIndex = index;
+  if (!playerPlane) {
+    airlineText.textContent = airlines[index].short;
+    updateAirlineButtons();
+    return;
+  }
   const oldPos = playerPlane.position.clone();
   const oldRot = playerPlane.rotation.y;
   scene.remove(playerPlane);
@@ -969,6 +1006,57 @@ function buildCountryButtons() {
   });
   internationalBtn.addEventListener("click", startInternationalFlight);
   updateCountryButtons();
+}
+
+function updateFlightLevelButtons() {
+  Array.from(flightLevelGrid.children).forEach((button, index) => {
+    button.classList.toggle("active", index === state.levelIndex);
+  });
+}
+
+function buildFlightLevelButtons() {
+  flightLevels.forEach((level, index) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.innerHTML = `<strong>${level.title}</strong><span>${level.timeMode === "night" ? "夜航" : level.timeMode === "dusk" ? "傍晚" : "白天"} · 难度 ${level.difficulty}/8<br>${level.description}</span>`;
+    button.addEventListener("click", () => applyFlightLevel(index));
+    flightLevelGrid.append(button);
+  });
+  updateFlightLevelButtons();
+}
+
+function openFlightLobby() {
+  flightLobby.classList.add("open");
+  updateFlightLevelButtons();
+}
+
+function closeFlightLobby() {
+  flightLobby.classList.remove("open");
+}
+
+function applyFlightLevel(index) {
+  const level = flightLevels[index];
+  state.levelIndex = index;
+  state.countryIndex = level.country;
+  state.destinationCountryIndex = level.international ? level.destination : level.country;
+  state.international = level.international;
+  setTimeMode(level.timeMode);
+  setAirline(level.airline);
+  updateCountryButtons();
+  updateCountryScenery();
+  resetGame();
+  missionTitle.textContent = level.title;
+  routeLabel.textContent = `${level.timeMode === "night" ? "夜航" : level.timeMode === "dusk" ? "傍晚航班" : "白天航班"} · ${currentRouteName()} · 难度 ${level.difficulty}/8`;
+  statusText.textContent = level.description;
+  if (level.start === "air") {
+    startAirLanding();
+    missionTitle.textContent = level.title;
+    routeLabel.textContent = `${level.timeMode === "night" ? "夜航" : level.timeMode === "dusk" ? "傍晚航班" : "白天航班"} · 沿绿色灯线降落 · 难度 ${level.difficulty}/8`;
+    statusText.textContent = `${level.description} 这一关从天空开始，飞机会沿目的机场方向飞。`;
+  }
+  addLog(`进入${level.title}。`);
+  updateFlightLevelButtons();
+  closeFlightLobby();
 }
 
 function setAutopilot(enabled) {
@@ -1080,6 +1168,8 @@ function resetGame() {
   throttleLever.value = "0";
   gearLever.value = "0";
   document.body.classList.remove("crashed");
+  clearExplosion();
+  playerPlane.visible = true;
   playerPlane.position.copy(runwayStart);
   playerPlane.rotation.set(0, 0, 0);
   flightLog.innerHTML = "";
@@ -1138,8 +1228,10 @@ function startAirLanding() {
   state.offRouteTime = 0;
   throttleLever.value = "58";
   gearLever.value = "0";
-  playerPlane.position.set(18, 0.62 + state.altitude * 0.22, 250);
-  state.heading = Math.atan2(landingPath[1].x - landingPath[0].x, landingPath[1].z - landingPath[0].z);
+  const path = getActiveRoutePath();
+  playerPlane.position.copy(path[0]);
+  playerPlane.position.y = 0.62 + state.altitude * 0.22;
+  state.heading = Math.atan2(path[1].x - path[0].x, path[1].z - path[0].z);
   playerPlane.rotation.set(0, state.heading, 0);
   rebuildRouteLights();
   missionTitle.textContent = "空中降落开局";
@@ -1157,6 +1249,63 @@ function brake() {
   statusText.textContent = "刹车，油门杆拉到最后面，飞机会慢慢停下来。";
 }
 
+function clearExplosion() {
+  while (explosionGroup.children.length) {
+    const child = explosionGroup.children.pop();
+    child.geometry?.dispose?.();
+    child.material?.dispose?.();
+  }
+  state.explosionAge = 0;
+}
+
+function createExplosion(position) {
+  clearExplosion();
+  const colors = [0xffd65a, 0xff4a3a, 0xff8a24, 0x242424];
+  for (let i = 0; i < 26; i++) {
+    const material = new THREE.MeshStandardMaterial({
+      color: colors[i % colors.length],
+      emissive: i % 4 === 3 ? 0x101010 : colors[i % colors.length],
+      emissiveIntensity: i % 4 === 3 ? 0.2 : 1.4,
+      roughness: 0.65,
+      transparent: true,
+      opacity: 0.9
+    });
+    const puff = new THREE.Mesh(new THREE.SphereGeometry(0.7 + Math.random() * 0.75, 16, 16), material);
+    puff.position.copy(position);
+    puff.userData.velocity = new THREE.Vector3(
+      (Math.random() - 0.5) * 18,
+      6 + Math.random() * 20,
+      (Math.random() - 0.5) * 18
+    );
+    explosionGroup.add(puff);
+  }
+  state.explosionAge = 0.001;
+}
+
+function updateExplosion(dt) {
+  if (!state.explosionAge) return;
+  state.explosionAge += dt;
+  explosionGroup.children.forEach((puff) => {
+    puff.position.addScaledVector(puff.userData.velocity, dt);
+    puff.userData.velocity.y -= 18 * dt;
+    puff.scale.multiplyScalar(1 + dt * 1.8);
+    puff.material.opacity = Math.max(0, 0.95 - state.explosionAge * 0.72);
+  });
+  if (state.explosionAge > 1.55) clearExplosion();
+}
+
+function checkHazardCollisions() {
+  if (state.crashed || state.landed || state.altitude > 18) return;
+  for (const building of hazardBuildings) {
+    const dx = Math.abs(playerPlane.position.x - building.x);
+    const dz = Math.abs(playerPlane.position.z - building.z);
+    if (dx < building.width * 0.62 && dz < building.depth * 0.7 && playerPlane.position.y < building.height + 2.2) {
+      crash(`撞到${building.label}大楼，飞机爆炸，任务失败。`);
+      return;
+    }
+  }
+}
+
 function crash(reason) {
   if (state.crashed || state.landed) return;
   setAutopilot(false);
@@ -1164,6 +1313,8 @@ function crash(reason) {
   state.speed = 0;
   state.throttle = 0;
   throttleLever.value = "0";
+  createExplosion(playerPlane.position.clone());
+  playerPlane.visible = false;
   document.body.classList.add("crashed");
   missionTitle.textContent = "飞行失败";
   statusText.textContent = reason;
@@ -1284,14 +1435,16 @@ function updatePhysics(dt) {
 
   const onLandingRunway = Math.abs(playerPlane.position.x - 100) < 9 && playerPlane.position.z < 910 && playerPlane.position.z > 390;
   if (state.phase === "landing" && state.altitude <= 0.2) {
-    if (!onLandingRunway) crash("降落没有对准目的机场跑道，落到跑道外面了。");
-    else if (state.gear > 0.55) crash("起落架还在 Up，不能安全落地。");
-    else if (state.speed > 78) crash("落地速度太快，飞机没有刹住。");
+    if (!onLandingRunway) crash("降落没有对准目的机场跑道，一头扎到跑道外地面，飞机爆炸。");
+    else if (state.gear > 0.55) crash("起落架还在 Up，不能安全落地，飞机爆炸。");
+    else if (state.speed > 78) crash("落地速度太快，飞机没有刹住，飞机爆炸。");
     else landSuccess();
   }
 
+  checkHazardCollisions();
+
   if (playerPlane.position.x < -160 || playerPlane.position.x > 220 || playerPlane.position.z < -300 || playerPlane.position.z > 1010) {
-    crash("飞出两个机场的超大范围，看不见跑道了。");
+    crash("飞出两个机场的超大范围，看不见跑道了，任务失败。");
   }
 }
 
@@ -1335,6 +1488,7 @@ function tick() {
   updateControlsFromInputs();
   updateAutopilot();
   updatePhysics(dt);
+  updateExplosion(dt);
   updateFlightSound();
   updateHud();
   updateCamera();
@@ -1428,6 +1582,11 @@ function setupEvents() {
     statusText.textContent = "视角已切换，也可以直接拖动屏幕往左、往右、往上、往下看。";
   });
   soundBtn.addEventListener("click", () => setSoundEnabled(!soundEnabled));
+  flightLobbyBtn.addEventListener("click", openFlightLobby);
+  closeFlightLobbyBtn.addEventListener("click", closeFlightLobby);
+  flightLobby.addEventListener("click", (event) => {
+    if (event.target === flightLobby) closeFlightLobby();
+  });
   document.querySelector("#resetBtn").addEventListener("click", resetGame);
   window.addEventListener("keydown", (event) => {
     const code = event.code.toUpperCase();
@@ -1462,7 +1621,9 @@ window.addEventListener("resize", resize);
 buildWorld();
 buildAirlineButtons();
 buildCountryButtons();
+buildFlightLevelButtons();
 setupEvents();
 resize();
 resetGame();
+setTimeMode("day");
 tick();

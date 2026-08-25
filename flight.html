@@ -4,13 +4,23 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>3D 航空驾驶</title>
-    <link rel="stylesheet" href="flight.css?v=autopilot-20260825" />
+    <link rel="stylesheet" href="flight.css?v=flight-levels-20260825" />
   </head>
   <body>
     <main class="flight-shell">
       <section class="sim">
         <canvas id="flightCanvas" aria-label="3D 航空驾驶游戏"></canvas>
         <a class="home-link" href="arcade.html">游戏大厅</a>
+        <button class="flight-lobby-toggle" id="flightLobbyBtn" type="button">开飞机大厅</button>
+        <section class="flight-lobby" id="flightLobby" aria-label="开飞机游戏大厅">
+          <div class="flight-lobby-card">
+            <p class="label">Flight Game Lobby</p>
+            <h2>开飞机大厅</h2>
+            <p>从第一关训练起飞开始，后面越来越远、越来越难。撞到大楼或者一头扎到地面就会爆炸。</p>
+            <div id="flightLevelGrid" class="flight-level-grid"></div>
+            <button id="closeFlightLobbyBtn" type="button">继续当前飞行</button>
+          </div>
+        </section>
         <div class="hud">
           <p>3D Flight Simulator</p>
           <h1>3D 航空驾驶</h1>
@@ -82,7 +92,7 @@
       </aside>
     </main>
 
-    <script type="module" src="flight.js?v=autopilot-20260825"></script>
+    <script type="module" src="flight.js?v=flight-levels-20260825"></script>
     <script src="arcade-stats.js?v=visitor-table-20260728"></script>
   </body>
 </html>
