@@ -100,6 +100,7 @@ const mats = {
   white: makeMat(0xf7fbff, 0.35, 0.45),
   steel: makeMat(0x7d8890, 0.55, 0.42),
   yellow: makeMat(0xf2c84b, 0.68, 0.35),
+  runwayYellowLight: new THREE.MeshStandardMaterial({ color: 0xffd65a, emissive: 0xffb300, emissiveIntensity: 1.8, roughness: 0.34, metalness: 0.12 }),
   greenLight: new THREE.MeshStandardMaterial({ color: 0x62ff8b, emissive: 0x1fe568, emissiveIntensity: 1.7 }),
   redLight: new THREE.MeshStandardMaterial({ color: 0xff4a3a, emissive: 0xd91f12, emissiveIntensity: 1.5 })
 };
@@ -304,13 +305,48 @@ function addGround() {
 
 function addRunway(label, pos, size) {
   box("runway", size, pos, mats.runway, airport);
+  box("runway-left-outline", [0.42, 0.09, size[2] + 4], [pos[0] - size[0] / 2 - 0.45, 0.105, pos[2]], mats.white, airport);
+  box("runway-right-outline", [0.42, 0.09, size[2] + 4], [pos[0] + size[0] / 2 + 0.45, 0.105, pos[2]], mats.white, airport);
   for (let i = -48; i <= 48; i += 14) {
     box("runway-centerline", [0.42, 0.07, 6], [pos[0], 0.08, pos[2] + i], mats.white, airport);
   }
   for (const side of [-4.2, 4.2]) {
     box("runway-edge", [0.18, 0.08, size[2] - 4], [pos[0] + side, 0.09, pos[2]], mats.white, airport);
   }
+  addRunwayDirectionArrows(pos, size);
+  addRunwayStartLights(pos, size);
   addSpriteLabel(label, "RUNWAY", [pos[0], 4, pos[2] - size[2] / 2 + 8], 8, 2.2);
+}
+
+function addRunwayDirectionArrows(pos, size) {
+  const arrowZs = [pos[2] + size[2] * 0.25, pos[2] + size[2] * 0.38];
+  arrowZs.forEach((z, index) => {
+    const spread = index === 0 ? 1.25 : 1.45;
+    const left = box("runway-takeoff-chevron-left", [0.36, 0.1, 5.6], [pos[0] - spread, 0.13, z], mats.white, airport);
+    const right = box("runway-takeoff-chevron-right", [0.36, 0.1, 5.6], [pos[0] + spread, 0.13, z], mats.white, airport);
+    left.rotation.y = -0.58;
+    right.rotation.y = 0.58;
+  });
+}
+
+function addRunwayStartLights(pos, size) {
+  const startZ = pos[2] - size[2] / 2 + 7;
+  for (let row = 0; row < 3; row++) {
+    for (const x of [-4.8, -3.1, -1.4, 1.4, 3.1, 4.8]) {
+      const lamp = cyl("yellow-runway-start-light", 0.18, 0.08, [pos[0] + x, 0.18, startZ + row * 2.2], mats.runwayYellowLight, airport, 18);
+      lamp.rotation.x = Math.PI / 2;
+    }
+  }
+  for (let row = 0; row < 5; row++) {
+    for (const x of [-5.1, 5.1]) {
+      const beacon = new THREE.Mesh(new THREE.SphereGeometry(0.34, 18, 18), mats.runwayYellowLight);
+      beacon.name = "large-yellow-takeoff-beacon";
+      beacon.position.set(pos[0] + x, 0.38, pos[2] - 7 + row * 3.2);
+      beacon.castShadow = true;
+      airport.add(beacon);
+    }
+  }
+  addSpriteLabel("黄色起飞灯", "从这里开始滑行", [pos[0], 3.6, startZ + 3.4], 5.6, 1.7);
 }
 
 function addTaxiway(a, b) {
