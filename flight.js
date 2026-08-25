@@ -18,6 +18,8 @@ const mobileYoke = document.querySelector("#mobileYoke");
 const mobileKnob = document.querySelector("#mobileKnob");
 const soundBtn = document.querySelector("#soundBtn");
 const skyStartBtn = document.querySelector("#skyStartBtn");
+const countryButtons = document.querySelector("#countryButtons");
+const internationalBtn = document.querySelector("#internationalBtn");
 
 const airlines = [
   { id: "cz", short: "南航", name: "China Southern", local: "中国南方航空", color: 0x1f5fb8, accent: 0xd83232, model: "Boeing 737" },
@@ -36,6 +38,79 @@ const airlines = [
   { id: "nx", short: "澳门", name: "Air Macau", local: "澳門航空", color: 0x3b7aaf, accent: 0xf1c653, model: "Airbus A321" },
   { id: "tv", short: "西藏", name: "Tibet Airlines", local: "西藏航空 · བོད", color: 0xe18f2d, accent: 0x246399, model: "Airbus A319" },
   { id: "ak", short: "亚洲", name: "AirAsia", local: "AirAsia", color: 0xd82727, accent: 0xffffff, model: "Airbus A320" }
+];
+
+const countries = [
+  {
+    id: "us",
+    name: "美国",
+    local: "United States",
+    domestic: "美国国内航班",
+    cities: ["纽约", "洛杉矶", "西雅图", "芝加哥"],
+    origin: "纽约自由机场",
+    destination: "洛杉矶星光机场",
+    color: 0x335f9f
+  },
+  {
+    id: "cn",
+    name: "中国",
+    local: "China",
+    domestic: "中国国内航班",
+    cities: ["北京", "上海", "深圳", "成都"],
+    origin: "北京云港机场",
+    destination: "上海海湾机场",
+    color: 0xd83a34
+  },
+  {
+    id: "jp",
+    name: "日本",
+    local: "Japan",
+    domestic: "日本国内航班",
+    cities: ["东京", "大阪", "札幌", "福冈"],
+    origin: "东京羽田训练机场",
+    destination: "大阪关西训练机场",
+    color: 0xe0e6ef
+  },
+  {
+    id: "kr",
+    name: "韩国",
+    local: "Korea",
+    domestic: "韩国国内航班",
+    cities: ["首尔", "釜山", "济州", "仁川"],
+    origin: "首尔天空机场",
+    destination: "济州海风机场",
+    color: 0x78b5d8
+  },
+  {
+    id: "kp",
+    name: "朝鲜",
+    local: "DPRK",
+    domestic: "朝鲜国内航班",
+    cities: ["平壤", "开城", "南浦", "元山"],
+    origin: "平壤蓝天机场",
+    destination: "元山海岸机场",
+    color: 0x6080a8
+  },
+  {
+    id: "th",
+    name: "泰国",
+    local: "Thailand",
+    domestic: "泰国国内航班",
+    cities: ["曼谷", "清迈", "普吉", "甲米"],
+    origin: "曼谷阳光机场",
+    destination: "普吉海岛机场",
+    color: 0xb37ad8
+  },
+  {
+    id: "sg",
+    name: "新加坡",
+    local: "Singapore",
+    domestic: "新加坡本地航班",
+    cities: ["樟宜", "滨海湾", "港湾", "牛车水"],
+    origin: "樟宜训练机场",
+    destination: "滨海湾水岸机场",
+    color: 0x55b987
+  }
 ];
 
 const runwayStart = new THREE.Vector3(0, 0.62, -220);
@@ -59,6 +134,9 @@ const landingPath = [
 
 const state = {
   airlineIndex: 0,
+  countryIndex: 0,
+  destinationCountryIndex: 0,
+  international: false,
   phase: "takeoff",
   speed: 0,
   altitude: 0,
@@ -92,7 +170,8 @@ const world = new THREE.Group();
 const airport = new THREE.Group();
 const parked = new THREE.Group();
 const routeLights = new THREE.Group();
-scene.add(world, airport, parked, routeLights);
+const countryScenery = new THREE.Group();
+scene.add(world, airport, parked, routeLights, countryScenery);
 
 const mats = {
   concrete: makeMat(0xb8bcc0, 0.72, 0.42),
@@ -280,15 +359,101 @@ function roundRect(ctx, x, y, w, h, r) {
   ctx.closePath();
 }
 
-function addSpriteLabel(text, subtext, pos, width = 8, height = 2.6) {
+function addSpriteLabel(text, subtext, pos, width = 8, height = 2.6, parent = scene) {
   const sprite = new THREE.Sprite(new THREE.SpriteMaterial({
     map: makeTextTexture([text, subtext], { width: 640, height: 220 }),
     transparent: true
   }));
   sprite.position.set(pos[0], pos[1], pos[2]);
   sprite.scale.set(width, height, 1);
-  scene.add(sprite);
+  parent.add(sprite);
   return sprite;
+}
+
+function clearGroup(group) {
+  while (group.children.length) {
+    const child = group.children.pop();
+    child.traverse?.((obj) => {
+      obj.geometry?.dispose?.();
+      if (obj.material?.map) obj.material.map.dispose?.();
+      obj.material?.dispose?.();
+    });
+  }
+}
+
+function currentOriginCountry() {
+  return countries[state.countryIndex];
+}
+
+function currentDestinationCountry() {
+  return countries[state.destinationCountryIndex];
+}
+
+function currentRouteName() {
+  const origin = currentOriginCountry();
+  const destination = currentDestinationCountry();
+  return state.international ? `${origin.name} → ${destination.name}` : origin.domestic;
+}
+
+function currentDestinationAirportName() {
+  const origin = currentOriginCountry();
+  const destination = currentDestinationCountry();
+  return state.international ? destination.origin : origin.destination;
+}
+
+function getInternationalPath() {
+  const curveOffset = (state.destinationCountryIndex - state.countryIndex) * 8;
+  return [
+    new THREE.Vector3(18, 62, 250),
+    new THREE.Vector3(20 + curveOffset, 86, 385),
+    new THREE.Vector3(55 + curveOffset, 92, 520),
+    new THREE.Vector3(82, 44, 690),
+    new THREE.Vector3(100, 0.85, 860)
+  ];
+}
+
+function getActiveRoutePath() {
+  if (state.route === "landing") return state.international ? getInternationalPath() : landingPath;
+  return runwayPath;
+}
+
+function addCityCluster(country, cityNames, baseX, baseZ, signText) {
+  const mat = makeMat(country.color, 0.62, 0.24);
+  const roofMat = makeMat(0x27313b, 0.56, 0.18);
+  cityNames.forEach((city, index) => {
+    const x = baseX + (index % 2) * 20;
+    const z = baseZ + Math.floor(index / 2) * 28;
+    const h = 5 + index * 2.4;
+    box("country-city-building", [9, h, 7], [x, h / 2, z], mat, countryScenery);
+    box("country-city-roof", [10, 0.55, 8], [x, h + 0.35, z], roofMat, countryScenery);
+    addSpriteLabel(city, country.name, [x, h + 4.2, z], 4.7, 1.45, countryScenery);
+  });
+  addSpriteLabel(country.name, signText, [baseX + 10, 15, baseZ - 18], 7.2, 2, countryScenery);
+}
+
+function updateCountryScenery() {
+  clearGroup(countryScenery);
+  const origin = currentOriginCountry();
+  const destination = currentDestinationCountry();
+  addCityCluster(origin, origin.cities, -142, -92, origin.local);
+  addCityCluster(destination, destination.cities, 172, 500, state.international ? destination.local : "国内目的地");
+  addSpriteLabel(`${origin.name}出发机场`, origin.origin, [-48, 9, -82], 8.2, 2.1, countryScenery);
+  addSpriteLabel(
+    state.international ? `${destination.name}目的机场` : `${origin.name}国内机场`,
+    currentDestinationAirportName(),
+    [126, 10, 622],
+    8.4,
+    2.1,
+    countryScenery
+  );
+  addSpriteLabel(
+    state.international ? `国际航班：${origin.name} → ${destination.name}` : origin.domestic,
+    "只能沿绿色航线飞",
+    [55, 76, 420],
+    10,
+    2.4,
+    countryScenery
+  );
 }
 
 function addGround() {
@@ -588,7 +753,7 @@ function addRouteLights(points, colorMat) {
 
 function rebuildRouteLights() {
   routeLights.clear();
-  addRouteLights(state.route === "landing" ? landingPath : runwayPath, mats.greenLight);
+  addRouteLights(getActiveRoutePath(), mats.greenLight);
 }
 
 function buildWorld() {
@@ -627,6 +792,7 @@ function buildWorld() {
 
   addSpriteLabel("从超长跑道一头出发", "滑完整条跑道才够速度", [-10, 3, -218], 8.4, 1.9);
   addSpriteLabel("远处机场跑道", "从天空飞过去降落", [100, 4, 650], 7.2, 1.9);
+  updateCountryScenery();
 }
 
 function addLog(text) {
@@ -745,6 +911,55 @@ function buildAirlineButtons() {
   updateAirlineButtons();
 }
 
+function updateCountryButtons() {
+  Array.from(countryButtons.children).forEach((button, index) => {
+    button.classList.toggle("active", index === state.countryIndex);
+  });
+  internationalBtn.classList.toggle("active", state.international);
+  internationalBtn.textContent = state.international
+    ? `国际航班：${currentOriginCountry().name} → ${currentDestinationCountry().name}`
+    : "国际航班";
+}
+
+function setDomesticCountry(index) {
+  state.countryIndex = index;
+  state.destinationCountryIndex = index;
+  state.international = false;
+  if (state.route === "landing") rebuildRouteLights();
+  updateCountryScenery();
+  updateCountryButtons();
+  routeLabel.textContent = `${currentOriginCountry().domestic}：只能在${currentOriginCountry().name}飞。`;
+  statusText.textContent = `已选择${currentOriginCountry().name}。这次是国内航班，目的机场是${currentDestinationAirportName()}。`;
+  addLog(`国家切换到${currentOriginCountry().name}，只飞本国机场。`);
+}
+
+function startInternationalFlight() {
+  const nextDestination = state.international
+    ? (state.destinationCountryIndex + 1) % countries.length
+    : (state.countryIndex + 1) % countries.length;
+  state.destinationCountryIndex = nextDestination === state.countryIndex ? (nextDestination + 1) % countries.length : nextDestination;
+  state.international = true;
+  if (state.phase === "airborne" || state.phase === "landing") state.route = "landing";
+  updateCountryScenery();
+  rebuildRouteLights();
+  updateCountryButtons();
+  routeLabel.textContent = `国际航班：${currentOriginCountry().name} → ${currentDestinationCountry().name}`;
+  statusText.textContent = `国际航班已选好。起飞后沿空中的绿色航线飞到${currentDestinationCountry().name}的${currentDestinationAirportName()}。`;
+  addLog(`国际航班开启：${currentOriginCountry().name}飞往${currentDestinationCountry().name}。`);
+}
+
+function buildCountryButtons() {
+  countries.forEach((country, index) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.textContent = country.name;
+    button.addEventListener("click", () => setDomesticCountry(index));
+    countryButtons.append(button);
+  });
+  internationalBtn.addEventListener("click", startInternationalFlight);
+  updateCountryButtons();
+}
+
 function resetGame() {
   state.phase = "takeoff";
   state.speed = 0;
@@ -765,10 +980,10 @@ function resetGame() {
   playerPlane.rotation.set(0, 0, 0);
   flightLog.innerHTML = "";
   rebuildRouteLights();
-  missionTitle.textContent = "跑道起飞准备";
-  statusText.textContent = "飞机在 3000 km 训练跑道最尾端。油门往前推，从这一头滑到另一头，速度够了才会抬头起飞。";
-  routeLabel.textContent = "绿色灯线：起飞跑道";
-  addLog("飞机在超长跑道一头，准备滑完整条跑道起飞。");
+  missionTitle.textContent = `${currentOriginCountry().name}起飞准备`;
+  statusText.textContent = `飞机在${currentOriginCountry().origin}的 3000 km 训练跑道最尾端。油门往前推，从这一头滑到另一头，速度够了才会抬头起飞。`;
+  routeLabel.textContent = `绿色灯线：起飞跑道 · ${currentRouteName()}`;
+  addLog(`飞机在${currentOriginCountry().origin}，准备滑完整条跑道起飞。`);
   updateYokeKnob();
   updateFlightSound();
 }
@@ -778,8 +993,8 @@ function followGreenLights() {
   state.phase = "takeoff";
   state.route = "takeoff";
   rebuildRouteLights();
-  routeLabel.textContent = "绿色灯线：起飞跑道";
-  statusText.textContent = "绿色灯线现在显示起飞跑道，飞机不用再从停机坪开过去。";
+  routeLabel.textContent = `绿色灯线：起飞跑道 · ${currentRouteName()}`;
+  statusText.textContent = `绿色灯线现在显示${currentOriginCountry().name}起飞跑道，飞机不用再从停机坪开过去。`;
   addLog("已显示跑道中心绿色灯线。");
 }
 
@@ -798,9 +1013,9 @@ function startLanding() {
   state.phase = "landing";
   state.route = "landing";
   rebuildRouteLights();
-  routeLabel.textContent = "绿色灯线：飞往远处机场";
-  statusText.textContent = "降落导航开启：绿色灯线会带你飞到远处的 3000 km 降落跑道，起落架 Down，速度低于 72 kt。";
-  addLog("进入降落导航，目标是远处的超长降落跑道。");
+  routeLabel.textContent = `绿色灯线：飞往${currentDestinationCountry().name}机场`;
+  statusText.textContent = `降落导航开启：绿色灯线会带你飞到${currentDestinationAirportName()}的 3000 km 降落跑道，起落架 Down，速度低于 72 kt。`;
+  addLog(`进入降落导航，目标是${currentDestinationAirportName()}。`);
 }
 
 function startAirLanding() {
@@ -824,9 +1039,9 @@ function startAirLanding() {
   playerPlane.rotation.set(0, state.heading, 0);
   rebuildRouteLights();
   missionTitle.textContent = "空中降落开局";
-  routeLabel.textContent = "空中开局：沿绿色灯线降落";
-  statusText.textContent = "你已经在天空上飞了。沿绿色灯线飞向机场，快到跑道时减速，起落架保持 Down。";
-  addLog("空中开局：飞机已经在天上，准备降落到远处机场。");
+  routeLabel.textContent = `空中开局：沿绿色灯线飞往${currentDestinationCountry().name}`;
+  statusText.textContent = `你已经在天空上飞了。沿绿色灯线飞向${currentDestinationAirportName()}，快到跑道时减速，起落架保持 Down。`;
+  addLog(`空中开局：飞机已经在天上，准备降落到${currentDestinationAirportName()}。`);
   updateYokeKnob();
   updateFlightSound();
 }
@@ -857,8 +1072,8 @@ function landSuccess() {
   state.throttle = 0;
   throttleLever.value = "0";
   missionTitle.textContent = "安全降落";
-  statusText.textContent = "飞机飞到远处的目的机场，沿降落跑道减速停下，任务成功。";
-  addLog("安全降落在另一个机场，飞机停在白线前。");
+  statusText.textContent = `飞机飞到${currentDestinationAirportName()}，沿降落跑道减速停下，任务成功。`;
+  addLog(`安全降落在${currentDestinationAirportName()}，飞机停在白线前。`);
 }
 
 function nearestDistanceToPath(points) {
@@ -910,7 +1125,13 @@ function updatePhysics(dt) {
     state.altitude += (state.speed - 88) * dt * 0.42 + Math.max(0, state.yokeY) * dt * 16;
     if (state.altitude > 8) {
       state.phase = "airborne";
-      routeLabel.textContent = "空中：可以拖动屏幕看四周，点降落导航飞往另一个机场。";
+      if (state.international) {
+        state.route = "landing";
+        rebuildRouteLights();
+        routeLabel.textContent = `国际航班：沿绿色灯线飞往${currentDestinationCountry().name}`;
+      } else {
+        routeLabel.textContent = "空中：可以拖动屏幕看四周，点降落导航飞往另一个机场。";
+      }
       missionTitle.textContent = "已经起飞";
       playTakeoffWhoosh();
       addLog("机头抬起，飞机离地飞上去了。");
@@ -944,7 +1165,7 @@ function updatePhysics(dt) {
     playerAircraftParts.gearParts.visible = state.gear < 0.62;
   }
 
-  const activePath = state.route === "landing" ? landingPath : runwayPath;
+  const activePath = getActiveRoutePath();
   const dist = nearestDistanceToPath(activePath);
   if (state.phase === "taxi" && state.speed > 48 && dist > 13) state.offRouteTime += dt;
   else state.offRouteTime = Math.max(0, state.offRouteTime - dt * 2);
@@ -1130,6 +1351,7 @@ window.addEventListener("resize", resize);
 
 buildWorld();
 buildAirlineButtons();
+buildCountryButtons();
 setupEvents();
 resize();
 resetGame();

@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>3D 航空驾驶</title>
-    <link rel="stylesheet" href="flight.css?v=cone-direction-20260825" />
+    <link rel="stylesheet" href="flight.css?v=country-routes-20260825" />
   </head>
   <body>
     <main class="flight-shell">
@@ -63,6 +63,12 @@
           <button id="resetBtn" type="button">重来</button>
         </section>
 
+        <section class="panel country-panel">
+          <p class="label">国家航班</p>
+          <div id="countryButtons" class="country-buttons"></div>
+          <button id="internationalBtn" type="button">国际航班</button>
+        </section>
+
         <section class="panel airline-panel">
           <p class="label">选择航空公司</p>
           <div id="airlineButtons" class="airline-buttons"></div>
@@ -75,7 +81,7 @@
       </aside>
     </main>
 
-    <script type="module" src="flight.js?v=cone-direction-20260825"></script>
+    <script type="module" src="flight.js?v=country-routes-20260825"></script>
     <script src="arcade-stats.js?v=visitor-table-20260728"></script>
   </body>
 </html>

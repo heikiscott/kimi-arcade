@@ -346,6 +346,37 @@ button {
   overflow: auto;
 }
 
+.country-buttons {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 10px;
+  margin-bottom: 8px;
+}
+
+.country-buttons button,
+#internationalBtn {
+  min-height: 38px;
+  border-radius: 8px;
+  color: var(--ink);
+  background: #edf2f0;
+  border: 1px solid var(--line);
+  font-weight: 950;
+  box-shadow: none;
+}
+
+.country-buttons button.active,
+#internationalBtn.active {
+  color: #fff;
+  background: var(--green);
+}
+
+#internationalBtn {
+  width: 100%;
+  color: #fff;
+  background: #2f6faa;
+}
+
 .airline-buttons button {
   min-height: 50px;
   padding: 7px;
