@@ -1321,7 +1321,10 @@ function crash(reason) {
   state.throttle = 0;
   throttleLever.value = "0";
   createExplosion(playerPlane.position.clone());
-  playerPlane.visible = false;
+  playerPlane.visible = true;
+  playerPlane.rotation.x = 0.38;
+  playerPlane.rotation.z = -0.62;
+  playerPlane.position.y = Math.max(0.85, playerPlane.position.y);
   document.body.classList.add("crashed");
   missionTitle.textContent = "飞行失败";
   statusText.textContent = reason;
