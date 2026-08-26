@@ -176,7 +176,7 @@ const countries = [
 const runwayStart = new THREE.Vector3(0, 0.62, -220);
 const playerPlaneScale = 1;
 const spaceAltitude = 500;
-const riverRescueLanding = { x: 74, z: 318, heading: 0.75 };
+const riverRescueLanding = { x: 338, z: 548, heading: 0.76 };
 
 const runwayPath = [
   new THREE.Vector3(0, 0.08, -220),
@@ -587,10 +587,10 @@ function getEmergencyWaterPath() {
   const rescuePoint = getRiverRescueLandingPoint();
   return [
     new THREE.Vector3(-260, 110, 420),
-    new THREE.Vector3(-180, 78, 365),
-    new THREE.Vector3(-70, 46, 285),
-    new THREE.Vector3(-18, 28, 298),
-    new THREE.Vector3(30, 10, 310),
+    new THREE.Vector3(-120, 88, 430),
+    new THREE.Vector3(40, 62, 475),
+    new THREE.Vector3(210, 28, 520),
+    new THREE.Vector3(300, 10, 540),
     rescuePoint
   ];
 }
@@ -1733,6 +1733,7 @@ function addEarthScenery() {
     [950, 620],
     [1350, 520]
   ], 20);
+  addRiverRescueLandingBay();
   addRiverbankRescueScene();
   addMountainRange(-1420, 340, 11, 34);
   addMountainRange(900, -520, 9, 28);
@@ -1760,6 +1761,26 @@ function addRiverRibbon(points, width) {
   }
 }
 
+function addRiverRescueLandingBay() {
+  const shallowWaterMat = new THREE.MeshBasicMaterial({ color: 0x62d8ff, transparent: true, opacity: 0.94 });
+  const waterEdgeMat = makeMat(0x8fdc87, 0.86, 0.08);
+  const sparkleMat = new THREE.MeshBasicMaterial({ color: 0xe8fbff, transparent: true, opacity: 0.74 });
+  box("shallow-blue-rescue-river-landing-zone", [190, 0.08, 112], [riverRescueLanding.x, 0.035, riverRescueLanding.z], shallowWaterMat, earthScenery);
+  box("rescue-river-grassy-bank-left", [190, 0.12, 9], [riverRescueLanding.x, 0.08, riverRescueLanding.z - 61], waterEdgeMat, earthScenery);
+  box("rescue-river-grassy-bank-right", [190, 0.12, 9], [riverRescueLanding.x, 0.08, riverRescueLanding.z + 61], waterEdgeMat, earthScenery);
+  for (let i = 0; i < 9; i++) {
+    const line = box("shallow-blue-river-wave", [22, 0.025, 0.38], [riverRescueLanding.x - 74 + i * 18, 0.11, riverRescueLanding.z - 28 + (i % 4) * 17], sparkleMat, earthScenery);
+    line.rotation.y = 0.16;
+  }
+  waterLandingSegments.push({
+    ax: riverRescueLanding.x - 95,
+    az: riverRescueLanding.z,
+    bx: riverRescueLanding.x + 95,
+    bz: riverRescueLanding.z,
+    width: 112
+  });
+}
+
 function addRiverbankRescueScene() {
   const shirtMats = [
     makeMat(0xffd75a, 0.64, 0.08),
@@ -1771,8 +1792,8 @@ function addRiverbankRescueScene() {
   const darkMat = makeMat(0x26323a, 0.66, 0.08);
   const rescueMat = makeMat(0xfff4a8, 0.58, 0.08);
   const people = [
-    [-35, 318], [-22, 326], [-8, 315], [14, 333], [34, 322],
-    [302, 560], [320, 576], [342, 566], [368, 582],
+    [258, 488], [278, 486], [304, 492], [330, 486], [356, 492], [382, 486], [410, 488],
+    [262, 608], [292, 612], [322, 606], [352, 612], [382, 606], [414, 610],
     [665, 810], [690, 828], [714, 818], [742, 836]
   ];
   people.forEach(([x, z], index) => {
@@ -1792,7 +1813,7 @@ function addRiverbankRescueScene() {
     group.rotation.y = index % 2 ? -0.35 : 0.35;
     earthScenery.add(group);
   });
-  for (const [x, z] of [[24, 306], [338, 548], [704, 795]]) {
+  for (const [x, z] of [[286, 498], [338, 548], [388, 604], [704, 795]]) {
     const buoy = new THREE.Mesh(new THREE.TorusGeometry(1.4, 0.16, 12, 32), rescueMat);
     buoy.name = "river-rescue-ring";
     buoy.position.set(x, 0.18, z);
@@ -1804,7 +1825,7 @@ function addRiverbankRescueScene() {
     lamp.position.set(x + 2.4, 1.1, z - 1.6);
     earthScenery.add(lamp);
   }
-  addSpriteLabel("河岸救援区", "有人在岸边看水上迫降", [55, 8.5, 290], 8.4, 2.1, earthScenery);
+  addSpriteLabel("河岸救援区", "浅蓝色河道，岸边有人和救援人员", [338, 8.5, 472], 9.4, 2.1, earthScenery);
 }
 
 function addMountainRange(baseX, baseZ, count, heightBase) {
