@@ -119,6 +119,16 @@ const landingPath = [
   new THREE.Vector3(100, 0.85, 860)
 ];
 
+const arrivalTaxiPath = [
+  new THREE.Vector3(100, 0.12, 860),
+  new THREE.Vector3(108, 0.12, 820),
+  new THREE.Vector3(128, 0.12, 778),
+  new THREE.Vector3(145, 0.12, 728),
+  new THREE.Vector3(142, 0.12, 680),
+  new THREE.Vector3(132, 0.12, 646),
+  new THREE.Vector3(122, 0.12, 620)
+];
+
 const arrivalGateStand = {
   x: 122,
   terminalZ: 599.3,
@@ -183,7 +193,10 @@ const state = {
   gateExtend: 0,
   planeDoorOpen: false,
   passengerFlow: false,
-  passengerTime: 0
+  passengerTime: 0,
+  arrivalTaxi: false,
+  arrivalTaxiTime: 0,
+  arrivalTaxiDuration: 60
 };
 
 const scene = new THREE.Scene();
@@ -490,6 +503,7 @@ function getEmergencyGroundPath() {
 function getActiveRoutePath() {
   if (state.route === "emergency-water") return getEmergencyWaterPath();
   if (state.route === "emergency-ground") return getEmergencyGroundPath();
+  if (state.route === "arrival-taxi") return arrivalTaxiPath;
   if (state.route === "landing") return state.international ? getInternationalPath() : landingPath;
   return runwayPath;
 }
@@ -557,6 +571,13 @@ function addGround() {
   addTaxiway([-8, 15], [0, 34]);
   addTaxiway([62, 420], [82, 500]);
   addTaxiway([82, 500], [100, 610]);
+  addTaxiway([100, 860], [108, 820]);
+  addTaxiway([108, 820], [128, 778]);
+  addTaxiway([128, 778], [145, 728]);
+  addTaxiway([145, 728], [142, 680]);
+  addTaxiway([142, 680], [132, 646]);
+  addTaxiway([132, 646], [122, 620]);
+  addDestinationCityTaxiScene();
 
   for (let i = -120; i <= 210; i += 18) {
     box("concrete-joint-x", [0.045, 0.012, 1230], [i, 0.02, 340], makeMat(0x9ea4a9), airport).receiveShadow = true;
@@ -568,6 +589,60 @@ function addGround() {
   addTerminal();
   addDestinationTerminal();
   addControlTower();
+}
+
+function addDestinationCityTaxiScene() {
+  const cityBaseMat = makeMat(0x394959, 0.78, 0.2);
+  const mallMat = makeMat(0xd6e1e8, 0.48, 0.16);
+  const shopMat = makeMat(0xf2c572, 0.58, 0.12);
+  const parkMat = makeMat(0x5bbd70, 0.9, 0.32);
+  box("arrival-city-ground", [146, 0.08, 290], [166, -0.025, 735], cityBaseMat, airport);
+  box("arrival-airport-city-boulevard", [12, 0.06, 260], [158, 0.045, 735], mats.roadDark, airport);
+  box("arrival-city-boulevard-light-line", [0.32, 0.08, 252], [158, 0.11, 735], mats.greenLight, airport);
+
+  const towers = [
+    [184, 820, 18], [202, 790, 24], [184, 760, 30], [204, 730, 22],
+    [176, 700, 35], [200, 668, 28], [168, 640, 20], [194, 610, 26],
+    [118, 792, 19], [103, 752, 27], [108, 706, 21], [112, 664, 31]
+  ];
+  towers.forEach(([x, z, h], index) => {
+    box("arrival-city-high-rise", [10, h, 10], [x, h / 2, z], mats.cityGlass, airport);
+    box("arrival-city-rooftop", [8, 0.28, 8], [x, h + 0.22, z], mats.cityLight, airport);
+    for (let floor = 3; floor < h - 2; floor += 4) {
+      box("arrival-city-window", [10.2, 0.26, 0.16], [x, floor, z - 5.08], mats.cityLight, airport);
+    }
+    if (index % 3 === 0) {
+      addSpriteLabel("目的城市高楼", currentDestinationCountry().cities[index % currentDestinationCountry().cities.length], [x, h + 4, z], 5.2, 1.5);
+    }
+  });
+
+  box("arrival-shopping-mall", [28, 6, 15], [178, 3, 865], mallMat, airport);
+  box("arrival-shopping-mall-glass", [26, 2.4, 0.18], [178, 4.1, 857.4], makeMat(0x82c9e7, 0.3, 0.08), airport);
+  addSpriteLabel("城市商场", "Mall", [178, 9.2, 856], 5.5, 1.7);
+
+  for (let i = 0; i < 5; i++) {
+    const x = 196 + i * 8;
+    box("arrival-street-shop", [6.4, 3.2, 7], [x, 1.6, 844], shopMat, airport);
+    box("arrival-shop-sign", [5.6, 0.5, 0.18], [x, 3.4, 840.4], mats.cityLight, airport);
+  }
+  addSpriteLabel("店铺街", "Shops", [210, 6, 838], 5, 1.5);
+
+  box("arrival-amusement-park-pad", [38, 0.08, 34], [84, 0.03, 710], parkMat, airport);
+  const wheel = new THREE.Group();
+  wheel.name = "arrival-amusement-wheel";
+  const rim = new THREE.Mesh(new THREE.TorusGeometry(7, 0.18, 12, 42), makeMat(0xffd95c, 0.42, 0.12));
+  rim.rotation.y = Math.PI / 2;
+  rim.position.set(0, 8, 0);
+  wheel.add(rim);
+  box("wheel-leg-left", [0.3, 8, 0.3], [-3.4, 4, 0], mats.steel, wheel).rotation.z = -0.34;
+  box("wheel-leg-right", [0.3, 8, 0.3], [3.4, 4, 0], mats.steel, wheel).rotation.z = 0.34;
+  for (let i = 0; i < 8; i++) {
+    const angle = (i / 8) * Math.PI * 2;
+    box("wheel-cabin", [1.1, 0.7, 0.7], [0, 8 + Math.sin(angle) * 6.6, Math.cos(angle) * 6.6], makeMat(0xff8f5c, 0.56, 0.08), wheel);
+  }
+  wheel.position.set(84, 0.05, 710);
+  airport.add(wheel);
+  addSpriteLabel("城市游乐园", "没有交叉路口，只在机场外城市里", [84, 18, 692], 8.8, 2);
 }
 
 function addRunway(label, pos, size) {
@@ -652,7 +727,7 @@ function addArrivalJetBridge() {
   group.name = "moving-arrival-jetbridge";
   group.position.set(arrivalGateStand.x, 0, arrivalGateStand.bridgeStartZ);
 
-  const bridgeMat = makeMat(0xdde6ea, 0.46, 0.2);
+  const bridgeMat = makeMat(0x1f2830, 0.58, 0.18);
   const glassMat = makeMat(0x7db8d5, 0.25, 0.08);
   const sealMat = makeMat(0x222a30, 0.64, 0.12);
 
@@ -761,6 +836,8 @@ function resetGateDocking() {
   state.planeDoorOpen = false;
   state.passengerFlow = false;
   state.passengerTime = 0;
+  state.arrivalTaxi = false;
+  state.arrivalTaxiTime = 0;
   clearPassengers();
   updateJetBridgeVisual();
   updatePlaneDoorVisual();
@@ -777,6 +854,62 @@ function movePlaneToArrivalGate() {
   if (playerAircraftParts.gearParts) playerAircraftParts.gearParts.visible = true;
   throttleLever.value = "0";
   gearLever.value = "0";
+}
+
+function startArrivalTaxi() {
+  state.phase = "arrival-taxi";
+  state.route = "arrival-taxi";
+  state.arrivalTaxi = true;
+  state.arrivalTaxiTime = 0;
+  state.arrivalTaxiDuration = 60;
+  state.speed = 42;
+  state.altitude = 0;
+  state.throttle = 0;
+  state.gear = 0;
+  state.heading = 0;
+  state.gateDocking = false;
+  state.gateDocked = false;
+  state.gateExtend = 0;
+  state.planeDoorOpen = false;
+  rebuildRouteLights();
+  updateJetBridgeVisual();
+  updatePlaneDoorVisual();
+  missionTitle.textContent = "到达机场滑行";
+  routeLabel.textContent = `到达滑行：${currentDestinationAirportName()}降落跑道 → 登机口`;
+  statusText.textContent = "飞机已经降落到目的机场跑道。现在会沿着地面灯线快速滑行，大约 60 秒经过目的城市高楼、商场、店铺和游乐园，再到登机口对接。";
+  addLog("飞机落在目的机场降落跑道，开始到达滑行，不会立刻开门。");
+}
+
+function updateArrivalTaxi(dt) {
+  if (!state.arrivalTaxi) return;
+  state.arrivalTaxiTime += dt;
+  const progress = THREE.MathUtils.clamp(state.arrivalTaxiTime / state.arrivalTaxiDuration, 0, 1);
+  const curve = new THREE.CatmullRomCurve3(arrivalTaxiPath);
+  const point = curve.getPoint(progress);
+  const nextPoint = curve.getPoint(Math.min(1, progress + 0.01));
+  playerPlane.position.set(point.x, 0.62, point.z);
+  state.altitude = 0;
+  state.speed = progress < 0.92 ? 46 + Math.sin(state.arrivalTaxiTime * 1.8) * 5 : THREE.MathUtils.lerp(46, 0, (progress - 0.92) / 0.08);
+  state.heading = Math.atan2(nextPoint.x - point.x, nextPoint.z - point.z);
+  playerPlane.rotation.set(0, state.heading, Math.sin(state.arrivalTaxiTime * 2.6) * 0.018);
+  if (playerAircraftParts.gearParts) playerAircraftParts.gearParts.visible = true;
+  throttleLever.value = "0";
+  gearLever.value = "0";
+
+  const remaining = Math.max(0, Math.ceil(state.arrivalTaxiDuration - state.arrivalTaxiTime));
+  routeLabel.textContent = `到达滑行：经过目的城市，${remaining} 秒后到登机口`;
+  if (remaining === 45) {
+    statusText.textContent = "飞机正在穿过目的城市机场区：两边是高楼、店铺街和商场。";
+  } else if (remaining === 25) {
+    statusText.textContent = "前面经过城市游乐园，继续沿绿色灯线滑向到达登机口。";
+  } else if (remaining === 8) {
+    statusText.textContent = "快到登机口了，飞机会慢慢停下，机场工作人员准备移动登机桥。";
+  }
+
+  if (progress >= 1) {
+    state.arrivalTaxi = false;
+    startGateDocking();
+  }
 }
 
 function startGateDocking() {
@@ -2251,9 +2384,9 @@ function landSuccess() {
   state.throttle = 0;
   throttleLever.value = "0";
   missionTitle.textContent = "安全降落";
-  statusText.textContent = `飞机飞到${currentDestinationAirportName()}，沿降落跑道减速停下，任务成功。`;
-  addLog(`安全降落在${currentDestinationAirportName()}，飞机停在白线前。`);
-  startGateDocking();
+  statusText.textContent = `飞机飞到${currentDestinationAirportName()}，沿降落跑道减速停下，接下来要穿过目的城市机场区去登机口。`;
+  addLog(`安全降落在${currentDestinationAirportName()}，飞机停在目的机场降落跑道。`);
+  startArrivalTaxi();
 }
 
 function startWaterLandingSequence() {
@@ -2513,6 +2646,7 @@ function tick() {
     updateAutopilot();
     updatePhysics(dt);
   }
+  updateArrivalTaxi(dt);
   updateGateDocking(dt);
   updateExplosion(dt);
   updateEngineFire(dt);
