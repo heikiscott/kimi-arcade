@@ -134,7 +134,9 @@ const arrivalGateStand = {
   terminalZ: 599.3,
   planeZ: 620,
   bridgeStartZ: 601.5,
-  bridgeY: 2.1
+  bridgeY: 1.58,
+  doorOffsetX: 0.9,
+  doorOffsetZ: 4.12
 };
 
 const flightLevels = [
@@ -457,6 +459,10 @@ function currentRouteName() {
   return state.international ? `${origin.name} → ${destination.name}` : origin.domestic;
 }
 
+function currentAirportRouteName() {
+  return `${currentOriginCountry().origin} → ${currentDestinationAirportName()}`;
+}
+
 function currentDestinationAirportName() {
   const origin = currentOriginCountry();
   const destination = currentDestinationCountry();
@@ -540,8 +546,8 @@ function updateCountryScenery() {
     countryScenery
   );
   addSpriteLabel(
-    state.international ? `国际航班：${origin.name} → ${destination.name}` : origin.domestic,
-    "只能沿绿色航线飞",
+    currentAirportRouteName(),
+    "机场到机场，不是国家分界线",
     [55, 76, 420],
     10,
     2.4,
@@ -725,33 +731,47 @@ function addDestinationTerminal() {
 function addArrivalJetBridge() {
   const group = new THREE.Group();
   group.name = "moving-arrival-jetbridge";
-  group.position.set(arrivalGateStand.x, 0, arrivalGateStand.bridgeStartZ);
+  group.position.set(arrivalGateStand.x + arrivalGateStand.doorOffsetX, 0, arrivalGateStand.bridgeStartZ);
 
   const bridgeMat = makeMat(0x1f2830, 0.58, 0.18);
   const glassMat = makeMat(0x7db8d5, 0.25, 0.08);
   const sealMat = makeMat(0x222a30, 0.64, 0.12);
 
-  box("jetbridge-fixed-corridor", [2.2, 1.9, 5.2], [0, arrivalGateStand.bridgeY, 1.8], bridgeMat, group);
-  box("jetbridge-fixed-window", [2.24, 0.55, 2.8], [0, arrivalGateStand.bridgeY + 0.18, 1.8], glassMat, group);
-  const telescope = box("jetbridge-moving-corridor", [1.85, 1.55, 7.4], [0, arrivalGateStand.bridgeY, 6.4], bridgeMat, group);
-  const head = box("jetbridge-plane-head", [2.65, 2.05, 2.3], [0, arrivalGateStand.bridgeY, 10.9], bridgeMat, group);
-  const seal = box("jetbridge-black-door-seal", [2.9, 2.25, 0.42], [0, arrivalGateStand.bridgeY, 12.2], sealMat, group);
-  box("jetbridge-roof-light", [1.5, 0.12, 8.8], [0, arrivalGateStand.bridgeY + 0.87, 6.8], mats.runwayYellowLight, group);
-  addSpriteLabel("G1", "移动登机桥", [arrivalGateStand.x, 5.7, arrivalGateStand.bridgeStartZ + 8], 4.8, 1.6);
+  box("jetbridge-fixed-corridor", [1.45, 1.35, 5.2], [0, arrivalGateStand.bridgeY, 1.8], bridgeMat, group);
+  box("jetbridge-fixed-window", [1.48, 0.42, 2.8], [0, arrivalGateStand.bridgeY + 0.13, 1.8], glassMat, group);
+  const telescope = box("jetbridge-moving-corridor", [1.28, 1.18, 7.4], [0, arrivalGateStand.bridgeY, 6.4], bridgeMat, group);
+  const head = box("jetbridge-plane-head", [1.55, 1.42, 1.8], [0, arrivalGateStand.bridgeY, 10.9], bridgeMat, group);
+  const seal = box("jetbridge-black-door-seal", [1.08, 1.16, 0.46], [0, arrivalGateStand.bridgeY, 12.2], sealMat, group);
+  const roofLight = box("jetbridge-roof-light", [1.0, 0.1, 8.8], [0, arrivalGateStand.bridgeY + 0.66, 6.8], mats.runwayYellowLight, group);
+  const doorTarget = box("jetbridge-door-target-frame", [1.14, 1.18, 0.08], [0, arrivalGateStand.bridgeY, arrivalGateStand.planeZ + arrivalGateStand.doorOffsetZ - arrivalGateStand.bridgeStartZ], mats.greenLight, group);
+  doorTarget.visible = false;
+  addSpriteLabel("G1", "移动登机桥对准机门", [arrivalGateStand.x + arrivalGateStand.doorOffsetX, 5.7, arrivalGateStand.bridgeStartZ + 8], 6.2, 1.6);
 
   airport.add(group);
-  jetBridgeParts = { group, telescope, head, seal };
+  jetBridgeParts = { group, telescope, head, seal, roofLight, doorTarget };
   updateJetBridgeVisual();
 }
 
 function updateJetBridgeVisual() {
   if (!jetBridgeParts.group) return;
   const extend = THREE.MathUtils.clamp(state.gateExtend, 0, 1);
-  const corridorLength = 7.4 + extend * 14.8;
+  const doorLocalZ = arrivalGateStand.planeZ + arrivalGateStand.doorOffsetZ - arrivalGateStand.bridgeStartZ;
+  const sealZ = THREE.MathUtils.lerp(12.2, doorLocalZ, extend);
+  const headZ = sealZ - 1.16;
+  const corridorStartZ = 4.1;
+  const corridorLength = Math.max(3.8, headZ - corridorStartZ);
   jetBridgeParts.telescope.scale.z = corridorLength / 7.4;
-  jetBridgeParts.telescope.position.z = 4.5 + corridorLength / 2;
-  jetBridgeParts.head.position.z = 5.5 + corridorLength;
-  jetBridgeParts.seal.position.z = 6.85 + corridorLength;
+  jetBridgeParts.telescope.position.z = corridorStartZ + corridorLength / 2;
+  jetBridgeParts.head.position.z = headZ;
+  jetBridgeParts.seal.position.z = sealZ;
+  if (jetBridgeParts.roofLight) {
+    jetBridgeParts.roofLight.scale.z = corridorLength / 8.8;
+    jetBridgeParts.roofLight.position.z = corridorStartZ + corridorLength / 2;
+  }
+  if (jetBridgeParts.doorTarget) {
+    jetBridgeParts.doorTarget.visible = extend > 0.97;
+    jetBridgeParts.doorTarget.position.z = doorLocalZ;
+  }
   jetBridgeParts.group.visible = true;
 }
 
@@ -791,8 +811,8 @@ function createDisembarkPassengers() {
 
 function updatePassengers() {
   if (!state.passengerFlow) return;
-  const startX = arrivalGateStand.x + 0.88;
-  const startZ = arrivalGateStand.planeZ + 4.15;
+  const startX = arrivalGateStand.x + arrivalGateStand.doorOffsetX;
+  const startZ = arrivalGateStand.planeZ + arrivalGateStand.doorOffsetZ;
   const terminalZ = arrivalGateStand.bridgeStartZ + 2.2;
   disembarkPassengers.children.forEach((person) => {
     const offset = person.userData.index * 0.48;
@@ -1590,7 +1610,7 @@ function updateCountryButtons() {
   });
   internationalBtn.classList.toggle("active", state.international);
   internationalBtn.textContent = state.international
-    ? `国际航班：${currentOriginCountry().name} → ${currentDestinationCountry().name}`
+    ? `国际航班：${currentOriginCountry().origin} → ${currentDestinationAirportName()}`
     : "国际航班";
 }
 
@@ -1616,9 +1636,9 @@ function startInternationalFlight() {
   updateCountryScenery();
   rebuildRouteLights();
   updateCountryButtons();
-  routeLabel.textContent = `国际航班：${currentOriginCountry().name} → ${currentDestinationCountry().name}`;
-  statusText.textContent = `国际航班已选好。起飞后沿空中的绿色航线飞到${currentDestinationCountry().name}的${currentDestinationAirportName()}。`;
-  addLog(`国际航班开启：${currentOriginCountry().name}飞往${currentDestinationCountry().name}。`);
+  routeLabel.textContent = `国际航班：${currentAirportRouteName()}`;
+  statusText.textContent = `国际航班已选好。起飞后沿空中的绿色航线，从${currentOriginCountry().origin}飞到${currentDestinationAirportName()}的降落跑道。`;
+  addLog(`国际航班开启：从${currentOriginCountry().origin}飞往${currentDestinationAirportName()}。`);
 }
 
 function buildCountryButtons() {
@@ -1671,13 +1691,13 @@ function applyFlightLevel(index) {
   updateCountryScenery();
   resetGame();
   missionTitle.textContent = level.title;
-  routeLabel.textContent = `${level.timeMode === "night" ? "夜航" : level.timeMode === "dusk" ? "傍晚航班" : "白天航班"} · ${currentRouteName()} · 难度 ${level.difficulty}/8`;
+  routeLabel.textContent = `${level.timeMode === "night" ? "夜航" : level.timeMode === "dusk" ? "傍晚航班" : "白天航班"} · ${currentAirportRouteName()} · 难度 ${level.difficulty}/8`;
   statusText.textContent = level.description;
   if (level.start === "air") {
     startAirLanding();
     missionTitle.textContent = level.title;
-    routeLabel.textContent = `${level.timeMode === "night" ? "夜航" : level.timeMode === "dusk" ? "傍晚航班" : "白天航班"} · 沿绿色灯线降落 · 难度 ${level.difficulty}/8`;
-    statusText.textContent = `${level.description} 这一关从天空开始，飞机会沿目的机场方向飞。`;
+    routeLabel.textContent = `${level.timeMode === "night" ? "夜航" : level.timeMode === "dusk" ? "傍晚航班" : "白天航班"} · 飞往目的机场降落跑道 · 难度 ${level.difficulty}/8`;
+    statusText.textContent = `${level.description} 这一关从天空开始，飞机会沿绿色灯线飞到目的机场降落跑道，不是在国家分界线上落地。`;
   } else if (level.start === "emergency") {
     startEngineFireEmergency();
     missionTitle.textContent = level.title;
@@ -1767,8 +1787,8 @@ function toggleAutopilot() {
     state.route = "landing";
     rebuildRouteLights();
   }
-  statusText.textContent = "无人驾驶开启：飞机会自动沿绿色灯线飞，经过城市上空，再飞到目的机场。";
-  routeLabel.textContent = `无人驾驶：${currentRouteName()}`;
+  statusText.textContent = "无人驾驶开启：飞机会自动沿绿色灯线飞，经过城市上空，再飞到目的机场降落跑道。";
+  routeLabel.textContent = `无人驾驶：${currentAirportRouteName()}`;
   addLog("无人驾驶开启，自动跟随绿色航线。");
 }
 
@@ -1893,7 +1913,7 @@ function resetGame() {
   rebuildRouteLights();
   missionTitle.textContent = `${currentOriginCountry().name}起飞准备`;
   statusText.textContent = `飞机在${currentOriginCountry().origin}的 3000 km 训练跑道最尾端。油门往前推，从这一头滑到另一头，速度够了才会抬头起飞。`;
-  routeLabel.textContent = `绿色灯线：起飞跑道 · ${currentRouteName()}`;
+  routeLabel.textContent = `绿色灯线：${currentOriginCountry().origin}起飞跑道 → ${currentDestinationAirportName()}降落跑道`;
   addLog(`飞机在${currentOriginCountry().origin}，准备滑完整条跑道起飞。`);
   updateYokeKnob();
   updateFlightSound();
@@ -1907,7 +1927,7 @@ function followGreenLights() {
   rebuildRouteLights();
   state.autoTakeoffOnly = true;
   setAutopilot(true);
-  routeLabel.textContent = `绿色灯线：起飞跑道 · ${currentRouteName()}`;
+  routeLabel.textContent = `绿色灯线：${currentOriginCountry().origin}起飞跑道 → ${currentDestinationAirportName()}降落跑道`;
   statusText.textContent = `绿色灯线现在显示${currentOriginCountry().name}起飞跑道，无人驾驶会沿灯线滑行到足够长的位置再起飞。`;
   addLog("已显示跑道中心绿色灯线，并开启自动滑行。");
 }
@@ -1930,7 +1950,7 @@ function startLanding() {
   state.phase = "landing";
   state.route = "landing";
   rebuildRouteLights();
-  routeLabel.textContent = `绿色灯线：飞往${currentDestinationCountry().name}机场`;
+  routeLabel.textContent = `绿色灯线：飞往${currentDestinationAirportName()}降落跑道`;
   statusText.textContent = `降落导航开启：绿色灯线会带你飞到${currentDestinationAirportName()}的 3000 km 降落跑道，起落架 Down，速度低于 72 kt。`;
   addLog(`进入降落导航，目标是${currentDestinationAirportName()}。`);
 }
@@ -1958,7 +1978,7 @@ function startAirLanding() {
   playerPlane.rotation.set(0, state.heading, 0);
   rebuildRouteLights();
   missionTitle.textContent = "空中降落开局";
-  routeLabel.textContent = `空中开局：沿绿色灯线飞往${currentDestinationCountry().name}`;
+  routeLabel.textContent = `空中开局：沿绿色灯线飞往${currentDestinationAirportName()}降落跑道`;
   statusText.textContent = `你已经在天空上飞了。沿绿色灯线飞向${currentDestinationAirportName()}，快到跑道时减速，起落架保持 Down。`;
   addLog(`空中开局：飞机已经在天上，准备降落到${currentDestinationAirportName()}。`);
   updateYokeKnob();
@@ -2494,7 +2514,7 @@ function updatePhysics(dt) {
       if (state.international) {
         state.route = "landing";
         rebuildRouteLights();
-        routeLabel.textContent = `国际航班：沿绿色灯线飞往${currentDestinationCountry().name}`;
+        routeLabel.textContent = `国际航班：沿绿色灯线飞往${currentDestinationAirportName()}降落跑道`;
       } else {
         routeLabel.textContent = "空中：可以拖动屏幕看四周，点降落导航飞往另一个机场。";
       }
@@ -2504,7 +2524,7 @@ function updatePhysics(dt) {
       if (state.autoTakeoffOnly) {
         state.autoTakeoffOnly = false;
         setAutopilot(false);
-        routeLabel.textContent = "自由飞行：拖动屏幕看山脉、河流、城市夜景，继续拉升可以到太空边缘。";
+        routeLabel.textContent = `自由飞行：外面是城市和地球场景，降落导航会去${currentDestinationAirportName()}跑道。`;
         statusText.textContent = "已经自动起飞，现在交给你控制。可以飞出机场外面，看地球上的山脉、河流、高楼和夜景，也可以一直爬升到太空边缘。";
         addLog("自动起飞完成，玩家接管自由飞行。");
       }
