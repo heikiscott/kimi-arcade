@@ -547,9 +547,9 @@ function updateCountryScenery() {
   );
   addSpriteLabel(
     currentAirportRouteName(),
-    "机场到机场，不是国家分界线",
+    "左机场起飞，飞过中间城市，再到右边机场降落",
     [55, 76, 420],
-    10,
+    11.2,
     2.4,
     countryScenery
   );
@@ -568,6 +568,7 @@ function addGround() {
   box("departure-grass", [360, 0.08, 42], [45, -0.03, -292], mats.grass, airport);
   box("middle-grass", [54, 0.08, 560], [146, -0.03, 250], mats.grass, airport);
   box("arrival-grass", [360, 0.08, 42], [45, -0.03, 975], mats.grass, airport);
+  addAirportCityAirportLayout();
   addRunway("起飞机场 · 3000 km 起飞跑道 18", [0, 0.02, 0], [16, 0.05, 460]);
   addRunway("目的机场 · 3000 km 降落跑道 27", [100, 0.03, 650], [16, 0.05, 520]);
   addTaxiway([-44, -46], [-44, -22]);
@@ -595,6 +596,78 @@ function addGround() {
   addTerminal();
   addDestinationTerminal();
   addControlTower();
+}
+
+function addAirportCityAirportLayout() {
+  const departureMat = makeMat(0xa7b2ba, 0.78, 0.34);
+  const cityMat = makeMat(0x2e4251, 0.82, 0.16);
+  const destinationMat = makeMat(0xc4ccd1, 0.74, 0.34);
+  const dividerMat = makeMat(0x0f151b, 0.6, 0.22);
+
+  box("layout-left-departure-airport-zone", [300, 0.06, 490], [0, 0.015, 0], departureMat, airport);
+  box("layout-middle-city-zone", [330, 0.07, 280], [55, 0.025, 390], cityMat, airport);
+  box("layout-right-arrival-airport-zone", [300, 0.06, 500], [105, 0.015, 735], destinationMat, airport);
+
+  addLayoutDivider("机场 | 城市", 245, dividerMat);
+  addLayoutDivider("城市 | 机场", 545, dividerMat);
+
+  box("left-airport-label-pad", [58, 0.12, 12], [-84, 0.12, -196], mats.dark, airport);
+  box("middle-city-label-pad", [74, 0.12, 12], [30, 0.12, 318], mats.dark, airport);
+  box("right-airport-label-pad", [62, 0.12, 12], [145, 0.12, 905], mats.dark, airport);
+  addSpriteLabel("左边：出发机场", "从这里滑行、加速、起飞", [-84, 9, -196], 8.8, 2);
+  addSpriteLabel("中间：城市", "飞过高楼、商场、店铺和游乐园", [30, 32, 318], 9.8, 2.1);
+  addSpriteLabel("右边：目的机场", "降落后滑行到登机桥", [145, 9, 905], 8.8, 2);
+
+  addMiddleCityCorridor();
+}
+
+function addLayoutDivider(label, z, dividerMat) {
+  box("airport-city-black-divider", [340, 0.16, 3.2], [45, 0.16, z], dividerMat, airport);
+  box("airport-city-yellow-divider", [340, 0.08, 0.48], [45, 0.28, z - 2.3], mats.runwayYellowLight, airport);
+  box("airport-city-yellow-divider", [340, 0.08, 0.48], [45, 0.28, z + 2.3], mats.runwayYellowLight, airport);
+  addSpriteLabel(label, "穿过分界线继续飞，不在这里突然切换国家", [45, 7, z], 8.8, 1.8);
+}
+
+function addMiddleCityCorridor() {
+  const plazaMat = makeMat(0x4b5661, 0.78, 0.18);
+  const roadMat = mats.roadDark;
+  box("middle-city-plaza", [245, 0.08, 210], [50, 0.08, 390], plazaMat, airport);
+  box("middle-city-main-road", [14, 0.09, 245], [48, 0.16, 390], roadMat, airport);
+  box("middle-city-cross-road", [218, 0.09, 12], [50, 0.17, 390], roadMat, airport);
+  box("middle-city-green-route-line", [0.42, 0.11, 236], [48, 0.25, 390], mats.greenLight, airport);
+
+  const towers = [
+    [-70, 300, 17], [-43, 338, 23], [-76, 386, 28], [-42, 438, 21],
+    [-10, 292, 30], [18, 338, 24], [14, 428, 35], [82, 306, 26],
+    [108, 352, 32], [92, 440, 24], [136, 484, 29], [160, 374, 21]
+  ];
+  towers.forEach(([x, z, h], index) => {
+    const tower = box("middle-city-high-rise", [11, h, 11], [x, h / 2, z], mats.cityGlass, airport);
+    tower.userData.scenicOnly = true;
+    box("middle-city-rooftop-light", [8.5, 0.28, 8.5], [x, h + 0.22, z], mats.cityLight, airport);
+    for (let floor = 4; floor < h - 2; floor += 4) {
+      box("middle-city-window-front", [9.8, 0.26, 0.16], [x, floor, z - 5.58], mats.cityLight, airport);
+      box("middle-city-window-side", [0.16, 0.26, 9.8], [x + 5.58, floor, z], mats.cityLight, airport);
+    }
+    if (index === 5) addSpriteLabel("大城市高楼", "机场之间会经过这里", [x, h + 5, z], 6.2, 1.6);
+  });
+
+  box("middle-city-mall", [32, 6, 18], [132, 3, 320], makeMat(0xe1edf2, 0.48, 0.14), airport);
+  box("middle-city-mall-glass", [30, 2.4, 0.18], [132, 4.1, 310.9], makeMat(0x8bd4ee, 0.3, 0.06), airport);
+  addSpriteLabel("商场", "Mall", [132, 10, 311], 5, 1.5);
+
+  box("middle-city-amusement-pad", [38, 0.1, 34], [-94, 0.16, 472], makeMat(0x62b873, 0.88, 0.2), airport);
+  const wheel = new THREE.Group();
+  wheel.name = "middle-city-amusement-wheel";
+  const rim = new THREE.Mesh(new THREE.TorusGeometry(6.6, 0.18, 12, 42), mats.runwayYellowLight);
+  rim.rotation.y = Math.PI / 2;
+  rim.position.set(0, 7.5, 0);
+  wheel.add(rim);
+  box("middle-wheel-leg-left", [0.3, 7.8, 0.3], [-3.1, 3.8, 0], mats.steel, wheel).rotation.z = -0.34;
+  box("middle-wheel-leg-right", [0.3, 7.8, 0.3], [3.1, 3.8, 0], mats.steel, wheel).rotation.z = 0.34;
+  wheel.position.set(-94, 0.16, 472);
+  airport.add(wheel);
+  addSpriteLabel("游乐园", "在城市里，不和机场混在一起", [-94, 16, 456], 7, 1.8);
 }
 
 function addDestinationCityTaxiScene() {
@@ -1697,7 +1770,7 @@ function applyFlightLevel(index) {
     startAirLanding();
     missionTitle.textContent = level.title;
     routeLabel.textContent = `${level.timeMode === "night" ? "夜航" : level.timeMode === "dusk" ? "傍晚航班" : "白天航班"} · 飞往目的机场降落跑道 · 难度 ${level.difficulty}/8`;
-    statusText.textContent = `${level.description} 这一关从天空开始，飞机会沿绿色灯线飞到目的机场降落跑道，不是在国家分界线上落地。`;
+    statusText.textContent = `${level.description} 这一关从天空开始，飞机会沿绿色灯线飞过中间城市，再到右边目的机场降落跑道。`;
   } else if (level.start === "emergency") {
     startEngineFireEmergency();
     missionTitle.textContent = level.title;
@@ -1787,7 +1860,7 @@ function toggleAutopilot() {
     state.route = "landing";
     rebuildRouteLights();
   }
-  statusText.textContent = "无人驾驶开启：飞机会自动沿绿色灯线飞，经过城市上空，再飞到目的机场降落跑道。";
+  statusText.textContent = "无人驾驶开启：飞机会自动沿绿色灯线飞，从左边机场出发，经过中间城市上空，再飞到右边目的机场降落跑道。";
   routeLabel.textContent = `无人驾驶：${currentAirportRouteName()}`;
   addLog("无人驾驶开启，自动跟随绿色航线。");
 }
@@ -1912,7 +1985,7 @@ function resetGame() {
   flightLog.innerHTML = "";
   rebuildRouteLights();
   missionTitle.textContent = `${currentOriginCountry().name}起飞准备`;
-  statusText.textContent = `飞机在${currentOriginCountry().origin}的 3000 km 训练跑道最尾端。油门往前推，从这一头滑到另一头，速度够了才会抬头起飞。`;
+  statusText.textContent = `飞机在左边${currentOriginCountry().origin}的 3000 km 训练跑道最尾端。油门往前推，从这一头滑到另一头，速度够了会抬头起飞；飞过中间城市后，到右边${currentDestinationAirportName()}降落。`;
   routeLabel.textContent = `绿色灯线：${currentOriginCountry().origin}起飞跑道 → ${currentDestinationAirportName()}降落跑道`;
   addLog(`飞机在${currentOriginCountry().origin}，准备滑完整条跑道起飞。`);
   updateYokeKnob();
@@ -1928,7 +2001,7 @@ function followGreenLights() {
   state.autoTakeoffOnly = true;
   setAutopilot(true);
   routeLabel.textContent = `绿色灯线：${currentOriginCountry().origin}起飞跑道 → ${currentDestinationAirportName()}降落跑道`;
-  statusText.textContent = `绿色灯线现在显示${currentOriginCountry().name}起飞跑道，无人驾驶会沿灯线滑行到足够长的位置再起飞。`;
+  statusText.textContent = `绿色灯线现在显示左边${currentOriginCountry().origin}起飞跑道，无人驾驶会沿灯线滑行到足够长的位置再起飞，然后穿过中间城市去右边机场。`;
   addLog("已显示跑道中心绿色灯线，并开启自动滑行。");
 }
 
