@@ -160,7 +160,10 @@ const state = {
   engineFire: false,
   engineOff: false,
   glideTimeLeft: 0,
-  emergencySurface: ""
+  emergencySurface: "",
+  waterLandingTime: 0,
+  waterLandingDuration: 0,
+  waterLandingHeading: 0
 };
 
 const scene = new THREE.Scene();
@@ -184,7 +187,8 @@ const spaceScenery = new THREE.Group();
 const explosionGroup = new THREE.Group();
 const engineFireGroup = new THREE.Group();
 const twinTowerTest = new THREE.Group();
-scene.add(world, earthScenery, airport, parked, routeLights, countryScenery, spaceScenery, twinTowerTest, explosionGroup, engineFireGroup);
+const waterSplashGroup = new THREE.Group();
+scene.add(world, earthScenery, airport, parked, routeLights, countryScenery, spaceScenery, twinTowerTest, explosionGroup, engineFireGroup, waterSplashGroup);
 
 const mats = {
   concrete: makeMat(0xb8bcc0, 0.72, 0.42),
@@ -1103,12 +1107,38 @@ function playTakeoffWhoosh() {
   whoosh.stop(now + 0.6);
 }
 
+function playWaterLandingSplashSound() {
+  if (!soundEnabled || !soundReady || !audioCtx) return;
+  const now = audioCtx.currentTime;
+  const splashNoise = audioCtx.createBufferSource();
+  const filter = audioCtx.createBiquadFilter();
+  const gain = audioCtx.createGain();
+  splashNoise.buffer = buildNoiseBuffer(audioCtx);
+  filter.type = "lowpass";
+  filter.frequency.setValueAtTime(1600, now);
+  filter.frequency.exponentialRampToValueAtTime(420, now + 1.35);
+  gain.gain.setValueAtTime(0.001, now);
+  gain.gain.exponentialRampToValueAtTime(0.38, now + 0.08);
+  gain.gain.exponentialRampToValueAtTime(0.035, now + 1.1);
+  gain.gain.exponentialRampToValueAtTime(0.001, now + 1.65);
+  splashNoise.connect(filter).connect(gain).connect(audioCtx.destination);
+  splashNoise.start(now);
+  splashNoise.stop(now + 1.8);
+}
+
 function updateFlightSound() {
   if (!soundReady || !audioCtx || !engineGain || !noiseGain) return;
   const now = audioCtx.currentTime;
   if (!soundEnabled || state.crashed || state.landed) {
     engineGain.gain.setTargetAtTime(0, now, 0.08);
     noiseGain.gain.setTargetAtTime(0, now, 0.08);
+    return;
+  }
+  if (state.phase === "water-skimming") {
+    const speedPower = THREE.MathUtils.clamp(state.speed / 90, 0, 1);
+    engineGain.gain.setTargetAtTime(0.01, now, 0.08);
+    noiseFilter.frequency.setTargetAtTime(420 + speedPower * 900, now, 0.06);
+    noiseGain.gain.setTargetAtTime(0.16 + speedPower * 0.18, now, 0.08);
     return;
   }
   const throttlePower = state.engineOff ? 0 : Math.max(0, state.throttle);
@@ -1380,6 +1410,8 @@ function resetGame() {
   state.engineOff = false;
   state.glideTimeLeft = 0;
   state.emergencySurface = "";
+  state.waterLandingTime = 0;
+  state.waterLandingDuration = 0;
   setAutopilot(false);
   throttleLever.value = "0";
   gearLever.value = "0";
@@ -1387,6 +1419,7 @@ function resetGame() {
   clearTwinTowerScene();
   clearExplosion();
   clearEngineFire();
+  clearWaterSplash();
   playerPlane.visible = true;
   playerPlane.position.copy(runwayStart);
   playerPlane.rotation.set(0, 0, 0);
@@ -1485,6 +1518,8 @@ function startEngineFireEmergency() {
   state.engineOff = false;
   state.glideTimeLeft = 600;
   state.emergencySurface = "";
+  state.waterLandingTime = 0;
+  state.waterLandingDuration = 0;
   throttleLever.value = "28";
   gearLever.value = "0";
   const start = new THREE.Vector3(-260, 0.62 + state.altitude * 0.22, 420);
@@ -1748,6 +1783,73 @@ function updateEngineFire(dt) {
   });
 }
 
+function clearWaterSplash() {
+  while (waterSplashGroup.children.length) {
+    const child = waterSplashGroup.children.pop();
+    child.geometry?.dispose?.();
+    child.material?.dispose?.();
+  }
+  waterSplashGroup.visible = false;
+}
+
+function createWaterSplash() {
+  clearWaterSplash();
+  const foamMat = new THREE.MeshStandardMaterial({
+    color: 0xe9fbff,
+    emissive: 0x8ddfff,
+    emissiveIntensity: 0.55,
+    roughness: 0.38,
+    transparent: true,
+    opacity: 0.82
+  });
+  const wakeMat = new THREE.MeshStandardMaterial({
+    color: 0xb9efff,
+    emissive: 0x3ba2d8,
+    emissiveIntensity: 0.5,
+    roughness: 0.45,
+    transparent: true,
+    opacity: 0.62
+  });
+  for (let i = 0; i < 30; i++) {
+    const side = i % 2 === 0 ? -1 : 1;
+    const drop = new THREE.Mesh(new THREE.SphereGeometry(0.12 + Math.random() * 0.24, 10, 10), i % 3 === 0 ? wakeMat.clone() : foamMat.clone());
+    drop.position.set(side * (1.1 + Math.random() * 2.8), -0.16 + Math.random() * 0.55, -1.2 - Math.random() * 7.5);
+    drop.userData.base = drop.position.clone();
+    drop.userData.seed = Math.random() * 20;
+    drop.userData.side = side;
+    waterSplashGroup.add(drop);
+  }
+  for (let i = 0; i < 12; i++) {
+    const wake = new THREE.Mesh(new THREE.BoxGeometry(0.22 + Math.random() * 0.4, 0.04, 1.8 + Math.random() * 2.6), wakeMat.clone());
+    wake.position.set((Math.random() - 0.5) * 5.8, -0.2, -2.2 - i * 0.85);
+    wake.rotation.y = (Math.random() - 0.5) * 0.28;
+    wake.userData.seed = Math.random() * 20;
+    waterSplashGroup.add(wake);
+  }
+  waterSplashGroup.visible = true;
+}
+
+function updateWaterSplash(dt) {
+  if (state.phase !== "water-skimming" || state.crashed || state.landed || !playerPlane.visible) {
+    waterSplashGroup.visible = false;
+    return;
+  }
+  waterSplashGroup.visible = true;
+  waterSplashGroup.position.copy(playerPlane.position);
+  waterSplashGroup.rotation.y = state.waterLandingHeading;
+  waterSplashGroup.children.forEach((splash, index) => {
+    const pulse = Math.sin(clock.elapsedTime * 18 + splash.userData.seed);
+    const stretch = THREE.MathUtils.clamp(state.speed / 70, 0.25, 1.25);
+    const wakeTravel = (clock.elapsedTime * Math.max(6, state.speed) * 0.18 + index * 0.8) % 12;
+    splash.position.copy(splash.userData.base);
+    splash.position.x += (splash.userData.side || 0) * Math.sin(clock.elapsedTime * 10 + index) * 0.18;
+    splash.position.y += Math.max(0, pulse) * 0.42 * stretch;
+    splash.position.z = -0.9 - wakeTravel;
+    splash.scale.set(1.2 + stretch * 0.75, 0.55 + Math.max(0, pulse) * 0.7, 1.1 + stretch);
+    splash.material.opacity = 0.28 + Math.max(0, pulse) * 0.48;
+  });
+}
+
 function distanceToSegment2D(px, pz, segment) {
   const abx = segment.bx - segment.ax;
   const abz = segment.bz - segment.az;
@@ -1780,6 +1882,7 @@ function crash(reason) {
   if (state.crashed || state.landed) return;
   setAutopilot(false);
   clearEngineFire();
+  clearWaterSplash();
   state.engineFire = false;
   state.engineOff = false;
   state.crashed = true;
@@ -1800,6 +1903,7 @@ function crash(reason) {
 function landSuccess() {
   setAutopilot(false);
   clearEngineFire();
+  clearWaterSplash();
   state.engineFire = false;
   state.engineOff = false;
   state.landed = true;
@@ -1812,9 +1916,36 @@ function landSuccess() {
   addLog(`安全降落在${currentDestinationAirportName()}，飞机停在白线前。`);
 }
 
+function startWaterLandingSequence() {
+  if (state.crashed || state.landed || state.phase === "water-skimming") return;
+  setAutopilot(false);
+  clearEngineFire();
+  state.engineFire = false;
+  state.engineOff = true;
+  state.phase = "water-skimming";
+  state.emergencySurface = "水面";
+  state.waterLandingTime = 0;
+  state.waterLandingDuration = 4.8;
+  state.waterLandingHeading = state.heading;
+  state.altitude = 0;
+  state.speed = Math.max(48, Math.min(state.speed, 82));
+  state.throttle = 0;
+  throttleLever.value = "0";
+  playerPlane.position.y = 0.74;
+  playerPlane.rotation.x = 0.08;
+  playerPlane.rotation.z = -0.08;
+  createWaterSplash();
+  playWaterLandingSplashSound();
+  missionTitle.textContent = "水上迫降滑行";
+  routeLabel.textContent = "水面：机头拉平，水花起来，正在减速";
+  statusText.textContent = "飞机已经碰到水面了。机身贴着河面滑行，左右两边有浪花，速度会慢慢降下来，河岸救援人员正在看着。";
+  addLog("飞机贴水了：不是爆炸，是在河面上滑行减速。");
+}
+
 function emergencyLandSuccess(surface) {
   setAutopilot(false);
   clearEngineFire();
+  clearWaterSplash();
   state.engineFire = false;
   state.engineOff = true;
   state.landed = true;
@@ -1825,7 +1956,7 @@ function emergencyLandSuccess(surface) {
   throttleLever.value = "0";
   missionTitle.textContent = "迫降成功";
   statusText.textContent = surface === "水面"
-    ? "飞机已经安全水上迫降，河岸边的人看到了，救援灯亮起来，没有爆炸。引擎故障测试完成。"
+    ? "飞机已经像真实水上迫降一样贴着河面滑完并停住，浪花慢慢散开，河岸边的人看到了，救援灯亮起来，没有爆炸。引擎故障测试完成。"
     : "飞机已经安全落到地面，没有爆炸。引擎故障测试完成。";
   addLog(`引擎故障迫降成功：落到${surface}，飞机停下来了。`);
 }
@@ -1865,6 +1996,8 @@ function updatePhysics(dt) {
   let targetSpeed = state.throttle < -0.22 ? 0 : state.throttle * 142;
   if (state.phase === "emergency") {
     targetSpeed = state.engineOff ? Math.max(56, state.speed * 0.996) : 86;
+  } else if (state.phase === "water-skimming") {
+    targetSpeed = 0;
   }
   state.speed = THREE.MathUtils.lerp(state.speed, Math.max(0, targetSpeed), 1 - Math.exp(-dt * 1.6));
   const ground = state.altitude < 1.1;
@@ -1922,11 +2055,23 @@ function updatePhysics(dt) {
     if (state.yokeY < -0.2) state.altitude += state.yokeY * 5.2 * dt;
     if (state.glideTimeLeft <= 0 && state.altitude > 4) state.altitude -= 5.5 * dt;
     state.altitude = Math.max(0, state.altitude);
+  } else if (state.phase === "water-skimming") {
+    state.waterLandingTime += dt;
+    state.altitude = 0;
+    state.yokeX *= 0.82;
+    state.yokeY *= 0.82;
+    state.speed = Math.max(0, state.speed - dt * 12);
+    state.heading += Math.sin(state.waterLandingTime * 2.4) * dt * 0.035;
+    playerPlane.rotation.z = Math.sin(state.waterLandingTime * 8) * 0.045;
+    if (state.waterLandingTime > state.waterLandingDuration || state.speed < 7) {
+      emergencyLandSuccess("水面");
+      return;
+    }
   } else if (ground) {
     state.altitude = 0;
   }
 
-  playerPlane.position.y = 0.62 + state.altitude * 0.22;
+  playerPlane.position.y = state.phase === "water-skimming" ? 0.76 : 0.62 + state.altitude * 0.22;
   let nosePitch = 0;
   if (state.altitude > 1 || state.phase === "takeoff") {
     const commandedPitch = -state.yokeY * 0.18;
@@ -1934,6 +2079,8 @@ function updatePhysics(dt) {
     const cruisePitch = state.phase === "airborne" ? -0.07 : 0;
     const landingPitch = state.phase === "landing" ? 0.04 : state.phase === "emergency" ? 0.07 : 0;
     nosePitch = THREE.MathUtils.clamp(commandedPitch + takeoffLiftPitch + cruisePitch + landingPitch, -0.32, 0.18);
+  } else if (state.phase === "water-skimming") {
+    nosePitch = 0.08 + Math.sin(state.waterLandingTime * 7) * 0.018;
   }
   playerPlane.rotation.x = nosePitch;
   if (playerAircraftParts.gearParts) {
@@ -1958,12 +2105,13 @@ function updatePhysics(dt) {
   }
 
   if (state.phase === "emergency" && state.altitude <= 0.2) {
-    emergencyLandSuccess(isOverWater() ? "水面" : "地面");
+    if (isOverWater()) startWaterLandingSequence();
+    else emergencyLandSuccess("地面");
   }
 
-  if (state.phase !== "emergency") checkHazardCollisions();
+  if (!["emergency", "water-skimming"].includes(state.phase)) checkHazardCollisions();
 
-  if (!["airborne", "landing", "emergency"].includes(state.phase) && (playerPlane.position.x < -160 || playerPlane.position.x > 220 || playerPlane.position.z < -300 || playerPlane.position.z > 1010)) {
+  if (!["airborne", "landing", "emergency", "water-skimming"].includes(state.phase) && (playerPlane.position.x < -160 || playerPlane.position.x > 220 || playerPlane.position.z < -300 || playerPlane.position.z > 1010)) {
     crash("飞出两个机场的超大范围，看不见跑道了，任务失败。");
   }
 }
@@ -2006,6 +2154,7 @@ function updateHud() {
       airborne: "空中飞行",
       landing: "降落中",
       emergency: state.engineOff ? `滑翔迫降 · ${Math.ceil(state.glideTimeLeft / 60)} 分钟` : "引擎着火",
+      "water-skimming": "水上滑行减速",
       "tower-test": "双塔测试"
     }[state.phase] || "飞行中";
     missionTitle.textContent = phaseText;
@@ -2023,6 +2172,7 @@ function tick() {
   }
   updateExplosion(dt);
   updateEngineFire(dt);
+  updateWaterSplash(dt);
   updateWorldAtmosphere();
   updateFlightSound();
   updateHud();
