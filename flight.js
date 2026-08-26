@@ -49,7 +49,11 @@ const airlines = [
   { id: "ai", short: "印度", name: "Air India", local: "एअर इंडिया", color: 0xc33a2b, accent: 0xf1b64f, model: "Boeing 777" },
   { id: "nx", short: "澳门", name: "Air Macau", local: "澳門航空", color: 0x3b7aaf, accent: 0xf1c653, model: "Airbus A321" },
   { id: "tv", short: "西藏", name: "Tibet Airlines", local: "西藏航空 · བོད", color: 0xe18f2d, accent: 0x246399, model: "Airbus A319" },
-  { id: "ak", short: "亚洲", name: "AirAsia", local: "AirAsia", color: 0xd82727, accent: 0xffffff, model: "Airbus A320" }
+  { id: "ak", short: "亚洲", name: "AirAsia", local: "AirAsia", color: 0xd82727, accent: 0xffffff, model: "Airbus A320" },
+  { id: "ci", short: "华航", name: "China Airlines", local: "中华航空", color: 0x3466b6, accent: 0xf09ab7, model: "Airbus A350" },
+  { id: "br", short: "长荣", name: "EVA Air", local: "长荣航空", color: 0x1f8658, accent: 0xf2c84b, model: "Boeing 787" },
+  { id: "ha", short: "夏威夷", name: "Hawaiian Airlines", local: "Hawaiian Airlines", color: 0x5e3a92, accent: 0xff87ba, model: "Airbus A330" },
+  { id: "ba", short: "英航", name: "British Airways", local: "British Airways", color: 0x254f9f, accent: 0xd52b2f, model: "Boeing 777" }
 ];
 
 const countries = [
@@ -96,6 +100,72 @@ const countries = [
     origin: "樟宜训练机场",
     destination: "滨海湾水岸机场",
     color: 0x55b987
+  },
+  {
+    id: "tw",
+    name: "台湾",
+    local: "Taiwan",
+    domestic: "台湾岛内航班",
+    cities: ["台北", "高雄"],
+    airports: ["台北桃园训练机场", "高雄小港训练机场"],
+    origin: "台北桃园训练机场",
+    destination: "高雄小港训练机场",
+    color: 0x4fb3d8
+  },
+  {
+    id: "hi",
+    name: "夏威夷",
+    local: "Hawaii",
+    domestic: "夏威夷群岛航班",
+    cities: ["火奴鲁鲁", "茂宜岛"],
+    airports: ["火奴鲁鲁海岛机场", "茂宜岛海湾机场"],
+    origin: "火奴鲁鲁海岛机场",
+    destination: "茂宜岛海湾机场",
+    color: 0x69c7c0
+  },
+  {
+    id: "th",
+    name: "泰国",
+    local: "Thailand",
+    domestic: "泰国国内航班",
+    cities: ["曼谷", "普吉岛"],
+    airports: ["曼谷素万训练机场", "普吉岛海岸机场"],
+    origin: "曼谷素万训练机场",
+    destination: "普吉岛海岸机场",
+    color: 0x8f5bb8
+  },
+  {
+    id: "kr",
+    name: "韩国",
+    local: "Korea",
+    domestic: "韩国国内航班",
+    cities: ["首尔", "济州岛"],
+    airports: ["首尔仁川训练机场", "济州岛海风机场"],
+    origin: "首尔仁川训练机场",
+    destination: "济州岛海风机场",
+    color: 0x78aee8
+  },
+  {
+    id: "fr",
+    name: "法国",
+    local: "France",
+    domestic: "法国国内航班",
+    cities: ["巴黎", "尼斯"],
+    airports: ["巴黎戴高乐训练机场", "尼斯蔚蓝海岸机场"],
+    origin: "巴黎戴高乐训练机场",
+    destination: "尼斯蔚蓝海岸机场",
+    color: 0xd6b48f
+  },
+  {
+    id: "ae",
+    name: "阿联酋",
+    local: "United Arab Emirates",
+    domestic: "阿联酋国内航班",
+    cities: ["迪拜", "阿布扎比"],
+    airports: ["迪拜云塔机场", "阿布扎比海湾机场"],
+    origin: "迪拜云塔机场",
+    destination: "阿布扎比海湾机场",
+    color: 0xd9b15e
   }
 ];
 
@@ -147,7 +217,9 @@ const flightLevels = [
   { title: "第5关 中国到日本国际航班", country: 0, destination: 2, airline: 2, international: true, timeMode: "day", start: "takeoff", difficulty: 5, description: "先滑行起飞，再接上国际绿色航线。" },
   { title: "第6关 日本到新加坡夜航", country: 2, destination: 3, airline: 4, international: true, timeMode: "night", start: "air", difficulty: 6, description: "夜航跨国飞行，速度和高度都要稳。" },
   { title: "第7关 美国远城降落", country: 1, destination: 1, airline: 3, international: false, timeMode: "dusk", start: "air", difficulty: 7, description: "傍晚进近，远处能看到大城市天际线。" },
-  { title: "第8关 引擎着火迫降", country: 0, destination: 1, airline: 0, international: true, timeMode: "dusk", start: "emergency", difficulty: 8, description: "最难：空中引擎着火，关引擎后滑翔到水面或地面。" }
+  { title: "第8关 引擎着火迫降", country: 0, destination: 1, airline: 0, international: true, timeMode: "dusk", start: "emergency", difficulty: 8, description: "最难：空中引擎着火，关引擎后滑翔到水面或地面。" },
+  { title: "第9关 台湾海峡航线", country: 0, destination: 4, airline: 16, international: true, timeMode: "day", start: "air", difficulty: 5, description: "飞过海峡和岛屿，大海在绿色航线下面。" },
+  { title: "第10关 夏威夷跨海远航", country: 1, destination: 5, airline: 18, international: true, timeMode: "dusk", start: "air", difficulty: 7, description: "远航到海岛机场，下面是很宽的大海和小岛。" }
 ];
 
 const state = {
@@ -466,7 +538,7 @@ function currentAirportRouteName() {
 function currentDestinationAirportName() {
   const origin = currentOriginCountry();
   const destination = currentDestinationCountry();
-  return state.international ? destination.origin : origin.destination;
+  return state.international ? destination.destination : origin.destination;
 }
 
 function normalizeAngle(angle) {
@@ -553,6 +625,79 @@ function updateCountryScenery() {
     2.4,
     countryScenery
   );
+  if (state.international) {
+    addInternationalSeaRoute(origin, destination);
+  } else {
+    addDomesticRiverRoute(origin);
+  }
+}
+
+function addDomesticRiverRoute(origin) {
+  const riverPoints = [
+    [-112, 292],
+    [-72, 326],
+    [-38, 360],
+    [14, 388],
+    [58, 418],
+    [92, 470],
+    [132, 510]
+  ];
+  addWaterRibbonToCountryScenery(riverPoints, 10, "domestic-river-route");
+  addSpriteLabel(
+    "国内航班：经过河道",
+    `${origin.cities[0]}到${origin.cities[1]}，下面是城市河流`,
+    [-48, 13, 344],
+    9.2,
+    2,
+    countryScenery
+  );
+  for (let i = 0; i < 4; i++) {
+    box("domestic-river-bridge", [26, 0.22, 2.2], [-50 + i * 48, 0.42, 330 + i * 42], mats.steel, countryScenery).rotation.y = -0.55;
+  }
+}
+
+function addInternationalSeaRoute(origin, destination) {
+  box("international-ocean-zone", [315, 0.09, 280], [48, 0.2, 438], mats.water, countryScenery);
+  box("international-deep-ocean-band", [260, 0.08, 96], [56, 0.26, 448], makeMat(0x125da0, 0.55, 0.02), countryScenery);
+  addSpriteLabel(
+    "国际航班：经过大海",
+    `${origin.name}飞往${destination.name}，海上有岛屿和远处国家`,
+    [46, 16, 438],
+    10.2,
+    2.2,
+    countryScenery
+  );
+
+  const islands = [
+    [-92, 372, 12],
+    [-22, 512, 16],
+    [82, 350, 10],
+    [132, 510, 18]
+  ];
+  islands.forEach(([x, z, radius], index) => {
+    cyl("international-island-sand", radius, 0.22, [x, 0.42, z], makeMat(0xe9d48d, 0.88, 0.05), countryScenery, 28);
+    cyl("international-island-green", radius * 0.68, 0.24, [x, 0.58, z], mats.grass, countryScenery, 28);
+    if (index % 2 === 0) addSpriteLabel("海岛", index === 0 ? "像台湾/夏威夷这种航线会跨海" : "远处目的地", [x, 5.6, z], 5.4, 1.5, countryScenery);
+  });
+
+  const shipMat = makeMat(0xffffff, 0.42, 0.16);
+  for (let i = 0; i < 3; i++) {
+    const ship = box("international-ocean-ship", [8, 1.2, 3], [-110 + i * 105, 1.05, 462 + i * 28], shipMat, countryScenery);
+    ship.rotation.y = 0.28;
+    box("international-ship-cabin", [3.4, 1.4, 2.4], [-110 + i * 105, 2.28, 462 + i * 28], makeMat(0xd9e7f0, 0.45, 0.12), countryScenery).rotation.y = 0.28;
+  }
+}
+
+function addWaterRibbonToCountryScenery(points, width, name) {
+  for (let i = 0; i < points.length - 1; i++) {
+    const [ax, az] = points[i];
+    const [bx, bz] = points[i + 1];
+    const midX = (ax + bx) / 2;
+    const midZ = (az + bz) / 2;
+    const len = Math.hypot(bx - ax, bz - az);
+    const segment = box(name, [width, 0.08, len], [midX, 0.31, midZ], mats.water, countryScenery);
+    segment.rotation.y = Math.atan2(bx - ax, bz - az);
+  }
 }
 
 function setTimeMode(mode) {
@@ -1513,10 +1658,11 @@ function buildWorld() {
 
   const parkPositions = [
     [-66, -42], [-58, -42], [-50, -42], [-42, -42], [-34, -42], [-26, -42], [42, -38], [52, -38],
-    [62, -38], [70, -28], [-70, 42], [-58, 48], [-46, 52], [50, 48], [62, 44], [72, 36]
+    [62, -38], [70, -28], [-70, 42], [-58, 48], [-46, 52], [50, 48], [62, 44], [72, 36],
+    [-78, 18], [-66, 22], [-54, 26], [82, 16], [90, 28], [96, 40]
   ];
   airlines.forEach((airline, index) => {
-    const pos = parkPositions[index];
+    const pos = parkPositions[index % parkPositions.length];
     const plane = createPlaneModel(airline, { scale: 0.52 });
     plane.position.set(pos[0], 0.5, pos[1]);
     plane.rotation.y = index < 8 ? Math.PI : 0;
@@ -1696,7 +1842,7 @@ function setDomesticCountry(index) {
   updateCountryButtons();
   routeLabel.textContent = `${currentOriginCountry().domestic}：只能在${currentOriginCountry().name}飞。`;
   statusText.textContent = `已选择${currentOriginCountry().name}。这次是国内航班，目的机场是${currentDestinationAirportName()}。`;
-  addLog(`国家切换到${currentOriginCountry().name}，只飞本国机场。`);
+  addLog(`国家切换到${currentOriginCountry().name}，只飞本国机场，航线下面会经过河道和城市。`);
 }
 
 function startInternationalFlight() {
@@ -1710,8 +1856,8 @@ function startInternationalFlight() {
   rebuildRouteLights();
   updateCountryButtons();
   routeLabel.textContent = `国际航班：${currentAirportRouteName()}`;
-  statusText.textContent = `国际航班已选好。起飞后沿空中的绿色航线，从${currentOriginCountry().origin}飞到${currentDestinationAirportName()}的降落跑道。`;
-  addLog(`国际航班开启：从${currentOriginCountry().origin}飞往${currentDestinationAirportName()}。`);
+  statusText.textContent = `国际航班已选好。起飞后沿空中的绿色航线，从${currentOriginCountry().origin}飞到${currentDestinationAirportName()}的降落跑道，中间会经过大海、岛屿和远处国家。`;
+  addLog(`国际航班开启：从${currentOriginCountry().origin}飞往${currentDestinationAirportName()}，会跨海飞行。`);
 }
 
 function buildCountryButtons() {
