@@ -176,6 +176,7 @@ const countries = [
 const runwayStart = new THREE.Vector3(0, 0.62, -220);
 const playerPlaneScale = 1;
 const spaceAltitude = 500;
+const riverRescueLanding = { x: 74, z: 318, heading: 0.75 };
 
 const runwayPath = [
   new THREE.Vector3(0, 0.08, -220),
@@ -583,13 +584,19 @@ function getInternationalPath() {
 }
 
 function getEmergencyWaterPath() {
+  const rescuePoint = getRiverRescueLandingPoint();
   return [
     new THREE.Vector3(-260, 110, 420),
     new THREE.Vector3(-180, 78, 365),
     new THREE.Vector3(-70, 46, 285),
-    new THREE.Vector3(34, 18, 292),
-    new THREE.Vector3(128, 0.85, 360)
+    new THREE.Vector3(-18, 28, 298),
+    new THREE.Vector3(30, 10, 310),
+    rescuePoint
   ];
+}
+
+function getRiverRescueLandingPoint() {
+  return new THREE.Vector3(riverRescueLanding.x, 0.85, riverRescueLanding.z);
 }
 
 function getEmergencyGroundPath() {
@@ -1355,7 +1362,7 @@ function createWaterRescueScene() {
   state.planeSinking = true;
   state.planeSinkTime = 0;
   state.planeSinkStartY = playerPlane.position.y;
-  addSpriteLabel("河面水上迫降", "逃生滑梯、充气救生筏、救援船，飞机会慢慢沉到水底", [playerPlane.position.x - 2, 5.8, playerPlane.position.z - 11], 11.5, 2.4, evacuationGroup);
+  addSpriteLabel("河岸救援区水上迫降", "飞机落在原来那条蓝色河面，旁边有人和救援人员", [playerPlane.position.x - 2, 5.8, playerPlane.position.z - 11], 12.5, 2.4, evacuationGroup);
 }
 
 function createWaterRescueCrowd() {
@@ -3145,6 +3152,14 @@ function startWaterLandingSequence() {
   state.speed = Math.max(48, Math.min(state.speed, 82));
   state.throttle = 0;
   throttleLever.value = "0";
+  if (state.emergencyAutopilotMode === "water" || state.passengerAccidentTarget === "water") {
+    const rescuePoint = getRiverRescueLandingPoint();
+    playerPlane.position.x = rescuePoint.x;
+    playerPlane.position.z = rescuePoint.z;
+    state.heading = riverRescueLanding.heading;
+    playerPlane.rotation.y = state.heading;
+    state.waterLandingHeading = state.heading;
+  }
   playerPlane.position.y = 0.74;
   playerPlane.rotation.x = 0.08;
   playerPlane.rotation.z = -0.08;
