@@ -1215,25 +1215,25 @@ function deployLifeRaft() {
   clearGroup(lifeRaftGroup);
   const raftMat = makeMat(0xff8f1f, 0.58, 0.05);
   const floorMat = makeMat(0xffd27d, 0.64, 0.04);
-  const waterMat = new THREE.MeshStandardMaterial({ color: 0x1d79b8, emissive: 0x07507f, emissiveIntensity: 0.36, roughness: 0.4, metalness: 0.04, transparent: true, opacity: 0.82 });
-  const base = new THREE.Mesh(new THREE.TorusGeometry(3.8, 0.34, 14, 64), raftMat);
+  const waterMat = new THREE.MeshBasicMaterial({ color: 0x42c8ff, transparent: true, opacity: 0.88 });
+  const base = new THREE.Mesh(new THREE.TorusGeometry(4.6, 0.42, 14, 72), raftMat);
   base.name = "large-orange-life-raft";
   base.rotation.x = Math.PI / 2;
-  base.scale.set(1.35, 0.72, 1);
-  base.position.set(playerPlane.position.x + 7.4, 0.42, playerPlane.position.z - 4.8);
+  base.scale.set(1.45, 0.78, 1);
+  base.position.set(playerPlane.position.x + 6.2, 0.48, playerPlane.position.z - 3.2);
   lifeRaftGroup.add(base);
-  box("life-raft-floor", [8.2, 0.08, 3.8], [base.position.x, 0.32, base.position.z], floorMat, lifeRaftGroup);
-  box("life-raft-water-shadow", [11.5, 0.04, 6.8], [base.position.x, 0.1, base.position.z], waterMat, lifeRaftGroup);
-  for (let i = 0; i < 14; i++) {
+  box("life-raft-floor", [9.8, 0.1, 4.8], [base.position.x, 0.36, base.position.z], floorMat, lifeRaftGroup);
+  box("life-raft-water-shadow", [14.5, 0.04, 8.2], [base.position.x, 0.08, base.position.z], waterMat, lifeRaftGroup);
+  for (let i = 0; i < 18; i++) {
     const passenger = createLastPassengerAvatar();
     passenger.name = "raft-passenger";
-    passenger.scale.setScalar(0.34);
-    passenger.position.set(base.position.x - 3.2 + (i % 7) * 1.05, 0.38, base.position.z - 1.25 + Math.floor(i / 7) * 1.55);
+    passenger.scale.setScalar(0.45);
+    passenger.position.set(base.position.x - 3.9 + (i % 9) * 0.95, 0.44, base.position.z - 1.42 + Math.floor(i / 9) * 1.62);
     passenger.rotation.y = i % 2 ? -0.4 : 0.4;
     passenger.userData.lifeJacket.visible = true;
     lifeRaftGroup.add(passenger);
   }
-  createRescueBoat(base.position.x + 11, base.position.z + 4.2, lifeRaftGroup);
+  createRescueBoat(base.position.x + 10, base.position.z + 4.2, lifeRaftGroup);
   addSpriteLabel("大型充气救生筏", "乘客和机组都能坐上来，旁边救援船接应", [base.position.x, 4.2, base.position.z], 9.2, 2.1, lifeRaftGroup);
   state.lifeRaftDeployed = true;
 }
@@ -1278,13 +1278,15 @@ function createEvacuationSlide(surface) {
   const rightEdge = box("escape-slide-right-edge", [0.26, 0.34, surface === "水面" ? 7.4 : 6.1], [midpoint.x, midpoint.y + 0.14, midpoint.z], edgeMat, evacuationGroup);
   rightEdge.rotation.copy(slide.rotation);
   rightEdge.position.add(new THREE.Vector3(side.z, 0, -side.x).multiplyScalar(0.78));
-  for (let i = 0; i < 7; i++) {
+  const slidePassengerCount = surface === "水面" ? 12 : 7;
+  for (let i = 0; i < slidePassengerCount; i++) {
     const passenger = createLastPassengerAvatar();
     passenger.name = surface === "水面" ? "water-slide-passenger" : "ground-slide-passenger";
-    passenger.scale.setScalar(0.36);
-    const t = i / 6;
+    passenger.scale.setScalar(surface === "水面" ? 0.5 : 0.38);
+    const t = i / Math.max(1, slidePassengerCount - 1);
     passenger.position.lerpVectors(slideStart, slideEnd, t);
-    passenger.position.y += 0.12;
+    passenger.position.y += surface === "水面" ? 0.22 : 0.12;
+    passenger.position.x += (i % 2 ? 0.25 : -0.25) * (surface === "水面" ? 1 : 0.4);
     passenger.rotation.y = state.heading + Math.PI / 2;
     passenger.userData.lifeJacket.visible = surface === "水面";
     evacuationGroup.add(passenger);
@@ -1337,8 +1339,16 @@ function createGroundRescueScene() {
 }
 
 function createWaterRescueScene() {
-  const waterMat = new THREE.MeshStandardMaterial({ color: 0x1c86c9, emissive: 0x0b5e92, emissiveIntensity: 0.42, roughness: 0.35, metalness: 0.02, transparent: true, opacity: 0.9 });
-  box("emergency-river-landing-water", [42, 0.05, 32], [playerPlane.position.x, 0.03, playerPlane.position.z], waterMat, evacuationGroup);
+  const waterMat = new THREE.MeshBasicMaterial({ color: 0x28bfff, transparent: true, opacity: 0.96 });
+  const waterShineMat = new THREE.MeshBasicMaterial({ color: 0xb9f3ff, transparent: true, opacity: 0.6 });
+  const bankMat = makeMat(0x79c36a, 0.88, 0.08);
+  box("emergency-river-landing-water", [96, 0.06, 64], [playerPlane.position.x + 5, 0.025, playerPlane.position.z], waterMat, evacuationGroup);
+  for (let i = 0; i < 8; i++) {
+    box("bright-water-wave-line", [18, 0.025, 0.28], [playerPlane.position.x - 32 + i * 10, 0.09, playerPlane.position.z - 9 + (i % 3) * 6], waterShineMat, evacuationGroup).rotation.y = 0.12;
+  }
+  box("river-bank-left-with-people", [96, 0.08, 5.2], [playerPlane.position.x + 5, 0.08, playerPlane.position.z - 34], bankMat, evacuationGroup);
+  box("river-bank-right-with-people", [96, 0.08, 5.2], [playerPlane.position.x + 5, 0.08, playerPlane.position.z + 34], bankMat, evacuationGroup);
+  createWaterRescueCrowd();
   createEvacuationSlide("水面");
   setPassengerLifeJacket(true);
   deployLifeRaft();
@@ -1346,6 +1356,29 @@ function createWaterRescueScene() {
   state.planeSinkTime = 0;
   state.planeSinkStartY = playerPlane.position.y;
   addSpriteLabel("河面水上迫降", "逃生滑梯、充气救生筏、救援船，飞机会慢慢沉到水底", [playerPlane.position.x - 2, 5.8, playerPlane.position.z - 11], 11.5, 2.4, evacuationGroup);
+}
+
+function createWaterRescueCrowd() {
+  const shirtMats = [
+    makeMat(0xffd447, 0.62, 0.06),
+    makeMat(0x3d8dff, 0.62, 0.06),
+    makeMat(0xff6b8a, 0.62, 0.06),
+    makeMat(0xffffff, 0.62, 0.06),
+    makeMat(0x35c77a, 0.62, 0.06)
+  ];
+  for (let i = 0; i < 28; i++) {
+    const person = createLastPassengerAvatar();
+    person.name = "river-bank-rescue-crowd";
+    person.scale.setScalar(0.44);
+    const side = i % 2 === 0 ? -1 : 1;
+    const row = Math.floor(i / 2);
+    person.position.set(playerPlane.position.x - 39 + (row % 14) * 6, 0.18, playerPlane.position.z + side * (37 + (row % 2) * 2.2));
+    person.rotation.y = side < 0 ? 0 : Math.PI;
+    const shirt = person.getObjectByName("last-passenger-body");
+    if (shirt) shirt.material = shirtMats[i % shirtMats.length];
+    evacuationGroup.add(person);
+  }
+  addSpriteLabel("河岸有人和救援人员", "大家在蓝色河面旁边等救援", [playerPlane.position.x - 16, 4.8, playerPlane.position.z + 38], 9.6, 2.1, evacuationGroup);
 }
 
 function updateEvacuation(dt) {
@@ -3330,6 +3363,20 @@ function updateCamera() {
     const testCamera = new THREE.Vector3(34, 126, 242);
     camera.position.lerp(testCamera, 0.08);
     camera.lookAt(testTarget);
+    return;
+  }
+  if (state.evacuationActive && state.evacuationSurface === "水面") {
+    const target = playerPlane.position.clone().add(new THREE.Vector3(4, 2.2, -2));
+    const rescueCamera = playerPlane.position.clone().add(new THREE.Vector3(30, 22, -34));
+    camera.position.lerp(rescueCamera, 0.08);
+    camera.lookAt(target);
+    return;
+  }
+  if (state.evacuationActive && state.evacuationSurface === "地面") {
+    const target = playerPlane.position.clone().add(new THREE.Vector3(0, 2.2, 0));
+    const rescueCamera = playerPlane.position.clone().add(new THREE.Vector3(24, 16, -26));
+    camera.position.lerp(rescueCamera, 0.08);
+    camera.lookAt(target);
     return;
   }
   const modes = [
