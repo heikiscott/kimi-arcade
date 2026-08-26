@@ -23,6 +23,7 @@ const engineOffBtn = document.querySelector("#engineOffBtn");
 const countryButtons = document.querySelector("#countryButtons");
 const internationalBtn = document.querySelector("#internationalBtn");
 const autopilotBtn = document.querySelector("#autopilotBtn");
+const doorBtn = document.querySelector("#doorBtn");
 const flightLobbyBtn = document.querySelector("#flightLobbyBtn");
 const flightLobby = document.querySelector("#flightLobby");
 const flightLevelGrid = document.querySelector("#flightLevelGrid");
@@ -118,6 +119,14 @@ const landingPath = [
   new THREE.Vector3(100, 0.85, 860)
 ];
 
+const arrivalGateStand = {
+  x: 122,
+  terminalZ: 599.3,
+  planeZ: 620,
+  bridgeStartZ: 601.5,
+  bridgeY: 2.1
+};
+
 const flightLevels = [
   { title: "第1关 白天训练起飞", country: 3, destination: 3, airline: 5, international: false, timeMode: "day", start: "takeoff", difficulty: 1, description: "最简单：白天、直跑道，先练滑行和抬头起飞。" },
   { title: "第2关 白天城市降落", country: 0, destination: 0, airline: 0, international: false, timeMode: "day", start: "air", difficulty: 2, description: "从天空开局，沿绿色航线降落到国内机场。" },
@@ -168,7 +177,13 @@ const state = {
   emergencySurface: "",
   waterLandingTime: 0,
   waterLandingDuration: 0,
-  waterLandingHeading: 0
+  waterLandingHeading: 0,
+  gateDocking: false,
+  gateDocked: false,
+  gateExtend: 0,
+  planeDoorOpen: false,
+  passengerFlow: false,
+  passengerTime: 0
 };
 
 const scene = new THREE.Scene();
@@ -193,7 +208,8 @@ const explosionGroup = new THREE.Group();
 const engineFireGroup = new THREE.Group();
 const twinTowerTest = new THREE.Group();
 const waterSplashGroup = new THREE.Group();
-scene.add(world, earthScenery, airport, parked, routeLights, countryScenery, spaceScenery, twinTowerTest, explosionGroup, engineFireGroup, waterSplashGroup);
+const disembarkPassengers = new THREE.Group();
+scene.add(world, earthScenery, airport, parked, routeLights, countryScenery, spaceScenery, twinTowerTest, explosionGroup, engineFireGroup, waterSplashGroup, disembarkPassengers);
 
 const mats = {
   concrete: makeMat(0xb8bcc0, 0.72, 0.42),
@@ -217,6 +233,7 @@ const mats = {
 
 let playerPlane;
 let playerAircraftParts = {};
+let jetBridgeParts = {};
 let hazardBuildings = [];
 let scenicHazardBuildings = [];
 let waterLandingSegments = [];
@@ -626,7 +643,200 @@ function addDestinationTerminal() {
     const gateX = 122 + i * 7;
     box("destination-gate-bridge", [1.4, 1.6, 7.5], [gateX, 2.05, 599.3], makeMat(0xdde4e8), airport);
   }
+  addArrivalJetBridge();
   addSpriteLabel("远处机场", "降落到这里", [134, 7.2, 601], 5.8, 1.8);
+}
+
+function addArrivalJetBridge() {
+  const group = new THREE.Group();
+  group.name = "moving-arrival-jetbridge";
+  group.position.set(arrivalGateStand.x, 0, arrivalGateStand.bridgeStartZ);
+
+  const bridgeMat = makeMat(0xdde6ea, 0.46, 0.2);
+  const glassMat = makeMat(0x7db8d5, 0.25, 0.08);
+  const sealMat = makeMat(0x222a30, 0.64, 0.12);
+
+  box("jetbridge-fixed-corridor", [2.2, 1.9, 5.2], [0, arrivalGateStand.bridgeY, 1.8], bridgeMat, group);
+  box("jetbridge-fixed-window", [2.24, 0.55, 2.8], [0, arrivalGateStand.bridgeY + 0.18, 1.8], glassMat, group);
+  const telescope = box("jetbridge-moving-corridor", [1.85, 1.55, 7.4], [0, arrivalGateStand.bridgeY, 6.4], bridgeMat, group);
+  const head = box("jetbridge-plane-head", [2.65, 2.05, 2.3], [0, arrivalGateStand.bridgeY, 10.9], bridgeMat, group);
+  const seal = box("jetbridge-black-door-seal", [2.9, 2.25, 0.42], [0, arrivalGateStand.bridgeY, 12.2], sealMat, group);
+  box("jetbridge-roof-light", [1.5, 0.12, 8.8], [0, arrivalGateStand.bridgeY + 0.87, 6.8], mats.runwayYellowLight, group);
+  addSpriteLabel("G1", "移动登机桥", [arrivalGateStand.x, 5.7, arrivalGateStand.bridgeStartZ + 8], 4.8, 1.6);
+
+  airport.add(group);
+  jetBridgeParts = { group, telescope, head, seal };
+  updateJetBridgeVisual();
+}
+
+function updateJetBridgeVisual() {
+  if (!jetBridgeParts.group) return;
+  const extend = THREE.MathUtils.clamp(state.gateExtend, 0, 1);
+  const corridorLength = 7.4 + extend * 14.8;
+  jetBridgeParts.telescope.scale.z = corridorLength / 7.4;
+  jetBridgeParts.telescope.position.z = 4.5 + corridorLength / 2;
+  jetBridgeParts.head.position.z = 5.5 + corridorLength;
+  jetBridgeParts.seal.position.z = 6.85 + corridorLength;
+  jetBridgeParts.group.visible = true;
+}
+
+function clearPassengers() {
+  while (disembarkPassengers.children.length) {
+    const child = disembarkPassengers.children.pop();
+    child.traverse((node) => {
+      if (node.geometry) node.geometry.dispose();
+      if (node.material) node.material.dispose();
+    });
+  }
+}
+
+function createTinyPassenger(index) {
+  const person = new THREE.Group();
+  person.name = "disembarking-passenger";
+  const shirtColors = [0x2f78c4, 0xe05a73, 0xf0b84c, 0x46a96b, 0x8f64c7, 0xf4f7fa];
+  const skin = makeMat(index % 2 ? 0xf0c39b : 0xd6a174, 0.62, 0.03);
+  const shirt = makeMat(shirtColors[index % shirtColors.length], 0.72, 0.08);
+  const pants = makeMat(0x243141, 0.68, 0.06);
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.18, 12, 12), skin);
+  head.position.set(0, 1.03, 0);
+  person.add(head);
+  box("passenger-body", [0.28, 0.42, 0.18], [0, 0.62, 0], shirt, person);
+  box("passenger-left-leg", [0.1, 0.36, 0.1], [-0.07, 0.22, 0], pants, person);
+  box("passenger-right-leg", [0.1, 0.36, 0.1], [0.07, 0.22, 0], pants, person);
+  box("passenger-bag", [0.17, 0.24, 0.12], [0.25, 0.48, -0.04], makeMat(0x33383f, 0.7, 0.08), person);
+  person.userData.index = index;
+  person.visible = false;
+  disembarkPassengers.add(person);
+}
+
+function createDisembarkPassengers() {
+  clearPassengers();
+  for (let i = 0; i < 10; i++) createTinyPassenger(i);
+}
+
+function updatePassengers() {
+  if (!state.passengerFlow) return;
+  const startX = arrivalGateStand.x + 0.88;
+  const startZ = arrivalGateStand.planeZ + 4.15;
+  const terminalZ = arrivalGateStand.bridgeStartZ + 2.2;
+  disembarkPassengers.children.forEach((person) => {
+    const offset = person.userData.index * 0.48;
+    const progress = THREE.MathUtils.clamp((state.passengerTime - offset) / 5.2, 0, 1);
+    person.visible = progress > 0 && progress < 1;
+    const wiggle = Math.sin(state.passengerTime * 6 + person.userData.index) * 0.08;
+    person.position.set(
+      startX + wiggle,
+      0.15,
+      THREE.MathUtils.lerp(startZ, terminalZ, progress)
+    );
+    person.rotation.y = Math.PI;
+  });
+  if (state.passengerTime > 9.8) {
+    state.passengerFlow = false;
+    clearPassengers();
+    statusText.textContent = "乘客已经全部从飞机出来，走过登机桥，进入机场准备过海关。";
+    addLog("乘客下机完成，已经进入机场海关方向。");
+  }
+}
+
+function updatePlaneDoorVisual() {
+  if (!playerAircraftParts.door) return;
+  const door = playerAircraftParts.door;
+  door.position.x = state.planeDoorOpen ? playerAircraftParts.doorOpenX : playerAircraftParts.doorClosedX;
+  door.rotation.z = state.planeDoorOpen ? -0.62 : 0;
+  door.visible = true;
+  if (playerAircraftParts.doorWindow) {
+    playerAircraftParts.doorWindow.position.x = door.position.x + 0.006;
+    playerAircraftParts.doorWindow.rotation.z = door.rotation.z;
+    playerAircraftParts.doorWindow.visible = true;
+  }
+  doorBtn.textContent = state.planeDoorOpen ? "关门" : "开门";
+  doorBtn.classList.toggle("active", state.planeDoorOpen);
+}
+
+function resetGateDocking() {
+  state.gateDocking = false;
+  state.gateDocked = false;
+  state.gateExtend = 0;
+  state.planeDoorOpen = false;
+  state.passengerFlow = false;
+  state.passengerTime = 0;
+  clearPassengers();
+  updateJetBridgeVisual();
+  updatePlaneDoorVisual();
+}
+
+function movePlaneToArrivalGate() {
+  state.heading = 0;
+  state.altitude = 0;
+  state.speed = 0;
+  state.throttle = 0;
+  state.gear = 0;
+  playerPlane.position.set(arrivalGateStand.x, 0.62, arrivalGateStand.planeZ);
+  playerPlane.rotation.set(0, 0, 0);
+  if (playerAircraftParts.gearParts) playerAircraftParts.gearParts.visible = true;
+  throttleLever.value = "0";
+  gearLever.value = "0";
+}
+
+function startGateDocking() {
+  movePlaneToArrivalGate();
+  state.phase = "gate-docking";
+  state.gateDocking = true;
+  state.gateDocked = false;
+  state.gateExtend = 0;
+  state.planeDoorOpen = false;
+  state.passengerFlow = false;
+  state.passengerTime = 0;
+  updateJetBridgeVisual();
+  updatePlaneDoorVisual();
+  missionTitle.textContent = "登机桥对接中";
+  routeLabel.textContent = "目的机场：等待移动登机桥对接飞机门";
+  statusText.textContent = "飞机已经停到登机位。机场工作人员正在移动登机桥，对准飞机门；对接成功后再点“开门”。";
+  addLog("飞机停到目的机场登机位，移动登机桥开始伸出。");
+}
+
+function updateGateDocking(dt) {
+  if (state.gateDocking && !state.gateDocked) {
+    state.gateExtend = Math.min(1, state.gateExtend + dt * 0.42);
+    updateJetBridgeVisual();
+    if (state.gateExtend >= 1) {
+      state.gateDocked = true;
+      state.gateDocking = false;
+      missionTitle.textContent = "登机桥已对接";
+      routeLabel.textContent = "对接成功：现在可以打开飞机门";
+      statusText.textContent = "登机桥已经对到飞机门了。现在点“开门”，乘客会从飞机出来，走到机场过海关。";
+      addLog("登机桥对接完成，可以开门下客。");
+    }
+  }
+  if (state.passengerFlow) {
+    state.passengerTime += dt;
+    updatePassengers();
+  }
+}
+
+function togglePlaneDoor() {
+  if (!state.gateDocked) {
+    statusText.textContent = "现在还不能开门，要先等登机桥和飞机门对接好。";
+    addLog("开门失败：登机桥还没有对接完成。");
+    return;
+  }
+  state.planeDoorOpen = !state.planeDoorOpen;
+  updatePlaneDoorVisual();
+  if (state.planeDoorOpen) {
+    createDisembarkPassengers();
+    state.passengerFlow = true;
+    state.passengerTime = 0;
+    missionTitle.textContent = "乘客下机";
+    routeLabel.textContent = "飞机门已开：乘客走向登机桥和海关";
+    statusText.textContent = "飞机门打开了。乘客正在离开飞机，走进登机桥，最后到机场里面过海关。";
+    addLog("飞机门打开，乘客开始下机。");
+  } else {
+    state.passengerFlow = false;
+    clearPassengers();
+    statusText.textContent = "飞机门已经关上。";
+    addLog("飞机门关闭。");
+  }
 }
 
 function addControlTower() {
@@ -1007,7 +1217,26 @@ function createPlaneModel(livery, options = {}) {
   });
   group.add(gearParts);
 
-  if (options.player) playerAircraftParts = { gearParts };
+  let playerDoor = null;
+  let playerDoorWindow = null;
+  if (options.player) {
+    const doorClosedX = radius * 1.16;
+    playerDoor = box(
+      "player-aircraft-openable-door",
+      [0.065 * scale, 0.5 * scale, 0.26 * scale],
+      [doorClosedX, radius * 1.5, length * 0.33],
+      makeMat(0xf8fbff, 0.34, 0.2),
+      group
+    );
+    playerDoorWindow = box("player-aircraft-door-window", [0.068 * scale, 0.12 * scale, 0.1 * scale], [doorClosedX + 0.006 * scale, radius * 1.62, length * 0.33 + 0.02 * scale], glassMat, group);
+    playerAircraftParts = {
+      gearParts,
+      door: playerDoor,
+      doorWindow: playerDoorWindow,
+      doorClosedX,
+      doorOpenX: doorClosedX + 0.48 * scale
+    };
+  }
 
   group.scale.setScalar(scale);
   return group;
@@ -1054,6 +1283,7 @@ function buildWorld() {
   playerPlane.position.copy(runwayStart);
   playerPlane.rotation.y = 0;
   scene.add(playerPlane);
+  updatePlaneDoorVisual();
 
   const parkPositions = [
     [-66, -42], [-58, -42], [-50, -42], [-42, -42], [-34, -42], [-26, -42], [42, -38], [52, -38],
@@ -1198,6 +1428,7 @@ function setAirline(index) {
   playerPlane.position.copy(oldPos);
   playerPlane.rotation.y = oldRot;
   scene.add(playerPlane);
+  updatePlaneDoorVisual();
   airlineText.textContent = airlines[index].short;
   updateAirlineButtons();
   addLog(`已换成 ${airlines[index].local} ${airlines[index].model}。`);
@@ -1514,6 +1745,7 @@ function resetGame() {
   state.waterLandingHeading = 0;
   setAutopilot(false);
   closeEmergencyChoice();
+  resetGateDocking();
   throttleLever.value = "0";
   gearLever.value = "0";
   document.body.classList.remove("crashed");
@@ -2021,6 +2253,7 @@ function landSuccess() {
   missionTitle.textContent = "安全降落";
   statusText.textContent = `飞机飞到${currentDestinationAirportName()}，沿降落跑道减速停下，任务成功。`;
   addLog(`安全降落在${currentDestinationAirportName()}，飞机停在白线前。`);
+  startGateDocking();
 }
 
 function startWaterLandingSequence() {
@@ -2280,6 +2513,7 @@ function tick() {
     updateAutopilot();
     updatePhysics(dt);
   }
+  updateGateDocking(dt);
   updateExplosion(dt);
   updateEngineFire(dt);
   updateWaterSplash(dt);
@@ -2373,6 +2607,7 @@ function setupEvents() {
   engineFireBtn.addEventListener("click", startEngineFireEmergency);
   engineOffBtn.addEventListener("click", shutEngine);
   autopilotBtn.addEventListener("click", toggleAutopilot);
+  doorBtn.addEventListener("click", togglePlaneDoor);
   waterAutopilotBtn.addEventListener("click", () => startEmergencyAutopilot("water"));
   groundAutopilotBtn.addEventListener("click", () => startEmergencyAutopilot("ground"));
   closeEmergencyChoiceBtn.addEventListener("click", closeEmergencyChoice);

@@ -497,6 +497,16 @@ button {
   background: #0f8d65;
 }
 
+#doorBtn {
+  color: #102333;
+  background: #ffd66b;
+}
+
+#doorBtn.active {
+  color: #fff;
+  background: #2076b2;
+}
+
 #soundBtn.muted {
   background: #6f7880;
 }
