@@ -469,6 +469,17 @@ button {
   background: var(--green);
 }
 
+#passengerModeBtn {
+  grid-column: 1 / -1;
+  background: #7a4bd8;
+}
+
+#passengerNormalBtn,
+#passengerAccidentWaterBtn,
+#passengerAccidentGroundBtn {
+  background: #246399;
+}
+
 .buttons button:nth-child(2) {
   background: var(--blue);
 }
