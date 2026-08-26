@@ -90,7 +90,8 @@ button {
   box-shadow: 0 8px 22px rgba(23, 38, 50, 0.18);
 }
 
-.flight-lobby {
+.flight-lobby,
+.emergency-choice {
   position: absolute;
   inset: 0;
   z-index: 12;
@@ -102,11 +103,13 @@ button {
   backdrop-filter: blur(7px);
 }
 
-.flight-lobby.open {
+.flight-lobby.open,
+.emergency-choice.open {
   display: flex;
 }
 
-.flight-lobby-card {
+.flight-lobby-card,
+.emergency-choice-card {
   width: min(780px, 100%);
   max-height: calc(100% - 24px);
   overflow: auto;
@@ -118,17 +121,63 @@ button {
   box-shadow: 0 22px 60px rgba(0, 0, 0, 0.24);
 }
 
-.flight-lobby-card h2 {
+.emergency-choice {
+  z-index: 13;
+  background: rgba(6, 15, 24, 0.38);
+}
+
+.emergency-choice-card {
+  width: min(500px, 100%);
+  text-align: center;
+}
+
+.flight-lobby-card h2,
+.emergency-choice-card h2 {
   margin: 4px 0 8px;
   font-size: clamp(2rem, 5vw, 4rem);
   line-height: 0.96;
 }
 
-.flight-lobby-card p:not(.label) {
+.emergency-choice-card h2 {
+  font-size: clamp(1.75rem, 4.2vw, 3.2rem);
+}
+
+.flight-lobby-card p:not(.label),
+.emergency-choice-card p:not(.label) {
   margin: 0 0 14px;
   color: #314351;
   font-weight: 820;
   line-height: 1.45;
+}
+
+.emergency-choice-buttons {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 12px 0;
+}
+
+.emergency-choice-buttons button,
+#closeEmergencyChoiceBtn {
+  min-height: 50px;
+  border-radius: 8px;
+  color: #fff;
+  font-weight: 950;
+  box-shadow: 0 5px 0 rgba(23, 38, 50, 0.16);
+}
+
+#waterAutopilotBtn {
+  background: #167ab5;
+}
+
+#groundAutopilotBtn {
+  background: #2e9b61;
+}
+
+#closeEmergencyChoiceBtn {
+  width: 100%;
+  color: var(--ink);
+  background: #eef4f4;
 }
 
 .flight-level-grid {
@@ -600,6 +649,14 @@ body.dusk-flight .route-label {
   }
 
   .flight-level-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .emergency-choice {
+    padding: 12px;
+  }
+
+  .emergency-choice-buttons {
     grid-template-columns: 1fr;
   }
 

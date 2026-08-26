@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>3D 航空驾驶</title>
-    <link rel="stylesheet" href="flight.css?v=real-water-ditching-20260825" />
+    <link rel="stylesheet" href="flight.css?v=emergency-autopilot-choice-20260825" />
   </head>
   <body>
     <main class="flight-shell">
@@ -19,6 +19,18 @@
             <p>从第一关训练起飞开始，后面越来越远、越来越难。撞到大楼或者一头扎到地面就会爆炸。</p>
             <div id="flightLevelGrid" class="flight-level-grid"></div>
             <button id="closeFlightLobbyBtn" type="button">继续当前飞行</button>
+          </div>
+        </section>
+        <section class="emergency-choice" id="emergencyChoice" aria-label="无人驾驶迫降选择">
+          <div class="emergency-choice-card">
+            <p class="label">Emergency Autopilot</p>
+            <h2>无人驾驶迫降选择</h2>
+            <p>引擎故障时先选目的地：飞到河面做水上迫降，或者飞到平地做地面迫降。</p>
+            <div class="emergency-choice-buttons">
+              <button id="waterAutopilotBtn" type="button">水面国家 / 水上迫降</button>
+              <button id="groundAutopilotBtn" type="button">地面国家 / 陆地迫降</button>
+            </div>
+            <button id="closeEmergencyChoiceBtn" type="button">我自己驾驶</button>
           </div>
         </section>
         <div class="hud">
@@ -96,7 +108,7 @@
       </aside>
     </main>
 
-    <script type="module" src="flight.js?v=real-water-ditching-20260825"></script>
+    <script type="module" src="flight.js?v=emergency-autopilot-choice-20260825"></script>
     <script src="arcade-stats.js?v=visitor-table-20260728"></script>
   </body>
 </html>

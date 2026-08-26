@@ -27,6 +27,10 @@ const flightLobbyBtn = document.querySelector("#flightLobbyBtn");
 const flightLobby = document.querySelector("#flightLobby");
 const flightLevelGrid = document.querySelector("#flightLevelGrid");
 const closeFlightLobbyBtn = document.querySelector("#closeFlightLobbyBtn");
+const emergencyChoice = document.querySelector("#emergencyChoice");
+const waterAutopilotBtn = document.querySelector("#waterAutopilotBtn");
+const groundAutopilotBtn = document.querySelector("#groundAutopilotBtn");
+const closeEmergencyChoiceBtn = document.querySelector("#closeEmergencyChoiceBtn");
 
 const airlines = [
   { id: "cz", short: "南航", name: "China Southern", local: "中国南方航空", color: 0x1f5fb8, accent: 0xd83232, model: "Boeing 737" },
@@ -160,6 +164,7 @@ const state = {
   engineFire: false,
   engineOff: false,
   glideTimeLeft: 0,
+  emergencyAutopilotMode: "",
   emergencySurface: "",
   waterLandingTime: 0,
   waterLandingDuration: 0,
@@ -446,7 +451,28 @@ function getInternationalPath() {
   ];
 }
 
+function getEmergencyWaterPath() {
+  return [
+    new THREE.Vector3(-260, 110, 420),
+    new THREE.Vector3(-180, 78, 365),
+    new THREE.Vector3(-70, 46, 285),
+    new THREE.Vector3(34, 18, 292),
+    new THREE.Vector3(128, 0.85, 360)
+  ];
+}
+
+function getEmergencyGroundPath() {
+  return [
+    new THREE.Vector3(-260, 110, 420),
+    new THREE.Vector3(-330, 74, 455),
+    new THREE.Vector3(-425, 42, 500),
+    new THREE.Vector3(-520, 0.85, 545)
+  ];
+}
+
 function getActiveRoutePath() {
+  if (state.route === "emergency-water") return getEmergencyWaterPath();
+  if (state.route === "emergency-ground") return getEmergencyGroundPath();
   if (state.route === "landing") return state.international ? getInternationalPath() : landingPath;
   return runwayPath;
 }
@@ -1308,6 +1334,47 @@ function setAutopilot(enabled) {
   autopilotBtn.classList.toggle("active", enabled);
 }
 
+function isEmergencyFlightActive() {
+  return ["emergency", "water-skimming"].includes(state.phase) || state.engineFire || (state.engineOff && state.glideTimeLeft > 0);
+}
+
+function openEmergencyChoice() {
+  if (!emergencyChoice) return;
+  emergencyChoice.classList.add("open");
+  statusText.textContent = "无人驾驶要先选择：去水面迫降，还是去地面迫降。";
+}
+
+function closeEmergencyChoice() {
+  if (!emergencyChoice) return;
+  emergencyChoice.classList.remove("open");
+}
+
+function startEmergencyAutopilot(mode) {
+  if (state.crashed || state.landed) resetGame();
+  ensureAudio();
+  closeEmergencyChoice();
+  state.phase = "emergency";
+  state.route = mode === "water" ? "emergency-water" : "emergency-ground";
+  state.emergencyAutopilotMode = mode;
+  state.engineOff = true;
+  state.engineFire = false;
+  state.throttle = 0;
+  state.gear = 0;
+  state.glideTimeLeft = Math.max(state.glideTimeLeft, 600);
+  throttleLever.value = "0";
+  gearLever.value = "0";
+  clearEngineFire();
+  rebuildRouteLights();
+  setAutopilot(true);
+  const targetText = mode === "water" ? "水面国家：沿绿色灯线飞到河道水面" : "地面国家：沿绿色灯线飞到安全平地";
+  routeLabel.textContent = `无人驾驶迫降 · ${targetText}`;
+  statusText.textContent = mode === "water"
+    ? "无人驾驶接管：飞机会沿绿色灯线找河流，放平机头，最后在水面滑行停下。"
+    : "无人驾驶接管：飞机会沿绿色灯线避开河流和大楼，最后落到平地停下。";
+  addLog(`无人驾驶迫降选择：${targetText}。`);
+  updateFlightSound();
+}
+
 function announceAutopilotStage(stage, text) {
   if (state.autopilotStage === stage) return;
   state.autopilotStage = stage;
@@ -1318,12 +1385,19 @@ function announceAutopilotStage(stage, text) {
 function toggleAutopilot() {
   if (state.crashed || state.landed) resetGame();
   ensureAudio();
-  setAutopilot(!state.autopilot);
-  if (!state.autopilot) {
+  if (state.autopilot) {
+    setAutopilot(false);
+    closeEmergencyChoice();
     statusText.textContent = "已切回手动驾驶，你可以自己推油门、拉操纵杆和收放起落架。";
     addLog("无人驾驶关闭，玩家接管飞机。");
     return;
   }
+  if (isEmergencyFlightActive()) {
+    openEmergencyChoice();
+    routeLabel.textContent = "请选择无人驾驶迫降目标：水面或地面";
+    return;
+  }
+  setAutopilot(true);
   if (state.phase === "airborne") {
     state.phase = "landing";
     state.route = "landing";
@@ -1385,6 +1459,30 @@ function updateAutopilot() {
       announceAutopilotStage("flare", "无人驾驶正在减速接地，飞机会停在跑道白线前。");
       state.gear = 0;
     }
+  } else if (state.phase === "emergency") {
+    state.engineOff = true;
+    state.engineFire = false;
+    state.throttle = 0;
+    state.gear = 0;
+    const finalTarget = path[path.length - 1];
+    const finalDistance = Math.hypot(finalTarget.x - playerPlane.position.x, finalTarget.z - playerPlane.position.z);
+    const desiredAltitude = finalDistance > 300
+      ? 74
+      : finalDistance > 170
+        ? THREE.MathUtils.mapLinear(finalDistance, 300, 170, 74, 34)
+        : finalDistance > 55
+          ? THREE.MathUtils.mapLinear(finalDistance, 170, 55, 34, 7)
+          : 0;
+    const altitudeError = desiredAltitude - state.altitude;
+    state.yokeY = THREE.MathUtils.clamp(altitudeError * 0.045, -0.62, 0.74);
+    routeLabel.textContent = state.emergencyAutopilotMode === "water"
+      ? "无人驾驶迫降：绿色灯线正在对准河面"
+      : "无人驾驶迫降：绿色灯线正在对准平地";
+    if (state.emergencyAutopilotMode === "water") {
+      announceAutopilotStage("emergency-water", "无人驾驶正在找河面：机头保持平稳，快到水面时会拉平滑行。");
+    } else {
+      announceAutopilotStage("emergency-ground", "无人驾驶正在找地面平地：避开河流和大楼，最后落地停下。");
+    }
   }
 
   throttleLever.value = String(Math.round(state.throttle * 100));
@@ -1409,10 +1507,13 @@ function resetGame() {
   state.engineFire = false;
   state.engineOff = false;
   state.glideTimeLeft = 0;
+  state.emergencyAutopilotMode = "";
   state.emergencySurface = "";
   state.waterLandingTime = 0;
   state.waterLandingDuration = 0;
+  state.waterLandingHeading = 0;
   setAutopilot(false);
+  closeEmergencyChoice();
   throttleLever.value = "0";
   gearLever.value = "0";
   document.body.classList.remove("crashed");
@@ -1503,6 +1604,7 @@ function startEngineFireEmergency() {
   if (state.crashed || state.landed) resetGame();
   ensureAudio();
   setAutopilot(false);
+  closeEmergencyChoice();
   state.phase = "emergency";
   state.route = "landing";
   state.speed = 130;
@@ -1517,6 +1619,7 @@ function startEngineFireEmergency() {
   state.engineFire = true;
   state.engineOff = false;
   state.glideTimeLeft = 600;
+  state.emergencyAutopilotMode = "";
   state.emergencySurface = "";
   state.waterLandingTime = 0;
   state.waterLandingDuration = 0;
@@ -1543,7 +1646,7 @@ function shutEngine() {
   throttleLever.value = "0";
   if (state.engineFire && state.phase !== "emergency") state.phase = "emergency";
   routeLabel.textContent = "引擎已关闭：保持机头平稳，继续滑翔";
-  statusText.textContent = "引擎已经关闭，火焰变小。飞机还可以滑翔约 10 分钟，优先找河岸有人等待的河流做水上迫降；落到城市地面也可以成功。";
+  statusText.textContent = "引擎已经关闭，火焰变小。飞机还可以滑翔约 10 分钟；点“无人驾驶”可以选择水面国家或地面国家。";
   addLog("引擎关闭，进入滑翔迫降。");
   updateFlightSound();
 }
@@ -1881,10 +1984,12 @@ function checkHazardCollisions() {
 function crash(reason) {
   if (state.crashed || state.landed) return;
   setAutopilot(false);
+  closeEmergencyChoice();
   clearEngineFire();
   clearWaterSplash();
   state.engineFire = false;
   state.engineOff = false;
+  state.emergencyAutopilotMode = "";
   state.crashed = true;
   state.speed = 0;
   state.throttle = 0;
@@ -1902,10 +2007,12 @@ function crash(reason) {
 
 function landSuccess() {
   setAutopilot(false);
+  closeEmergencyChoice();
   clearEngineFire();
   clearWaterSplash();
   state.engineFire = false;
   state.engineOff = false;
+  state.emergencyAutopilotMode = "";
   state.landed = true;
   state.phase = "landed";
   state.speed = 0;
@@ -1919,6 +2026,7 @@ function landSuccess() {
 function startWaterLandingSequence() {
   if (state.crashed || state.landed || state.phase === "water-skimming") return;
   setAutopilot(false);
+  closeEmergencyChoice();
   clearEngineFire();
   state.engineFire = false;
   state.engineOff = true;
@@ -1944,10 +2052,12 @@ function startWaterLandingSequence() {
 
 function emergencyLandSuccess(surface) {
   setAutopilot(false);
+  closeEmergencyChoice();
   clearEngineFire();
   clearWaterSplash();
   state.engineFire = false;
   state.engineOff = true;
+  state.emergencyAutopilotMode = "";
   state.landed = true;
   state.phase = "emergency-landed";
   state.emergencySurface = surface;
@@ -2263,6 +2373,12 @@ function setupEvents() {
   engineFireBtn.addEventListener("click", startEngineFireEmergency);
   engineOffBtn.addEventListener("click", shutEngine);
   autopilotBtn.addEventListener("click", toggleAutopilot);
+  waterAutopilotBtn.addEventListener("click", () => startEmergencyAutopilot("water"));
+  groundAutopilotBtn.addEventListener("click", () => startEmergencyAutopilot("ground"));
+  closeEmergencyChoiceBtn.addEventListener("click", closeEmergencyChoice);
+  emergencyChoice.addEventListener("click", (event) => {
+    if (event.target === emergencyChoice) closeEmergencyChoice();
+  });
   document.querySelector("#brakeBtn").addEventListener("click", brake);
   document.querySelector("#demoCrashBtn").addEventListener("click", demoCrash);
   document.querySelector("#twinTowerBtn").addEventListener("click", startTwinTowerTest);
