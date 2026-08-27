@@ -1328,6 +1328,10 @@ function createRescueBoat(x, z, parent) {
   box("rescue-boat-blue-light", [0.36, 0.22, 0.36], [-0.8, 1.58, 0], mats.greenLight, boat);
   box("rescue-boat-stern-inflatable-raft", [1.65, 0.18, 1.55], [-3.2, 0.62, 0], orangeMat, boat);
   box("rescue-boat-stern-rope", [0.16, 0.12, 2.8], [-2.55, 0.64, 0], mats.dark, boat).rotation.y = Math.PI / 2;
+  for (const z of [-1.35, 1.35]) {
+    const oar = box("rowing-rescue-oar", [0.12, 0.08, 3.4], [0.4, 0.68, z], mats.dark, boat);
+    oar.rotation.x = z > 0 ? 0.32 : -0.32;
+  }
   for (let i = 0; i < 5; i++) {
     const helper = createLastPassengerAvatar();
     helper.name = i < 2 ? "rescue-boat-crew" : "rescued-passenger-on-boat";
@@ -1522,6 +1526,11 @@ function updateEvacuation(dt) {
         child.position.x = THREE.MathUtils.lerp(child.position.x, child.userData.target.x, 1 - Math.exp(-dt * 0.22));
         child.position.z = THREE.MathUtils.lerp(child.position.z, child.userData.target.z, 1 - Math.exp(-dt * 0.22));
       }
+      child.children.forEach((part, partIndex) => {
+        if (part.name === "rowing-rescue-oar") {
+          part.rotation.y = Math.sin(clock.elapsedTime * 4.8 + partIndex) * 0.42;
+        }
+      });
     }
   });
   if (state.planeSinking) {
@@ -1796,6 +1805,11 @@ function updateGateDocking(dt) {
 }
 
 function togglePlaneDoor() {
+  if (state.speed >= 10) {
+    statusText.textContent = `速度还有 ${Math.round(state.speed)} kt，低于 10 kt 才能开门。`;
+    addLog("开门失败：速度还没有低于 10 kt。");
+    return;
+  }
   if (state.phase === "emergency-landed" && state.evacuationSurface === "水面") {
     state.planeDoorOpen = true;
     updatePlaneDoorVisual();
@@ -1806,9 +1820,23 @@ function togglePlaneDoor() {
     addLog("水上迫降：普通开门按钮也打开了机门和逃生滑梯。");
     return;
   }
+  if (state.phase === "emergency-landed" && state.evacuationSurface === "地面") {
+    state.planeDoorOpen = true;
+    updatePlaneDoorVisual();
+    openEmergencyExitAndSlide(true);
+    missionTitle.textContent = "地面开门撤离";
+    routeLabel.textContent = "地面迫降：速度低于 10 kt，可以开门";
+    statusText.textContent = "飞机已经低于 10 kt，可以开门。紧急滑梯打开，乘客可以离开飞机。";
+    addLog("地面迫降：速度低于 10 kt，普通开门按钮打开了机门。");
+    return;
+  }
   if (!state.gateDocked) {
-    statusText.textContent = "现在还不能开门，要先等登机桥和飞机门对接好。";
-    addLog("开门失败：登机桥还没有对接完成。");
+    state.planeDoorOpen = !state.planeDoorOpen;
+    updatePlaneDoorVisual();
+    statusText.textContent = state.planeDoorOpen
+      ? "速度已经低于 10 kt，飞机门可以打开。"
+      : "飞机门已经关上。";
+    addLog(state.planeDoorOpen ? "速度低于 10 kt，飞机门打开。" : "飞机门关闭。");
     return;
   }
   state.planeDoorOpen = !state.planeDoorOpen;
