@@ -1805,6 +1805,39 @@ function updateGateDocking(dt) {
 }
 
 function togglePlaneDoor() {
+  const emergencyDoorAllowed =
+    ["emergency", "water-skimming", "emergency-landed"].includes(state.phase) ||
+    state.engineFire ||
+    state.engineOff ||
+    state.passengerAccidentTarget;
+
+  if (emergencyDoorAllowed) {
+    const waterEmergency =
+      state.evacuationSurface === "水面" ||
+      state.emergencySurface === "水面" ||
+      state.passengerAccidentTarget === "water" ||
+      state.phase === "water-skimming";
+    state.planeDoorOpen = true;
+    state.evacuationActive = true;
+    state.evacuationSurface = waterEmergency ? "水面" : "地面";
+    state.emergencySurface = waterEmergency ? "水面" : "地面";
+    updatePlaneDoorVisual();
+    openEmergencyExitAndSlide(true);
+    missionTitle.textContent = "紧急开门";
+    routeLabel.textContent = waterEmergency
+      ? "水上紧急门：飞机还在动也可以慢慢打开"
+      : "地面紧急门：不用等速度低于 10 kt";
+    statusText.textContent = waterEmergency
+      ? "这是紧急门，水上迫降时不管飞机还动不动都可以打开。滑梯和救生筏会放出来，乘客可以撤离。"
+      : "这是紧急门，紧急状态下不用等速度低于 10 kt，也可以打开滑梯撤离。";
+    addLog(
+      waterEmergency
+        ? "紧急开门：水上滑行时也允许打开机门和滑梯。"
+        : "紧急开门：取消 10 kt 限制，直接打开机门和滑梯。"
+    );
+    return;
+  }
+
   if (state.speed >= 10) {
     statusText.textContent = `速度还有 ${Math.round(state.speed)} kt，低于 10 kt 才能开门。`;
     addLog("开门失败：速度还没有低于 10 kt。");
