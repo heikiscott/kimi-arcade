@@ -1310,9 +1310,10 @@ function deployLifeRaftAt(exit, index) {
   for (let i = 0; i < 18; i++) {
     const passenger = createLastPassengerAvatar();
     passenger.name = "raft-passenger";
-    passenger.scale.setScalar(0.46);
+    passenger.scale.setScalar(0.4);
     passenger.position.set(base.position.x - 4.85 + (i % 6) * 1.58, 0.44, base.position.z - 2.35 + Math.floor(i / 6) * 1.9);
     passenger.rotation.y = i % 2 ? -0.4 : 0.4;
+    passenger.rotation.z = i % 3 === 0 ? 0.08 : -0.08;
     passenger.userData.lifeJacket.visible = true;
     lifeRaftGroup.add(passenger);
   }
@@ -1427,15 +1428,33 @@ function createEvacuationSlideAt(surface, exit, index) {
     const passenger = createLastPassengerAvatar();
     passenger.name = surface === "水面" ? "water-slide-passenger" : "ground-slide-passenger";
     passenger.scale.setScalar(surface === "水面" ? 0.42 : 0.34);
-    const t = i / Math.max(1, slidePassengerCount - 1);
-    passenger.position.lerpVectors(slideStart, slideEnd, t);
-    passenger.position.y += surface === "水面" ? 0.26 : 0.12;
-    passenger.position.add(new THREE.Vector3(-side.z, 0, side.x).multiplyScalar((i % 2 ? 0.22 : -0.22) * (surface === "水面" ? 1 : 0.4)));
+    const row = Math.floor(i / 2);
+    const lateral = new THREE.Vector3(-side.z, 0, side.x).multiplyScalar((i % 2 ? 0.28 : -0.28) * (surface === "水面" ? 1 : 0.5));
+    const queue = slideStart
+      .clone()
+      .add(forward.clone().multiplyScalar(-0.58 * row))
+      .add(lateral)
+      .add(new THREE.Vector3(0, 0.22, 0));
+    const raftLanding = slideEnd
+      .clone()
+      .add(side.clone().multiplyScalar(surface === "水面" ? 2.9 : 0.6))
+      .add(lateral.clone().multiplyScalar(1.35))
+      .add(new THREE.Vector3(0, surface === "水面" ? 0.22 : 0.05, 0));
+    passenger.position.copy(queue);
     passenger.rotation.y = slide.rotation.y;
     passenger.userData.lifeJacket.visible = surface === "水面";
+    passenger.userData.evacuationPath = {
+      delay: index * 0.55 + i * 0.18,
+      duration: surface === "水面" ? 2.35 : 1.55,
+      queue,
+      slideStart: slideStart.clone().add(lateral.clone().multiplyScalar(0.4)),
+      slideEnd: raftLanding,
+      slideYaw: slide.rotation.y,
+      surface
+    };
     evacuationGroup.add(passenger);
   }
-  addSpriteLabel(exit.label, surface === "水面" ? "滑梯斜下来，乘客滑到救生筏" : "滑梯斜下来，乘客滑到安全地面", [midpoint.x, midpoint.y + 2.5 + index * 0.18, midpoint.z], 8.3, 1.85, evacuationGroup);
+  addSpriteLabel(exit.label, surface === "水面" ? "门开后排队，一个个滑到救生筏" : "门开后排队，一个个滑到安全地面", [midpoint.x, midpoint.y + 2.5 + index * 0.18, midpoint.z], 8.3, 1.85, evacuationGroup);
 }
 
 function openEmergencyExitAndSlide(force = false) {
@@ -1559,7 +1578,20 @@ function updateEvacuation(dt) {
   if (!state.evacuationActive) return;
   state.evacuationTime += dt;
   evacuationGroup.children.forEach((child, index) => {
-    if (child.name.includes("passenger")) {
+    if (child.userData.evacuationPath) {
+      const path = child.userData.evacuationPath;
+      const moveT = THREE.MathUtils.clamp((state.evacuationTime - path.delay) / path.duration, 0, 1);
+      if (moveT <= 0) {
+        child.position.copy(path.queue);
+        child.rotation.x = 0;
+      } else {
+        const smoothT = moveT * moveT * (3 - 2 * moveT);
+        child.position.lerpVectors(path.slideStart, path.slideEnd, smoothT);
+        child.position.y += Math.sin(smoothT * Math.PI) * 0.12;
+        child.rotation.x = path.surface === "水面" ? -0.32 * smoothT : -0.22 * smoothT;
+      }
+      child.rotation.y = path.slideYaw;
+    } else if (child.name.includes("passenger")) {
       child.position.y += Math.sin(clock.elapsedTime * 4 + index) * 0.002;
     }
     if (child.name === "rescue-boat") {
