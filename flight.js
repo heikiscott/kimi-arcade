@@ -1796,6 +1796,16 @@ function updateGateDocking(dt) {
 }
 
 function togglePlaneDoor() {
+  if (state.phase === "emergency-landed" && state.evacuationSurface === "水面") {
+    state.planeDoorOpen = true;
+    updatePlaneDoorVisual();
+    openEmergencyExitAndSlide(true);
+    missionTitle.textContent = "水上开门撤离";
+    routeLabel.textContent = "水上迫降：机门打开，滑梯和救生筏都在水面";
+    statusText.textContent = "水上迫降后可以开门。机门已经打开，乘客从滑梯滑到充气救生筏，救援船会靠过来接人。";
+    addLog("水上迫降：普通开门按钮也打开了机门和逃生滑梯。");
+    return;
+  }
   if (!state.gateDocked) {
     statusText.textContent = "现在还不能开门，要先等登机桥和飞机门对接好。";
     addLog("开门失败：登机桥还没有对接完成。");
