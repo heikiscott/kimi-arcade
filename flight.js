@@ -291,8 +291,8 @@ const state = {
   evacuationTime: 0,
   planeSinking: false,
   planeSinkTime: 0,
-  planeSinkDelay: 120,
-  planeSinkDuration: 22,
+  planeSinkDelay: 96,
+  planeSinkDuration: 24,
   planeSinkStartY: 0,
   arrivalTaxi: false,
   arrivalTaxiTime: 0,
@@ -1326,10 +1326,26 @@ function createRescueBoat(x, z, parent) {
   box("rescue-boat-nose", [1.2, 0.42, 1.55], [3, 0.38, 0], orangeMat, boat).rotation.y = Math.PI / 4;
   box("rescue-boat-cabin", [1.5, 0.9, 1.35], [-0.8, 0.98, 0], makeMat(0x8fd7ff, 0.35, 0.08), boat);
   box("rescue-boat-blue-light", [0.36, 0.22, 0.36], [-0.8, 1.58, 0], mats.greenLight, boat);
+  box("rescue-boat-stern-inflatable-raft", [1.65, 0.18, 1.55], [-3.2, 0.62, 0], orangeMat, boat);
+  box("rescue-boat-stern-rope", [0.16, 0.12, 2.8], [-2.55, 0.64, 0], mats.dark, boat).rotation.y = Math.PI / 2;
+  for (let i = 0; i < 5; i++) {
+    const helper = createLastPassengerAvatar();
+    helper.name = i < 2 ? "rescue-boat-crew" : "rescued-passenger-on-boat";
+    helper.scale.setScalar(0.28);
+    helper.position.set(-0.8 + i * 0.62, 0.82, i % 2 ? 0.46 : -0.46);
+    helper.rotation.y = Math.PI / 2;
+    helper.userData.lifeJacket.visible = true;
+    boat.add(helper);
+  }
   boat.position.set(x, 0.18, z);
   boat.rotation.y = -0.4;
+  boat.userData.target = new THREE.Vector3(
+    playerPlane.position.x + (x > playerPlane.position.x ? 9.5 : -9.5),
+    0.18,
+    playerPlane.position.z + (z > playerPlane.position.z ? 7.2 : -7.2)
+  );
   parent.add(boat);
-  addSpriteLabel("救援船", "把救生筏上的人接走", [x, 3.1, z], 5.8, 1.6, parent);
+  addSpriteLabel("救援船", "船尾带着小充气筏，自动靠近接人", [x, 3.1, z], 7.2, 1.7, parent);
 }
 
 function getPlaneSideVector() {
@@ -1464,10 +1480,10 @@ function createWaterRescueScene() {
   openEmergencyExitAndSlide(true);
   state.planeSinking = true;
   state.planeSinkTime = 0;
-  state.planeSinkDelay = 120;
-  state.planeSinkDuration = 22;
+  state.planeSinkDelay = 96;
+  state.planeSinkDuration = 24;
   state.planeSinkStartY = playerPlane.position.y;
-  addSpriteLabel("浅蓝色大海迫降", "飞机先浮在水面约2分钟，乘客滑到救生筏后再慢慢沉下去", [playerPlane.position.x - 2, 5.8, playerPlane.position.z - 11], 13.5, 2.4, evacuationGroup);
+  addSpriteLabel("浅蓝色大海迫降", "飞机会在约2分钟内从水面慢慢沉下去，乘客先滑到救生筏", [playerPlane.position.x - 2, 5.8, playerPlane.position.z - 11], 13.5, 2.4, evacuationGroup);
 }
 
 function createWaterRescueCrowd() {
@@ -1502,6 +1518,10 @@ function updateEvacuation(dt) {
     }
     if (child.name === "rescue-boat") {
       child.position.y = 0.18 + Math.sin(clock.elapsedTime * 2.4) * 0.08;
+      if (child.userData.target) {
+        child.position.x = THREE.MathUtils.lerp(child.position.x, child.userData.target.x, 1 - Math.exp(-dt * 0.22));
+        child.position.z = THREE.MathUtils.lerp(child.position.z, child.userData.target.z, 1 - Math.exp(-dt * 0.22));
+      }
     }
   });
   if (state.planeSinking) {
@@ -2892,8 +2912,8 @@ function shutEngine() {
 function brake() {
   state.throttle = -0.3;
   throttleLever.value = "-30";
-  state.speed = Math.max(0, state.speed - 24);
-  statusText.textContent = "刹车，油门杆拉到最后面，飞机会慢慢停下来。";
+  state.speed = Math.max(0, state.speed - 42);
+  statusText.textContent = "刹车，油门杆拉到最后面，速度可以一直降到 0 kt。";
 }
 
 function demoCrash() {
@@ -3377,7 +3397,8 @@ function updatePhysics(dt) {
   }
   let targetSpeed = state.throttle < -0.22 ? 0 : state.throttle * 142;
   if (state.phase === "emergency") {
-    targetSpeed = state.engineOff ? Math.max(56, state.speed * 0.996) : 86;
+    const manualStop = state.throttle < -0.22 || (state.altitude < 1.2 && state.throttle <= 0.02);
+    targetSpeed = manualStop ? 0 : state.engineOff ? Math.max(24, state.speed * 0.992) : 86;
   } else if (state.phase === "water-skimming") {
     targetSpeed = 0;
   }
