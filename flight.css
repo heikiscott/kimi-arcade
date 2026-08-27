@@ -480,6 +480,20 @@ button {
   background: #246399;
 }
 
+#oxygenMaskBtn,
+#lifeJacketBtn,
+#emergencyExitBtn {
+  background: #2d7c8f;
+}
+
+#oxygenMaskBtn.active,
+#lifeJacketBtn.active,
+#emergencyExitBtn.active,
+#autopilotBtn.active {
+  color: var(--ink);
+  background: var(--gold);
+}
+
 .buttons button:nth-child(2) {
   background: var(--blue);
 }

@@ -36,6 +36,9 @@ const passengerModeBtn = document.querySelector("#passengerModeBtn");
 const passengerNormalBtn = document.querySelector("#passengerNormalBtn");
 const passengerAccidentWaterBtn = document.querySelector("#passengerAccidentWaterBtn");
 const passengerAccidentGroundBtn = document.querySelector("#passengerAccidentGroundBtn");
+const oxygenMaskBtn = document.querySelector("#oxygenMaskBtn");
+const lifeJacketBtn = document.querySelector("#lifeJacketBtn");
+const emergencyExitBtn = document.querySelector("#emergencyExitBtn");
 
 const airlines = [
   { id: "cz", short: "南航", name: "China Southern", local: "中国南方航空", color: 0x1f5fb8, accent: 0xd83232, model: "Boeing 737" },
@@ -279,8 +282,10 @@ const state = {
   passengerBoardTime: 0,
   passengerAccidentTarget: "",
   oxygenMasksDropped: false,
+  oxygenMaskOn: false,
   lifeJacketOn: false,
   lifeRaftDeployed: false,
+  emergencyExitOpened: false,
   evacuationActive: false,
   evacuationSurface: "",
   evacuationTime: 0,
@@ -687,13 +692,14 @@ function addDomesticRiverRoute(origin) {
 }
 
 function addInternationalSeaRoute(origin, destination) {
-  box("international-ocean-zone", [315, 0.09, 280], [48, 0.2, 438], mats.water, countryScenery);
-  box("international-deep-ocean-band", [260, 0.08, 96], [56, 0.26, 448], makeMat(0x125da0, 0.55, 0.02), countryScenery);
+  box("international-ocean-zone", [560, 0.09, 460], [48, 0.2, 438], mats.water, countryScenery);
+  box("international-deep-ocean-band", [520, 0.08, 170], [56, 0.26, 448], makeMat(0x125da0, 0.55, 0.02), countryScenery);
+  box("international-long-sea-landing-strip", [34, 0.1, 390], [112, 0.34, 438], makeMat(0x5fd8ff, 0.48, 0.02), countryScenery);
   addSpriteLabel(
-    "国际航班：经过大海",
-    `${origin.name}飞往${destination.name}，海上有岛屿和远处国家`,
-    [46, 16, 438],
-    10.2,
+    "国际航班：经过很长大海",
+    `${origin.name}飞往${destination.name}，海面迫降区比跑道还长`,
+    [46, 17, 438],
+    11.2,
     2.2,
     countryScenery
   );
@@ -745,7 +751,11 @@ function addGround() {
   box("arrival-grass", [360, 0.08, 42], [45, -0.03, 975], mats.grass, airport);
   addAirportCityAirportLayout();
   addRunway("起飞机场 · 3000 km 起飞跑道 18", [0, 0.02, 0], [16, 0.05, 460]);
+  addRunway("起飞机场 · 起飞跑道 19L", [-56, 0.021, 0], [13, 0.05, 420]);
+  addRunway("起飞机场 · 起飞跑道 19R", [56, 0.021, 0], [13, 0.05, 420]);
   addRunway("目的机场 · 3000 km 降落跑道 27", [100, 0.03, 650], [16, 0.05, 520]);
+  addRunway("目的机场 · 降落跑道 28L", [48, 0.031, 650], [13, 0.05, 470]);
+  addRunway("目的机场 · 降落跑道 28R", [152, 0.031, 650], [13, 0.05, 470]);
   addTaxiway([-44, -46], [-44, -22]);
   addTaxiway([-44, -22], [-34, -10]);
   addTaxiway([-34, -10], [-18, -2]);
@@ -1109,8 +1119,13 @@ function clearPassengerModeVisuals() {
   state.passengerBoardTime = 0;
   state.passengerAccidentTarget = "";
   state.oxygenMasksDropped = false;
+  state.oxygenMaskOn = false;
   state.lifeJacketOn = false;
   state.lifeRaftDeployed = false;
+  state.emergencyExitOpened = false;
+  oxygenMaskBtn.classList.remove("active");
+  lifeJacketBtn.classList.remove("active");
+  emergencyExitBtn.classList.remove("active");
   state.evacuationActive = false;
   state.evacuationSurface = "";
   state.evacuationTime = 0;
@@ -1180,7 +1195,9 @@ function createPassengerCabin() {
   passenger.rotation.y = Math.PI;
   passenger.userData.lifeJacket.visible = state.lifeJacketOn;
   passengerCabinRig.add(passenger);
-  box("orange-life-jacket-on-seat", [0.42, 0.1, 0.28], [-0.32, 1.62, 1.65], vestMat, passengerCabinRig);
+  const seatVest = box("orange-life-jacket-under-seat", [0.42, 0.1, 0.28], [-0.32, 1.18, 1.65], vestMat, passengerCabinRig);
+  seatVest.name = "orange-life-jacket-under-seat";
+  addSpriteLabel("座椅下救生衣", "点按钮穿上", [-0.32, 2.1, 1.65], 3.6, 1.15, passengerCabinRig);
   passengerCabinRig.visible = false;
   playerPlane.add(passengerCabinRig);
 }
@@ -1204,7 +1221,27 @@ function dropOxygenMasks() {
   }
   playerPlane.add(oxygenMaskRig);
   state.oxygenMasksDropped = true;
+  state.oxygenMaskOn = false;
+  oxygenMaskBtn.classList.remove("active");
   playAlertBeep();
+}
+
+function putOnOxygenMask() {
+  ensureAudio();
+  if (!state.passengerMode && !state.passengerBoarded) {
+    statusText.textContent = "先点“我是乘客”，坐进飞机里以后才能戴氧气面罩。";
+    return;
+  }
+  if (!state.oxygenMasksDropped) dropOxygenMasks();
+  state.oxygenMaskOn = true;
+  oxygenMaskBtn.classList.add("active");
+  if (oxygenMaskRig) {
+    oxygenMaskRig.traverse((node) => {
+      if (node.name === "oxygen-mask") node.material = makeMat(0x9ff2ff, 0.34, 0.05);
+    });
+  }
+  statusText.textContent = "你已经把氧气面罩对到脸上了。接下来如果是水上迫降，再点“穿救生衣”。";
+  addLog("乘客操作：氧气面罩已经戴好。");
 }
 
 function setPassengerLifeJacket(on) {
@@ -1214,7 +1251,19 @@ function setPassengerLifeJacket(on) {
   });
   passengerCabinRig?.traverse((node) => {
     if (node.name === "last-passenger-life-jacket") node.visible = on;
+    if (node.name === "orange-life-jacket-under-seat") node.visible = !on;
   });
+  lifeJacketBtn.classList.toggle("active", on);
+}
+
+function putOnPassengerLifeJacket() {
+  if (!state.passengerMode && !state.passengerBoarded) {
+    statusText.textContent = "先点“我是乘客”，坐进飞机里以后才能拿座椅下面的救生衣。";
+    return;
+  }
+  setPassengerLifeJacket(true);
+  statusText.textContent = "你已经从座椅下面拿出橙色救生衣并穿好了。飞机停到海面后可以打开紧急出口和滑梯。";
+  addLog("乘客操作：救生衣已经穿好。");
 }
 
 function deployLifeRaft() {
@@ -1223,25 +1272,27 @@ function deployLifeRaft() {
   const raftMat = makeMat(0xff8f1f, 0.58, 0.05);
   const floorMat = makeMat(0xffd27d, 0.64, 0.04);
   const waterMat = new THREE.MeshBasicMaterial({ color: 0x42c8ff, transparent: true, opacity: 0.88 });
-  const base = new THREE.Mesh(new THREE.TorusGeometry(4.6, 0.42, 14, 72), raftMat);
-  base.name = "large-orange-life-raft";
-  base.rotation.x = Math.PI / 2;
-  base.scale.set(1.45, 0.78, 1);
-  base.position.set(playerPlane.position.x + 6.2, 0.48, playerPlane.position.z - 3.2);
+  const base = new THREE.Mesh(new THREE.TorusGeometry(4.6, 0.42, 4, 4), raftMat);
+  base.name = "large-diamond-life-raft";
+  base.rotation.set(Math.PI / 2, 0, Math.PI / 4);
+  base.scale.set(1.7, 1.05, 1);
+  base.position.set(playerPlane.position.x + 8.2, 0.48, playerPlane.position.z - 4.2);
   lifeRaftGroup.add(base);
-  box("life-raft-floor", [9.8, 0.1, 4.8], [base.position.x, 0.36, base.position.z], floorMat, lifeRaftGroup);
-  box("life-raft-water-shadow", [14.5, 0.04, 8.2], [base.position.x, 0.08, base.position.z], waterMat, lifeRaftGroup);
-  for (let i = 0; i < 18; i++) {
+  const floor = box("diamond-life-raft-floor", [11.6, 0.1, 6.4], [base.position.x, 0.36, base.position.z], floorMat, lifeRaftGroup);
+  floor.rotation.y = Math.PI / 4;
+  box("life-raft-water-shadow", [16.5, 0.04, 10.2], [base.position.x, 0.08, base.position.z], waterMat, lifeRaftGroup).rotation.y = Math.PI / 4;
+  for (let i = 0; i < 24; i++) {
     const passenger = createLastPassengerAvatar();
     passenger.name = "raft-passenger";
-    passenger.scale.setScalar(0.45);
-    passenger.position.set(base.position.x - 3.9 + (i % 9) * 0.95, 0.44, base.position.z - 1.42 + Math.floor(i / 9) * 1.62);
+    passenger.scale.setScalar(0.42);
+    passenger.position.set(base.position.x - 4.8 + (i % 8) * 1.28, 0.44, base.position.z - 2.0 + Math.floor(i / 8) * 1.86);
     passenger.rotation.y = i % 2 ? -0.4 : 0.4;
     passenger.userData.lifeJacket.visible = true;
     lifeRaftGroup.add(passenger);
   }
-  createRescueBoat(base.position.x + 10, base.position.z + 4.2, lifeRaftGroup);
-  addSpriteLabel("大型充气救生筏", "乘客和机组都能坐上来，旁边救援船接应", [base.position.x, 4.2, base.position.z], 9.2, 2.1, lifeRaftGroup);
+  createRescueBoat(base.position.x + 12, base.position.z + 5.6, lifeRaftGroup);
+  createRescueBoat(base.position.x - 11, base.position.z - 5.2, lifeRaftGroup);
+  addSpriteLabel("大型菱形充气救生筏", "乘客从滑梯滑下来，救援船把大家接走", [base.position.x, 4.2, base.position.z], 10.8, 2.1, lifeRaftGroup);
   state.lifeRaftDeployed = true;
 }
 
@@ -1265,6 +1316,8 @@ function getPlaneSideVector() {
 }
 
 function createEvacuationSlide(surface) {
+  const hasSlide = evacuationGroup.children.some((child) => child.name === "inflatable-escape-slide");
+  if (hasSlide) return;
   const side = getPlaneSideVector();
   const door = getPlaneDoorWorldPosition();
   const slideStart = new THREE.Vector3(door.x, Math.max(1.25, door.y - 0.2), door.z);
@@ -1299,6 +1352,35 @@ function createEvacuationSlide(surface) {
     evacuationGroup.add(passenger);
   }
   addSpriteLabel("紧急逃生滑梯", surface === "水面" ? "滑到救生筏旁边" : "乘客滑到安全地面", [midpoint.x, midpoint.y + 2.7, midpoint.z], 7.6, 1.9, evacuationGroup);
+}
+
+function openEmergencyExitAndSlide(force = false) {
+  if (!force && !state.evacuationActive && !state.passengerMode && !state.passengerBoarded) {
+    statusText.textContent = "先进入乘客模式，或者等飞机迫降停稳后，再打开紧急出口和滑梯。";
+    return;
+  }
+  if (!force && state.passengerAccidentTarget && !state.evacuationActive) {
+    statusText.textContent = "飞机还没有停稳，先戴好氧气面罩和救生衣，等迫降停住后再打开紧急出口。";
+    return;
+  }
+  if (!force && state.passengerAccidentTarget === "water" && !state.lifeJacketOn) {
+    statusText.textContent = "水上迫降前先点“穿救生衣”，然后再打开紧急出口和滑梯。";
+    return;
+  }
+  state.emergencyExitOpened = true;
+  emergencyExitBtn.classList.add("active");
+  state.planeDoorOpen = true;
+  updatePlaneDoorVisual();
+  const surface = state.evacuationSurface || state.emergencySurface || (state.passengerAccidentTarget === "water" ? "水面" : "地面");
+  createEvacuationSlide(surface);
+  if (surface === "水面") {
+    setPassengerLifeJacket(true);
+    deployLifeRaft();
+    statusText.textContent = "紧急出口打开了。乘客顺着滑梯滑到大型菱形充气救生筏上，救援船正在靠近接人。";
+  } else {
+    statusText.textContent = "紧急出口打开了。乘客顺着滑梯滑到安全地面，救援车在旁边接应。";
+  }
+  addLog(surface === "水面" ? "紧急出口打开：乘客从滑梯进入救生筏，救援船靠近。" : "紧急出口打开：乘客从滑梯到地面。");
 }
 
 function createFireTruck(x, z, sideOffset) {
@@ -1346,23 +1428,22 @@ function createGroundRescueScene() {
 }
 
 function createWaterRescueScene() {
-  const waterMat = new THREE.MeshBasicMaterial({ color: 0x28bfff, transparent: true, opacity: 0.96 });
+  const waterMat = new THREE.MeshBasicMaterial({ color: 0x5fd8ff, transparent: true, opacity: 0.96 });
   const waterShineMat = new THREE.MeshBasicMaterial({ color: 0xb9f3ff, transparent: true, opacity: 0.6 });
   const bankMat = makeMat(0x79c36a, 0.88, 0.08);
-  box("emergency-river-landing-water", [96, 0.06, 64], [playerPlane.position.x + 5, 0.025, playerPlane.position.z], waterMat, evacuationGroup);
-  for (let i = 0; i < 8; i++) {
-    box("bright-water-wave-line", [18, 0.025, 0.28], [playerPlane.position.x - 32 + i * 10, 0.09, playerPlane.position.z - 9 + (i % 3) * 6], waterShineMat, evacuationGroup).rotation.y = 0.12;
+  box("emergency-long-sea-landing-water", [260, 0.06, 132], [playerPlane.position.x + 8, 0.025, playerPlane.position.z], waterMat, evacuationGroup);
+  for (let i = 0; i < 12; i++) {
+    box("bright-sea-wave-line", [26, 0.025, 0.28], [playerPlane.position.x - 95 + i * 18, 0.09, playerPlane.position.z - 46 + (i % 5) * 22], waterShineMat, evacuationGroup).rotation.y = 0.12;
   }
-  box("river-bank-left-with-people", [96, 0.08, 5.2], [playerPlane.position.x + 5, 0.08, playerPlane.position.z - 34], bankMat, evacuationGroup);
-  box("river-bank-right-with-people", [96, 0.08, 5.2], [playerPlane.position.x + 5, 0.08, playerPlane.position.z + 34], bankMat, evacuationGroup);
+  box("sea-bank-left-with-people", [230, 0.08, 5.2], [playerPlane.position.x + 8, 0.08, playerPlane.position.z - 70], bankMat, evacuationGroup);
+  box("sea-bank-right-with-people", [230, 0.08, 5.2], [playerPlane.position.x + 8, 0.08, playerPlane.position.z + 70], bankMat, evacuationGroup);
   createWaterRescueCrowd();
-  createEvacuationSlide("水面");
   setPassengerLifeJacket(true);
-  deployLifeRaft();
+  openEmergencyExitAndSlide(true);
   state.planeSinking = true;
   state.planeSinkTime = 0;
   state.planeSinkStartY = playerPlane.position.y;
-  addSpriteLabel("河岸救援区水上迫降", "飞机落在原来那条蓝色河面，旁边有人和救援人员", [playerPlane.position.x - 2, 5.8, playerPlane.position.z - 11], 12.5, 2.4, evacuationGroup);
+  addSpriteLabel("浅蓝色大海迫降", "飞机平稳贴海面，开紧急出口后从滑梯到救生筏", [playerPlane.position.x - 2, 5.8, playerPlane.position.z - 11], 12.5, 2.4, evacuationGroup);
 }
 
 function createWaterRescueCrowd() {
@@ -1375,7 +1456,7 @@ function createWaterRescueCrowd() {
   ];
   for (let i = 0; i < 28; i++) {
     const person = createLastPassengerAvatar();
-    person.name = "river-bank-rescue-crowd";
+    person.name = "sea-bank-rescue-crowd";
     person.scale.setScalar(0.44);
     const side = i % 2 === 0 ? -1 : 1;
     const row = Math.floor(i / 2);
@@ -1385,7 +1466,7 @@ function createWaterRescueCrowd() {
     if (shirt) shirt.material = shirtMats[i % shirtMats.length];
     evacuationGroup.add(person);
   }
-  addSpriteLabel("河岸有人和救援人员", "大家在蓝色河面旁边等救援", [playerPlane.position.x - 16, 4.8, playerPlane.position.z + 38], 9.6, 2.1, evacuationGroup);
+  addSpriteLabel("海岸有人和救援人员", "大家在浅蓝色大海旁边等救援", [playerPlane.position.x - 16, 4.8, playerPlane.position.z + 38], 9.6, 2.1, evacuationGroup);
 }
 
 function updateEvacuation(dt) {
@@ -1471,7 +1552,7 @@ function finishPassengerBoarding() {
   if (passengerCabinRig) passengerCabinRig.visible = true;
   missionTitle.textContent = "已经坐进飞机";
   routeLabel.textContent = "请选择：正常飞行 / 乘客水上迫降 / 乘客陆地迫降";
-  statusText.textContent = "你已经进到客舱坐好了。可以点“正常飞行”，也可以点事故模式：水上迫降会先掉氧气面罩、穿救生衣，停住后坐救生小船；陆地迫降会落到安全平地。";
+  statusText.textContent = "你已经进到客舱坐好了。可以点“正常飞行”，也可以点事故模式：水上迫降会先掉氧气面罩，你要点面罩和座椅下救生衣，停住后打开紧急出口滑到救生筏。";
   addLog("最后一个乘客已经坐好，等待选择飞行模式。");
 }
 
@@ -1518,7 +1599,7 @@ function startPassengerAccident(mode) {
   if (!passengerCabinRig) createPassengerCabin();
   passengerCabinRig.visible = true;
   dropOxygenMasks();
-  setPassengerLifeJacket(mode === "water");
+  setPassengerLifeJacket(false);
   startEngineFireEmergency();
   state.passengerMode = true;
   state.passengerBoarded = true;
@@ -1526,14 +1607,14 @@ function startPassengerAccident(mode) {
   if (!passengerCabinRig) createPassengerCabin();
   passengerCabinRig.visible = true;
   if (!state.oxygenMasksDropped) dropOxygenMasks();
-  if (mode === "water") setPassengerLifeJacket(true);
+  setPassengerLifeJacket(false);
   startEmergencyAutopilot(mode);
   missionTitle.textContent = mode === "water" ? "乘客水上迫降" : "乘客陆地迫降";
-  routeLabel.textContent = mode === "water" ? "乘客事故：氧气面罩掉下，穿救生衣，飞向水面" : "乘客事故：氧气面罩掉下，飞向安全平地";
+  routeLabel.textContent = mode === "water" ? "乘客事故：氧气面罩掉下，拿救生衣，飞向浅蓝色大海" : "乘客事故：氧气面罩掉下，飞向安全平地";
   statusText.textContent = mode === "water"
-    ? "事故模式开始：氧气面罩掉下来了。你穿好橙色救生衣，无人驾驶会沿绿色灯线去水面，停住后会放出小救生船。"
+    ? "事故模式开始：氧气面罩掉下来了。先点“戴氧气面罩”，再点“穿救生衣”；无人驾驶会沿绿色灯线飞向浅蓝色大海，停住后打开紧急出口滑到救生筏。"
     : "事故模式开始：氧气面罩掉下来了。无人驾驶会沿绿色灯线找安全平地迫降。";
-  addLog(mode === "water" ? "乘客事故模式：水上迫降，氧气面罩和救生衣已经准备。" : "乘客事故模式：陆地迫降，氧气面罩已经掉下。");
+  addLog(mode === "water" ? "乘客事故模式：水上迫降，氧气面罩已掉下，救生衣在座椅下面。" : "乘客事故模式：陆地迫降，氧气面罩已经掉下。");
 }
 
 function updatePlaneDoorVisual() {
@@ -1745,7 +1826,7 @@ function addEarthScenery() {
   addNightCity("河边高楼城区", -720, 1450, 4, 5);
   addCityRoadNetwork();
   addSpriteLabel("地球场景", "机场外是大片城市，天空只在上方", [-250, 28, 300], 9, 2.4, earthScenery);
-  addSpriteLabel("穿城河流", "引擎着火时可以迫降河里，地面也可以", [460, 36, 700], 9, 2.3, earthScenery);
+  addSpriteLabel("浅蓝色大海迫降区", "引擎着火时可以迫降到很长的海面，地面也可以", [460, 36, 700], 9, 2.3, earthScenery);
 }
 
 function addRiverRibbon(points, width) {
@@ -1765,19 +1846,19 @@ function addRiverRescueLandingBay() {
   const shallowWaterMat = new THREE.MeshBasicMaterial({ color: 0x62d8ff, transparent: true, opacity: 0.94 });
   const waterEdgeMat = makeMat(0x8fdc87, 0.86, 0.08);
   const sparkleMat = new THREE.MeshBasicMaterial({ color: 0xe8fbff, transparent: true, opacity: 0.74 });
-  box("shallow-blue-rescue-river-landing-zone", [190, 0.08, 112], [riverRescueLanding.x, 0.035, riverRescueLanding.z], shallowWaterMat, earthScenery);
-  box("rescue-river-grassy-bank-left", [190, 0.12, 9], [riverRescueLanding.x, 0.08, riverRescueLanding.z - 61], waterEdgeMat, earthScenery);
-  box("rescue-river-grassy-bank-right", [190, 0.12, 9], [riverRescueLanding.x, 0.08, riverRescueLanding.z + 61], waterEdgeMat, earthScenery);
-  for (let i = 0; i < 9; i++) {
-    const line = box("shallow-blue-river-wave", [22, 0.025, 0.38], [riverRescueLanding.x - 74 + i * 18, 0.11, riverRescueLanding.z - 28 + (i % 4) * 17], sparkleMat, earthScenery);
+  box("shallow-blue-rescue-sea-landing-zone", [330, 0.08, 156], [riverRescueLanding.x, 0.035, riverRescueLanding.z], shallowWaterMat, earthScenery);
+  box("rescue-sea-grassy-bank-left", [330, 0.12, 10], [riverRescueLanding.x, 0.08, riverRescueLanding.z - 84], waterEdgeMat, earthScenery);
+  box("rescue-sea-grassy-bank-right", [330, 0.12, 10], [riverRescueLanding.x, 0.08, riverRescueLanding.z + 84], waterEdgeMat, earthScenery);
+  for (let i = 0; i < 13; i++) {
+    const line = box("shallow-blue-sea-wave", [28, 0.025, 0.38], [riverRescueLanding.x - 142 + i * 24, 0.11, riverRescueLanding.z - 48 + (i % 6) * 18], sparkleMat, earthScenery);
     line.rotation.y = 0.16;
   }
   waterLandingSegments.push({
-    ax: riverRescueLanding.x - 95,
+    ax: riverRescueLanding.x - 165,
     az: riverRescueLanding.z,
-    bx: riverRescueLanding.x + 95,
+    bx: riverRescueLanding.x + 165,
     bz: riverRescueLanding.z,
-    width: 112
+    width: 156
   });
 }
 
@@ -1798,7 +1879,7 @@ function addRiverbankRescueScene() {
   ];
   people.forEach(([x, z], index) => {
     const group = new THREE.Group();
-    group.name = "riverbank-rescue-person";
+    group.name = "sea-bank-rescue-person";
     cyl("person-body", 0.42, 1.35, [0, 0.78, 0], shirtMats[index % shirtMats.length], group, 12);
     const head = new THREE.Mesh(new THREE.SphereGeometry(0.34, 14, 14), skinMat);
     head.name = "person-head";
@@ -1815,17 +1896,17 @@ function addRiverbankRescueScene() {
   });
   for (const [x, z] of [[286, 498], [338, 548], [388, 604], [704, 795]]) {
     const buoy = new THREE.Mesh(new THREE.TorusGeometry(1.4, 0.16, 12, 32), rescueMat);
-    buoy.name = "river-rescue-ring";
+    buoy.name = "sea-rescue-ring";
     buoy.position.set(x, 0.18, z);
     buoy.rotation.x = Math.PI / 2;
     buoy.castShadow = true;
     earthScenery.add(buoy);
     const lamp = new THREE.Mesh(new THREE.SphereGeometry(0.5, 14, 14), mats.runwayYellowLight);
-    lamp.name = "river-rescue-light";
+    lamp.name = "sea-rescue-light";
     lamp.position.set(x + 2.4, 1.1, z - 1.6);
     earthScenery.add(lamp);
   }
-  addSpriteLabel("河岸救援区", "浅蓝色河道，岸边有人和救援人员", [338, 8.5, 472], 9.4, 2.1, earthScenery);
+  addSpriteLabel("海上救援区", "浅蓝色大海，岸边有人和救援人员", [338, 8.5, 472], 9.4, 2.1, earthScenery);
 }
 
 function addMountainRange(baseX, baseZ, count, heightBase) {
@@ -2491,10 +2572,10 @@ function startEmergencyAutopilot(mode) {
   clearEngineFire();
   rebuildRouteLights();
   setAutopilot(true);
-  const targetText = mode === "water" ? "水面国家：沿绿色灯线飞到河道水面" : "地面国家：沿绿色灯线飞到安全平地";
+  const targetText = mode === "water" ? "水面国家：沿绿色灯线飞到浅蓝色大海" : "地面国家：沿绿色灯线飞到安全平地";
   routeLabel.textContent = `无人驾驶迫降 · ${targetText}`;
   statusText.textContent = mode === "water"
-    ? "无人驾驶接管：飞机会沿绿色灯线找河流，放平机头，最后在水面滑行停下。"
+    ? "无人驾驶接管：飞机会沿绿色灯线找浅蓝色大海，放平机头，最后在水面滑行停下。"
     : "无人驾驶接管：飞机会沿绿色灯线避开河流和大楼，最后落到平地停下。";
   addLog(`无人驾驶迫降选择：${targetText}。`);
   updateFlightSound();
@@ -2505,7 +2586,7 @@ function announceAutopilotStage(stage, text) {
   state.autopilotStage = stage;
   const passengerText = state.passengerAccidentTarget
     ? state.passengerAccidentTarget === "water"
-      ? `氧气面罩已经掉下，你穿好救生衣。${text}`
+      ? `氧气面罩已经掉下，救生衣在座椅下面。${text}`
       : `氧气面罩已经掉下。${text}`
     : text;
   statusText.textContent = passengerText;
@@ -2606,10 +2687,10 @@ function updateAutopilot() {
     const altitudeError = desiredAltitude - state.altitude;
     state.yokeY = THREE.MathUtils.clamp(altitudeError * 0.045, -0.62, 0.74);
     routeLabel.textContent = state.emergencyAutopilotMode === "water"
-      ? "无人驾驶迫降：绿色灯线正在对准河面"
+      ? "无人驾驶迫降：绿色灯线正在对准浅蓝色大海"
       : "无人驾驶迫降：绿色灯线正在对准平地";
     if (state.emergencyAutopilotMode === "water") {
-      announceAutopilotStage("emergency-water", "无人驾驶正在找河面：机头保持平稳，快到水面时会拉平滑行。");
+      announceAutopilotStage("emergency-water", "无人驾驶正在找浅蓝色大海：机头保持平稳，快到水面时会拉平滑行。");
     } else {
       announceAutopilotStage("emergency-ground", "无人驾驶正在找地面平地：避开河流和大楼，最后落地停下。");
     }
@@ -2766,8 +2847,8 @@ function startEngineFireEmergency() {
   rebuildRouteLights();
   missionTitle.textContent = "引擎着火迫降";
   routeLabel.textContent = "空中故障：关闭引擎后还可以滑翔 10 分钟";
-  statusText.textContent = "引擎着火了：点“关闭引擎”，最好驾驶到有岸边救援人员的河道做水上迫降；如果降到地面上也可以成功，不会爆炸。";
-  addLog("空中故障开局：引擎着火，目标是驾驶到穿城河流做水上迫降。");
+  statusText.textContent = "引擎着火了：点“关闭引擎”，最好驾驶到有海岸救援人员的浅蓝色大海做水上迫降；如果降到地面上也可以成功，不会爆炸。";
+  addLog("空中故障开局：引擎着火，目标是驾驶到浅蓝色大海做水上迫降。");
   updateYokeKnob();
   updateFlightSound();
 }
@@ -3167,7 +3248,7 @@ function startWaterLandingSequence() {
   state.phase = "water-skimming";
   state.emergencySurface = "水面";
   state.waterLandingTime = 0;
-  state.waterLandingDuration = 4.8;
+  state.waterLandingDuration = 6.4;
   state.waterLandingHeading = state.heading;
   state.altitude = 0;
   state.speed = Math.max(48, Math.min(state.speed, 82));
@@ -3182,14 +3263,14 @@ function startWaterLandingSequence() {
     state.waterLandingHeading = state.heading;
   }
   playerPlane.position.y = 0.74;
-  playerPlane.rotation.x = 0.08;
-  playerPlane.rotation.z = -0.08;
+  playerPlane.rotation.x = 0.015;
+  playerPlane.rotation.z = 0;
   createWaterSplash();
   playWaterLandingSplashSound();
   missionTitle.textContent = "水上迫降滑行";
-  routeLabel.textContent = "水面：机头拉平，水花起来，正在减速";
-  statusText.textContent = "飞机已经碰到水面了。机身贴着河面滑行，左右两边有浪花，速度会慢慢降下来，河岸救援人员正在看着。";
-  addLog("飞机贴水了：不是爆炸，是在河面上滑行减速。");
+  routeLabel.textContent = "浅蓝色大海：机身拉平，水花起来，正在减速";
+  statusText.textContent = "飞机已经平稳碰到浅蓝色大海了。机身贴着水面滑行，左右两边有浪花，速度会慢慢降下来，海岸救援人员正在看着。";
+  addLog("飞机贴水了：不是爆炸，是在浅蓝色大海上平稳滑行减速。");
 }
 
 function emergencyLandSuccess(surface) {
@@ -3220,7 +3301,7 @@ function emergencyLandSuccess(surface) {
   }
   missionTitle.textContent = "迫降成功";
   statusText.textContent = surface === "水面"
-    ? "飞机已经落到河面上并停住。逃生滑梯打开，大型充气救生筏放出来，救援船在旁边接应，乘客和机组都坐上救生筏，飞机会慢慢沉到水底。"
+    ? "飞机已经落到浅蓝色大海上并停住。逃生滑梯打开，大型菱形充气救生筏放出来，救援船在旁边接应，乘客和机组都坐上救生筏，飞机会慢慢沉到水底。"
     : "飞机已经在地面跑道上停住。消防车开过来喷水灭火，停稳后紧急逃生滑梯打开，乘客从滑梯滑到安全区域。";
   addLog(`引擎故障迫降成功：落到${surface}，飞机停下来了。`);
 }
@@ -3337,9 +3418,9 @@ function updatePhysics(dt) {
     state.altitude = 0;
     state.yokeX *= 0.82;
     state.yokeY *= 0.82;
-    state.speed = Math.max(0, state.speed - dt * 12);
-    state.heading += Math.sin(state.waterLandingTime * 2.4) * dt * 0.035;
-    playerPlane.rotation.z = Math.sin(state.waterLandingTime * 8) * 0.045;
+    state.speed = Math.max(0, state.speed - dt * 9.5);
+    state.heading = THREE.MathUtils.lerp(state.heading, state.waterLandingHeading, 1 - Math.exp(-dt * 2.8));
+    playerPlane.rotation.z = THREE.MathUtils.lerp(playerPlane.rotation.z, 0, 1 - Math.exp(-dt * 5));
     if (state.waterLandingTime > state.waterLandingDuration || state.speed < 7) {
       emergencyLandSuccess("水面");
       return;
@@ -3357,7 +3438,7 @@ function updatePhysics(dt) {
     const landingPitch = state.phase === "landing" ? 0.04 : state.phase === "emergency" ? 0.07 : 0;
     nosePitch = THREE.MathUtils.clamp(commandedPitch + takeoffLiftPitch + cruisePitch + landingPitch, -0.32, 0.18);
   } else if (state.phase === "water-skimming") {
-    nosePitch = 0.08 + Math.sin(state.waterLandingTime * 7) * 0.018;
+    nosePitch = 0.012 + Math.sin(state.waterLandingTime * 6) * 0.004;
   }
   playerPlane.rotation.x = nosePitch;
   if (playerAircraftParts.gearParts) {
@@ -3565,6 +3646,9 @@ function setupEvents() {
   passengerNormalBtn.addEventListener("click", startPassengerNormalFlight);
   passengerAccidentWaterBtn.addEventListener("click", () => startPassengerAccident("water"));
   passengerAccidentGroundBtn.addEventListener("click", () => startPassengerAccident("ground"));
+  oxygenMaskBtn.addEventListener("click", putOnOxygenMask);
+  lifeJacketBtn.addEventListener("click", putOnPassengerLifeJacket);
+  emergencyExitBtn.addEventListener("click", () => openEmergencyExitAndSlide(false));
   doorBtn.addEventListener("click", togglePlaneDoor);
   waterAutopilotBtn.addEventListener("click", () => startEmergencyAutopilot("water"));
   groundAutopilotBtn.addEventListener("click", () => startEmergencyAutopilot("ground"));
