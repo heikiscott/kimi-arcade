@@ -286,6 +286,8 @@ const state = {
   lifeJacketOn: false,
   lifeRaftDeployed: false,
   emergencyExitOpened: false,
+  evacuationSlideDeployed: false,
+  evacuationPassengersReleased: false,
   evacuationActive: false,
   evacuationSurface: "",
   evacuationTime: 0,
@@ -1126,6 +1128,8 @@ function clearPassengerModeVisuals() {
   state.lifeJacketOn = false;
   state.lifeRaftDeployed = false;
   state.emergencyExitOpened = false;
+  state.evacuationSlideDeployed = false;
+  state.evacuationPassengersReleased = false;
   oxygenMaskBtn.classList.remove("active");
   lifeJacketBtn.classList.remove("active");
   emergencyExitBtn.classList.remove("active");
@@ -1134,6 +1138,7 @@ function clearPassengerModeVisuals() {
   state.evacuationTime = 0;
   state.planeSinking = false;
   state.planeSinkTime = 0;
+  updateEmergencyActionButton();
 }
 
 function createLastPassengerAvatar() {
@@ -1178,18 +1183,34 @@ function getPlaneDoorWorldPosition() {
   return target;
 }
 
+function getPlaneLocalWorldPoint(x, y, z) {
+  playerPlane.updateMatrixWorld(true);
+  return new THREE.Vector3(x, y, z).applyMatrix4(playerPlane.matrixWorld);
+}
+
 function createPassengerCabin() {
   clearPassengerCabin();
   passengerCabinRig = new THREE.Group();
-  passengerCabinRig.name = "passenger-cabin-cutaway";
+  passengerCabinRig.name = "single-deck-passenger-cabin";
   const floorMat = makeMat(0x263746, 0.65, 0.08);
   const seatMat = makeMat(0x274f90, 0.52, 0.12);
   const vestMat = makeMat(0xff9f1c, 0.48, 0.08);
-  box("cabin-floor", [1.35, 0.05, 4.8], [0.15, 1.1, 0.7], floorMat, passengerCabinRig);
+  const wallMat = makeMat(0xe9f3f9, 0.45, 0.08);
+  const aisleMat = makeMat(0x9eb5c8, 0.62, 0.05);
+  const binMat = makeMat(0xd8e7f0, 0.5, 0.06);
+  box("single-deck-cabin-floor", [1.55, 0.05, 5.05], [0.15, 1.1, 0.7], floorMat, passengerCabinRig);
+  box("single-deck-cabin-aisle", [0.22, 0.035, 4.86], [0.13, 1.145, 0.7], aisleMat, passengerCabinRig);
+  box("single-deck-cabin-left-wall", [0.05, 0.92, 4.9], [-0.72, 1.66, 0.7], wallMat, passengerCabinRig);
+  box("single-deck-cabin-right-wall", [0.05, 0.92, 4.9], [1.02, 1.66, 0.7], wallMat, passengerCabinRig);
+  box("single-deck-cabin-ceiling", [1.62, 0.06, 5.05], [0.15, 2.25, 0.7], wallMat, passengerCabinRig);
+  box("left-overhead-bin", [0.48, 0.18, 4.65], [-0.46, 2.08, 0.65], binMat, passengerCabinRig);
+  box("right-overhead-bin", [0.48, 0.18, 4.65], [0.76, 2.08, 0.65], binMat, passengerCabinRig);
   for (let row = 0; row < 4; row++) {
     const z = -0.8 + row * 0.82;
     box("cabin-left-seat", [0.42, 0.34, 0.38], [-0.32, 1.36, z], seatMat, passengerCabinRig);
     box("cabin-right-seat", [0.42, 0.34, 0.38], [0.58, 1.36, z], seatMat, passengerCabinRig);
+    box("seat-back-screen", [0.28, 0.18, 0.035], [-0.32, 1.58, z - 0.18], makeMat(0x142535, 0.46, 0.1), passengerCabinRig);
+    box("seat-back-screen", [0.28, 0.18, 0.035], [0.58, 1.58, z - 0.18], makeMat(0x142535, 0.46, 0.1), passengerCabinRig);
   }
   const passenger = createLastPassengerAvatar();
   passenger.name = "seated-last-passenger";
@@ -1200,7 +1221,8 @@ function createPassengerCabin() {
   passengerCabinRig.add(passenger);
   const seatVest = box("orange-life-jacket-under-seat", [0.42, 0.1, 0.28], [-0.32, 1.18, 1.65], vestMat, passengerCabinRig);
   seatVest.name = "orange-life-jacket-under-seat";
-  addSpriteLabel("座椅下救生衣", "点按钮穿上", [-0.32, 2.1, 1.65], 3.6, 1.15, passengerCabinRig);
+  addSpriteLabel("一层客舱", "你坐在一层，不是二楼", [0.14, 2.78, -1.36], 4.2, 1.2, passengerCabinRig);
+  addSpriteLabel("座椅下救生衣", "点按钮穿上", [-0.32, 2.38, 1.65], 3.6, 1.15, passengerCabinRig);
   passengerCabinRig.visible = false;
   playerPlane.add(passengerCabinRig);
 }
@@ -1211,14 +1233,17 @@ function dropOxygenMasks() {
   oxygenMaskRig.name = "dropped-oxygen-masks";
   const tubeMat = makeMat(0xe8f4ff, 0.45, 0.05);
   const maskMat = makeMat(0xffe680, 0.42, 0.06);
+  const panelMat = makeMat(0xdceaf2, 0.5, 0.06);
   for (let row = 0; row < 5; row++) {
+    const z = -1.2 + row * 0.75;
+    box("oxygen-mask-ceiling-panel", [1.28, 0.055, 0.28], [0.05, 2.26, z], panelMat, oxygenMaskRig);
     for (const x of [-0.42, 0.52]) {
-      const z = -1.2 + row * 0.75;
-      box("oxygen-mask-strap", [0.035, 0.46, 0.035], [x, 2.05, z], tubeMat, oxygenMaskRig);
+      box("oxygen-mask-strap", [0.035, 0.56, 0.035], [x, 2.0, z], tubeMat, oxygenMaskRig);
+      box("oxygen-mask-top-anchor", [0.16, 0.04, 0.16], [x, 2.25, z], tubeMat, oxygenMaskRig);
       const mask = new THREE.Mesh(new THREE.SphereGeometry(0.14, 12, 12), maskMat);
       mask.name = "oxygen-mask";
       mask.scale.set(1, 0.72, 0.55);
-      mask.position.set(x, 1.76, z);
+      mask.position.set(x, 1.68, z);
       oxygenMaskRig.add(mask);
     }
   }
@@ -1289,8 +1314,11 @@ function deployLifeRaft() {
   clearGroup(lifeRaftGroup);
   const exits = getEvacuationExitConfigs("水面");
   exits.forEach((exit, index) => deployLifeRaftAt(exit, index));
-  addSpriteLabel("全机紧急撤离", "所有紧急出口放下滑梯，乘客穿救生衣坐到救生筏上", [playerPlane.position.x, 6.4, playerPlane.position.z], 14.8, 2.35, lifeRaftGroup);
+  addSpriteLabel("全机紧急撤离", "救生筏已经充气，乘客开始一个个从滑梯下来", [playerPlane.position.x, 6.4, playerPlane.position.z], 14.8, 2.35, lifeRaftGroup);
   state.lifeRaftDeployed = true;
+  state.evacuationPassengersReleased = true;
+  state.evacuationTime = 0;
+  updateEmergencyActionButton();
 }
 
 function deployLifeRaftAt(exit, index) {
@@ -1307,22 +1335,36 @@ function deployLifeRaftAt(exit, index) {
   const floor = box("diamond-life-raft-floor", [14.6, 0.1, 8.2], [base.position.x, 0.36, base.position.z], floorMat, lifeRaftGroup);
   floor.rotation.y = Math.PI / 4;
   box("life-raft-water-shadow", [20.5, 0.04, 12.8], [base.position.x, 0.08, base.position.z], waterMat, lifeRaftGroup).rotation.y = Math.PI / 4;
-  for (let i = 0; i < 18; i++) {
-    const passenger = createLastPassengerAvatar();
-    passenger.name = "raft-passenger";
-    passenger.scale.setScalar(0.4);
-    passenger.position.set(base.position.x - 4.85 + (i % 6) * 1.58, 0.44, base.position.z - 2.35 + Math.floor(i / 6) * 1.9);
-    passenger.rotation.y = i % 2 ? -0.4 : 0.4;
-    passenger.rotation.z = i % 3 === 0 ? 0.08 : -0.08;
-    passenger.userData.lifeJacket.visible = true;
-    lifeRaftGroup.add(passenger);
-  }
+  const sideTube = box("inflated-raft-side-tube", [13.8, 0.42, 0.42], [base.position.x, 0.72, base.position.z - 3.55], raftMat, lifeRaftGroup);
+  sideTube.rotation.y = Math.PI / 4;
+  const sideTube2 = box("inflated-raft-side-tube", [13.8, 0.42, 0.42], [base.position.x, 0.72, base.position.z + 3.55], raftMat, lifeRaftGroup);
+  sideTube2.rotation.y = Math.PI / 4;
   const tetherStart = exit.door.clone().add(exit.side.clone().multiplyScalar(11.8));
   const tetherMid = new THREE.Vector3((tetherStart.x + base.position.x) / 2, 0.58, (tetherStart.z + base.position.z) / 2);
   const tether = box("life-raft-tether-rope", [0.12, 0.08, 8.2], [tetherMid.x, tetherMid.y, tetherMid.z], mats.dark, lifeRaftGroup);
   tether.rotation.y = state.heading + exit.sideSign * Math.PI / 2;
   createRescueBoat(base.position.x + exit.side.x * (12 + index * 1.4) + 3.2, base.position.z + exit.side.z * (12 + index * 1.4) + 4.2, lifeRaftGroup);
-  addSpriteLabel("充气救生筏", "乘客从这条滑梯滑下来等待救援船", [base.position.x, 4.1, base.position.z], 9.8, 1.75, lifeRaftGroup);
+  addSpriteLabel("充气救生筏", "和滑梯末端连在一起，两边鼓起来接住乘客", [base.position.x, 4.1, base.position.z], 9.8, 1.75, lifeRaftGroup);
+}
+
+function createPackedLifeRafts() {
+  clearGroup(lifeRaftGroup);
+  getEvacuationExitConfigs("水面").forEach((exit, index) => createPackedLifeRaftAt(exit, index));
+  addSpriteLabel("救生筏还没充气", "再点“充气救生筏”，滑梯末端会展开大救生筏", [playerPlane.position.x, 6.4, playerPlane.position.z], 13.5, 2.25, lifeRaftGroup);
+}
+
+function createPackedLifeRaftAt(exit, index) {
+  const packMat = makeMat(0xff7a1f, 0.52, 0.06);
+  const side = exit.side;
+  const door = exit.door;
+  const center = new THREE.Vector3(door.x + side.x * 15.6, 0.62, door.z + side.z * 15.6);
+  const pack = box("packed-life-raft-canister", [2.8, 0.46, 1.18], [center.x, center.y, center.z], packMat, lifeRaftGroup);
+  pack.rotation.y = state.heading + exit.sideSign * Math.PI / 2;
+  const foldedLeft = box("folded-raft-left-bag", [1.6, 0.24, 0.42], [center.x - side.z * 0.52, center.y + 0.22, center.z + side.x * 0.52], packMat, lifeRaftGroup);
+  foldedLeft.rotation.y = pack.rotation.y;
+  const foldedRight = box("folded-raft-right-bag", [1.6, 0.24, 0.42], [center.x + side.z * 0.52, center.y + 0.22, center.z - side.x * 0.52], packMat, lifeRaftGroup);
+  foldedRight.rotation.y = pack.rotation.y;
+  addSpriteLabel("救生筏包", index === 0 ? "点按钮充气" : "滑梯末端待命", [center.x, 2.65, center.z], 5.6, 1.25, lifeRaftGroup);
 }
 
 function createRescueBoat(x, z, parent) {
@@ -1443,6 +1485,7 @@ function createEvacuationSlideAt(surface, exit, index) {
     passenger.position.copy(queue);
     passenger.rotation.y = slide.rotation.y;
     passenger.userData.lifeJacket.visible = surface === "水面";
+    passenger.visible = surface !== "水面" || state.evacuationPassengersReleased;
     passenger.userData.evacuationPath = {
       delay: index * 0.55 + i * 0.18,
       duration: surface === "水面" ? 2.35 : 1.55,
@@ -1454,7 +1497,7 @@ function createEvacuationSlideAt(surface, exit, index) {
     };
     evacuationGroup.add(passenger);
   }
-  addSpriteLabel(exit.label, surface === "水面" ? "门开后排队，一个个滑到救生筏" : "门开后排队，一个个滑到安全地面", [midpoint.x, midpoint.y + 2.5 + index * 0.18, midpoint.z], 8.3, 1.85, evacuationGroup);
+  addSpriteLabel(exit.label, surface === "水面" ? "滑梯已伸出，救生筏充气后再滑" : "门开后排队，一个个滑到安全地面", [midpoint.x, midpoint.y + 2.5 + index * 0.18, midpoint.z], 8.3, 1.85, evacuationGroup);
 }
 
 function openEmergencyExitAndSlide(force = false) {
@@ -1470,20 +1513,51 @@ function openEmergencyExitAndSlide(force = false) {
     statusText.textContent = "水上迫降前先点“穿救生衣”，然后再打开紧急出口和滑梯。";
     return;
   }
-  state.emergencyExitOpened = true;
-  emergencyExitBtn.classList.add("active");
-  state.planeDoorOpen = true;
-  updatePlaneDoorVisual();
   const surface = state.evacuationSurface || state.emergencySurface || (state.passengerAccidentTarget === "water" ? "水面" : "地面");
-  createEvacuationSlide(surface);
-  if (surface === "水面") {
-    setPassengerLifeJacket(true);
-    deployLifeRaft();
-    statusText.textContent = "紧急出口打开了。乘客顺着滑梯滑到大型菱形充气救生筏上，救援船正在靠近接人。";
-  } else {
-    statusText.textContent = "紧急出口打开了。乘客顺着滑梯滑到安全地面，救援车在旁边接应。";
+  state.evacuationActive = true;
+  state.evacuationSurface = surface;
+  state.emergencySurface = surface;
+  if (!state.planeDoorOpen) {
+    state.planeDoorOpen = true;
+    updatePlaneDoorVisual();
+    missionTitle.textContent = surface === "水面" ? "水上开门" : "紧急开门";
+    routeLabel.textContent = "门已打开：下一步点“伸出滑梯”";
+    statusText.textContent = "飞机门已经打开。现在再点一次“伸出滑梯”，滑梯才会从门口伸出来。";
+    addLog("紧急流程：第一步开门完成。");
+    return;
   }
-  addLog(surface === "水面" ? "紧急出口打开：乘客从滑梯进入救生筏，救援船靠近。" : "紧急出口打开：乘客从滑梯到地面。");
+  if (!state.evacuationSlideDeployed) {
+    state.emergencyExitOpened = true;
+    state.evacuationSlideDeployed = true;
+    state.evacuationPassengersReleased = surface !== "水面";
+    state.evacuationTime = 0;
+    emergencyExitBtn.classList.add("active");
+    createEvacuationSlide(surface);
+    if (surface === "水面") {
+      setPassengerLifeJacket(true);
+      createPackedLifeRafts();
+      routeLabel.textContent = "滑梯已伸出：下一步点“充气救生筏”";
+      statusText.textContent = "滑梯从飞机门伸出来了。滑梯末端夹着未充气救生筏包，再点“充气救生筏”，救生筏会和滑梯接在一起。";
+      addLog("紧急流程：滑梯已经伸出，救生筏包在末端等待充气。");
+    } else {
+      routeLabel.textContent = "滑梯已伸出：乘客开始排队下滑";
+      statusText.textContent = "紧急滑梯伸出来了。乘客正在排队，一个个顺着滑梯滑到安全地面。";
+      addLog("紧急流程：地面滑梯已经伸出，乘客开始撤离。");
+    }
+    updateEmergencyActionButton();
+    return;
+  }
+  if (surface === "水面" && !state.lifeRaftDeployed) {
+    deployLifeRaft();
+    routeLabel.textContent = "救生筏已充气：乘客一个个滑下去";
+    statusText.textContent = "救生筏充气完成，两边鼓起来并和滑梯末端接在一起。乘客开始排队滑到救生筏上，救援船正在靠近。";
+    addLog("紧急流程：救生筏充气完成，乘客开始从滑梯进入救生筏。");
+    return;
+  }
+  statusText.textContent = surface === "水面"
+    ? "撤离正在进行：乘客一个个从门口排队，顺着滑梯滑到救生筏上。"
+    : "撤离正在进行：乘客一个个从门口排队，顺着滑梯滑到安全地面。";
+  updateEmergencyActionButton();
 }
 
 function createFireTruck(x, z, sideOffset) {
@@ -1526,8 +1600,7 @@ function createGroundRescueScene() {
     smoke.material.opacity = 0.34 - i * 0.025;
     evacuationGroup.add(smoke);
   }
-  createEvacuationSlide("地面");
-  addSpriteLabel("跑道救援", "停稳后消防车喷水灭火，乘客从滑梯离开", [playerPlane.position.x, 5.2, playerPlane.position.z - 8], 10, 2.2, evacuationGroup);
+  addSpriteLabel("跑道救援", "停稳后先开门，再伸出滑梯，乘客一个个离开", [playerPlane.position.x, 5.2, playerPlane.position.z - 8], 11.5, 2.2, evacuationGroup);
 }
 
 function createWaterRescueScene() {
@@ -1541,14 +1614,12 @@ function createWaterRescueScene() {
   box("sea-bank-left-with-people", [230, 0.08, 5.2], [playerPlane.position.x + 8, 0.08, playerPlane.position.z - 70], bankMat, evacuationGroup);
   box("sea-bank-right-with-people", [230, 0.08, 5.2], [playerPlane.position.x + 8, 0.08, playerPlane.position.z + 70], bankMat, evacuationGroup);
   createWaterRescueCrowd();
-  setPassengerLifeJacket(true);
-  openEmergencyExitAndSlide(true);
   state.planeSinking = true;
   state.planeSinkTime = 0;
   state.planeSinkDelay = 96;
   state.planeSinkDuration = 24;
   state.planeSinkStartY = playerPlane.position.y;
-  addSpriteLabel("浅蓝色大海迫降", "飞机会在约2分钟内从水面慢慢沉下去，乘客先滑到救生筏", [playerPlane.position.x - 2, 5.8, playerPlane.position.z - 11], 13.5, 2.4, evacuationGroup);
+  addSpriteLabel("浅蓝色大海迫降", "停稳后先开门，再伸滑梯，最后充气救生筏", [playerPlane.position.x - 2, 5.8, playerPlane.position.z - 11], 13.5, 2.4, evacuationGroup);
 }
 
 function createWaterRescueCrowd() {
@@ -1580,6 +1651,14 @@ function updateEvacuation(dt) {
   evacuationGroup.children.forEach((child, index) => {
     if (child.userData.evacuationPath) {
       const path = child.userData.evacuationPath;
+      if (path.surface === "水面" && !state.evacuationPassengersReleased) {
+        child.visible = true;
+        child.position.copy(path.queue);
+        child.rotation.x = 0;
+        child.rotation.y = path.slideYaw;
+        return;
+      }
+      child.visible = true;
       const moveT = THREE.MathUtils.clamp((state.evacuationTime - path.delay) / path.duration, 0, 1);
       if (moveT <= 0) {
         child.position.copy(path.queue);
@@ -1693,6 +1772,8 @@ function startPassengerNormalFlight() {
   clearGroup(evacuationGroup);
   state.passengerAccidentTarget = "";
   state.lifeRaftDeployed = false;
+  state.evacuationSlideDeployed = false;
+  state.evacuationPassengersReleased = false;
   state.evacuationActive = false;
   state.planeSinking = false;
   state.planeDoorOpen = false;
@@ -1722,6 +1803,10 @@ function startPassengerAccident(mode) {
   }
   state.passengerAccidentTarget = mode;
   state.planeDoorOpen = false;
+  state.evacuationSlideDeployed = false;
+  state.evacuationPassengersReleased = false;
+  state.lifeRaftDeployed = false;
+  state.emergencyExitOpened = false;
   updatePlaneDoorVisual();
   if (!passengerCabinRig) createPassengerCabin();
   passengerCabinRig.visible = true;
@@ -1757,6 +1842,26 @@ function updatePlaneDoorVisual() {
   }
   doorBtn.textContent = state.planeDoorOpen ? "关门" : "开门";
   doorBtn.classList.toggle("active", state.planeDoorOpen);
+  updateEmergencyActionButton();
+}
+
+function updateEmergencyActionButton() {
+  if (!emergencyExitBtn) return;
+  const waterFlow = (state.evacuationSurface || state.emergencySurface || (state.passengerAccidentTarget === "water" ? "水面" : "")) === "水面";
+  const emergencyFlow = state.evacuationActive || state.emergencySurface || state.phase === "emergency-landed";
+  if (!emergencyFlow) {
+    emergencyExitBtn.textContent = "紧急出口/滑梯";
+    return;
+  }
+  if (!state.planeDoorOpen) {
+    emergencyExitBtn.textContent = "先开门";
+  } else if (!state.evacuationSlideDeployed) {
+    emergencyExitBtn.textContent = "伸出滑梯";
+  } else if (waterFlow && !state.lifeRaftDeployed) {
+    emergencyExitBtn.textContent = "充气救生筏";
+  } else {
+    emergencyExitBtn.textContent = "乘客撤离中";
+  }
 }
 
 function resetGateDocking() {
@@ -1896,18 +2001,17 @@ function togglePlaneDoor() {
     state.evacuationSurface = waterEmergency ? "水面" : "地面";
     state.emergencySurface = waterEmergency ? "水面" : "地面";
     updatePlaneDoorVisual();
-    openEmergencyExitAndSlide(true);
     missionTitle.textContent = "紧急开门";
     routeLabel.textContent = waterEmergency
-      ? "水上紧急门：飞机还在动也可以慢慢打开"
-      : "地面紧急门：不用等速度低于 10 kt";
+      ? "水上紧急门：门已打开，下一步伸出滑梯"
+      : "地面紧急门：门已打开，下一步伸出滑梯";
     statusText.textContent = waterEmergency
-      ? "这是紧急门，水上迫降时不管飞机还动不动都可以打开。滑梯和救生筏会放出来，乘客可以撤离。"
-      : "这是紧急门，紧急状态下不用等速度低于 10 kt，也可以打开滑梯撤离。";
+      ? "这是紧急门，水上迫降时可以打开。现在门已经开了，再点“伸出滑梯”，然后点“充气救生筏”。"
+      : "这是紧急门，紧急状态下不用等速度低于 10 kt。现在门已经开了，再点“伸出滑梯”。";
     addLog(
       waterEmergency
-        ? "紧急开门：水上滑行时也允许打开机门和滑梯。"
-        : "紧急开门：取消 10 kt 限制，直接打开机门和滑梯。"
+        ? "紧急开门：水上状态先打开机门，等待伸出滑梯。"
+        : "紧急开门：先打开机门，等待伸出滑梯。"
     );
     return;
   }
@@ -1920,21 +2024,19 @@ function togglePlaneDoor() {
   if (state.phase === "emergency-landed" && state.evacuationSurface === "水面") {
     state.planeDoorOpen = true;
     updatePlaneDoorVisual();
-    openEmergencyExitAndSlide(true);
     missionTitle.textContent = "水上开门撤离";
-    routeLabel.textContent = "水上迫降：机门打开，滑梯和救生筏都在水面";
-    statusText.textContent = "水上迫降后可以开门。机门已经打开，乘客从滑梯滑到充气救生筏，救援船会靠过来接人。";
-    addLog("水上迫降：普通开门按钮也打开了机门和逃生滑梯。");
+    routeLabel.textContent = "水上迫降：机门打开，下一步伸出滑梯";
+    statusText.textContent = "水上迫降后可以开门。机门已经打开，下一步点“伸出滑梯”，再点“充气救生筏”。";
+    addLog("水上迫降：机门打开，等待滑梯和救生筏。");
     return;
   }
   if (state.phase === "emergency-landed" && state.evacuationSurface === "地面") {
     state.planeDoorOpen = true;
     updatePlaneDoorVisual();
-    openEmergencyExitAndSlide(true);
     missionTitle.textContent = "地面开门撤离";
-    routeLabel.textContent = "地面迫降：速度低于 10 kt，可以开门";
-    statusText.textContent = "飞机已经低于 10 kt，可以开门。紧急滑梯打开，乘客可以离开飞机。";
-    addLog("地面迫降：速度低于 10 kt，普通开门按钮打开了机门。");
+    routeLabel.textContent = "地面迫降：机门打开，下一步伸出滑梯";
+    statusText.textContent = "飞机已经停住，可以开门。机门已经打开，下一步点“伸出滑梯”，乘客再排队撤离。";
+    addLog("地面迫降：机门打开，等待伸出滑梯。");
     return;
   }
   if (!state.gateDocked) {
@@ -3478,9 +3580,15 @@ function emergencyLandSuccess(surface) {
   state.evacuationActive = true;
   state.evacuationSurface = surface;
   state.evacuationTime = 0;
+  state.planeDoorOpen = false;
+  state.emergencyExitOpened = false;
+  state.evacuationSlideDeployed = false;
+  state.evacuationPassengersReleased = false;
+  state.lifeRaftDeployed = false;
   state.speed = 0;
   state.throttle = 0;
   throttleLever.value = "0";
+  updatePlaneDoorVisual();
   if (surface === "水面") {
     playerPlane.position.y = 0.68;
     createWaterRescueScene();
@@ -3488,10 +3596,11 @@ function emergencyLandSuccess(surface) {
     playerPlane.position.y = 0.72;
     createGroundRescueScene();
   }
+  updateEmergencyActionButton();
   missionTitle.textContent = "迫降成功";
   statusText.textContent = surface === "水面"
-    ? "飞机已经落到浅蓝色大海上并停住。逃生滑梯打开，大型菱形充气救生筏放出来，救援船在旁边接应，乘客和机组都坐上救生筏，飞机会慢慢沉到水底。"
-    : "飞机已经在地面跑道上停住。消防车开过来喷水灭火，停稳后紧急逃生滑梯打开，乘客从滑梯滑到安全区域。";
+    ? "飞机已经落到浅蓝色大海上并停住。现在先点开门，再点伸出滑梯，最后点充气救生筏，乘客才会一个个滑下来。"
+    : "飞机已经在地面跑道上停住。消防车开过来喷水灭火。现在先点开门，再点伸出滑梯，乘客才会一个个滑到安全区域。";
   addLog(`引擎故障迫降成功：落到${surface}，飞机停下来了。`);
 }
 
@@ -3670,6 +3779,20 @@ function updateCamera() {
     const testCamera = new THREE.Vector3(34, 126, 242);
     camera.position.lerp(testCamera, 0.08);
     camera.lookAt(testTarget);
+    return;
+  }
+  if (
+    state.passengerMode &&
+    state.passengerBoarded &&
+    passengerCabinRig?.visible &&
+    (!state.evacuationActive || !state.evacuationSlideDeployed)
+  ) {
+    const cabinCamera = getPlaneLocalWorldPoint(0.12, 1.86, 2.7);
+    const lookLocalX = 0.12 + Math.sin(state.cameraYaw) * 1.1;
+    const lookLocalZ = -1.16 + Math.cos(state.cameraYaw) * 0.28;
+    const cabinTarget = getPlaneLocalWorldPoint(lookLocalX, 1.62 + state.cameraPitch * 1.25, lookLocalZ);
+    camera.position.lerp(cabinCamera, 0.16);
+    camera.lookAt(cabinTarget);
     return;
   }
   if (state.evacuationActive && state.evacuationSurface === "水面") {
