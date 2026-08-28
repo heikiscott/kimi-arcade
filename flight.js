@@ -249,6 +249,7 @@ const state = {
   cameraMode: 0,
   cameraYaw: 0,
   cameraPitch: 0.12,
+  passengerCabinViewMode: 0,
   route: "takeoff",
   crashed: false,
   landed: false,
@@ -1189,6 +1190,15 @@ function getPlaneLocalWorldPoint(x, y, z) {
   return new THREE.Vector3(x, y, z).applyMatrix4(playerPlane.matrixWorld);
 }
 
+function isCabinLookMode() {
+  return Boolean(
+    state.passengerMode &&
+    state.passengerBoarded &&
+    passengerCabinRig?.visible &&
+    (!state.evacuationActive || !state.evacuationSlideDeployed)
+  );
+}
+
 function createPassengerCabin() {
   clearPassengerCabin();
   passengerCabinRig = new THREE.Group();
@@ -1199,6 +1209,9 @@ function createPassengerCabin() {
   const wallMat = makeMat(0xe9f3f9, 0.45, 0.08);
   const aisleMat = makeMat(0x9eb5c8, 0.62, 0.05);
   const binMat = makeMat(0xd8e7f0, 0.5, 0.06);
+  wallMat.transparent = true;
+  wallMat.opacity = 0.32;
+  wallMat.side = THREE.DoubleSide;
   box("single-deck-cabin-floor", [1.55, 0.05, 5.05], [0.15, 1.1, 0.7], floorMat, passengerCabinRig);
   box("single-deck-cabin-aisle", [0.22, 0.035, 4.86], [0.13, 1.145, 0.7], aisleMat, passengerCabinRig);
   box("single-deck-cabin-left-wall", [0.05, 0.92, 4.9], [-0.72, 1.66, 0.7], wallMat, passengerCabinRig);
@@ -1755,6 +1768,9 @@ function finishPassengerBoarding() {
   state.passengerBoarding = false;
   state.passengerBoarded = true;
   state.phase = "passenger-ready";
+  state.passengerCabinViewMode = 0;
+  state.cameraYaw = 0;
+  state.cameraPitch = 0.12;
   clearGroup(boardingPassengerGroup);
   if (passengerCabinRig) passengerCabinRig.visible = true;
   missionTitle.textContent = "已经坐进飞机";
@@ -3002,6 +3018,7 @@ function resetGame() {
   state.yokeX = 0;
   state.yokeY = 0;
   state.heading = 0;
+  state.passengerCabinViewMode = 0;
   state.route = "takeoff";
   state.crashed = false;
   state.landed = false;
@@ -3626,11 +3643,7 @@ function nearestDistanceToPath(points) {
 function updateControlsFromInputs() {
   state.throttle = Number(throttleLever.value) / 100;
   state.gear = Number(gearLever.value) / 100;
-  const cabinLookMode =
-    state.passengerMode &&
-    state.passengerBoarded &&
-    passengerCabinRig?.visible &&
-    (!state.evacuationActive || !state.evacuationSlideDeployed);
+  const cabinLookMode = isCabinLookMode();
   if (cabinLookMode) {
     if (keys.has("KEYA") || keys.has("ARROWLEFT")) state.cameraYaw += 0.045;
     if (keys.has("KEYD") || keys.has("ARROWRIGHT")) state.cameraYaw -= 0.045;
@@ -3794,12 +3807,22 @@ function updateCamera() {
     camera.lookAt(testTarget);
     return;
   }
-  if (
-    state.passengerMode &&
-    state.passengerBoarded &&
-    passengerCabinRig?.visible &&
-    (!state.evacuationActive || !state.evacuationSlideDeployed)
-  ) {
+  if (isCabinLookMode()) {
+    if (state.passengerCabinViewMode > 0) {
+      const cabinTarget = getPlaneLocalWorldPoint(0.12, 1.62 + state.cameraPitch * 0.6, 0.55);
+      const baseAngles = [0, Math.PI / 2, -Math.PI / 2, Math.PI];
+      const angle = baseAngles[state.passengerCabinViewMode] + state.cameraYaw * 0.45;
+      const radius = state.passengerCabinViewMode === 3 ? 4.8 : 3.9;
+      const height = 2.18 + state.cameraPitch * 1.2;
+      const cabinCamera = getPlaneLocalWorldPoint(
+        0.12 + Math.sin(angle) * radius,
+        height,
+        0.55 + Math.cos(angle) * radius
+      );
+      camera.position.lerp(cabinCamera, 0.16);
+      camera.lookAt(cabinTarget);
+      return;
+    }
     const cabinCamera = getPlaneLocalWorldPoint(0.12, 1.86, 2.48);
     const pitch = THREE.MathUtils.clamp(state.cameraPitch, -0.95, 0.9);
     const level = Math.cos(pitch);
@@ -3950,11 +3973,7 @@ function setupCameraDrag() {
     if (!active) return;
     const dx = event.clientX - lastX;
     const dy = event.clientY - lastY;
-    const cabinLookMode =
-      state.passengerMode &&
-      state.passengerBoarded &&
-      passengerCabinRig?.visible &&
-      (!state.evacuationActive || !state.evacuationSlideDeployed);
+    const cabinLookMode = isCabinLookMode();
     state.cameraYaw -= dx * (cabinLookMode ? 0.011 : 0.006);
     state.cameraPitch = THREE.MathUtils.clamp(
       state.cameraPitch + dy * (cabinLookMode ? 0.007 : 0.004),
@@ -4003,6 +4022,14 @@ function setupEvents() {
   document.querySelector("#demoCrashBtn").addEventListener("click", demoCrash);
   document.querySelector("#twinTowerBtn").addEventListener("click", startTwinTowerTest);
   document.querySelector("#cameraBtn").addEventListener("click", () => {
+    if (isCabinLookMode()) {
+      state.passengerCabinViewMode = (state.passengerCabinViewMode + 1) % 4;
+      state.cameraYaw = 0;
+      state.cameraPitch = 0.12;
+      const cabinNames = ["客舱里面看", "左侧外面看进去", "右侧外面看进去", "门口后面看进去"];
+      statusText.textContent = `客舱视角：${cabinNames[state.passengerCabinViewMode]}。也可以继续拖动屏幕调整角度。`;
+      return;
+    }
     state.cameraMode = (state.cameraMode + 1) % 4;
     statusText.textContent = "视角已切换，也可以直接拖动屏幕往左、往右、往上、往下看。";
   });
