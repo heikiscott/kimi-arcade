@@ -1,6 +1,7 @@
 import * as THREE from "./assets/three.module.js";
 
 const canvas = document.querySelector("#flightCanvas");
+const simPanel = document.querySelector(".sim");
 const statusText = document.querySelector("#statusText");
 const routeLabel = document.querySelector("#routeLabel");
 const missionTitle = document.querySelector("#missionTitle");
@@ -1758,7 +1759,7 @@ function finishPassengerBoarding() {
   if (passengerCabinRig) passengerCabinRig.visible = true;
   missionTitle.textContent = "已经坐进飞机";
   routeLabel.textContent = "请选择：正常飞行 / 乘客水上迫降 / 乘客陆地迫降";
-  statusText.textContent = "你已经进到客舱坐好了。可以点“正常飞行”，也可以点事故模式：水上迫降会先掉氧气面罩，你要点面罩和座椅下救生衣，停住后打开紧急出口滑到救生筏。";
+  statusText.textContent = "你已经进到一层客舱坐好了。拖动屏幕可以左右转头、上下看；电脑也可以用 A/D/W/S 或方向键看客舱。可以点“正常飞行”，也可以点事故模式。";
   addLog("最后一个乘客已经坐好，等待选择飞行模式。");
 }
 
@@ -3625,6 +3626,18 @@ function nearestDistanceToPath(points) {
 function updateControlsFromInputs() {
   state.throttle = Number(throttleLever.value) / 100;
   state.gear = Number(gearLever.value) / 100;
+  const cabinLookMode =
+    state.passengerMode &&
+    state.passengerBoarded &&
+    passengerCabinRig?.visible &&
+    (!state.evacuationActive || !state.evacuationSlideDeployed);
+  if (cabinLookMode) {
+    if (keys.has("KEYA") || keys.has("ARROWLEFT")) state.cameraYaw += 0.045;
+    if (keys.has("KEYD") || keys.has("ARROWRIGHT")) state.cameraYaw -= 0.045;
+    if (keys.has("KEYW") || keys.has("ARROWUP")) state.cameraPitch = THREE.MathUtils.clamp(state.cameraPitch + 0.035, -0.95, 0.9);
+    if (keys.has("KEYS") || keys.has("ARROWDOWN")) state.cameraPitch = THREE.MathUtils.clamp(state.cameraPitch - 0.035, -0.95, 0.9);
+    return;
+  }
   if (keys.has("KEYA") || keys.has("ARROWLEFT")) state.yokeX = Math.max(state.yokeX - 0.08, -1);
   if (keys.has("KEYD") || keys.has("ARROWRIGHT")) state.yokeX = Math.min(state.yokeX + 0.08, 1);
   if (keys.has("KEYW") || keys.has("ARROWUP")) state.yokeY = Math.max(state.yokeY - 0.08, -1);
@@ -3787,10 +3800,13 @@ function updateCamera() {
     passengerCabinRig?.visible &&
     (!state.evacuationActive || !state.evacuationSlideDeployed)
   ) {
-    const cabinCamera = getPlaneLocalWorldPoint(0.12, 1.86, 2.7);
-    const lookLocalX = 0.12 + Math.sin(state.cameraYaw) * 1.1;
-    const lookLocalZ = -1.16 + Math.cos(state.cameraYaw) * 0.28;
-    const cabinTarget = getPlaneLocalWorldPoint(lookLocalX, 1.62 + state.cameraPitch * 1.25, lookLocalZ);
+    const cabinCamera = getPlaneLocalWorldPoint(0.12, 1.86, 2.48);
+    const pitch = THREE.MathUtils.clamp(state.cameraPitch, -0.95, 0.9);
+    const level = Math.cos(pitch);
+    const lookLocalX = 0.12 + Math.sin(state.cameraYaw) * level * 3.2;
+    const lookLocalY = 1.86 + Math.sin(pitch) * 2.2;
+    const lookLocalZ = 2.48 - Math.cos(state.cameraYaw) * level * 3.2;
+    const cabinTarget = getPlaneLocalWorldPoint(lookLocalX, lookLocalY, lookLocalZ);
     camera.position.lerp(cabinCamera, 0.16);
     camera.lookAt(cabinTarget);
     return;
@@ -3920,24 +3936,38 @@ function setupCameraDrag() {
   let active = false;
   let lastX = 0;
   let lastY = 0;
-  canvas.addEventListener("pointerdown", (event) => {
+  const dragSurface = simPanel || canvas;
+  const shouldSkipCameraDrag = (event) => Boolean(event.target.closest("button, a, input, .mobile-yoke, .flight-lobby, .emergency-choice"));
+  dragSurface.addEventListener("pointerdown", (event) => {
+    if (shouldSkipCameraDrag(event)) return;
     active = true;
     lastX = event.clientX;
     lastY = event.clientY;
-    canvas.setPointerCapture(event.pointerId);
+    dragSurface.setPointerCapture?.(event.pointerId);
+    event.preventDefault();
   });
-  canvas.addEventListener("pointermove", (event) => {
+  dragSurface.addEventListener("pointermove", (event) => {
     if (!active) return;
     const dx = event.clientX - lastX;
     const dy = event.clientY - lastY;
-    state.cameraYaw -= dx * 0.006;
-    state.cameraPitch = THREE.MathUtils.clamp(state.cameraPitch + dy * 0.004, -0.45, 0.55);
+    const cabinLookMode =
+      state.passengerMode &&
+      state.passengerBoarded &&
+      passengerCabinRig?.visible &&
+      (!state.evacuationActive || !state.evacuationSlideDeployed);
+    state.cameraYaw -= dx * (cabinLookMode ? 0.011 : 0.006);
+    state.cameraPitch = THREE.MathUtils.clamp(
+      state.cameraPitch + dy * (cabinLookMode ? 0.007 : 0.004),
+      cabinLookMode ? -0.95 : -0.45,
+      cabinLookMode ? 0.9 : 0.55
+    );
     lastX = event.clientX;
     lastY = event.clientY;
+    event.preventDefault();
   });
   const end = () => { active = false; };
-  canvas.addEventListener("pointerup", end);
-  canvas.addEventListener("pointercancel", end);
+  dragSurface.addEventListener("pointerup", end);
+  dragSurface.addEventListener("pointercancel", end);
 }
 
 function setupEvents() {
