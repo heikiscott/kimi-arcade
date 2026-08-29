@@ -959,70 +959,69 @@ body::after {
 }
 
 .progress-bar {
-  background: linear-gradient(90deg, var(--blue), var(--green), var(--yellow), var(--red));
+  background: linear-gradient(90deg, #087f91, #16a1a6, #18a86b);
 }
 
 .hint-toggle {
-  background: #fff4c7;
+  background: #e0fbf5;
+  color: #0f6670;
 }
 
 .hint-panel {
-  background: #fff8d8;
+  background: #ecfffb;
 }
 
-/* Cleaner toy frame: keep the middle solid and put toy details on the edges. */
+/* Blue-green version of the original clean study background. */
 :root {
-  --paper: #fffdf7;
-  --blue: #1d6fc5;
-  --line: #1d6fc5;
-  --yellow: #ffd14a;
-  --red: #d94135;
-  --green: #2ba85a;
+  --brown: #0f6670;
+  --brown-2: #113f46;
+  --orange: #159e9a;
+  --cream: #e8fbf7;
+  --paper: #ffffff;
+  --line: #16a1a6;
+  --muted: #5d7f86;
+  --green: #18a86b;
+  --red: #d94747;
+  --gray: #dbecea;
+  --blue: #087f91;
+  --yellow: #d9f7f1;
 }
 
 body {
   background:
-    linear-gradient(90deg, rgba(29, 111, 197, 0.18) 0 14px, transparent 14px calc(100% - 14px), rgba(217, 65, 53, 0.18) calc(100% - 14px)),
-    linear-gradient(180deg, #bfe8ff 0 54px, #eef9ff 54px 64%, #c78243 64% 100%);
+    radial-gradient(circle at 50% 34%, rgba(8, 127, 145, 0.1), transparent 27%),
+    linear-gradient(160deg, #dff8f4 0%, #f5fffb 48%, #c9eee8 100%);
   background-attachment: fixed;
 }
 
-body::before,
-body::after {
-  position: fixed;
-  top: 118px;
-  bottom: 96px;
-  z-index: -1;
-  display: grid;
-  width: min(15vw, 132px);
-  height: auto;
-  place-items: center;
-  border: 4px solid rgba(29, 111, 197, 0.34);
-  border-radius: 8px;
-  background: #fffdf7;
-  color: rgba(63, 43, 29, 0.58);
-  font-family: ui-sans-serif, system-ui, sans-serif;
-  font-size: clamp(0.9rem, 2vw, 1.25rem);
-  line-height: 1.7;
-  white-space: pre-line;
-  transform: none;
-}
-
 body::before {
-  left: max(12px, calc((100vw - 1180px) / 2));
-  content: "牛仔玩具\A数字积木\A木马星星";
+  position: fixed;
+  inset: 18% 0 auto;
+  z-index: -1;
+  width: auto;
+  height: auto;
+  border: 0;
+  background: transparent;
+  color: rgba(8, 127, 145, 0.055);
+  content: "乘法";
+  font-family: Georgia, serif;
+  font-size: clamp(8rem, 34vw, 22rem);
+  font-weight: 900;
+  line-height: 1;
+  text-align: center;
+  white-space: normal;
+  transform: rotate(-6deg);
 }
 
 body::after {
-  right: max(12px, calc((100vw - 1180px) / 2));
-  content: "太空玩具\A火箭按钮\A彩色方块";
+  display: none;
 }
 
 .app-shell {
   position: relative;
-  background: #f8fbff;
-  border-right: 8px solid rgba(29, 111, 197, 0.22);
-  border-left: 8px solid rgba(217, 65, 53, 0.18);
+  background: rgba(248, 255, 253, 0.96);
+  border-right: 0;
+  border-left: 0;
 }
 
 .topbar,
@@ -1044,7 +1043,7 @@ body::after {
 }
 
 .wrong-practice-home {
-  box-shadow: 0 8px 0 rgba(217, 65, 53, 0.16);
+  box-shadow: 0 8px 0 rgba(217, 71, 71, 0.12);
 }
 
 .level-card,
@@ -1052,41 +1051,37 @@ body::after {
 .done-card,
 .result-card,
 .record-panel {
-  box-shadow: 0 8px 0 rgba(29, 111, 197, 0.12);
-}
-
-.level-card::after {
-  position: absolute;
-  top: 12px;
-  right: 14px;
-  color: rgba(29, 111, 197, 0.18);
-  content: "TOY";
-  font-size: 2.1rem;
-  font-weight: 1000;
+  box-shadow: 0 8px 0 rgba(8, 127, 145, 0.1);
 }
 
 .sublevel-btn:nth-child(2),
 .wrong-practice-grid button:nth-child(2) {
-  background: var(--green);
+  background: #13978c;
 }
 
 .sublevel-btn:nth-child(3),
 .wrong-practice-grid button:nth-child(3) {
-  background: var(--red);
+  background: #0f8a72;
 }
 
 .sublevel-btn:nth-child(4) {
-  background: var(--brown);
+  background: #0f6670;
+}
+
+.ghost-btn,
+.tab-row button {
+  background: #e3f4f1;
+  color: #0f6670;
+}
+
+.tab-row button.active {
+  background: #fff;
+  color: #087f91;
+  box-shadow: inset 0 -5px 0 #087f91;
 }
 
 @media (max-width: 980px) {
-  body::before,
-  body::after {
-    display: none;
-  }
-
   .app-shell {
-    border-right-width: 4px;
-    border-left-width: 4px;
+    background: rgba(248, 255, 253, 0.98);
   }
 }
