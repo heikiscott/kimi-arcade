@@ -1,6 +1,13 @@
 const STORAGE_KEY = "kimi-big-multiplication-pass-v1";
+const MODE_KEY = "kimi-big-multiplication-record-mode";
 const QUESTION_COUNT = 20;
 const QUICK_SECONDS = 5;
+const sessionData = { best: {}, history: [], wrongs: {} };
+const wrongGroups = [
+  { id: "easy", label: "1-12 打乱", min: 1, max: 12 },
+  { id: "middle", label: "13-15", min: 13, max: 15 },
+  { id: "hard", label: "16-19", min: 16, max: 19 }
+];
 
 const levels = [
   ...Array.from({ length: 9 }, (_, index) => ({
@@ -43,7 +50,9 @@ const state = {
   hintOpen: false,
   secondsLeft: QUICK_SECONDS,
   timer: null,
-  wrongPractice: false
+  wrongPractice: false,
+  wrongPracticeGroup: null,
+  lastWrongQuestions: []
 };
 
 const els = {
@@ -54,6 +63,8 @@ const els = {
   completedDays: document.querySelector("#completedDays"),
   averageRate: document.querySelector("#averageRate"),
   levelList: document.querySelector("#levelList"),
+  recordModeBtn: document.querySelector("#recordModeBtn"),
+  noRecordModeBtn: document.querySelector("#noRecordModeBtn"),
   recordTopBtn: document.querySelector("#recordTopBtn"),
   levelsNav: document.querySelector("#levelsNav"),
   recordsNav: document.querySelector("#recordsNav"),
@@ -77,6 +88,7 @@ const els = {
   resultCorrect: document.querySelector("#resultCorrect"),
   resultRate: document.querySelector("#resultRate"),
   wrongList: document.querySelector("#wrongList"),
+  drillWrongBtn: document.querySelector("#drillWrongBtn"),
   retryBtn: document.querySelector("#retryBtn"),
   resultHomeBtn: document.querySelector("#resultHomeBtn"),
   exitRecordBtn: document.querySelector("#exitRecordBtn"),
@@ -89,7 +101,25 @@ const els = {
   wrongPanel: document.querySelector("#wrongPanel")
 };
 
+function isRecording() {
+  return localStorage.getItem(MODE_KEY) !== "off";
+}
+
+function setRecording(value) {
+  localStorage.setItem(MODE_KEY, value ? "on" : "off");
+  syncRecordMode();
+  renderHome();
+}
+
+function syncRecordMode() {
+  const recording = isRecording();
+  els.recordModeBtn.classList.toggle("active", recording);
+  els.noRecordModeBtn.classList.toggle("active", !recording);
+  els.recordTopBtn.textContent = recording ? "学习记录" : "本次记录";
+}
+
 function loadData() {
+  if (!isRecording()) return sessionData;
   try {
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
     if (saved && saved.best && saved.history && saved.wrongs) return saved;
@@ -100,6 +130,12 @@ function loadData() {
 }
 
 function saveData(data) {
+  if (!isRecording()) {
+    sessionData.best = data.best;
+    sessionData.history = data.history;
+    sessionData.wrongs = data.wrongs;
+    return;
+  }
   localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
 }
 
@@ -207,8 +243,12 @@ function buildLevelQuestions(level) {
   return shuffle(questions).slice(0, QUESTION_COUNT);
 }
 
-function buildWrongPracticeQuestions(data) {
-  const pool = Object.values(data.wrongs).filter((item) => item.count > 0);
+function buildWrongPracticeQuestions(data, group = null) {
+  const pool = Object.values(data.wrongs).filter((item) => {
+    if (item.count <= 0) return false;
+    if (!group) return true;
+    return item.left >= group.min && item.left <= group.max;
+  });
   return shuffle(pool).slice(0, Math.min(QUESTION_COUNT, pool.length)).map((item) => buildQuestion(item.left, item.right, "direct"));
 }
 
@@ -321,6 +361,7 @@ function finishQuiz() {
   const correct = state.answers.filter((item) => item.correct).length;
   const rate = total ? (correct / total) * 100 : 0;
   const passed = state.wrongPractice ? true : rate >= state.activeLevel.passRate;
+  state.lastWrongQuestions = state.answers.filter((item) => !item.correct).map((item) => item.question);
 
   if (!state.wrongPractice) {
     const data = loadData();
@@ -352,6 +393,7 @@ function renderResult(result) {
   els.wrongList.innerHTML = wrongs.length
     ? wrongs.map((item) => `<div class="wrong-row"><strong>${item.question.display}</strong><span>你的答案：${item.timeout ? "超时" : item.userAnswer ?? "空"}；正确答案：${item.question.answer}</span></div>`).join("")
     : `<p class="empty-note">没有错题，太稳了。</p>`;
+  els.drillWrongBtn.hidden = !wrongs.length;
 }
 
 function startLevel(level) {
@@ -361,20 +403,37 @@ function startLevel(level) {
   state.answers = [];
   state.hintOpen = false;
   state.wrongPractice = false;
+  state.wrongPracticeGroup = null;
+  state.lastWrongQuestions = [];
   showScreen("quiz");
   renderQuestion();
 }
 
-function startWrongPractice() {
-  const data = loadData();
-  const questions = buildWrongPracticeQuestions(data);
+function startQuestionPractice(questions, title, meta = "错题再练") {
   if (!questions.length) return;
-  state.activeLevel = { day: "错题本", title: "错题专项练习", passRate: 0, timed: false };
+  state.activeLevel = { day: meta, title, passRate: 100, timed: false };
+  state.questions = shuffle(questions).slice(0, QUESTION_COUNT);
+  state.index = 0;
+  state.answers = [];
+  state.hintOpen = true;
+  state.wrongPractice = true;
+  state.wrongPracticeGroup = null;
+  showScreen("quiz");
+  renderQuestion();
+}
+
+function startWrongPractice(group = null) {
+  const data = loadData();
+  const questions = buildWrongPracticeQuestions(data, group);
+  if (!questions.length) return;
+  state.activeLevel = { day: "错题本", title: group ? `${group.label} 错题练习` : "错题专项练习", passRate: 100, timed: false };
   state.questions = questions;
   state.index = 0;
   state.answers = [];
   state.hintOpen = true;
   state.wrongPractice = true;
+  state.wrongPracticeGroup = group;
+  state.lastWrongQuestions = [];
   showScreen("quiz");
   renderQuestion();
 }
@@ -393,10 +452,19 @@ function renderRecords(tab = "history") {
     ? data.history.map((item) => `<div class="history-row"><strong>${item.name}</strong><span>${formatRate(item.rate)} · ${item.correct}/${item.total} · ${new Date(item.at).toLocaleString()}</span></div>`).join("")
     : `<p class="empty-note">还没有完成记录。</p>`;
   const wrongs = Object.values(data.wrongs).filter((item) => item.count > 0).sort((a, b) => b.count - a.count);
+  const groupButtons = wrongGroups
+    .map((group) => {
+      const count = wrongs.filter((item) => item.left >= group.min && item.left <= group.max).length;
+      return `<button type="button" data-wrong-group="${group.id}" ${count ? "" : "disabled"}>${group.label}<br>${count} 题</button>`;
+    })
+    .join("");
   els.wrongPanel.innerHTML = wrongs.length
-    ? `<button class="start-wrong-btn" type="button" id="startWrongPracticeBtn">开始练习错题</button>${wrongs.map((item) => `<div class="wrong-row"><strong>${item.left} × ${item.right} = ${item.answer}</strong><span>错误次数：${item.count}；最后错误：${new Date(item.lastWrongAt).toLocaleString()}</span></div>`).join("")}`
+    ? `<div class="wrong-practice-grid">${groupButtons}</div><button class="start-wrong-btn secondary" type="button" id="startWrongPracticeBtn">全部错题打乱练</button>${wrongs.map((item) => `<div class="wrong-row"><strong>${item.left} × ${item.right} = ${item.answer}</strong><span>错误次数：${item.count}；最后错误：${new Date(item.lastWrongAt).toLocaleString()}</span></div>`).join("")}`
     : `<p class="empty-note">错题本是空的，目标达成。</p>`;
-  document.querySelector("#startWrongPracticeBtn")?.addEventListener("click", startWrongPractice);
+  document.querySelector("#startWrongPracticeBtn")?.addEventListener("click", () => startWrongPractice());
+  document.querySelectorAll("[data-wrong-group]").forEach((button) => {
+    button.addEventListener("click", () => startWrongPractice(wrongGroups.find((group) => group.id === button.dataset.wrongGroup)));
+  });
 }
 
 els.answerForm.addEventListener("submit", (event) => {
@@ -421,8 +489,12 @@ els.resultHomeBtn.addEventListener("click", () => {
 });
 
 els.retryBtn.addEventListener("click", () => {
-  if (state.wrongPractice) startWrongPractice();
+  if (state.wrongPractice) startWrongPractice(state.wrongPracticeGroup);
   else startLevel(state.activeLevel);
+});
+
+els.drillWrongBtn.addEventListener("click", () => {
+  startQuestionPractice(state.lastWrongQuestions, "把这次错题做熟", "未通过错题");
 });
 
 [els.recordTopBtn, els.recordsNav].forEach((button) => {
@@ -441,5 +513,8 @@ els.retryBtn.addEventListener("click", () => {
 
 els.historyTab.addEventListener("click", () => renderRecords("history"));
 els.wrongTab.addEventListener("click", () => renderRecords("wrong"));
+els.recordModeBtn.addEventListener("click", () => setRecording(true));
+els.noRecordModeBtn.addEventListener("click", () => setRecording(false));
 
+syncRecordMode();
 renderHome();

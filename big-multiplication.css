@@ -59,7 +59,7 @@ button {
   top: 0;
   z-index: 20;
   display: grid;
-  grid-template-columns: 56px 1fr auto;
+  grid-template-columns: 56px 1fr auto auto;
   gap: 10px;
   align-items: center;
   min-height: 72px;
@@ -67,6 +67,31 @@ button {
   border-bottom: 1px solid rgba(95, 45, 14, 0.14);
   background: rgba(247, 247, 247, 0.94);
   backdrop-filter: blur(14px);
+}
+
+.mode-toggle {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(76px, 1fr));
+  gap: 4px;
+  padding: 4px;
+  border: 2px solid rgba(207, 107, 32, 0.72);
+  border-radius: 8px;
+  background: #fff;
+}
+
+.mode-toggle button {
+  min-height: 36px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-weight: 950;
+}
+
+.mode-toggle button.active {
+  background: var(--orange);
+  color: #fff;
 }
 
 .topbar h1,
@@ -387,6 +412,32 @@ button {
   padding: 0 18px;
 }
 
+.result-actions button.secondary {
+  background: var(--brown);
+}
+
+.wrong-practice-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.wrong-practice-grid button {
+  min-height: 56px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--orange);
+  color: #fff;
+  font-weight: 950;
+}
+
+.wrong-practice-grid button:disabled {
+  background: #d2c6b8;
+  color: #fff8ec;
+  cursor: not-allowed;
+}
+
 .hint-toggle {
   width: 100%;
   margin-top: 12px;
@@ -620,7 +671,12 @@ button {
 
 @media (max-width: 720px) {
   .topbar {
-    grid-template-columns: 44px 1fr auto;
+    grid-template-columns: 44px 1fr;
+  }
+
+  .mode-toggle,
+  .topbar > .outline-btn {
+    grid-column: 1 / -1;
   }
 
   .outline-btn {
@@ -653,6 +709,10 @@ button {
   }
 
   .answer-form {
+    grid-template-columns: 1fr;
+  }
+
+  .wrong-practice-grid {
     grid-template-columns: 1fr;
   }
 

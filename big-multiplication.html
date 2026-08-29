@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>大九九乘法过关</title>
-    <link rel="stylesheet" href="big-multiplication.css?v=pass-levels-20260829" />
+    <link rel="stylesheet" href="big-multiplication.css?v=wrong-drill-20260829" />
   </head>
   <body>
     <main class="app-shell">
@@ -13,6 +13,10 @@
         <div>
           <h1>大九九乘法过关</h1>
           <p>11-19 专项训练</p>
+        </div>
+        <div class="mode-toggle" aria-label="记录模式">
+          <button id="recordModeBtn" class="active" type="button">记成绩</button>
+          <button id="noRecordModeBtn" type="button">不记成绩</button>
         </div>
         <button id="recordTopBtn" class="outline-btn" type="button">学习记录</button>
       </header>
@@ -92,6 +96,7 @@
           <h3>错题列表</h3>
           <div id="wrongList" class="wrong-list"></div>
           <div class="result-actions">
+            <button id="drillWrongBtn" type="button">继续练错题</button>
             <button id="retryBtn" type="button">重新挑战</button>
             <button id="resultHomeBtn" type="button">返回首页</button>
           </div>
@@ -136,7 +141,7 @@
         </button>
       </nav>
     </main>
-    <script src="big-multiplication.js?v=pass-levels-20260829"></script>
+    <script src="big-multiplication.js?v=wrong-drill-20260829"></script>
     <script src="arcade-stats.js?v=visitor-table-20260728"></script>
   </body>
 </html>
