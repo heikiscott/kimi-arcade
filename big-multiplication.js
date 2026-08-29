@@ -2,11 +2,6 @@ const STORAGE_KEY = "kimi-big-multiplication-pass-v1";
 const TIMER_MODE_KEY = "kimi-big-multiplication-timer-mode";
 const QUESTION_COUNT = 20;
 const QUICK_SECONDS = 5;
-const wrongGroups = [
-  { id: "easy", label: "1-12 打乱", min: 1, max: 12 },
-  { id: "middle", label: "13-15", min: 13, max: 15 },
-  { id: "hard", label: "16-19", min: 16, max: 19 }
-];
 const subLevels = [
   { id: "part-1", label: "1-13 打乱", min: 1, max: 13 },
   { id: "part-2", label: "13-15 打乱", min: 13, max: 15 },
@@ -193,6 +188,12 @@ function wrongItemsForLevel(data, level) {
     .sort((a, b) => b.count - a.count);
 }
 
+function wrongPracticeTitleForLevel(level) {
+  if (level.type === "basic") return `${level.day} · ${level.factor} 错题专项`;
+  if (level.factors?.length) return `${level.day} · ${level.factors.join("、")} 错题专项`;
+  return `${level.day} 错题专项`;
+}
+
 function getUnlockedIndex(data) {
   let unlocked = 0;
   levels.forEach((level, index) => {
@@ -275,10 +276,10 @@ function renderHome() {
         </div>
         <div class="level-wrong-practice${levelWrongs.length ? "" : " is-empty"}">
           <div>
-            <strong>本关错题专项</strong>
-            <span>${levelWrongs.length ? `还有 ${levelWrongs.length} 道要做熟` : "本关暂时没有错题"}</span>
+            <strong>${wrongPracticeTitleForLevel(level)}</strong>
+            <span>${levelWrongs.length ? `只练这个 Day 的 ${levelWrongs.length} 道错题` : "这个 Day 暂时没有错题"}</span>
           </div>
-          <button class="level-wrong-btn" type="button" data-level-wrong-index="${index}" ${unlocked && levelWrongs.length ? "" : "disabled"}>练本关错题</button>
+          <button class="level-wrong-btn" type="button" data-level-wrong-index="${index}" ${unlocked && levelWrongs.length ? "" : "disabled"}>练这个 Day</button>
         </div>
       </div>
       <strong class="pass-stamp">${passed ? "已通过" : unlocked ? "开始" : "未解锁"}</strong>
@@ -526,7 +527,7 @@ function startWrongPractice(scope = null) {
   const data = loadData();
   const questions = buildWrongPracticeQuestions(data, scope);
   if (!questions.length) return;
-  state.activeLevel = { day: scope?.meta || "错题本", title: scope?.title || (scope ? `${scope.label} 错题练习` : "全部错题专项练习"), passRate: 100, timed: false };
+  state.activeLevel = { day: scope?.meta || "错题本", title: scope?.title || "错题专项练习", passRate: 100, timed: false };
   state.questions = questions;
   state.index = 0;
   state.answers = [];
@@ -546,7 +547,7 @@ function startLevelWrongPractice(level) {
     type: "level",
     keys: new Set(wrongs.map((item) => item.key)),
     meta: level.day,
-    title: `${level.day} 本关错题专项`
+    title: wrongPracticeTitleForLevel(level)
   });
 }
 
@@ -564,19 +565,9 @@ function renderRecords(tab = "history") {
     ? data.history.map((item) => `<div class="history-row"><strong>${item.name}</strong><span>${formatRate(item.rate)} · ${item.correct}/${item.total} · ${new Date(item.at).toLocaleString()}</span></div>`).join("")
     : `<p class="empty-note">还没有完成记录。</p>`;
   const wrongs = Object.values(data.wrongs).filter((item) => item.count > 0).sort((a, b) => b.count - a.count);
-  const groupButtons = wrongGroups
-    .map((group) => {
-      const count = wrongs.filter((item) => item.left >= group.min && item.left <= group.max).length;
-      return `<button type="button" data-wrong-group="${group.id}" ${count ? "" : "disabled"}>${group.label}<br>${count} 题</button>`;
-    })
-    .join("");
   els.wrongPanel.innerHTML = wrongs.length
-    ? `<div class="wrong-practice-grid">${groupButtons}</div><button class="start-wrong-btn secondary" type="button" id="startWrongPracticeBtn">全部错题打乱练</button>${wrongs.map((item) => `<div class="wrong-row"><strong>${item.left} × ${item.right} = ${item.answer}</strong><span>错误次数：${item.count}；最后错误：${new Date(item.lastWrongAt).toLocaleString()}</span></div>`).join("")}`
+    ? wrongs.map((item) => `<div class="wrong-row"><strong>${item.left} × ${item.right} = ${item.answer}</strong><span>错误次数：${item.count}；最后错误：${new Date(item.lastWrongAt).toLocaleString()}</span></div>`).join("")
     : `<p class="empty-note">错题本是空的，目标达成。</p>`;
-  document.querySelector("#startWrongPracticeBtn")?.addEventListener("click", () => startWrongPractice());
-  document.querySelectorAll("[data-wrong-group]").forEach((button) => {
-    button.addEventListener("click", () => startWrongPractice(wrongGroups.find((group) => group.id === button.dataset.wrongGroup)));
-  });
 }
 
 els.answerForm.addEventListener("submit", (event) => {

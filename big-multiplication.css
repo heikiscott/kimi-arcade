@@ -124,8 +124,7 @@ button {
 .tab-row button,
 .result-actions button,
 .answer-form button,
-.hint-toggle,
-.start-wrong-btn {
+.hint-toggle {
   min-height: 44px;
   border-radius: 8px;
   font-weight: 950;
@@ -490,8 +489,7 @@ button {
 }
 
 .answer-form button,
-.result-actions button,
-.start-wrong-btn {
+.result-actions button {
   border: 0;
   background: var(--orange);
   color: #fff;
@@ -500,28 +498,6 @@ button {
 
 .result-actions button.secondary {
   background: var(--brown);
-}
-
-.wrong-practice-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
-  margin-bottom: 10px;
-}
-
-.wrong-practice-grid button {
-  min-height: 56px;
-  border: 0;
-  border-radius: 8px;
-  background: var(--orange);
-  color: #fff;
-  font-weight: 950;
-}
-
-.wrong-practice-grid button:disabled {
-  background: #d2c6b8;
-  color: #fff8ec;
-  cursor: not-allowed;
 }
 
 .hint-toggle {
@@ -855,10 +831,6 @@ button {
     width: 100%;
   }
 
-  .wrong-practice-grid {
-    grid-template-columns: 1fr;
-  }
-
   .question-card h3 {
     min-height: 72px;
   }
@@ -964,9 +936,7 @@ body::after {
 .mode-toggle button.active,
 .sublevel-btn,
 .answer-form button,
-.result-actions button,
-.start-wrong-btn,
-.wrong-practice-grid button {
+.result-actions button {
   background: var(--blue);
 }
 
@@ -1027,9 +997,12 @@ body::after {
 
 .app-shell {
   position: relative;
-  background: rgba(248, 255, 253, 0.9);
-  border-right: 0;
-  border-left: 0;
+  background: #f8fffd;
+  border-right: 8px solid #69c7d5;
+  border-left: 8px solid #f8ad5d;
+  box-shadow:
+    -18px 0 0 rgba(248, 173, 93, 0.18),
+    18px 0 0 rgba(105, 199, 213, 0.18);
 }
 
 .topbar,
@@ -1057,13 +1030,11 @@ body::after {
   box-shadow: 0 8px 0 rgba(8, 127, 145, 0.1);
 }
 
-.sublevel-btn:nth-child(2),
-.wrong-practice-grid button:nth-child(2) {
+.sublevel-btn:nth-child(2) {
   background: #13978c;
 }
 
-.sublevel-btn:nth-child(3),
-.wrong-practice-grid button:nth-child(3) {
+.sublevel-btn:nth-child(3) {
   background: #0f8a72;
 }
 
@@ -1085,6 +1056,9 @@ body::after {
 
 @media (max-width: 980px) {
   .app-shell {
-    background: rgba(248, 255, 253, 0.98);
+    background: #f8fffd;
+    border-right-width: 4px;
+    border-left-width: 4px;
+    box-shadow: none;
   }
 }
