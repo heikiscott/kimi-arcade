@@ -1,8 +1,7 @@
 const STORAGE_KEY = "kimi-big-multiplication-pass-v1";
-const MODE_KEY = "kimi-big-multiplication-record-mode";
+const TIMER_MODE_KEY = "kimi-big-multiplication-timer-mode";
 const QUESTION_COUNT = 20;
 const QUICK_SECONDS = 5;
-const sessionData = { best: {}, history: [], wrongs: {} };
 const wrongGroups = [
   { id: "easy", label: "1-12 打乱", min: 1, max: 12 },
   { id: "middle", label: "13-15", min: 13, max: 15 },
@@ -63,8 +62,8 @@ const els = {
   completedDays: document.querySelector("#completedDays"),
   averageRate: document.querySelector("#averageRate"),
   levelList: document.querySelector("#levelList"),
-  recordModeBtn: document.querySelector("#recordModeBtn"),
-  noRecordModeBtn: document.querySelector("#noRecordModeBtn"),
+  timerModeBtn: document.querySelector("#timerModeBtn"),
+  noTimerModeBtn: document.querySelector("#noTimerModeBtn"),
   recordTopBtn: document.querySelector("#recordTopBtn"),
   levelsNav: document.querySelector("#levelsNav"),
   recordsNav: document.querySelector("#recordsNav"),
@@ -101,25 +100,23 @@ const els = {
   wrongPanel: document.querySelector("#wrongPanel")
 };
 
-function isRecording() {
-  return localStorage.getItem(MODE_KEY) !== "off";
+function isTiming() {
+  return localStorage.getItem(TIMER_MODE_KEY) !== "off";
 }
 
-function setRecording(value) {
-  localStorage.setItem(MODE_KEY, value ? "on" : "off");
-  syncRecordMode();
+function setTiming(value) {
+  localStorage.setItem(TIMER_MODE_KEY, value ? "on" : "off");
+  syncTimerMode();
   renderHome();
 }
 
-function syncRecordMode() {
-  const recording = isRecording();
-  els.recordModeBtn.classList.toggle("active", recording);
-  els.noRecordModeBtn.classList.toggle("active", !recording);
-  els.recordTopBtn.textContent = recording ? "学习记录" : "本次记录";
+function syncTimerMode() {
+  const timing = isTiming();
+  els.timerModeBtn.classList.toggle("active", timing);
+  els.noTimerModeBtn.classList.toggle("active", !timing);
 }
 
 function loadData() {
-  if (!isRecording()) return sessionData;
   try {
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
     if (saved && saved.best && saved.history && saved.wrongs) return saved;
@@ -130,12 +127,6 @@ function loadData() {
 }
 
 function saveData(data) {
-  if (!isRecording()) {
-    sessionData.best = data.best;
-    sessionData.history = data.history;
-    sessionData.wrongs = data.wrongs;
-    return;
-  }
   localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
 }
 
@@ -199,7 +190,7 @@ function renderHome() {
         <span class="level-meta">
           <span>20 题</span>
           <span>${level.passRate}%通过</span>
-          <span>${level.timed ? "每题5秒" : "不限时"}</span>
+          <span>${isTiming() ? "每题5秒" : "不计时"}</span>
           <span>最佳成绩：${best ? formatRate(best.rate) : "--"}</span>
         </span>
       </span>
@@ -295,7 +286,7 @@ function renderQuestion() {
 function resetTimer() {
   clearInterval(state.timer);
   state.timer = null;
-  if (!state.activeLevel?.timed && !state.wrongPractice) {
+  if (!isTiming()) {
     els.timerBox.textContent = "不限时";
     els.timerBox.classList.remove("warn");
     return;
@@ -513,8 +504,8 @@ els.drillWrongBtn.addEventListener("click", () => {
 
 els.historyTab.addEventListener("click", () => renderRecords("history"));
 els.wrongTab.addEventListener("click", () => renderRecords("wrong"));
-els.recordModeBtn.addEventListener("click", () => setRecording(true));
-els.noRecordModeBtn.addEventListener("click", () => setRecording(false));
+els.timerModeBtn.addEventListener("click", () => setTiming(true));
+els.noTimerModeBtn.addEventListener("click", () => setTiming(false));
 
-syncRecordMode();
+syncTimerMode();
 renderHome();
