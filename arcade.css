@@ -466,6 +466,10 @@ body {
   background: linear-gradient(135deg, #39a657, #ffd15f 52%, #d94a78);
 }
 
+.big-multiplication {
+  background: linear-gradient(135deg, #152431, #2865ad 36%, #f5c95c 70%, #c83d45);
+}
+
 .chinese {
   background: linear-gradient(135deg, #9b6a3c, #d94a78 52%, #ffd15f);
 }

@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>大九九乘法表</title>
+    <link rel="stylesheet" href="big-multiplication.css?v=big-99-20260828" />
+  </head>
+  <body>
+    <a class="home-link" href="arcade.html">游戏大厅</a>
+    <main class="multiplication-shell">
+      <section class="hero">
+        <div>
+          <p class="label">Big Multiplication</p>
+          <h1>大九九乘法表</h1>
+          <p>1 到 19 的整张乘法表，一列一列背：点一个乘数，就看这一整列。</p>
+        </div>
+        <div class="number-stack" aria-label="乘法数字装饰">
+          <span>1</span>
+          <span>9</span>
+          <span>×</span>
+          <span>19</span>
+        </div>
+      </section>
+
+      <section class="practice-board" aria-label="单列乘法表">
+        <div class="column-card">
+          <div class="column-head">
+            <p class="label">Single Column</p>
+            <h2 id="columnTitle">×12 一列</h2>
+          </div>
+          <div id="columnList" class="column-list"></div>
+        </div>
+
+        <div class="selector-card">
+          <p class="label">Choose Column</p>
+          <div id="columnButtons" class="column-buttons" aria-label="选择乘数"></div>
+          <button id="autoBtn" class="auto-btn" type="button">自动背下一列</button>
+        </div>
+      </section>
+
+      <section class="full-table-section" aria-label="完整大九九乘法表">
+        <div class="section-title">
+          <p class="label">Full Table</p>
+          <h2>1 到 19 完整表</h2>
+        </div>
+        <div class="table-wrap">
+          <table id="multiplicationTable" class="multiplication-table"></table>
+        </div>
+      </section>
+    </main>
+    <script src="big-multiplication.js?v=big-99-20260828"></script>
+    <script src="arcade-stats.js?v=visitor-table-20260728"></script>
+  </body>
+</html>
