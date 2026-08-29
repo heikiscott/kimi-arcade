@@ -250,6 +250,12 @@ const state = {
   cameraYaw: 0,
   cameraPitch: 0.12,
   passengerCabinViewMode: 0,
+  passengerCabinX: -0.32,
+  passengerCabinZ: 1.65,
+  passengerCabinWalkYaw: 0,
+  passengerWalking: false,
+  cabinMoveX: 0,
+  cabinMoveY: 0,
   route: "takeoff",
   crashed: false,
   landed: false,
@@ -1123,6 +1129,12 @@ function clearPassengerModeVisuals() {
   state.passengerBoarding = false;
   state.passengerBoarded = false;
   state.passengerBoardTime = 0;
+  state.passengerCabinX = -0.32;
+  state.passengerCabinZ = 1.65;
+  state.passengerCabinWalkYaw = 0;
+  state.passengerWalking = false;
+  state.cabinMoveX = 0;
+  state.cabinMoveY = 0;
   state.passengerAccidentTarget = "";
   state.oxygenMasksDropped = false;
   state.oxygenMaskOn = false;
@@ -1199,6 +1211,20 @@ function isCabinLookMode() {
   );
 }
 
+function getSeatedCabinPassenger() {
+  if (!passengerCabinRig) return null;
+  return passengerCabinRig.children.find((child) => child.name === "seated-last-passenger") || null;
+}
+
+function syncCabinPassengerAvatar() {
+  const passenger = getSeatedCabinPassenger();
+  if (!passenger) return;
+  passenger.position.set(state.passengerCabinX, 1.5, state.passengerCabinZ);
+  passenger.rotation.y = Math.PI + state.passengerCabinWalkYaw;
+  passenger.rotation.z = state.passengerWalking ? Math.sin(clock.elapsedTime * 12) * 0.08 : 0;
+  if (passenger.userData?.lifeJacket) passenger.userData.lifeJacket.visible = state.lifeJacketOn;
+}
+
 function createPassengerCabin() {
   clearPassengerCabin();
   passengerCabinRig = new THREE.Group();
@@ -1229,7 +1255,7 @@ function createPassengerCabin() {
   const passenger = createLastPassengerAvatar();
   passenger.name = "seated-last-passenger";
   passenger.scale.setScalar(0.62);
-  passenger.position.set(0.55, 1.18, 1.65);
+  passenger.position.set(state.passengerCabinX, 1.5, state.passengerCabinZ);
   passenger.rotation.y = Math.PI;
   passenger.userData.lifeJacket.visible = state.lifeJacketOn;
   passengerCabinRig.add(passenger);
@@ -1239,6 +1265,7 @@ function createPassengerCabin() {
   addSpriteLabel("座椅下救生衣", "点按钮穿上", [-0.32, 2.38, 1.65], 3.6, 1.15, passengerCabinRig);
   passengerCabinRig.visible = false;
   playerPlane.add(passengerCabinRig);
+  syncCabinPassengerAvatar();
 }
 
 function dropOxygenMasks() {
@@ -1769,13 +1796,20 @@ function finishPassengerBoarding() {
   state.passengerBoarded = true;
   state.phase = "passenger-ready";
   state.passengerCabinViewMode = 0;
+  state.passengerCabinX = -0.32;
+  state.passengerCabinZ = 1.65;
+  state.passengerCabinWalkYaw = 0;
+  state.passengerWalking = false;
+  state.cabinMoveX = 0;
+  state.cabinMoveY = 0;
   state.cameraYaw = 0;
   state.cameraPitch = 0.12;
   clearGroup(boardingPassengerGroup);
   if (passengerCabinRig) passengerCabinRig.visible = true;
+  syncCabinPassengerAvatar();
   missionTitle.textContent = "已经坐进飞机";
   routeLabel.textContent = "请选择：正常飞行 / 乘客水上迫降 / 乘客陆地迫降";
-  statusText.textContent = "你已经进到一层客舱坐好了。拖动屏幕可以左右转头、上下看；电脑也可以用 A/D/W/S 或方向键看客舱。可以点“正常飞行”，也可以点事故模式。";
+  statusText.textContent = "你已经进到一层客舱。左下角摇杆或 W/A/S/D 可以在客舱走动；拖动屏幕或方向键可以转头看四周。可以点“正常飞行”，也可以点事故模式。";
   addLog("最后一个乘客已经坐好，等待选择飞行模式。");
 }
 
@@ -1801,16 +1835,23 @@ function startPassengerNormalFlight() {
   state.route = "takeoff";
   state.speed = 0;
   state.altitude = 0;
-  state.throttle = 0;
+  state.throttle = 0.96;
   state.gear = 0;
+  state.yokeX = 0;
+  state.yokeY = 0;
   state.heading = 0;
-  throttleLever.value = "0";
+  state.autoTakeoffOnly = false;
+  state.autopilotStage = "";
+  throttleLever.value = "96";
   gearLever.value = "0";
   rebuildRouteLights();
+  setAutopilot(true);
   missionTitle.textContent = "乘客正常飞行";
-  routeLabel.textContent = `正常航班：${currentAirportRouteName()}`;
-  statusText.textContent = "舱门已关，你坐在飞机里面。现在按起飞或无人驾驶，飞机就会像往常一样沿绿色灯线起飞。";
-  addLog("乘客正常飞行：舱门关闭，准备从跑道起飞。");
+  routeLabel.textContent = `机长驾驶：${currentAirportRouteName()}`;
+  statusText.textContent = "舱门已关，这次飞机是机长在驾驶，不是你驾驶。你可以在客舱里走动、转头看外面，飞机会平稳沿绿色灯线滑行、起飞和降落。";
+  addLog("乘客正常飞行：机长驾驶，客舱保持平稳。");
+  updateYokeKnob();
+  updateFlightSound();
 }
 
 function startPassengerAccident(mode) {
@@ -2889,14 +2930,23 @@ function startEmergencyAutopilot(mode) {
   updateFlightSound();
 }
 
+function autopilotActorName() {
+  return state.passengerMode && state.passengerBoarded && !state.passengerAccidentTarget ? "机长" : "无人驾驶";
+}
+
+function withPilotActor(text) {
+  return text.replace(/无人驾驶/g, autopilotActorName());
+}
+
 function announceAutopilotStage(stage, text) {
   if (state.autopilotStage === stage) return;
   state.autopilotStage = stage;
+  const baseText = withPilotActor(text);
   const passengerText = state.passengerAccidentTarget
     ? state.passengerAccidentTarget === "water"
-      ? `氧气面罩已经掉下，救生衣在座椅下面。${text}`
-      : `氧气面罩已经掉下。${text}`
-    : text;
+      ? `氧气面罩已经掉下，救生衣在座椅下面。${baseText}`
+      : `氧气面罩已经掉下。${baseText}`
+    : baseText;
   statusText.textContent = passengerText;
   addLog(passengerText);
 }
@@ -2933,7 +2983,7 @@ function updateAutopilot() {
     state.phase = "landing";
     state.route = "landing";
     rebuildRouteLights();
-    routeLabel.textContent = `无人驾驶：沿绿色灯线飞往${currentDestinationAirportName()}`;
+    routeLabel.textContent = `${autopilotActorName()}：沿绿色灯线飞往${currentDestinationAirportName()}`;
     announceAutopilotStage("city-route", `无人驾驶转入航线：先飞过${currentDestinationCountry().cities[0]}上空，再去${currentDestinationAirportName()}。`);
   }
   if (state.autopilotRoute !== state.route) {
@@ -2995,8 +3045,8 @@ function updateAutopilot() {
     const altitudeError = desiredAltitude - state.altitude;
     state.yokeY = THREE.MathUtils.clamp(altitudeError * 0.045, -0.62, 0.74);
     routeLabel.textContent = state.emergencyAutopilotMode === "water"
-      ? "无人驾驶迫降：绿色灯线正在对准浅蓝色大海"
-      : "无人驾驶迫降：绿色灯线正在对准平地";
+      ? `${autopilotActorName()}迫降：绿色灯线正在对准浅蓝色大海`
+      : `${autopilotActorName()}迫降：绿色灯线正在对准平地`;
     if (state.emergencyAutopilotMode === "water") {
       announceAutopilotStage("emergency-water", "无人驾驶正在找浅蓝色大海：机头保持平稳，快到水面时会拉平滑行。");
     } else {
@@ -3006,7 +3056,7 @@ function updateAutopilot() {
 
   throttleLever.value = String(Math.round(state.throttle * 100));
   gearLever.value = String(Math.round(state.gear * 100));
-  updateYokeKnob();
+  if (!isCabinLookMode()) updateYokeKnob();
 }
 
 function resetGame() {
@@ -3645,10 +3695,29 @@ function updateControlsFromInputs() {
   state.gear = Number(gearLever.value) / 100;
   const cabinLookMode = isCabinLookMode();
   if (cabinLookMode) {
-    if (keys.has("KEYA") || keys.has("ARROWLEFT")) state.cameraYaw += 0.045;
-    if (keys.has("KEYD") || keys.has("ARROWRIGHT")) state.cameraYaw -= 0.045;
-    if (keys.has("KEYW") || keys.has("ARROWUP")) state.cameraPitch = THREE.MathUtils.clamp(state.cameraPitch + 0.035, -0.95, 0.9);
-    if (keys.has("KEYS") || keys.has("ARROWDOWN")) state.cameraPitch = THREE.MathUtils.clamp(state.cameraPitch - 0.035, -0.95, 0.9);
+    if (keys.has("ARROWLEFT")) state.cameraYaw += 0.045;
+    if (keys.has("ARROWRIGHT")) state.cameraYaw -= 0.045;
+    if (keys.has("ARROWUP")) state.cameraPitch = THREE.MathUtils.clamp(state.cameraPitch + 0.035, -0.95, 0.9);
+    if (keys.has("ARROWDOWN")) state.cameraPitch = THREE.MathUtils.clamp(state.cameraPitch - 0.035, -0.95, 0.9);
+
+    const keyForward = (keys.has("KEYW") ? 1 : 0) - (keys.has("KEYS") ? 1 : 0);
+    const keySide = (keys.has("KEYD") ? 1 : 0) - (keys.has("KEYA") ? 1 : 0);
+    const stickForward = Math.abs(state.cabinMoveY) > 0.08 ? -state.cabinMoveY : 0;
+    const stickSide = Math.abs(state.cabinMoveX) > 0.08 ? state.cabinMoveX : 0;
+    const forwardInput = THREE.MathUtils.clamp(keyForward + stickForward, -1, 1);
+    const sideInput = THREE.MathUtils.clamp(keySide + stickSide, -1, 1);
+    const moving = Math.abs(forwardInput) > 0.01 || Math.abs(sideInput) > 0.01;
+    if (moving) {
+      const step = 0.045;
+      const yaw = state.cameraYaw;
+      const deltaX = (Math.cos(yaw) * sideInput + Math.sin(yaw) * forwardInput) * step;
+      const deltaZ = (Math.sin(yaw) * sideInput - Math.cos(yaw) * forwardInput) * step;
+      state.passengerCabinX = THREE.MathUtils.clamp(state.passengerCabinX + deltaX, -0.48, 0.78);
+      state.passengerCabinZ = THREE.MathUtils.clamp(state.passengerCabinZ + deltaZ, -1.36, 2.42);
+      state.passengerCabinWalkYaw = Math.atan2(deltaX, -deltaZ);
+    }
+    state.passengerWalking = moving;
+    syncCabinPassengerAvatar();
     return;
   }
   if (keys.has("KEYA") || keys.has("ARROWLEFT")) state.yokeX = Math.max(state.yokeX - 0.08, -1);
@@ -3691,7 +3760,8 @@ function updatePhysics(dt) {
   const distance = state.speed * dt * 0.35;
   playerPlane.position.add(forward.multiplyScalar(distance));
   playerPlane.rotation.y = state.heading;
-  playerPlane.rotation.z = -state.yokeX * 0.28;
+  const passengerCruise = state.passengerMode && state.passengerBoarded && ["takeoff", "airborne", "landing"].includes(state.phase);
+  playerPlane.rotation.z = -state.yokeX * (passengerCruise ? 0.08 : 0.28);
 
   const takeoffRollReady = playerPlane.position.z > -100;
   if (state.phase === "takeoff" && state.speed > 92 && takeoffRollReady) {
@@ -3719,7 +3789,7 @@ function updatePhysics(dt) {
   } else if (state.phase === "takeoff" && state.speed > 92 && !takeoffRollReady) {
     state.altitude = 0;
     statusText.textContent = state.autopilot
-      ? "无人驾驶正在继续沿绿色灯线滑行，跑道距离够了才会自动抬头。"
+      ? `${autopilotActorName()}正在继续沿绿色灯线滑行，跑道距离够了才会自动抬头。`
       : "速度够了，但跑道还没滑够长。继续沿绿色灯线往前跑，过了中段才会抬头。";
   } else if (state.phase === "airborne") {
     state.altitude += state.yokeY * dt * 28;
@@ -3762,6 +3832,10 @@ function updatePhysics(dt) {
     const cruisePitch = state.phase === "airborne" ? -0.07 : 0;
     const landingPitch = state.phase === "landing" ? 0.04 : state.phase === "emergency" ? 0.07 : 0;
     nosePitch = THREE.MathUtils.clamp(commandedPitch + takeoffLiftPitch + cruisePitch + landingPitch, -0.32, 0.18);
+    if (passengerCruise) {
+      const steadyPitch = state.phase === "takeoff" && state.speed > 82 && takeoffRollReady ? -0.08 : state.phase === "landing" ? 0.02 : -0.025;
+      nosePitch = THREE.MathUtils.lerp(nosePitch, steadyPitch, 0.62);
+    }
   } else if (state.phase === "water-skimming") {
     nosePitch = 0.012 + Math.sin(state.waterLandingTime * 6) * 0.004;
   }
@@ -3809,28 +3883,28 @@ function updateCamera() {
   }
   if (isCabinLookMode()) {
     if (state.passengerCabinViewMode > 0) {
-      const cabinTarget = getPlaneLocalWorldPoint(0.12, 1.62 + state.cameraPitch * 0.6, 0.55);
+      const cabinTarget = getPlaneLocalWorldPoint(state.passengerCabinX, 1.62 + state.cameraPitch * 0.6, state.passengerCabinZ);
       const baseAngles = [0, Math.PI / 2, -Math.PI / 2, Math.PI];
       const angle = baseAngles[state.passengerCabinViewMode] + state.cameraYaw * 0.45;
       const radius = state.passengerCabinViewMode === 3 ? 4.8 : 3.9;
       const height = 2.18 + state.cameraPitch * 1.2;
       const cabinCamera = getPlaneLocalWorldPoint(
-        0.12 + Math.sin(angle) * radius,
+        state.passengerCabinX + Math.sin(angle) * radius,
         height,
-        0.55 + Math.cos(angle) * radius
+        state.passengerCabinZ + Math.cos(angle) * radius
       );
-      camera.position.lerp(cabinCamera, 0.16);
+      camera.position.copy(cabinCamera);
       camera.lookAt(cabinTarget);
       return;
     }
-    const cabinCamera = getPlaneLocalWorldPoint(0.12, 1.86, 2.48);
+    const cabinCamera = getPlaneLocalWorldPoint(state.passengerCabinX, 1.86, state.passengerCabinZ + 0.18);
     const pitch = THREE.MathUtils.clamp(state.cameraPitch, -0.95, 0.9);
     const level = Math.cos(pitch);
-    const lookLocalX = 0.12 + Math.sin(state.cameraYaw) * level * 3.2;
+    const lookLocalX = state.passengerCabinX + Math.sin(state.cameraYaw) * level * 3.2;
     const lookLocalY = 1.86 + Math.sin(pitch) * 2.2;
-    const lookLocalZ = 2.48 - Math.cos(state.cameraYaw) * level * 3.2;
+    const lookLocalZ = state.passengerCabinZ + 0.18 - Math.cos(state.cameraYaw) * level * 3.2;
     const cabinTarget = getPlaneLocalWorldPoint(lookLocalX, lookLocalY, lookLocalZ);
-    camera.position.lerp(cabinCamera, 0.16);
+    camera.position.copy(cabinCamera);
     camera.lookAt(cabinTarget);
     return;
   }
@@ -3912,11 +3986,15 @@ function tick() {
   window.requestAnimationFrame(tick);
 }
 
-function updateYokeKnob() {
-  const x = state.yokeX * 44;
-  const y = state.yokeY * 44;
+function setYokeKnobPosition(xValue, yValue) {
+  const x = xValue * 44;
+  const y = yValue * 44;
   yokeKnob.style.transform = `translate(calc(-50% + ${x}px), calc(-50% + ${y}px))`;
   mobileKnob.style.transform = `translate(calc(-50% + ${x}px), calc(-50% + ${y}px))`;
+}
+
+function updateYokeKnob() {
+  setYokeKnobPosition(state.yokeX, state.yokeY);
 }
 
 function setupYoke(element) {
@@ -3930,8 +4008,16 @@ function setupYoke(element) {
     const limit = rect.width * 0.34;
     const len = Math.hypot(dx, dy) || 1;
     const scale = Math.min(limit, len) / len;
-    state.yokeX = THREE.MathUtils.clamp((dx * scale) / limit, -1, 1);
-    state.yokeY = THREE.MathUtils.clamp((dy * scale) / limit, -1, 1);
+    const inputX = THREE.MathUtils.clamp((dx * scale) / limit, -1, 1);
+    const inputY = THREE.MathUtils.clamp((dy * scale) / limit, -1, 1);
+    if (isCabinLookMode()) {
+      state.cabinMoveX = inputX;
+      state.cabinMoveY = inputY;
+      setYokeKnobPosition(inputX, inputY);
+      return;
+    }
+    state.yokeX = inputX;
+    state.yokeY = inputY;
     updateYokeKnob();
   };
   element.addEventListener("pointerdown", (event) => {
@@ -3947,6 +4033,8 @@ function setupYoke(element) {
   });
   const end = () => {
     active = false;
+    state.cabinMoveX = 0;
+    state.cabinMoveY = 0;
     state.yokeX = 0;
     state.yokeY = 0;
     updateYokeKnob();
