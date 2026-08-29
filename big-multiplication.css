@@ -971,7 +971,7 @@ body::after {
   background: #ecfffb;
 }
 
-/* Blue-green version of the original clean study background. */
+/* User-provided study illustration background. */
 :root {
   --brown: #0f6670;
   --brown-2: #113f46;
@@ -989,28 +989,14 @@ body::after {
 
 body {
   background:
-    radial-gradient(circle at 50% 34%, rgba(8, 127, 145, 0.1), transparent 27%),
-    linear-gradient(160deg, #dff8f4 0%, #f5fffb 48%, #c9eee8 100%);
+    linear-gradient(rgba(229, 241, 218, 0.18), rgba(229, 241, 218, 0.18)),
+    url("assets/big-multiplication-bg.jpg") center top / cover no-repeat fixed;
+  background-color: #e5f1da;
   background-attachment: fixed;
 }
 
 body::before {
-  position: fixed;
-  inset: 18% 0 auto;
-  z-index: -1;
-  width: auto;
-  height: auto;
-  border: 0;
-  background: transparent;
-  color: rgba(8, 127, 145, 0.055);
-  content: "乘法";
-  font-family: Georgia, serif;
-  font-size: clamp(8rem, 34vw, 22rem);
-  font-weight: 900;
-  line-height: 1;
-  text-align: center;
-  white-space: normal;
-  transform: rotate(-6deg);
+  display: none;
 }
 
 body::after {
@@ -1019,7 +1005,7 @@ body::after {
 
 .app-shell {
   position: relative;
-  background: rgba(248, 255, 253, 0.96);
+  background: rgba(248, 255, 253, 0.9);
   border-right: 0;
   border-left: 0;
 }
