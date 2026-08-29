@@ -56,7 +56,7 @@ const state = {
   secondsLeft: QUICK_SECONDS,
   timer: null,
   wrongPractice: false,
-  wrongPracticeGroup: null,
+  wrongPracticeScope: null,
   lastWrongQuestions: [],
   retryLevel: null,
   retrySubLevel: null,
@@ -72,7 +72,6 @@ const els = {
   recordScreen: document.querySelector("#recordScreen"),
   completedDays: document.querySelector("#completedDays"),
   averageRate: document.querySelector("#averageRate"),
-  wrongPracticeHome: document.querySelector("#wrongPracticeHome"),
   levelList: document.querySelector("#levelList"),
   timerModeBtn: document.querySelector("#timerModeBtn"),
   noTimerModeBtn: document.querySelector("#noTimerModeBtn"),
@@ -179,6 +178,21 @@ function questionCountForSubLevel(level, subLevel) {
   return leftCount * (level.factors || [level.factor]).length;
 }
 
+function questionKeysForLevel(level) {
+  const keys = new Set();
+  subLevels.forEach((subLevel) => {
+    buildLevelQuestions(level, subLevel).forEach((question) => keys.add(questionKey(question)));
+  });
+  return keys;
+}
+
+function wrongItemsForLevel(data, level) {
+  const keys = questionKeysForLevel(level);
+  return Object.values(data.wrongs)
+    .filter((item) => item.count > 0 && keys.has(`${item.left}×${item.right}`))
+    .sort((a, b) => b.count - a.count);
+}
+
 function getUnlockedIndex(data) {
   let unlocked = 0;
   levels.forEach((level, index) => {
@@ -232,12 +246,12 @@ function renderHome() {
   els.completedDays.textContent = `${passedDays} 天`;
   els.averageRate.textContent = formatRate(average);
   els.levelList.innerHTML = "";
-  renderHomeWrongPractice(data);
 
   levels.forEach((level, index) => {
     const passed = isLevelPassed(data, level);
     const levelBest = bestRateForLevel(data, level);
     const unlocked = index <= unlockedIndex;
+    const levelWrongs = wrongItemsForLevel(data, level);
     const card = document.createElement("article");
     card.className = `level-card${passed ? " passed" : ""}${unlocked ? "" : " locked"}`;
     card.innerHTML = `
@@ -259,6 +273,13 @@ function renderHome() {
             })
             .join("")}
         </div>
+        <div class="level-wrong-practice${levelWrongs.length ? "" : " is-empty"}">
+          <div>
+            <strong>本关错题专项</strong>
+            <span>${levelWrongs.length ? `还有 ${levelWrongs.length} 道要做熟` : "本关暂时没有错题"}</span>
+          </div>
+          <button class="level-wrong-btn" type="button" data-level-wrong-index="${index}" ${unlocked && levelWrongs.length ? "" : "disabled"}>练本关错题</button>
+        </div>
       </div>
       <strong class="pass-stamp">${passed ? "已通过" : unlocked ? "开始" : "未解锁"}</strong>
     `;
@@ -272,37 +293,9 @@ function renderHome() {
       startLevel(level, subLevel);
     });
   });
-}
 
-function renderHomeWrongPractice(data) {
-  const wrongs = Object.values(data.wrongs).filter((item) => item.count > 0).sort((a, b) => b.count - a.count);
-  els.wrongPracticeHome.classList.toggle("is-empty", !wrongs.length);
-  if (!wrongs.length) {
-    els.wrongPracticeHome.innerHTML = `
-      <h3>错题专项练习</h3>
-      <p>现在错题本是空的。做题时答错的题会自动红色标出来，并收进这里继续练。</p>
-    `;
-    return;
-  }
-
-  const groupButtons = wrongGroups
-    .map((group) => {
-      const count = wrongs.filter((item) => item.left >= group.min && item.left <= group.max).length;
-      return `<button type="button" data-home-wrong-group="${group.id}" ${count ? "" : "disabled"}>${group.label}<br>${count} 题</button>`;
-    })
-    .join("");
-  els.wrongPracticeHome.innerHTML = `
-    <h3>错题专项练习</h3>
-    <p>红色错题会一直留在这里，练对一次少一次，全部练熟就消掉。</p>
-    <div class="wrong-practice-grid">${groupButtons}</div>
-    <button class="start-wrong-btn secondary" type="button" id="homeAllWrongPracticeBtn">全部错题打乱练</button>
-    <div class="wrong-chip-list">
-      ${wrongs.slice(0, 10).map((item) => `<span class="wrong-chip">${item.left}×${item.right}</span>`).join("")}
-    </div>
-  `;
-  document.querySelector("#homeAllWrongPracticeBtn")?.addEventListener("click", () => startWrongPractice());
-  document.querySelectorAll("[data-home-wrong-group]").forEach((button) => {
-    button.addEventListener("click", () => startWrongPractice(wrongGroups.find((group) => group.id === button.dataset.homeWrongGroup)));
+  document.querySelectorAll("[data-level-wrong-index]").forEach((button) => {
+    button.addEventListener("click", () => startLevelWrongPractice(levels[Number(button.dataset.levelWrongIndex)]));
   });
 }
 
@@ -339,11 +332,12 @@ function buildLevelQuestions(level, subLevel = subLevels[0]) {
   return shuffle(questions);
 }
 
-function buildWrongPracticeQuestions(data, group = null) {
+function buildWrongPracticeQuestions(data, scope = null) {
   const pool = Object.values(data.wrongs).filter((item) => {
     if (item.count <= 0) return false;
-    if (!group) return true;
-    return item.left >= group.min && item.left <= group.max;
+    if (!scope) return true;
+    if (scope.keys) return scope.keys.has(item.key);
+    return item.left >= scope.min && item.left <= scope.max;
   });
   return shuffle(pool).slice(0, Math.min(QUESTION_COUNT, pool.length)).map((item) => buildQuestion(item.left, item.right, "direct"));
 }
@@ -371,8 +365,8 @@ function renderQuestion() {
   }
 
   const completed = state.answers.length;
-  els.quizMeta.textContent = state.wrongPractice ? "错题本练习" : state.activeLevel.day;
-  els.quizTitle.textContent = state.wrongPractice ? "错题专项练习" : state.activeLevel.title;
+  els.quizMeta.textContent = state.wrongPractice ? state.activeLevel.day : state.activeLevel.day;
+  els.quizTitle.textContent = state.activeLevel.title;
   els.questionType.textContent = question.type;
   els.questionText.innerHTML = question.left === question.right && question.type === "基础计算" ? question.prompt.replace("?", "<strong>?</strong>") : question.prompt;
   els.answerInput.value = "";
@@ -507,7 +501,7 @@ function startLevel(level, subLevel = subLevels[0]) {
   state.answers = [];
   state.hintOpen = false;
   state.wrongPractice = false;
-  state.wrongPracticeGroup = null;
+  state.wrongPracticeScope = null;
   state.lastWrongQuestions = [];
   state.retryLevel = level;
   state.retrySubLevel = subLevel;
@@ -523,25 +517,37 @@ function startQuestionPractice(questions, title, meta = "错题再练") {
   state.answers = [];
   state.hintOpen = true;
   state.wrongPractice = true;
-  state.wrongPracticeGroup = null;
+  state.wrongPracticeScope = { type: "questions", questions, title, meta };
   showScreen("quiz");
   renderQuestion();
 }
 
-function startWrongPractice(group = null) {
+function startWrongPractice(scope = null) {
   const data = loadData();
-  const questions = buildWrongPracticeQuestions(data, group);
+  const questions = buildWrongPracticeQuestions(data, scope);
   if (!questions.length) return;
-  state.activeLevel = { day: "错题本", title: group ? `${group.label} 错题练习` : "错题专项练习", passRate: 100, timed: false };
+  state.activeLevel = { day: scope?.meta || "错题本", title: scope?.title || (scope ? `${scope.label} 错题练习` : "全部错题专项练习"), passRate: 100, timed: false };
   state.questions = questions;
   state.index = 0;
   state.answers = [];
   state.hintOpen = true;
   state.wrongPractice = true;
-  state.wrongPracticeGroup = group;
+  state.wrongPracticeScope = scope;
   state.lastWrongQuestions = [];
   showScreen("quiz");
   renderQuestion();
+}
+
+function startLevelWrongPractice(level) {
+  const data = loadData();
+  const wrongs = wrongItemsForLevel(data, level);
+  if (!wrongs.length) return;
+  startWrongPractice({
+    type: "level",
+    keys: new Set(wrongs.map((item) => item.key)),
+    meta: level.day,
+    title: `${level.day} 本关错题专项`
+  });
 }
 
 function renderRecords(tab = "history") {
@@ -597,7 +603,11 @@ els.resultHomeBtn.addEventListener("click", () => {
 
 els.retryBtn.addEventListener("click", () => {
   clearAutoAdvance();
-  if (state.wrongPractice) startWrongPractice(state.wrongPracticeGroup);
+  if (state.wrongPractice && state.wrongPracticeScope?.type === "questions") {
+    startQuestionPractice(state.wrongPracticeScope.questions, state.wrongPracticeScope.title, state.wrongPracticeScope.meta);
+  } else if (state.wrongPractice) {
+    startWrongPractice(state.wrongPracticeScope);
+  }
   else startLevel(state.retryLevel, state.retrySubLevel);
 });
 

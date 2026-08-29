@@ -346,6 +346,61 @@ button {
   cursor: not-allowed;
 }
 
+.level-wrong-practice {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+  align-items: center;
+  margin-top: 12px;
+  padding: 10px 12px;
+  border: 2px solid rgba(225, 75, 55, 0.34);
+  border-radius: 8px;
+  background: rgba(225, 75, 55, 0.07);
+}
+
+.level-wrong-practice strong,
+.level-wrong-practice span {
+  display: block;
+}
+
+.level-wrong-practice strong {
+  color: var(--red);
+  font-size: 0.95rem;
+  font-weight: 950;
+}
+
+.level-wrong-practice span {
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 850;
+}
+
+.level-wrong-practice.is-empty {
+  border-color: rgba(22, 161, 166, 0.22);
+  background: rgba(22, 161, 166, 0.05);
+}
+
+.level-wrong-practice.is-empty strong {
+  color: var(--blue);
+}
+
+.level-wrong-btn {
+  min-height: 38px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--red);
+  color: #fff;
+  font-weight: 950;
+  white-space: nowrap;
+}
+
+.level-wrong-btn:disabled {
+  background: #c8c1ba;
+  cursor: not-allowed;
+}
+
 .pass-stamp {
   color: var(--red);
   font-size: clamp(1.2rem, 5vw, 2rem);
@@ -831,6 +886,14 @@ button {
 
   .sublevel-actions {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .level-wrong-practice {
+    grid-template-columns: 1fr;
+  }
+
+  .level-wrong-btn {
+    width: 100%;
   }
 
   .wrong-practice-grid {
