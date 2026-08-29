@@ -7,6 +7,11 @@ const wrongGroups = [
   { id: "middle", label: "13-15", min: 13, max: 15 },
   { id: "hard", label: "16-19", min: 16, max: 19 }
 ];
+const subLevels = [
+  { id: "part-1", label: "1-13 打乱", min: 1, max: 13 },
+  { id: "part-2", label: "13-15 打乱", min: 13, max: 15 },
+  { id: "part-3", label: "16-19 打乱", min: 16, max: 19 }
+];
 
 const levels = [
   ...Array.from({ length: 9 }, (_, index) => ({
@@ -51,7 +56,9 @@ const state = {
   timer: null,
   wrongPractice: false,
   wrongPracticeGroup: null,
-  lastWrongQuestions: []
+  lastWrongQuestions: [],
+  retryLevel: null,
+  retrySubLevel: null
 };
 
 const els = {
@@ -142,16 +149,39 @@ function shuffle(items) {
   return [...items].sort(() => Math.random() - 0.5);
 }
 
+function rangeNumbers(min, max) {
+  return Array.from({ length: max - min + 1 }, (_, index) => index + min);
+}
+
+function subLevelId(level, subLevel) {
+  return `${level.id}-${subLevel.id}`;
+}
+
+function isLevelPassed(data, level) {
+  return subLevels.every((subLevel) => data.best[subLevelId(level, subLevel)]?.passed);
+}
+
+function bestRateForLevel(data, level) {
+  const rates = subLevels.map((subLevel) => data.best[subLevelId(level, subLevel)]?.rate).filter((rate) => Number.isFinite(rate));
+  return rates.length ? Math.round(rates.reduce((sum, rate) => sum + rate, 0) / rates.length) : null;
+}
+
+function questionCountForSubLevel(level, subLevel) {
+  const leftCount = subLevel.max - subLevel.min + 1;
+  if (level.type === "basic") return leftCount;
+  return leftCount * (level.factors || [level.factor]).length;
+}
+
 function getUnlockedIndex(data) {
   let unlocked = 0;
   levels.forEach((level, index) => {
-    if (index === 0 || data.best[levels[index - 1].id]?.passed) unlocked = index;
+    if (index === 0 || isLevelPassed(data, levels[index - 1])) unlocked = index;
   });
   return unlocked;
 }
 
 function getStats(data) {
-  const passedDays = levels.filter((level) => level.id.startsWith("day-") && data.best[level.id]?.passed).length;
+  const passedDays = levels.filter((level) => level.id.startsWith("day-") && isLevelPassed(data, level)).length;
   const rates = Object.values(data.best).map((item) => item.rate);
   const average = rates.length ? rates.reduce((sum, rate) => sum + rate, 0) / rates.length : 0;
   return { passedDays, average, attempts: data.history.length };
@@ -176,28 +206,42 @@ function renderHome() {
   els.levelList.innerHTML = "";
 
   levels.forEach((level, index) => {
-    const best = data.best[level.id];
+    const passed = isLevelPassed(data, level);
+    const levelBest = bestRateForLevel(data, level);
     const unlocked = index <= unlockedIndex;
-    const card = document.createElement("button");
-    card.type = "button";
-    card.className = `level-card${best?.passed ? " passed" : ""}${unlocked ? "" : " locked"}`;
-    card.disabled = !unlocked;
+    const card = document.createElement("article");
+    card.className = `level-card${passed ? " passed" : ""}${unlocked ? "" : " locked"}`;
     card.innerHTML = `
-      <span class="level-icon">${best?.passed ? "✓" : unlocked ? "▶" : "🔒"}</span>
-      <span>
+      <span class="level-icon">${passed ? "✓" : unlocked ? "▶" : "🔒"}</span>
+      <div class="level-body">
         <h3>${level.day}：${level.title}</h3>
         <p>${level.desc}</p>
-        <span class="level-meta">
-          <span>20 题</span>
+        <div class="level-meta">
+          <span>3 个小关</span>
           <span>${level.passRate}%通过</span>
           <span>${isTiming() ? "每题5秒" : "不计时"}</span>
-          <span>最佳成绩：${best ? formatRate(best.rate) : "--"}</span>
-        </span>
-      </span>
-      <strong class="pass-stamp">${best?.passed ? "已通过" : unlocked ? "开始" : "未解锁"}</strong>
+          <span>平均最佳：${levelBest === null ? "--" : formatRate(levelBest)}</span>
+        </div>
+        <div class="sublevel-actions">
+          ${subLevels
+            .map((subLevel) => {
+              const best = data.best[subLevelId(level, subLevel)];
+              return `<button class="sublevel-btn" type="button" data-level-index="${index}" data-sublevel-id="${subLevel.id}" ${unlocked ? "" : "disabled"}>${subLevel.label}<small>${questionCountForSubLevel(level, subLevel)} 题 · ${best ? formatRate(best.rate) : "未练"}</small></button>`;
+            })
+            .join("")}
+        </div>
+      </div>
+      <strong class="pass-stamp">${passed ? "已通过" : unlocked ? "开始" : "未解锁"}</strong>
     `;
-    card.addEventListener("click", () => startLevel(level));
     els.levelList.append(card);
+  });
+
+  document.querySelectorAll(".sublevel-btn").forEach((button) => {
+    button.addEventListener("click", () => {
+      const level = levels[Number(button.dataset.levelIndex)];
+      const subLevel = subLevels.find((item) => item.id === button.dataset.sublevelId);
+      startLevel(level, subLevel);
+    });
   });
 }
 
@@ -216,22 +260,22 @@ function buildQuestion(left, right, mode = "direct") {
   return { type: "基础计算", prompt: `${left} × ${right} = ?`, answer, left, right, display: `${left} × ${right} = ${answer}` };
 }
 
-function buildLevelQuestions(level) {
+function buildLevelQuestions(level, subLevel = subLevels[0]) {
   const questions = [];
+  const leftNumbers = rangeNumbers(subLevel.min, subLevel.max);
   if (level.type === "basic") {
-    for (let left = 1; left <= 19; left += 1) questions.push(buildQuestion(left, level.factor));
-    questions.push(buildQuestion(level.factor, level.factor));
-    return questions;
+    leftNumbers.forEach((left) => questions.push(buildQuestion(left, level.factor)));
+    return shuffle(questions);
   }
 
   const factors = level.factors || [11, 12, 13, 14, 15, 16, 17, 18, 19];
-  while (questions.length < QUESTION_COUNT) {
-    const right = randomItem(factors);
-    const left = Math.floor(Math.random() * 19) + 1;
-    const modes = level.type === "reverse" ? ["reverse"] : ["direct", "reverse", "word"];
-    questions.push(buildQuestion(left, right, randomItem(modes)));
-  }
-  return shuffle(questions).slice(0, QUESTION_COUNT);
+  leftNumbers.forEach((left) => {
+    factors.forEach((right) => {
+      const modes = level.type === "reverse" ? ["reverse"] : ["direct", "reverse", "word"];
+      questions.push(buildQuestion(left, right, randomItem(modes)));
+    });
+  });
+  return shuffle(questions);
 }
 
 function buildWrongPracticeQuestions(data, group = null) {
@@ -387,15 +431,17 @@ function renderResult(result) {
   els.drillWrongBtn.hidden = !wrongs.length;
 }
 
-function startLevel(level) {
-  state.activeLevel = level;
-  state.questions = buildLevelQuestions(level);
+function startLevel(level, subLevel = subLevels[0]) {
+  state.activeLevel = { ...level, id: subLevelId(level, subLevel), day: `${level.day} · ${subLevel.label}`, title: `${level.title}：${subLevel.label}` };
+  state.questions = buildLevelQuestions(level, subLevel);
   state.index = 0;
   state.answers = [];
   state.hintOpen = false;
   state.wrongPractice = false;
   state.wrongPracticeGroup = null;
   state.lastWrongQuestions = [];
+  state.retryLevel = level;
+  state.retrySubLevel = subLevel;
   showScreen("quiz");
   renderQuestion();
 }
@@ -481,7 +527,7 @@ els.resultHomeBtn.addEventListener("click", () => {
 
 els.retryBtn.addEventListener("click", () => {
   if (state.wrongPractice) startWrongPractice(state.wrongPracticeGroup);
-  else startLevel(state.activeLevel);
+  else startLevel(state.retryLevel, state.retrySubLevel);
 });
 
 els.drillWrongBtn.addEventListener("click", () => {
