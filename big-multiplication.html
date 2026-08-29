@@ -3,53 +3,140 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>大九九乘法表</title>
-    <link rel="stylesheet" href="big-multiplication.css?v=big-99-20260828" />
+    <title>大九九乘法过关</title>
+    <link rel="stylesheet" href="big-multiplication.css?v=pass-levels-20260829" />
   </head>
   <body>
-    <a class="home-link" href="arcade.html">游戏大厅</a>
-    <main class="multiplication-shell">
-      <section class="hero">
+    <main class="app-shell">
+      <header class="topbar">
+        <a class="close-link" href="arcade.html" aria-label="返回游戏大厅">×</a>
         <div>
-          <p class="label">Big Multiplication</p>
-          <h1>大九九乘法表</h1>
-          <p>1 到 19 的整张乘法表，一列一列背：点一个乘数，就看这一整列。</p>
+          <h1>大九九乘法过关</h1>
+          <p>11-19 专项训练</p>
         </div>
-        <div class="number-stack" aria-label="乘法数字装饰">
-          <span>1</span>
-          <span>9</span>
-          <span>×</span>
-          <span>19</span>
-        </div>
-      </section>
+        <button id="recordTopBtn" class="outline-btn" type="button">学习记录</button>
+      </header>
 
-      <section class="practice-board" aria-label="单列乘法表">
-        <div class="column-card">
-          <div class="column-head">
-            <p class="label">Single Column</p>
-            <h2 id="columnTitle">×12 一列</h2>
+      <section id="homeScreen" class="screen active">
+        <div class="page-head">
+          <h2>关卡列表</h2>
+          <div class="summary-grid">
+            <article>
+              <span>已完成</span>
+              <strong id="completedDays">0 天</strong>
+            </article>
+            <article>
+              <span>平均正确率</span>
+              <strong id="averageRate">0%</strong>
+            </article>
           </div>
-          <div id="columnList" class="column-list"></div>
+        </div>
+        <div id="levelList" class="level-list"></div>
+      </section>
+
+      <section id="quizScreen" class="screen">
+        <div class="quiz-head">
+          <button id="backHomeBtn" class="ghost-btn" type="button">返回首页</button>
+          <div>
+            <p class="label" id="quizMeta">Day 1</p>
+            <h2 id="quizTitle">11 的乘法表专项训练</h2>
+          </div>
+          <div id="timerBox" class="timer-box">不限时</div>
         </div>
 
-        <div class="selector-card">
-          <p class="label">Choose Column</p>
-          <div id="columnButtons" class="column-buttons" aria-label="选择乘数"></div>
-          <button id="autoBtn" class="auto-btn" type="button">自动背下一列</button>
+        <div class="progress-wrap" aria-label="答题进度">
+          <div id="progressBar" class="progress-bar"></div>
+        </div>
+
+        <div class="quiz-grid">
+          <section class="question-card">
+            <p id="questionType" class="question-type">基础计算</p>
+            <h3 id="questionText">11 × 11 = ?</h3>
+            <form id="answerForm" class="answer-form">
+              <input id="answerInput" inputmode="numeric" autocomplete="off" placeholder="输入答案" aria-label="输入答案" />
+              <button type="submit">下一题</button>
+            </form>
+            <button id="hintToggle" class="hint-toggle" type="button">展开记忆提示</button>
+            <div id="hintPanel" class="hint-panel"></div>
+            <p id="feedbackText" class="feedback-text"></p>
+          </section>
+
+          <aside class="done-card">
+            <div class="done-head">
+              <p class="label">Done</p>
+              <strong id="doneCount">0/20</strong>
+            </div>
+            <div id="doneList" class="done-list"></div>
+          </aside>
         </div>
       </section>
 
-      <section class="full-table-section" aria-label="完整大九九乘法表">
-        <div class="section-title">
-          <p class="label">Full Table</p>
-          <h2>1 到 19 完整表</h2>
-        </div>
-        <div class="table-wrap">
-          <table id="multiplicationTable" class="multiplication-table"></table>
+      <section id="resultScreen" class="screen">
+        <div class="result-card">
+          <p id="resultBadge" class="result-badge">未通过</p>
+          <h2 id="resultTitle">本关成绩</h2>
+          <div class="result-stats">
+            <article>
+              <span>总题数</span>
+              <strong id="resultTotal">20</strong>
+            </article>
+            <article>
+              <span>正确数</span>
+              <strong id="resultCorrect">0</strong>
+            </article>
+            <article>
+              <span>正确率</span>
+              <strong id="resultRate">0%</strong>
+            </article>
+          </div>
+          <h3>错题列表</h3>
+          <div id="wrongList" class="wrong-list"></div>
+          <div class="result-actions">
+            <button id="retryBtn" type="button">重新挑战</button>
+            <button id="resultHomeBtn" type="button">返回首页</button>
+          </div>
         </div>
       </section>
+
+      <section id="recordScreen" class="screen">
+        <div class="page-head records-head">
+          <h2>学习记录</h2>
+          <button id="exitRecordBtn" class="outline-btn" type="button">退出</button>
+        </div>
+        <div class="record-summary">
+          <article>
+            <span>完成天数</span>
+            <strong id="recordCompleted">0</strong>
+          </article>
+          <article>
+            <span>平均正确率</span>
+            <strong id="recordAverage">0%</strong>
+          </article>
+          <article>
+            <span>总尝试次数</span>
+            <strong id="recordAttempts">0</strong>
+          </article>
+        </div>
+        <div class="tab-row">
+          <button id="historyTab" class="active" type="button">历史记录</button>
+          <button id="wrongTab" type="button">错题本</button>
+        </div>
+        <div id="historyPanel" class="record-panel active"></div>
+        <div id="wrongPanel" class="record-panel"></div>
+      </section>
+
+      <nav class="bottom-nav" aria-label="底部导航栏">
+        <button id="levelsNav" class="active" type="button">
+          <span>⚗</span>
+          关卡
+        </button>
+        <button id="recordsNav" type="button">
+          <span>↺</span>
+          记录
+        </button>
+      </nav>
     </main>
-    <script src="big-multiplication.js?v=big-99-20260828"></script>
+    <script src="big-multiplication.js?v=pass-levels-20260829"></script>
     <script src="arcade-stats.js?v=visitor-table-20260728"></script>
   </body>
 </html>
