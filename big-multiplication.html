@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>大九九乘法过关</title>
-    <link rel="stylesheet" href="big-multiplication.css?v=sublevels-20260829" />
+    <link rel="stylesheet" href="big-multiplication.css?v=wrong-hub-20260829" />
   </head>
   <body>
     <main class="app-shell">
@@ -35,6 +35,7 @@
             </article>
           </div>
         </div>
+        <section id="wrongPracticeHome" class="wrong-practice-home" aria-label="错题专项练习"></section>
         <div id="levelList" class="level-list"></div>
       </section>
 
@@ -95,7 +96,9 @@
           </div>
           <h3>错题列表</h3>
           <div id="wrongList" class="wrong-list"></div>
+          <p id="resultNextHint" class="result-next-hint"></p>
           <div class="result-actions">
+            <button id="nextLevelBtn" type="button">下一关</button>
             <button id="drillWrongBtn" type="button">继续练错题</button>
             <button id="retryBtn" type="button">重新挑战</button>
             <button id="resultHomeBtn" type="button">返回首页</button>
@@ -141,7 +144,7 @@
         </button>
       </nav>
     </main>
-    <script src="big-multiplication.js?v=sublevels-20260829"></script>
+    <script src="big-multiplication.js?v=wrong-hub-20260829"></script>
     <script src="arcade-stats.js?v=visitor-table-20260728"></script>
   </body>
 </html>

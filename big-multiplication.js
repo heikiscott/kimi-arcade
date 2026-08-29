@@ -10,7 +10,8 @@ const wrongGroups = [
 const subLevels = [
   { id: "part-1", label: "1-13 打乱", min: 1, max: 13 },
   { id: "part-2", label: "13-15 打乱", min: 13, max: 15 },
-  { id: "part-3", label: "16-19 打乱", min: 16, max: 19 }
+  { id: "part-3", label: "16-19 打乱", min: 16, max: 19 },
+  { id: "part-4", label: "13-19 打乱", min: 13, max: 19 }
 ];
 
 const levels = [
@@ -58,7 +59,10 @@ const state = {
   wrongPracticeGroup: null,
   lastWrongQuestions: [],
   retryLevel: null,
-  retrySubLevel: null
+  retrySubLevel: null,
+  nextLevel: null,
+  nextSubLevel: null,
+  autoAdvanceTimer: null
 };
 
 const els = {
@@ -68,6 +72,7 @@ const els = {
   recordScreen: document.querySelector("#recordScreen"),
   completedDays: document.querySelector("#completedDays"),
   averageRate: document.querySelector("#averageRate"),
+  wrongPracticeHome: document.querySelector("#wrongPracticeHome"),
   levelList: document.querySelector("#levelList"),
   timerModeBtn: document.querySelector("#timerModeBtn"),
   noTimerModeBtn: document.querySelector("#noTimerModeBtn"),
@@ -94,6 +99,8 @@ const els = {
   resultCorrect: document.querySelector("#resultCorrect"),
   resultRate: document.querySelector("#resultRate"),
   wrongList: document.querySelector("#wrongList"),
+  resultNextHint: document.querySelector("#resultNextHint"),
+  nextLevelBtn: document.querySelector("#nextLevelBtn"),
   drillWrongBtn: document.querySelector("#drillWrongBtn"),
   retryBtn: document.querySelector("#retryBtn"),
   resultHomeBtn: document.querySelector("#resultHomeBtn"),
@@ -189,12 +196,33 @@ function getStats(data) {
 
 function showScreen(name) {
   clearInterval(state.timer);
+  clearAutoAdvance();
   state.timer = null;
   state.screen = name;
   [els.homeScreen, els.quizScreen, els.resultScreen, els.recordScreen].forEach((screen) => screen.classList.remove("active"));
   document.querySelector(`#${name}Screen`).classList.add("active");
   els.levelsNav.classList.toggle("active", name === "home");
   els.recordsNav.classList.toggle("active", name === "record");
+}
+
+function clearAutoAdvance() {
+  if (!state.autoAdvanceTimer) return;
+  clearTimeout(state.autoAdvanceTimer);
+  state.autoAdvanceTimer = null;
+}
+
+function nextPracticeStep(level, subLevel) {
+  if (!level || !subLevel) return null;
+  const levelIndex = levels.findIndex((item) => item.id === level.id);
+  const subIndex = subLevels.findIndex((item) => item.id === subLevel.id);
+  if (levelIndex < 0 || subIndex < 0) return null;
+  if (subIndex < subLevels.length - 1) return { level, subLevel: subLevels[subIndex + 1] };
+
+  const data = loadData();
+  const missingSubLevel = subLevels.find((item) => !data.best[subLevelId(level, item)]?.passed);
+  if (missingSubLevel) return { level, subLevel: missingSubLevel };
+  if (levelIndex < levels.length - 1) return { level: levels[levelIndex + 1], subLevel: subLevels[0] };
+  return null;
 }
 
 function renderHome() {
@@ -204,6 +232,7 @@ function renderHome() {
   els.completedDays.textContent = `${passedDays} 天`;
   els.averageRate.textContent = formatRate(average);
   els.levelList.innerHTML = "";
+  renderHomeWrongPractice(data);
 
   levels.forEach((level, index) => {
     const passed = isLevelPassed(data, level);
@@ -217,7 +246,7 @@ function renderHome() {
         <h3>${level.day}：${level.title}</h3>
         <p>${level.desc}</p>
         <div class="level-meta">
-          <span>3 个小关</span>
+          <span>4 个小关</span>
           <span>${level.passRate}%通过</span>
           <span>${isTiming() ? "每题5秒" : "不计时"}</span>
           <span>平均最佳：${levelBest === null ? "--" : formatRate(levelBest)}</span>
@@ -242,6 +271,38 @@ function renderHome() {
       const subLevel = subLevels.find((item) => item.id === button.dataset.sublevelId);
       startLevel(level, subLevel);
     });
+  });
+}
+
+function renderHomeWrongPractice(data) {
+  const wrongs = Object.values(data.wrongs).filter((item) => item.count > 0).sort((a, b) => b.count - a.count);
+  els.wrongPracticeHome.classList.toggle("is-empty", !wrongs.length);
+  if (!wrongs.length) {
+    els.wrongPracticeHome.innerHTML = `
+      <h3>错题专项练习</h3>
+      <p>现在错题本是空的。做题时答错的题会自动红色标出来，并收进这里继续练。</p>
+    `;
+    return;
+  }
+
+  const groupButtons = wrongGroups
+    .map((group) => {
+      const count = wrongs.filter((item) => item.left >= group.min && item.left <= group.max).length;
+      return `<button type="button" data-home-wrong-group="${group.id}" ${count ? "" : "disabled"}>${group.label}<br>${count} 题</button>`;
+    })
+    .join("");
+  els.wrongPracticeHome.innerHTML = `
+    <h3>错题专项练习</h3>
+    <p>红色错题会一直留在这里，练对一次少一次，全部练熟就消掉。</p>
+    <div class="wrong-practice-grid">${groupButtons}</div>
+    <button class="start-wrong-btn secondary" type="button" id="homeAllWrongPracticeBtn">全部错题打乱练</button>
+    <div class="wrong-chip-list">
+      ${wrongs.slice(0, 10).map((item) => `<span class="wrong-chip">${item.left}×${item.right}</span>`).join("")}
+    </div>
+  `;
+  document.querySelector("#homeAllWrongPracticeBtn")?.addEventListener("click", () => startWrongPractice());
+  document.querySelectorAll("[data-home-wrong-group]").forEach((button) => {
+    button.addEventListener("click", () => startWrongPractice(wrongGroups.find((group) => group.id === button.dataset.homeWrongGroup)));
   });
 }
 
@@ -413,8 +474,8 @@ function finishQuiz() {
     saveData(data);
   }
 
-  renderResult({ total, correct, rate, passed });
   showScreen("result");
+  renderResult({ total, correct, rate, passed });
 }
 
 function renderResult(result) {
@@ -429,6 +490,14 @@ function renderResult(result) {
     ? wrongs.map((item) => `<div class="wrong-row"><strong>${item.question.display}</strong><span>你的答案：${item.timeout ? "超时" : item.userAnswer ?? "空"}；正确答案：${item.question.answer}</span></div>`).join("")
     : `<p class="empty-note">没有错题，太稳了。</p>`;
   els.drillWrongBtn.hidden = !wrongs.length;
+  const nextStep = result.passed && !state.wrongPractice ? nextPracticeStep(state.retryLevel, state.retrySubLevel) : null;
+  state.nextLevel = nextStep?.level || null;
+  state.nextSubLevel = nextStep?.subLevel || null;
+  els.nextLevelBtn.hidden = !nextStep;
+  els.resultNextHint.textContent = nextStep ? `通过了，马上自动进入：${nextStep.level.day} · ${nextStep.subLevel.label}` : "";
+  if (nextStep) {
+    state.autoAdvanceTimer = window.setTimeout(() => startLevel(nextStep.level, nextStep.subLevel), 2600);
+  }
 }
 
 function startLevel(level, subLevel = subLevels[0]) {
@@ -521,16 +590,24 @@ els.backHomeBtn.addEventListener("click", () => {
 });
 
 els.resultHomeBtn.addEventListener("click", () => {
+  clearAutoAdvance();
   showScreen("home");
   renderHome();
 });
 
 els.retryBtn.addEventListener("click", () => {
+  clearAutoAdvance();
   if (state.wrongPractice) startWrongPractice(state.wrongPracticeGroup);
   else startLevel(state.retryLevel, state.retrySubLevel);
 });
 
+els.nextLevelBtn.addEventListener("click", () => {
+  clearAutoAdvance();
+  if (state.nextLevel && state.nextSubLevel) startLevel(state.nextLevel, state.nextSubLevel);
+});
+
 els.drillWrongBtn.addEventListener("click", () => {
+  clearAutoAdvance();
   startQuestionPractice(state.lastWrongQuestions, "把这次错题做熟", "未通过错题");
 });
 
