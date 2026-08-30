@@ -299,6 +299,8 @@ const state = {
   evacuationActive: false,
   evacuationSurface: "",
   evacuationTime: 0,
+  playerEvacuationStarted: false,
+  playerEvacuated: false,
   planeSinking: false,
   planeSinkTime: 0,
   planeSinkDelay: 96,
@@ -1150,6 +1152,8 @@ function clearPassengerModeVisuals() {
   state.evacuationActive = false;
   state.evacuationSurface = "";
   state.evacuationTime = 0;
+  state.playerEvacuationStarted = false;
+  state.playerEvacuated = false;
   state.planeSinking = false;
   state.planeSinkTime = 0;
   updateEmergencyActionButton();
@@ -1541,6 +1545,53 @@ function createEvacuationSlideAt(surface, exit, index) {
   addSpriteLabel(exit.label, surface === "水面" ? "滑梯已伸出，救生筏充气后再滑" : "门开后排队，一个个滑到安全地面", [midpoint.x, midpoint.y + 2.5 + index * 0.18, midpoint.z], 8.3, 1.85, evacuationGroup);
 }
 
+function releasePlayerEvacuation(surface) {
+  if (state.playerEvacuationStarted || !state.passengerMode || !state.passengerBoarded) return;
+  const exit = getEvacuationExitConfigs(surface)[0];
+  if (!exit) return;
+
+  state.playerEvacuationStarted = true;
+  state.playerEvacuated = false;
+  const seated = getSeatedCabinPassenger();
+  if (seated) seated.visible = false;
+
+  const side = exit.side;
+  const forward = getPlaneForwardVector();
+  const door = exit.door;
+  const slideLength = surface === "水面" ? 15.4 : 7.2;
+  const slideStart = new THREE.Vector3(door.x + forward.x * 0.36, Math.max(1.28, door.y - 0.08), door.z + forward.z * 0.36);
+  const slideEnd = new THREE.Vector3(
+    door.x + side.x * slideLength,
+    surface === "水面" ? 0.34 : 0.22,
+    door.z + side.z * slideLength
+  );
+  const finalPoint = slideEnd
+    .clone()
+    .add(side.clone().multiplyScalar(surface === "水面" ? 4.6 : 1.25))
+    .add(forward.clone().multiplyScalar(0.48))
+    .add(new THREE.Vector3(0, surface === "水面" ? 0.2 : 0.04, 0));
+
+  const player = createLastPassengerAvatar();
+  player.name = "you-evacuating-passenger";
+  player.scale.setScalar(surface === "水面" ? 0.52 : 0.42);
+  player.position.copy(slideStart);
+  player.rotation.y = state.heading + exit.sideSign * Math.PI / 2;
+  if (player.userData.lifeJacket) player.userData.lifeJacket.visible = surface === "水面" || state.lifeJacketOn;
+  player.userData.evacuationPath = {
+    delay: 0.28,
+    duration: surface === "水面" ? 2.6 : 1.8,
+    queue: slideStart.clone().add(forward.clone().multiplyScalar(-0.8)),
+    slideStart,
+    slideEnd: finalPoint,
+    slideYaw: player.rotation.y,
+    surface,
+    isPlayer: true
+  };
+  evacuationGroup.add(player);
+  addSpriteLabel("我也撤离", surface === "水面" ? "你会顺着滑梯滑到救生筏上" : "你会顺着滑梯滑到安全地面", [slideStart.x, slideStart.y + 2.6, slideStart.z], 7.6, 1.55, evacuationGroup);
+  addLog(surface === "水面" ? "你也加入撤离：从门口滑到救生筏。" : "你也加入撤离：从门口滑到安全地面。");
+}
+
 function openEmergencyExitAndSlide(force = false) {
   if (!force && !state.evacuationActive && !state.passengerMode && !state.passengerBoarded) {
     statusText.textContent = "先进入乘客模式，或者等飞机迫降停稳后，再打开紧急出口和滑梯。";
@@ -1581,18 +1632,20 @@ function openEmergencyExitAndSlide(force = false) {
       statusText.textContent = "滑梯从飞机门伸出来了。滑梯末端夹着未充气救生筏包，再点“充气救生筏”，救生筏会和滑梯接在一起。";
       addLog("紧急流程：滑梯已经伸出，救生筏包在末端等待充气。");
     } else {
+      releasePlayerEvacuation(surface);
       routeLabel.textContent = "滑梯已伸出：乘客开始排队下滑";
-      statusText.textContent = "紧急滑梯伸出来了。乘客正在排队，一个个顺着滑梯滑到安全地面。";
-      addLog("紧急流程：地面滑梯已经伸出，乘客开始撤离。");
+      statusText.textContent = "紧急滑梯伸出来了。乘客正在排队，你也会跟着一起顺着滑梯滑到安全地面。";
+      addLog("紧急流程：地面滑梯已经伸出，乘客和你一起开始撤离。");
     }
     updateEmergencyActionButton();
     return;
   }
   if (surface === "水面" && !state.lifeRaftDeployed) {
     deployLifeRaft();
+    releasePlayerEvacuation(surface);
     routeLabel.textContent = "救生筏已充气：乘客一个个滑下去";
-    statusText.textContent = "救生筏充气完成，两边鼓起来并和滑梯末端接在一起。乘客开始排队滑到救生筏上，救援船正在靠近。";
-    addLog("紧急流程：救生筏充气完成，乘客开始从滑梯进入救生筏。");
+    statusText.textContent = "救生筏充气完成，两边鼓起来并和滑梯末端接在一起。乘客开始排队滑到救生筏上，你也会一起滑下去。";
+    addLog("紧急流程：救生筏充气完成，乘客和你一起从滑梯进入救生筏。");
     return;
   }
   statusText.textContent = surface === "水面"
@@ -1709,6 +1762,13 @@ function updateEvacuation(dt) {
         child.position.lerpVectors(path.slideStart, path.slideEnd, smoothT);
         child.position.y += Math.sin(smoothT * Math.PI) * 0.12;
         child.rotation.x = path.surface === "水面" ? -0.32 * smoothT : -0.22 * smoothT;
+        if (path.isPlayer && moveT >= 0.98 && !state.playerEvacuated) {
+          state.playerEvacuated = true;
+          statusText.textContent = path.surface === "水面"
+            ? "你也已经顺着滑梯滑到救生筏上了，救援船正在靠过来接大家。"
+            : "你也已经顺着滑梯滑到安全地面了，消防车和工作人员正在救援。";
+          addLog(path.surface === "水面" ? "你撤离完成：已经到救生筏上。" : "你撤离完成：已经到安全地面。");
+        }
       }
       child.rotation.y = path.slideYaw;
     } else if (child.name.includes("passenger")) {
@@ -1826,6 +1886,8 @@ function startPassengerNormalFlight() {
   state.evacuationSlideDeployed = false;
   state.evacuationPassengersReleased = false;
   state.evacuationActive = false;
+  state.playerEvacuationStarted = false;
+  state.playerEvacuated = false;
   state.planeSinking = false;
   state.planeDoorOpen = false;
   updatePlaneDoorVisual();
@@ -1864,6 +1926,8 @@ function startPassengerAccident(mode) {
   state.evacuationSlideDeployed = false;
   state.evacuationPassengersReleased = false;
   state.lifeRaftDeployed = false;
+  state.playerEvacuationStarted = false;
+  state.playerEvacuated = false;
   state.emergencyExitOpened = false;
   updatePlaneDoorVisual();
   if (!passengerCabinRig) createPassengerCabin();
@@ -3653,6 +3717,8 @@ function emergencyLandSuccess(surface) {
   state.evacuationSlideDeployed = false;
   state.evacuationPassengersReleased = false;
   state.lifeRaftDeployed = false;
+  state.playerEvacuationStarted = false;
+  state.playerEvacuated = false;
   state.speed = 0;
   state.throttle = 0;
   throttleLever.value = "0";
