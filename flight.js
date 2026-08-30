@@ -1592,6 +1592,10 @@ function releasePlayerEvacuation(surface) {
   addLog(surface === "水面" ? "你也加入撤离：从门口滑到救生筏。" : "你也加入撤离：从门口滑到安全地面。");
 }
 
+function getPlayerEvacuationAvatar() {
+  return evacuationGroup.getObjectByName("you-evacuating-passenger");
+}
+
 function openEmergencyExitAndSlide(force = false) {
   if (!force && !state.evacuationActive && !state.passengerMode && !state.passengerBoarded) {
     statusText.textContent = "先进入乘客模式，或者等飞机迫降停稳后，再打开紧急出口和滑梯。";
@@ -3945,6 +3949,25 @@ function updateCamera() {
     const testCamera = new THREE.Vector3(34, 126, 242);
     camera.position.lerp(testCamera, 0.08);
     camera.lookAt(testTarget);
+    return;
+  }
+  const evacuatingPlayer = state.playerEvacuationStarted ? getPlayerEvacuationAvatar() : null;
+  if (evacuatingPlayer) {
+    const path = evacuatingPlayer.userData.evacuationPath;
+    const target = evacuatingPlayer.position.clone().add(new THREE.Vector3(0, 1.05, 0));
+    const slideDir = path?.slideEnd
+      ? path.slideEnd.clone().sub(path.slideStart).setY(0).normalize()
+      : getPlaneForwardVector();
+    const sideDir = new THREE.Vector3(-slideDir.z, 0, slideDir.x);
+    const distance = path?.surface === "水面" ? 7.8 : 5.8;
+    const height = path?.surface === "水面" ? 3.8 : 3.1;
+    const followCamera = target
+      .clone()
+      .add(slideDir.clone().multiplyScalar(-distance))
+      .add(sideDir.clone().multiplyScalar(2.6))
+      .add(new THREE.Vector3(0, height, 0));
+    camera.position.lerp(followCamera, 0.18);
+    camera.lookAt(target);
     return;
   }
   if (isCabinLookMode()) {
