@@ -108,6 +108,36 @@ const els = {
   wrongPanel: document.querySelector("#wrongPanel")
 };
 
+function hidePlatformWatermarks(root = document.body) {
+  const markers = ["小红书", "小红书号", "秒哒制作", "appmiaoda", "xiaohongshu", "redbook"];
+  const nodes = root instanceof Element ? [root, ...root.querySelectorAll("*")] : [...document.body.querySelectorAll("*")];
+  nodes.forEach((node) => {
+    const text = (node.textContent || "").trim();
+    const attrs = `${node.id || ""} ${node.className || ""} ${node.getAttribute?.("href") || ""} ${node.getAttribute?.("src") || ""}`.toLowerCase();
+    const hasMarker = markers.some((marker) => text.includes(marker) || attrs.includes(marker.toLowerCase()));
+    if (!hasMarker) return;
+    const style = window.getComputedStyle(node);
+    const isFloating = ["fixed", "sticky", "absolute"].includes(style.position) || Number(style.zIndex) >= 50;
+    if (isFloating || text.length <= 80) {
+      node.style.setProperty("display", "none", "important");
+      node.style.setProperty("visibility", "hidden", "important");
+      node.setAttribute("aria-hidden", "true");
+    }
+  });
+}
+
+function watchPlatformWatermarks() {
+  hidePlatformWatermarks();
+  const observer = new MutationObserver((mutations) => {
+    mutations.forEach((mutation) => {
+      mutation.addedNodes.forEach((node) => {
+        if (node instanceof Element) hidePlatformWatermarks(node);
+      });
+    });
+  });
+  observer.observe(document.body, { childList: true, subtree: true });
+}
+
 function isTiming() {
   return localStorage.getItem(TIMER_MODE_KEY) !== "off";
 }
@@ -632,4 +662,5 @@ els.timerModeBtn.addEventListener("click", () => setTiming(true));
 els.noTimerModeBtn.addEventListener("click", () => setTiming(false));
 
 syncTimerMode();
+watchPlatformWatermarks();
 renderHome();
