@@ -301,6 +301,7 @@ const state = {
   evacuationTime: 0,
   playerEvacuationStarted: false,
   playerEvacuated: false,
+  playerEvacuationZoom: 1.15,
   planeSinking: false,
   planeSinkTime: 0,
   planeSinkDelay: 96,
@@ -1154,6 +1155,7 @@ function clearPassengerModeVisuals() {
   state.evacuationTime = 0;
   state.playerEvacuationStarted = false;
   state.playerEvacuated = false;
+  state.playerEvacuationZoom = 1.15;
   state.planeSinking = false;
   state.planeSinkTime = 0;
   updateEmergencyActionButton();
@@ -1559,6 +1561,13 @@ function releasePlayerEvacuation(surface) {
   const forward = getPlaneForwardVector();
   const door = exit.door;
   const slideLength = surface === "水面" ? 15.4 : 7.2;
+  const cabinStart = getPlaneLocalWorldPoint(state.passengerCabinX, 1.48, state.passengerCabinZ);
+  const aislePoint = getPlaneLocalWorldPoint(0.13, 1.48, Math.min(1.65, state.passengerCabinZ));
+  const doorInside = door
+    .clone()
+    .add(side.clone().multiplyScalar(-0.95))
+    .add(forward.clone().multiplyScalar(-0.32))
+    .add(new THREE.Vector3(0, 0.12, 0));
   const slideStart = new THREE.Vector3(door.x + forward.x * 0.36, Math.max(1.28, door.y - 0.08), door.z + forward.z * 0.36);
   const slideEnd = new THREE.Vector3(
     door.x + side.x * slideLength,
@@ -1574,26 +1583,62 @@ function releasePlayerEvacuation(surface) {
   const player = createLastPassengerAvatar();
   player.name = "you-evacuating-passenger";
   player.scale.setScalar(surface === "水面" ? 0.52 : 0.42);
-  player.position.copy(slideStart);
-  player.rotation.y = state.heading + exit.sideSign * Math.PI / 2;
+  player.position.copy(cabinStart);
+  player.rotation.y = yawTowardPoint(cabinStart, aislePoint, state.heading);
+  const slideYaw = state.heading + exit.sideSign * Math.PI / 2;
   if (player.userData.lifeJacket) player.userData.lifeJacket.visible = surface === "水面" || state.lifeJacketOn;
   player.userData.evacuationPath = {
-    delay: 0.28,
+    delay: 0.08,
+    walkDuration: surface === "水面" ? 2.15 : 1.85,
+    walkPoints: [cabinStart, aislePoint, doorInside, slideStart],
     duration: surface === "水面" ? 2.6 : 1.8,
-    queue: slideStart.clone().add(forward.clone().multiplyScalar(-0.8)),
+    queue: cabinStart,
     slideStart,
     slideEnd: finalPoint,
-    slideYaw: player.rotation.y,
+    slideYaw,
     surface,
     isPlayer: true
   };
   evacuationGroup.add(player);
-  addSpriteLabel("我也撤离", surface === "水面" ? "你会顺着滑梯滑到救生筏上" : "你会顺着滑梯滑到安全地面", [slideStart.x, slideStart.y + 2.6, slideStart.z], 7.6, 1.55, evacuationGroup);
-  addLog(surface === "水面" ? "你也加入撤离：从门口滑到救生筏。" : "你也加入撤离：从门口滑到安全地面。");
+  addSpriteLabel("我也撤离", surface === "水面" ? "先从客舱走到门口，再滑到救生筏上" : "先从客舱走到门口，再滑到安全地面", [slideStart.x, slideStart.y + 2.6, slideStart.z], 7.6, 1.55, evacuationGroup);
+  addLog(surface === "水面" ? "你也加入撤离：先从客舱走到门口，再滑到救生筏。" : "你也加入撤离：先从客舱走到门口，再滑到安全地面。");
 }
 
 function getPlayerEvacuationAvatar() {
   return evacuationGroup.getObjectByName("you-evacuating-passenger");
+}
+
+function getPolylinePoint(points, t) {
+  if (!points?.length) return new THREE.Vector3();
+  if (points.length === 1) return points[0].clone();
+  const lengths = [];
+  let total = 0;
+  for (let i = 0; i < points.length - 1; i++) {
+    const length = points[i].distanceTo(points[i + 1]);
+    lengths.push(length);
+    total += length;
+  }
+  if (total <= 0.0001) return points[points.length - 1].clone();
+  let distance = THREE.MathUtils.clamp(t, 0, 1) * total;
+  for (let i = 0; i < lengths.length; i++) {
+    if (distance <= lengths[i] || i === lengths.length - 1) {
+      const localT = lengths[i] <= 0.0001 ? 1 : distance / lengths[i];
+      return points[i].clone().lerp(points[i + 1], localT);
+    }
+    distance -= lengths[i];
+  }
+  return points[points.length - 1].clone();
+}
+
+function yawTowardPoint(from, to, fallback = 0) {
+  const dx = to.x - from.x;
+  const dz = to.z - from.z;
+  if (Math.hypot(dx, dz) < 0.0001) return fallback;
+  return Math.atan2(dx, dz);
+}
+
+function adjustPlayerEvacuationZoom(delta) {
+  state.playerEvacuationZoom = THREE.MathUtils.clamp((state.playerEvacuationZoom || 1.15) + delta, 0.82, 2.65);
 }
 
 function openEmergencyExitAndSlide(force = false) {
@@ -1757,15 +1802,29 @@ function updateEvacuation(dt) {
         return;
       }
       child.visible = true;
-      const moveT = THREE.MathUtils.clamp((state.evacuationTime - path.delay) / path.duration, 0, 1);
-      if (moveT <= 0) {
+      const elapsed = state.evacuationTime - path.delay;
+      const walkDuration = path.walkDuration || 0;
+      if (elapsed <= 0) {
         child.position.copy(path.queue);
         child.rotation.x = 0;
+      } else if (path.walkPoints?.length > 1 && elapsed < walkDuration) {
+        const walkT = THREE.MathUtils.clamp(elapsed / walkDuration, 0, 1);
+        const smoothWalkT = walkT * walkT * (3 - 2 * walkT);
+        const point = getPolylinePoint(path.walkPoints, smoothWalkT);
+        const nextPoint = getPolylinePoint(path.walkPoints, Math.min(1, smoothWalkT + 0.03));
+        child.position.copy(point);
+        child.position.y += Math.sin(state.evacuationTime * 12) * 0.035;
+        child.rotation.x = 0;
+        child.rotation.z = Math.sin(state.evacuationTime * 10) * 0.06;
+        child.rotation.y = yawTowardPoint(point, nextPoint, child.rotation.y);
       } else {
+        const moveT = THREE.MathUtils.clamp((elapsed - walkDuration) / path.duration, 0, 1);
         const smoothT = moveT * moveT * (3 - 2 * moveT);
         child.position.lerpVectors(path.slideStart, path.slideEnd, smoothT);
         child.position.y += Math.sin(smoothT * Math.PI) * 0.12;
         child.rotation.x = path.surface === "水面" ? -0.32 * smoothT : -0.22 * smoothT;
+        child.rotation.z = 0;
+        child.rotation.y = path.slideYaw;
         if (path.isPlayer && moveT >= 0.98 && !state.playerEvacuated) {
           state.playerEvacuated = true;
           statusText.textContent = path.surface === "水面"
@@ -1774,7 +1833,6 @@ function updateEvacuation(dt) {
           addLog(path.surface === "水面" ? "你撤离完成：已经到救生筏上。" : "你撤离完成：已经到安全地面。");
         }
       }
-      child.rotation.y = path.slideYaw;
     } else if (child.name.includes("passenger")) {
       child.position.y += Math.sin(clock.elapsedTime * 4 + index) * 0.002;
     }
@@ -1892,6 +1950,7 @@ function startPassengerNormalFlight() {
   state.evacuationActive = false;
   state.playerEvacuationStarted = false;
   state.playerEvacuated = false;
+  state.playerEvacuationZoom = 1.15;
   state.planeSinking = false;
   state.planeDoorOpen = false;
   updatePlaneDoorVisual();
@@ -1932,6 +1991,7 @@ function startPassengerAccident(mode) {
   state.lifeRaftDeployed = false;
   state.playerEvacuationStarted = false;
   state.playerEvacuated = false;
+  state.playerEvacuationZoom = 1.15;
   state.emergencyExitOpened = false;
   updatePlaneDoorVisual();
   if (!passengerCabinRig) createPassengerCabin();
@@ -3723,6 +3783,7 @@ function emergencyLandSuccess(surface) {
   state.lifeRaftDeployed = false;
   state.playerEvacuationStarted = false;
   state.playerEvacuated = false;
+  state.playerEvacuationZoom = 1.15;
   state.speed = 0;
   state.throttle = 0;
   throttleLever.value = "0";
@@ -3955,16 +4016,25 @@ function updateCamera() {
   if (evacuatingPlayer) {
     const path = evacuatingPlayer.userData.evacuationPath;
     const target = evacuatingPlayer.position.clone().add(new THREE.Vector3(0, 1.05, 0));
-    const slideDir = path?.slideEnd
-      ? path.slideEnd.clone().sub(path.slideStart).setY(0).normalize()
-      : getPlaneForwardVector();
-    const sideDir = new THREE.Vector3(-slideDir.z, 0, slideDir.x);
-    const distance = path?.surface === "水面" ? 7.8 : 5.8;
-    const height = path?.surface === "水面" ? 3.8 : 3.1;
+    const elapsed = state.evacuationTime - (path?.delay || 0);
+    const walkingToDoor = Boolean(path?.walkPoints?.length > 1 && elapsed < (path.walkDuration || 0));
+    const nextWalkPoint = walkingToDoor
+      ? getPolylinePoint(path.walkPoints, Math.min(1, Math.max(0, elapsed / path.walkDuration) + 0.04))
+      : null;
+    const followDir = walkingToDoor && nextWalkPoint
+      ? nextWalkPoint.clone().sub(evacuatingPlayer.position).setY(0).normalize()
+      : path?.slideEnd
+        ? path.slideEnd.clone().sub(path.slideStart).setY(0).normalize()
+        : getPlaneForwardVector();
+    const sideDir = new THREE.Vector3(-followDir.z, 0, followDir.x);
+    const zoom = THREE.MathUtils.clamp(state.playerEvacuationZoom || 1.15, 0.82, 2.65);
+    const distance = (walkingToDoor ? 1.55 : path?.surface === "水面" ? 7.8 : 5.8) * zoom;
+    const height = (walkingToDoor ? 0.8 : path?.surface === "水面" ? 3.8 : 3.1) * Math.min(1.8, zoom);
+    const sideOffset = walkingToDoor ? 0.36 * zoom : 2.6 * zoom;
     const followCamera = target
       .clone()
-      .add(slideDir.clone().multiplyScalar(-distance))
-      .add(sideDir.clone().multiplyScalar(2.6))
+      .add(followDir.clone().multiplyScalar(-distance))
+      .add(sideDir.clone().multiplyScalar(sideOffset))
       .add(new THREE.Vector3(0, height, 0));
     camera.position.lerp(followCamera, 0.18);
     camera.lookAt(target);
@@ -4136,10 +4206,24 @@ function setupCameraDrag() {
   let active = false;
   let lastX = 0;
   let lastY = 0;
+  let lastPinchDistance = 0;
+  const activePointers = new Map();
   const dragSurface = simPanel || canvas;
   const shouldSkipCameraDrag = (event) => Boolean(event.target.closest("button, a, input, .mobile-yoke, .flight-lobby, .emergency-choice"));
+  const getPinchDistance = () => {
+    const points = [...activePointers.values()];
+    if (points.length < 2) return 0;
+    return Math.hypot(points[0].x - points[1].x, points[0].y - points[1].y);
+  };
   dragSurface.addEventListener("pointerdown", (event) => {
     if (shouldSkipCameraDrag(event)) return;
+    activePointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+    if (activePointers.size >= 2) {
+      active = false;
+      lastPinchDistance = getPinchDistance();
+      event.preventDefault();
+      return;
+    }
     active = true;
     lastX = event.clientX;
     lastY = event.clientY;
@@ -4147,6 +4231,18 @@ function setupCameraDrag() {
     event.preventDefault();
   });
   dragSurface.addEventListener("pointermove", (event) => {
+    if (activePointers.has(event.pointerId)) {
+      activePointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+    }
+    if (activePointers.size >= 2) {
+      const distance = getPinchDistance();
+      if (state.playerEvacuationStarted && distance > 0 && lastPinchDistance > 0) {
+        adjustPlayerEvacuationZoom((lastPinchDistance - distance) * 0.0045);
+      }
+      lastPinchDistance = distance;
+      event.preventDefault();
+      return;
+    }
     if (!active) return;
     const dx = event.clientX - lastX;
     const dy = event.clientY - lastY;
@@ -4161,7 +4257,16 @@ function setupCameraDrag() {
     lastY = event.clientY;
     event.preventDefault();
   });
-  const end = () => { active = false; };
+  dragSurface.addEventListener("wheel", (event) => {
+    if (!state.playerEvacuationStarted) return;
+    adjustPlayerEvacuationZoom(event.deltaY * 0.0018);
+    event.preventDefault();
+  }, { passive: false });
+  const end = (event) => {
+    active = false;
+    if (event?.pointerId !== undefined) activePointers.delete(event.pointerId);
+    lastPinchDistance = activePointers.size >= 2 ? getPinchDistance() : 0;
+  };
   dragSurface.addEventListener("pointerup", end);
   dragSurface.addEventListener("pointercancel", end);
 }
@@ -4199,6 +4304,14 @@ function setupEvents() {
   document.querySelector("#demoCrashBtn").addEventListener("click", demoCrash);
   document.querySelector("#twinTowerBtn").addEventListener("click", startTwinTowerTest);
   document.querySelector("#cameraBtn").addEventListener("click", () => {
+    if (state.playerEvacuationStarted) {
+      const zoom = state.playerEvacuationZoom || 1.15;
+      state.playerEvacuationZoom = zoom < 1.45 ? 1.75 : zoom < 2.2 ? 2.55 : 1.05;
+      statusText.textContent = state.playerEvacuationZoom > 1.2
+        ? "撤离镜头已缩小拉远，可以看到你自己、滑梯和旁边的人。"
+        : "撤离镜头已拉近，跟着你走到机门和滑梯。";
+      return;
+    }
     if (isCabinLookMode()) {
       state.passengerCabinViewMode = (state.passengerCabinViewMode + 1) % 4;
       state.cameraYaw = 0;
