@@ -963,7 +963,7 @@ body::after {
   background: #ecfffb;
 }
 
-/* User-provided study illustration background. */
+/* Clean study illustration background without platform marks. */
 :root {
   --brown: #0f6670;
   --brown-2: #113f46;
@@ -982,7 +982,7 @@ body::after {
 body {
   background:
     linear-gradient(rgba(214, 238, 247, 0.1), rgba(214, 238, 247, 0.1)),
-    url("assets/big-multiplication-bg-blue-school.jpg") center top / cover no-repeat fixed;
+    url("assets/big-multiplication-bg-clean-school.png") center top / cover no-repeat fixed;
   background-color: #d6eef7;
   background-attachment: fixed;
 }
