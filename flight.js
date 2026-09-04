@@ -1295,16 +1295,25 @@ function createCabinCrew(options = {}) {
 }
 
 function addCabinWindows() {
-  const windowMat = new THREE.MeshStandardMaterial({ color: 0xbdefff, emissive: 0x4fc3ff, emissiveIntensity: 0.3, roughness: 0.28, metalness: 0.03 });
+  const windowMat = new THREE.MeshBasicMaterial({ color: 0x8edcff });
+  const wideWindowMat = new THREE.MeshBasicMaterial({ color: 0xaeeaff });
   const shadeMat = makeMat(0xf7fbff, 0.42, 0.04);
+  const grassViewMat = makeMat(0x7bc47f, 0.75, 0.04);
+  const cityViewMat = makeMat(0x6c8ea6, 0.6, 0.06);
+  box("left-wide-cabin-window-band", [0.012, 0.52, 1.38], [-0.625, 1.82, 1.66], wideWindowMat, passengerCabinRig);
+  box("right-wide-cabin-window-band", [0.012, 0.52, 1.38], [0.925, 1.82, 1.66], wideWindowMat, passengerCabinRig);
+  box("left-wide-window-lower-view", [0.01, 0.12, 1.26], [-0.616, 1.61, 1.66], grassViewMat, passengerCabinRig);
+  box("right-wide-window-city-view", [0.01, 0.12, 1.26], [0.916, 1.98, 1.66], cityViewMat, passengerCabinRig);
   for (let i = 0; i < 6; i++) {
     const z = -1.36 + i * 0.72;
-    box("left-side-cabin-window", [0.035, 0.24, 0.34], [-0.755, 1.84, z], windowMat, passengerCabinRig);
-    box("right-side-cabin-window", [0.035, 0.24, 0.34], [1.055, 1.84, z], windowMat, passengerCabinRig);
-    box("left-window-frame-top", [0.045, 0.035, 0.43], [-0.762, 1.995, z], shadeMat, passengerCabinRig);
-    box("left-window-frame-bottom", [0.045, 0.035, 0.43], [-0.762, 1.685, z], shadeMat, passengerCabinRig);
-    box("right-window-frame-top", [0.045, 0.035, 0.43], [1.062, 1.995, z], shadeMat, passengerCabinRig);
-    box("right-window-frame-bottom", [0.045, 0.035, 0.43], [1.062, 1.685, z], shadeMat, passengerCabinRig);
+    box("left-side-cabin-window", [0.018, 0.34, 0.5], [-0.64, 1.84, z], windowMat, passengerCabinRig);
+    box("right-side-cabin-window", [0.018, 0.34, 0.5], [0.94, 1.84, z], windowMat, passengerCabinRig);
+    box("left-window-ground-view", [0.014, 0.07, 0.44], [-0.628, 1.7, z], grassViewMat, passengerCabinRig);
+    box("right-window-city-view", [0.014, 0.07, 0.44], [0.928, 1.94, z], cityViewMat, passengerCabinRig);
+    box("left-window-frame-top", [0.024, 0.035, 0.58], [-0.635, 2.035, z], shadeMat, passengerCabinRig);
+    box("left-window-frame-bottom", [0.024, 0.035, 0.58], [-0.635, 1.645, z], shadeMat, passengerCabinRig);
+    box("right-window-frame-top", [0.024, 0.035, 0.58], [0.935, 2.035, z], shadeMat, passengerCabinRig);
+    box("right-window-frame-bottom", [0.024, 0.035, 0.58], [0.935, 1.645, z], shadeMat, passengerCabinRig);
   }
 }
 
@@ -1377,7 +1386,7 @@ function syncCabinPassengerAvatar() {
   passenger.position.set(state.passengerCabinX, 1.5, state.passengerCabinZ);
   passenger.rotation.y = Math.PI + state.passengerCabinWalkYaw;
   passenger.rotation.z = state.passengerWalking ? Math.sin(clock.elapsedTime * 12) * 0.08 : 0;
-  passenger.visible = state.passengerCabinViewMode > 0;
+  passenger.visible = state.passengerCabinViewMode >= 2;
   if (passenger.userData?.lifeJacket) passenger.userData.lifeJacket.visible = state.lifeJacketOn;
 }
 
@@ -1391,8 +1400,6 @@ function createPassengerCabin() {
   const wallMat = makeMat(0xe9f3f9, 0.45, 0.08);
   const aisleMat = makeMat(0x9eb5c8, 0.62, 0.05);
   const binMat = makeMat(0xd8e7f0, 0.5, 0.06);
-  wallMat.transparent = true;
-  wallMat.opacity = 0.32;
   wallMat.side = THREE.DoubleSide;
   box("single-deck-cabin-floor", [1.55, 0.05, 5.05], [0.15, 1.1, 0.7], floorMat, passengerCabinRig);
   box("single-deck-cabin-aisle", [0.22, 0.035, 4.86], [0.13, 1.145, 0.7], aisleMat, passengerCabinRig);
@@ -2155,7 +2162,7 @@ function finishPassengerBoarding() {
   state.passengerBoarding = false;
   state.passengerBoarded = true;
   state.phase = "passenger-ready";
-  state.passengerCabinViewMode = 3;
+  state.passengerCabinViewMode = 2;
   state.passengerCabinX = -0.32;
   state.passengerCabinZ = 1.65;
   state.passengerCabinWalkYaw = 0;
@@ -2169,7 +2176,7 @@ function finishPassengerBoarding() {
   syncCabinPassengerAvatar();
   missionTitle.textContent = "已经坐进飞机";
   routeLabel.textContent = "请选择：正常飞行 / 乘客水上迫降 / 乘客陆地迫降";
-  statusText.textContent = "你已经从登机桥进到一层客舱。现在镜头拉远一点，可以看见你、旁边乘客、乘务员和行李架；点“切换视角”可以进第一视角，只从左右窗户看外面。";
+  statusText.textContent = "你已经从登机桥进到一层客舱。现在镜头在飞机里面的走道，不是在飞机顶上；外面只能从左右窗户看到。点“切换视角”也只会在客舱里面换位置。";
   addLog("最后一个乘客已经坐好，等待选择飞行模式。");
 }
 
@@ -4284,28 +4291,32 @@ function updateCamera() {
   }
   if (isCabinLookMode()) {
     if (state.passengerCabinViewMode > 0) {
-      const targetX = state.passengerCabinViewMode === 3 ? 0.14 : state.passengerCabinX;
-      const targetZ = state.passengerCabinViewMode === 3 ? 0.7 : state.passengerCabinZ;
-      const cabinTarget = getPlaneLocalWorldPoint(targetX, 1.62 + state.cameraPitch * 0.6, targetZ);
-      const baseAngles = [0, Math.PI / 2, -Math.PI / 2, Math.PI];
-      const angle = (state.passengerCabinViewMode === 3 ? 0 : baseAngles[state.passengerCabinViewMode]) + state.cameraYaw * 0.45;
-      const radius = state.passengerCabinViewMode === 3 ? 7.8 : 4.8;
-      const height = (state.passengerCabinViewMode === 3 ? 2.65 : 2.18) + state.cameraPitch * 1.2;
-      const cabinCamera = getPlaneLocalWorldPoint(
-        targetX + Math.sin(angle) * radius,
-        height,
-        targetZ + Math.cos(angle) * radius
+      const cabinViews = [
+        null,
+        { camera: [0.08, 1.82, 1.7], target: [1.0, 1.84, 1.7] },
+        { camera: [0.13, 1.52, 2.24], target: [0.13, 1.34, -0.15] },
+        { camera: [0.13, 1.54, -1.2], target: [0.28, 1.36, 2.0] }
+      ];
+      const view = cabinViews[state.passengerCabinViewMode] || cabinViews[1];
+      const lookShiftX = Math.sin(state.cameraYaw) * 0.34;
+      const lookShiftY = state.cameraPitch * 0.55;
+      const lookShiftZ = -Math.cos(state.cameraYaw) * 0.26;
+      const cabinCamera = getPlaneLocalWorldPoint(view.camera[0], view.camera[1], view.camera[2]);
+      const cabinTarget = getPlaneLocalWorldPoint(
+        view.target[0] + lookShiftX,
+        view.target[1] + lookShiftY,
+        view.target[2] + lookShiftZ
       );
       camera.position.copy(cabinCamera);
       camera.lookAt(cabinTarget);
       return;
     }
-    const cabinCamera = getPlaneLocalWorldPoint(state.passengerCabinX, 1.86, state.passengerCabinZ + 0.18);
+    const cameraLocalX = THREE.MathUtils.clamp(state.passengerCabinX + 0.28, -0.08, 0.72);
+    const cabinCamera = getPlaneLocalWorldPoint(cameraLocalX, 1.82, state.passengerCabinZ + 0.18);
     const pitch = THREE.MathUtils.clamp(state.cameraPitch, -0.95, 0.9);
-    const level = Math.cos(pitch);
-    const lookLocalX = state.passengerCabinX + Math.sin(state.cameraYaw) * level * 3.2;
-    const lookLocalY = 1.86 + Math.sin(pitch) * 2.2;
-    const lookLocalZ = state.passengerCabinZ + 0.18 - Math.cos(state.cameraYaw) * level * 3.2;
+    const lookLocalX = THREE.MathUtils.clamp(cameraLocalX + Math.sin(state.cameraYaw) * 1.05, -0.64, 0.94);
+    const lookLocalY = 1.86 + Math.sin(pitch) * 0.62;
+    const lookLocalZ = THREE.MathUtils.clamp(state.passengerCabinZ + 0.18 - Math.cos(state.cameraYaw) * 1.2, -1.46, 2.54);
     const cabinTarget = getPlaneLocalWorldPoint(lookLocalX, lookLocalY, lookLocalZ);
     camera.position.copy(cabinCamera);
     camera.lookAt(cabinTarget);
@@ -4560,8 +4571,9 @@ function setupEvents() {
       state.passengerCabinViewMode = (state.passengerCabinViewMode + 1) % 4;
       state.cameraYaw = 0;
       state.cameraPitch = 0.12;
-      const cabinNames = ["客舱里面看", "左侧外面看进去", "右侧外面看进去", "门口后面看进去"];
-      statusText.textContent = `客舱视角：${cabinNames[state.passengerCabinViewMode]}。也可以继续拖动屏幕调整角度。`;
+      if (state.passengerCabinViewMode === 0) state.cameraYaw = -Math.PI / 2;
+      const cabinNames = ["座位看侧窗", "座位看右窗", "走道看客舱", "门口看客舱"];
+      statusText.textContent = `客舱视角：${cabinNames[state.passengerCabinViewMode]}。这些视角都在飞机里面，外面只能从窗户上看到。`;
       return;
     }
     state.cameraMode = (state.cameraMode + 1) % 4;
