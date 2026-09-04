@@ -299,6 +299,7 @@ const state = {
   evacuationActive: false,
   evacuationSurface: "",
   evacuationTime: 0,
+  crewAutoEvacuationStarted: false,
   playerEvacuationStarted: false,
   playerEvacuated: false,
   playerEvacuationZoom: 1.15,
@@ -1153,6 +1154,7 @@ function clearPassengerModeVisuals() {
   state.evacuationActive = false;
   state.evacuationSurface = "";
   state.evacuationTime = 0;
+  state.crewAutoEvacuationStarted = false;
   state.playerEvacuationStarted = false;
   state.playerEvacuated = false;
   state.playerEvacuationZoom = 1.15;
@@ -1189,6 +1191,153 @@ function createLastPassengerAvatar() {
   jacket.visible = false;
   person.userData.lifeJacket = jacket;
   return person;
+}
+
+function createCabinPerson(options = {}) {
+  const person = new THREE.Group();
+  const name = options.name || "cabin-person";
+  person.name = name;
+  const skin = makeMat(options.skinColor || 0xf1c39f, 0.58, 0.03);
+  const shirt = makeMat(options.shirtColor || 0x2f78c4, 0.72, 0.08);
+  const pants = makeMat(options.pantsColor || 0x233142, 0.68, 0.06);
+  const hair = makeMat(options.hairColor || 0x332016, 0.74, 0.05);
+  const shoes = makeMat(options.shoeColor || 0x1b1f26, 0.65, 0.08);
+  const vest = makeMat(0xffa326, 0.55, 0.08);
+
+  box(`${name}-body`, [0.42, 0.66, 0.22], [0, 0.72, 0], shirt, person);
+  if (options.skirt) {
+    const skirt = cone(`${name}-skirt`, 0.28, 0.36, [0, 0.36, 0], shirt, person, 4);
+    skirt.rotation.y = Math.PI / 4;
+    box(`${name}-left-leg`, [0.11, 0.34, 0.1], [-0.09, 0.14, 0], skin, person);
+    box(`${name}-right-leg`, [0.11, 0.34, 0.1], [0.09, 0.14, 0], skin, person);
+  } else {
+    box(`${name}-left-leg`, [0.13, 0.5, 0.12], [-0.1, 0.22, 0], pants, person);
+    box(`${name}-right-leg`, [0.13, 0.5, 0.12], [0.1, 0.22, 0], pants, person);
+  }
+  box(`${name}-left-shoe`, [0.16, 0.08, 0.18], [-0.1, -0.04, -0.02], shoes, person);
+  box(`${name}-right-shoe`, [0.16, 0.08, 0.18], [0.1, -0.04, -0.02], shoes, person);
+  box(`${name}-left-arm`, [0.1, 0.44, 0.1], [-0.29, 0.73, 0.02], skin, person).rotation.z = 0.16;
+  box(`${name}-right-arm`, [0.1, 0.44, 0.1], [0.29, 0.73, 0.02], skin, person).rotation.z = -0.16;
+
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.24, 18, 18), skin);
+  head.name = `${name}-head`;
+  head.position.set(0, 1.15, 0);
+  person.add(head);
+  const hairCap = new THREE.Mesh(new THREE.SphereGeometry(0.255, 18, 18, 0, Math.PI * 2, 0, Math.PI * 0.54), hair);
+  hairCap.name = `${name}-hair`;
+  hairCap.position.set(0, 1.23, 0);
+  person.add(hairCap);
+  if (options.longHair) {
+    box(`${name}-long-hair-left`, [0.08, 0.32, 0.08], [-0.21, 1.04, 0.02], hair, person);
+    box(`${name}-long-hair-right`, [0.08, 0.32, 0.08], [0.21, 1.04, 0.02], hair, person);
+  }
+  box(`${name}-nose`, [0.035, 0.045, 0.08], [0, 1.13, -0.22], skin, person);
+  box(`${name}-left-eye`, [0.035, 0.035, 0.025], [-0.08, 1.19, -0.225], mats.dark, person);
+  box(`${name}-right-eye`, [0.035, 0.035, 0.025], [0.08, 1.19, -0.225], mats.dark, person);
+
+  if (options.crew) {
+    box(`${name}-uniform-collar`, [0.3, 0.08, 0.04], [0, 0.98, -0.12], makeMat(0xffffff, 0.5, 0.05), person);
+    box(`${name}-name-badge`, [0.12, 0.06, 0.025], [0.14, 0.88, -0.13], mats.runwayYellowLight, person);
+  }
+  if (options.bag) {
+    const bag = box(`${name}-small-bag`, [0.2, 0.3, 0.18], [0.45, 0.48, -0.02], makeMat(0x303844, 0.68, 0.08), person);
+    bag.rotation.z = -0.18;
+  }
+  const jacket = box("last-passenger-life-jacket", [0.48, 0.52, 0.1], [0, 0.75, -0.14], vest, person);
+  jacket.visible = Boolean(options.lifeJacketVisible);
+  person.userData.lifeJacket = jacket;
+  return person;
+}
+
+function createCabinSeatedPassenger(index, x, z) {
+  const palettes = [
+    [0xf0c19a, 0x2f78c4, 0x21160f],
+    [0xd9a37c, 0x45a36b, 0x1f1b18],
+    [0xf4d0aa, 0xff9b52, 0x5a3821],
+    [0xc98f6d, 0x8d6ed7, 0x191919],
+    [0xe8b993, 0xd95a6f, 0x3b2416],
+    [0xb9825f, 0x33a6a6, 0x111318],
+    [0xf1c6a8, 0xe6d45f, 0x6b3d24]
+  ];
+  const palette = palettes[index % palettes.length];
+  const person = createCabinPerson({
+    name: `seated-cabin-passenger-${index}`,
+    skinColor: palette[0],
+    shirtColor: palette[1],
+    hairColor: palette[2],
+    pantsColor: index % 2 ? 0x334053 : 0x273242,
+    longHair: index % 3 === 1,
+    lifeJacketVisible: state.lifeJacketOn
+  });
+  person.scale.setScalar(0.5);
+  person.position.set(x, 1.49, z);
+  person.rotation.y = Math.PI + (index % 2 ? 0.08 : -0.08);
+  passengerCabinRig.add(person);
+  return person;
+}
+
+function createCabinCrew(options = {}) {
+  const person = createCabinPerson({
+    name: options.name || "cabin-crew",
+    skinColor: options.skinColor || 0xf1c6a7,
+    shirtColor: options.uniformColor || 0x1c4d73,
+    pantsColor: 0x1c2b38,
+    hairColor: options.hairColor || 0x2b1b12,
+    skirt: Boolean(options.skirt),
+    longHair: Boolean(options.longHair),
+    crew: true,
+    lifeJacketVisible: state.lifeJacketOn
+  });
+  person.scale.setScalar(options.scale || 0.52);
+  person.position.set(options.x || 0, options.y || 1.47, options.z || 0);
+  person.rotation.y = options.rotationY || 0;
+  return person;
+}
+
+function addCabinWindows() {
+  const windowMat = new THREE.MeshStandardMaterial({ color: 0xbdefff, emissive: 0x4fc3ff, emissiveIntensity: 0.3, roughness: 0.28, metalness: 0.03 });
+  const shadeMat = makeMat(0xf7fbff, 0.42, 0.04);
+  for (let i = 0; i < 6; i++) {
+    const z = -1.36 + i * 0.72;
+    box("left-side-cabin-window", [0.035, 0.24, 0.34], [-0.755, 1.84, z], windowMat, passengerCabinRig);
+    box("right-side-cabin-window", [0.035, 0.24, 0.34], [1.055, 1.84, z], windowMat, passengerCabinRig);
+    box("left-window-frame-top", [0.045, 0.035, 0.43], [-0.762, 1.995, z], shadeMat, passengerCabinRig);
+    box("left-window-frame-bottom", [0.045, 0.035, 0.43], [-0.762, 1.685, z], shadeMat, passengerCabinRig);
+    box("right-window-frame-top", [0.045, 0.035, 0.43], [1.062, 1.995, z], shadeMat, passengerCabinRig);
+    box("right-window-frame-bottom", [0.045, 0.035, 0.43], [1.062, 1.685, z], shadeMat, passengerCabinRig);
+  }
+}
+
+function addOverheadLuggage() {
+  const bagColors = [0xe86f4a, 0x246eb9, 0x2f9e6d, 0xf0bf4c, 0x8758a8, 0x32495c];
+  for (let i = 0; i < 10; i++) {
+    const sideX = i % 2 === 0 ? -0.46 : 0.76;
+    const z = -1.42 + Math.floor(i / 2) * 0.76;
+    const bag = box("overhead-cabin-bag", [0.32, 0.16, 0.26], [sideX, 2.2, z], makeMat(bagColors[i % bagColors.length], 0.64, 0.08), passengerCabinRig);
+    box("overhead-cabin-bag-handle", [0.18, 0.035, 0.035], [sideX, 2.3, z], mats.dark, passengerCabinRig);
+    bag.rotation.y = (i % 2 ? -0.04 : 0.04);
+  }
+}
+
+function addPassengerBoardingBridge(door) {
+  const start = new THREE.Vector3(door.x + 8.4, 0.15, door.z - 8.4);
+  const end = new THREE.Vector3(door.x + 0.42, 0.2, door.z + 0.08);
+  const mid = start.clone().lerp(end, 0.5);
+  const length = start.distanceTo(end);
+  const yaw = Math.atan2(end.x - start.x, end.z - start.z);
+  const bridgeMat = makeMat(0xdde7ee, 0.52, 0.08);
+  const glassMat = new THREE.MeshStandardMaterial({ color: 0xa8ddf4, transparent: true, opacity: 0.55, roughness: 0.28, metalness: 0.04 });
+  const bridge = new THREE.Group();
+  bridge.name = "passenger-boarding-jetbridge";
+  bridge.position.copy(mid);
+  box("boarding-bridge-floor", [2.2, 0.1, length], [0, 0.28, 0], bridgeMat, bridge);
+  box("boarding-bridge-left-wall", [0.08, 1.35, length], [-0.95, 1.05, 0], glassMat, bridge);
+  box("boarding-bridge-right-wall", [0.08, 1.35, length], [0.95, 1.05, 0], glassMat, bridge);
+  box("boarding-bridge-roof", [2.2, 0.1, length], [0, 1.78, 0], bridgeMat, bridge);
+  box("boarding-bridge-black-door-seal", [1.5, 1.45, 0.26], [0, 1.08, length / 2], mats.dark, bridge);
+  bridge.rotation.y = yaw;
+  boardingPassengerGroup.add(bridge);
+  addSpriteLabel("登机口进飞机", "你是最后一个进去，乘务员在门口欢迎登机", [mid.x, 3.2, mid.z], 9.2, 1.8, boardingPassengerGroup);
 }
 
 function getPlaneDoorWorldPosition() {
@@ -1228,6 +1377,7 @@ function syncCabinPassengerAvatar() {
   passenger.position.set(state.passengerCabinX, 1.5, state.passengerCabinZ);
   passenger.rotation.y = Math.PI + state.passengerCabinWalkYaw;
   passenger.rotation.z = state.passengerWalking ? Math.sin(clock.elapsedTime * 12) * 0.08 : 0;
+  passenger.visible = state.passengerCabinViewMode > 0;
   if (passenger.userData?.lifeJacket) passenger.userData.lifeJacket.visible = state.lifeJacketOn;
 }
 
@@ -1251,6 +1401,11 @@ function createPassengerCabin() {
   box("single-deck-cabin-ceiling", [1.62, 0.06, 5.05], [0.15, 2.25, 0.7], wallMat, passengerCabinRig);
   box("left-overhead-bin", [0.48, 0.18, 4.65], [-0.46, 2.08, 0.65], binMat, passengerCabinRig);
   box("right-overhead-bin", [0.48, 0.18, 4.65], [0.76, 2.08, 0.65], binMat, passengerCabinRig);
+  box("front-cabin-bulkhead", [1.48, 0.82, 0.055], [0.15, 1.66, -1.62], wallMat, passengerCabinRig);
+  box("rear-cabin-entry-wall", [1.48, 0.82, 0.055], [0.15, 1.66, 2.78], wallMat, passengerCabinRig);
+  box("rear-cabin-entry-door-gap", [0.48, 0.72, 0.06], [0.15, 1.54, 2.75], makeMat(0x5f7280, 0.55, 0.05), passengerCabinRig);
+  addCabinWindows();
+  addOverheadLuggage();
   for (let row = 0; row < 4; row++) {
     const z = -0.8 + row * 0.82;
     box("cabin-left-seat", [0.42, 0.34, 0.38], [-0.32, 1.36, z], seatMat, passengerCabinRig);
@@ -1258,6 +1413,21 @@ function createPassengerCabin() {
     box("seat-back-screen", [0.28, 0.18, 0.035], [-0.32, 1.58, z - 0.18], makeMat(0x142535, 0.46, 0.1), passengerCabinRig);
     box("seat-back-screen", [0.28, 0.18, 0.035], [0.58, 1.58, z - 0.18], makeMat(0x142535, 0.46, 0.1), passengerCabinRig);
   }
+  const occupiedSeats = [
+    [0.58, -0.8],
+    [-0.32, -0.8],
+    [0.58, 0.02],
+    [-0.32, 0.02],
+    [0.58, 0.84],
+    [-0.32, 0.84],
+    [0.58, 1.66]
+  ];
+  occupiedSeats.forEach(([x, z], index) => createCabinSeatedPassenger(index, x, z));
+  const femaleCrew = createCabinCrew({ name: "female-flight-attendant-welcome", x: 0.72, z: 2.36, rotationY: Math.PI * 1.08, skirt: true, longHair: true, uniformColor: 0x1f5d85, hairColor: 0x3a2418 });
+  passengerCabinRig.add(femaleCrew);
+  const maleCrew = createCabinCrew({ name: "male-flight-attendant-cabin", x: -0.52, z: -1.18, rotationY: 0.18, uniformColor: 0x23384d, hairColor: 0x19130f });
+  passengerCabinRig.add(maleCrew);
+  box("cabin-service-cart", [0.28, 0.44, 0.42], [0.45, 1.38, -1.2], makeMat(0xc9d3dc, 0.45, 0.16), passengerCabinRig);
   const passenger = createLastPassengerAvatar();
   passenger.name = "seated-last-passenger";
   passenger.scale.setScalar(0.62);
@@ -1267,8 +1437,6 @@ function createPassengerCabin() {
   passengerCabinRig.add(passenger);
   const seatVest = box("orange-life-jacket-under-seat", [0.42, 0.1, 0.28], [-0.32, 1.18, 1.65], vestMat, passengerCabinRig);
   seatVest.name = "orange-life-jacket-under-seat";
-  addSpriteLabel("一层客舱", "你坐在一层，不是二楼", [0.14, 2.78, -1.36], 4.2, 1.2, passengerCabinRig);
-  addSpriteLabel("座椅下救生衣", "点按钮穿上", [-0.32, 2.38, 1.65], 3.6, 1.15, passengerCabinRig);
   passengerCabinRig.visible = false;
   playerPlane.add(passengerCabinRig);
   syncCabinPassengerAvatar();
@@ -1608,6 +1776,54 @@ function getPlayerEvacuationAvatar() {
   return evacuationGroup.getObjectByName("you-evacuating-passenger");
 }
 
+function showCabinCrewAtEmergencyDoor(surface) {
+  if (evacuationGroup.getObjectByName("crew-opening-emergency-door")) return;
+  const exit = getEvacuationExitConfigs(surface)[0];
+  if (!exit) return;
+  const side = exit.side;
+  const forward = getPlaneForwardVector();
+  const doorPoint = exit.door
+    .clone()
+    .add(side.clone().multiplyScalar(-0.88))
+    .add(forward.clone().multiplyScalar(-0.4))
+    .add(new THREE.Vector3(0, 0.08, 0));
+  const crew = createCabinCrew({
+    name: "crew-opening-emergency-door",
+    y: 0,
+    skirt: true,
+    longHair: true,
+    uniformColor: 0x1f5d85,
+    scale: 0.48
+  });
+  crew.position.copy(doorPoint);
+  crew.rotation.y = state.heading + exit.sideSign * Math.PI / 2;
+  if (crew.userData.lifeJacket) crew.userData.lifeJacket.visible = surface === "水面";
+  evacuationGroup.add(crew);
+  addSpriteLabel("乘务员开门", surface === "水面" ? "自动打开机门、放滑梯和救生筏" : "自动打开机门、放滑梯", [doorPoint.x, doorPoint.y + 2.6, doorPoint.z], 7.6, 1.55, evacuationGroup);
+}
+
+function scheduleCrewAutoEvacuation(surface) {
+  if (state.crewAutoEvacuationStarted) return;
+  state.crewAutoEvacuationStarted = true;
+  showCabinCrewAtEmergencyDoor(surface);
+  const runIfSameEmergency = (step) => {
+    if (state.phase !== "emergency-landed") return;
+    if (state.evacuationSurface !== surface) return;
+    if (!state.evacuationActive) return;
+    step();
+  };
+  window.setTimeout(() => runIfSameEmergency(() => {
+    if (!state.planeDoorOpen) openEmergencyExitAndSlide(true);
+  }), 850);
+  window.setTimeout(() => runIfSameEmergency(() => {
+    if (!state.evacuationSlideDeployed) openEmergencyExitAndSlide(true);
+  }), 1850);
+  window.setTimeout(() => runIfSameEmergency(() => {
+    if (surface === "水面" && !state.lifeRaftDeployed) openEmergencyExitAndSlide(true);
+    if (surface !== "水面" && state.evacuationSlideDeployed) releasePlayerEvacuation(surface);
+  }), 3100);
+}
+
 function getPolylinePoint(points, t) {
   if (!points?.length) return new THREE.Vector3();
   if (points.length === 1) return points[0].clone();
@@ -1661,10 +1877,13 @@ function openEmergencyExitAndSlide(force = false) {
   if (!state.planeDoorOpen) {
     state.planeDoorOpen = true;
     updatePlaneDoorVisual();
+    showCabinCrewAtEmergencyDoor(surface);
     missionTitle.textContent = surface === "水面" ? "水上开门" : "紧急开门";
-    routeLabel.textContent = "门已打开：下一步点“伸出滑梯”";
-    statusText.textContent = "飞机门已经打开。现在再点一次“伸出滑梯”，滑梯才会从门口伸出来。";
-    addLog("紧急流程：第一步开门完成。");
+    routeLabel.textContent = force ? "乘务员已开门：马上自动伸出滑梯" : "门已打开：下一步点“伸出滑梯”";
+    statusText.textContent = force
+      ? "乘务员已经到门口自动打开机门，下一步滑梯会从门口伸出来。"
+      : "飞机门已经打开。现在再点一次“伸出滑梯”，滑梯才会从门口伸出来。";
+    addLog(force ? "乘务员自动开门：第一步完成。" : "紧急流程：第一步开门完成。");
     return;
   }
   if (!state.evacuationSlideDeployed) {
@@ -1677,9 +1896,11 @@ function openEmergencyExitAndSlide(force = false) {
     if (surface === "水面") {
       setPassengerLifeJacket(true);
       createPackedLifeRafts();
-      routeLabel.textContent = "滑梯已伸出：下一步点“充气救生筏”";
-      statusText.textContent = "滑梯从飞机门伸出来了。滑梯末端夹着未充气救生筏包，再点“充气救生筏”，救生筏会和滑梯接在一起。";
-      addLog("紧急流程：滑梯已经伸出，救生筏包在末端等待充气。");
+      routeLabel.textContent = force ? "滑梯已伸出：救生筏马上自动充气" : "滑梯已伸出：下一步点“充气救生筏”";
+      statusText.textContent = force
+        ? "乘务员已经把滑梯放出来了。滑梯末端的救生筏包马上会自动充气，接住从滑梯下来的乘客。"
+        : "滑梯从飞机门伸出来了。滑梯末端夹着未充气救生筏包，再点“充气救生筏”，救生筏会和滑梯接在一起。";
+      addLog(force ? "乘务员自动伸出滑梯，救生筏包在末端等待充气。" : "紧急流程：滑梯已经伸出，救生筏包在末端等待充气。");
     } else {
       releasePlayerEvacuation(surface);
       routeLabel.textContent = "滑梯已伸出：乘客开始排队下滑";
@@ -1693,8 +1914,10 @@ function openEmergencyExitAndSlide(force = false) {
     deployLifeRaft();
     releasePlayerEvacuation(surface);
     routeLabel.textContent = "救生筏已充气：乘客一个个滑下去";
-    statusText.textContent = "救生筏充气完成，两边鼓起来并和滑梯末端接在一起。乘客开始排队滑到救生筏上，你也会一起滑下去。";
-    addLog("紧急流程：救生筏充气完成，乘客和你一起从滑梯进入救生筏。");
+    statusText.textContent = force
+      ? "救生筏自动充气完成，两边鼓起来并和滑梯末端接在一起。乘客开始排队滑到救生筏上，你也会一起滑下去。"
+      : "救生筏充气完成，两边鼓起来并和滑梯末端接在一起。乘客开始排队滑到救生筏上，你也会一起滑下去。";
+    addLog(force ? "乘务员完成自动撤离准备：救生筏充气，乘客和你开始撤离。" : "紧急流程：救生筏充气完成，乘客和你一起从滑梯进入救生筏。");
     return;
   }
   statusText.textContent = surface === "水面"
@@ -1882,8 +2105,23 @@ function startPassengerMode() {
   state.planeDoorOpen = true;
   updatePlaneDoorVisual();
   createPassengerCabin();
-  const passenger = createLastPassengerAvatar();
   const door = getPlaneDoorWorldPosition();
+  addPassengerBoardingBridge(door);
+  const boardingCrew = createCabinCrew({
+    name: "boarding-door-flight-attendant",
+    x: door.x + 0.92,
+    y: 0.24,
+    z: door.z - 0.56,
+    rotationY: Math.PI * 0.72,
+    skirt: true,
+    longHair: true,
+    uniformColor: 0x1f5d85,
+    scale: 0.58
+  });
+  boardingPassengerGroup.add(boardingCrew);
+  addSpriteLabel("欢迎登机", "Welcome aboard / 환영합니다 / ようこそ", [door.x + 1.1, 2.7, door.z - 1.2], 7.2, 1.55, boardingPassengerGroup);
+  const passenger = createLastPassengerAvatar();
+  passenger.name = "boarding-last-passenger";
   passenger.position.set(door.x + 8.4, 0.15, door.z - 8.4);
   passenger.rotation.y = Math.PI * 0.72;
   boardingPassengerGroup.add(passenger);
@@ -1900,7 +2138,7 @@ function startPassengerMode() {
 function updatePassengerBoarding(dt) {
   if (!state.passengerBoarding) return;
   state.passengerBoardTime += dt;
-  const passenger = boardingPassengerGroup.children[0];
+  const passenger = boardingPassengerGroup.getObjectByName("boarding-last-passenger");
   const door = getPlaneDoorWorldPosition();
   if (passenger) {
     const start = new THREE.Vector3(door.x + 8.4, 0.15, door.z - 8.4);
@@ -1917,7 +2155,7 @@ function finishPassengerBoarding() {
   state.passengerBoarding = false;
   state.passengerBoarded = true;
   state.phase = "passenger-ready";
-  state.passengerCabinViewMode = 0;
+  state.passengerCabinViewMode = 3;
   state.passengerCabinX = -0.32;
   state.passengerCabinZ = 1.65;
   state.passengerCabinWalkYaw = 0;
@@ -1931,7 +2169,7 @@ function finishPassengerBoarding() {
   syncCabinPassengerAvatar();
   missionTitle.textContent = "已经坐进飞机";
   routeLabel.textContent = "请选择：正常飞行 / 乘客水上迫降 / 乘客陆地迫降";
-  statusText.textContent = "你已经进到一层客舱。左下角摇杆或 W/A/S/D 可以在客舱走动；拖动屏幕或方向键可以转头看四周。可以点“正常飞行”，也可以点事故模式。";
+  statusText.textContent = "你已经从登机桥进到一层客舱。现在镜头拉远一点，可以看见你、旁边乘客、乘务员和行李架；点“切换视角”可以进第一视角，只从左右窗户看外面。";
   addLog("最后一个乘客已经坐好，等待选择飞行模式。");
 }
 
@@ -1948,6 +2186,7 @@ function startPassengerNormalFlight() {
   state.evacuationSlideDeployed = false;
   state.evacuationPassengersReleased = false;
   state.evacuationActive = false;
+  state.crewAutoEvacuationStarted = false;
   state.playerEvacuationStarted = false;
   state.playerEvacuated = false;
   state.playerEvacuationZoom = 1.15;
@@ -1992,6 +2231,7 @@ function startPassengerAccident(mode) {
   state.playerEvacuationStarted = false;
   state.playerEvacuated = false;
   state.playerEvacuationZoom = 1.15;
+  state.crewAutoEvacuationStarted = false;
   state.emergencyExitOpened = false;
   updatePlaneDoorVisual();
   if (!passengerCabinRig) createPassengerCabin();
@@ -3776,6 +4016,7 @@ function emergencyLandSuccess(surface) {
   state.evacuationActive = true;
   state.evacuationSurface = surface;
   state.evacuationTime = 0;
+  state.crewAutoEvacuationStarted = false;
   state.planeDoorOpen = false;
   state.emergencyExitOpened = false;
   state.evacuationSlideDeployed = false;
@@ -3798,9 +4039,10 @@ function emergencyLandSuccess(surface) {
   updateEmergencyActionButton();
   missionTitle.textContent = "迫降成功";
   statusText.textContent = surface === "水面"
-    ? "飞机已经落到浅蓝色大海上并停住。现在先点开门，再点伸出滑梯，最后点充气救生筏，乘客才会一个个滑下来。"
-    : "飞机已经在地面跑道上停住。消防车开过来喷水灭火。现在先点开门，再点伸出滑梯，乘客才会一个个滑到安全区域。";
+    ? "飞机已经落到浅蓝色大海上并停住。乘务员会自动到门口开门、伸出滑梯、充气救生筏，乘客和你都会从滑梯撤离。"
+    : "飞机已经在地面跑道上停住。消防车开过来喷水灭火，乘务员会自动开门并伸出滑梯，乘客和你都会撤离。";
   addLog(`引擎故障迫降成功：落到${surface}，飞机停下来了。`);
+  scheduleCrewAutoEvacuation(surface);
 }
 
 function nearestDistanceToPath(points) {
@@ -4042,15 +4284,17 @@ function updateCamera() {
   }
   if (isCabinLookMode()) {
     if (state.passengerCabinViewMode > 0) {
-      const cabinTarget = getPlaneLocalWorldPoint(state.passengerCabinX, 1.62 + state.cameraPitch * 0.6, state.passengerCabinZ);
+      const targetX = state.passengerCabinViewMode === 3 ? 0.14 : state.passengerCabinX;
+      const targetZ = state.passengerCabinViewMode === 3 ? 0.7 : state.passengerCabinZ;
+      const cabinTarget = getPlaneLocalWorldPoint(targetX, 1.62 + state.cameraPitch * 0.6, targetZ);
       const baseAngles = [0, Math.PI / 2, -Math.PI / 2, Math.PI];
-      const angle = baseAngles[state.passengerCabinViewMode] + state.cameraYaw * 0.45;
-      const radius = state.passengerCabinViewMode === 3 ? 4.8 : 3.9;
-      const height = 2.18 + state.cameraPitch * 1.2;
+      const angle = (state.passengerCabinViewMode === 3 ? 0 : baseAngles[state.passengerCabinViewMode]) + state.cameraYaw * 0.45;
+      const radius = state.passengerCabinViewMode === 3 ? 7.8 : 4.8;
+      const height = (state.passengerCabinViewMode === 3 ? 2.65 : 2.18) + state.cameraPitch * 1.2;
       const cabinCamera = getPlaneLocalWorldPoint(
-        state.passengerCabinX + Math.sin(angle) * radius,
+        targetX + Math.sin(angle) * radius,
         height,
-        state.passengerCabinZ + Math.cos(angle) * radius
+        targetZ + Math.cos(angle) * radius
       );
       camera.position.copy(cabinCamera);
       camera.lookAt(cabinTarget);
