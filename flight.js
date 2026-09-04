@@ -1704,14 +1704,38 @@ function createEvacuationSlideAt(surface, exit, index) {
       .add(side.clone().multiplyScalar(surface === "水面" ? 2.9 : 0.6))
       .add(lateral.clone().multiplyScalar(1.35))
       .add(new THREE.Vector3(0, surface === "水面" ? 0.22 : 0.05, 0));
+    const walkStartSeats = [
+      [0.58, 1.66],
+      [0.58, 0.84],
+      [-0.32, 0.84],
+      [0.58, 0.02],
+      [-0.32, 0.02],
+      [0.58, -0.8],
+      [-0.32, -0.8]
+    ];
+    const shouldWalkFromCabin = surface === "水面" && index === 0 && i < walkStartSeats.length;
+    const walkStart = shouldWalkFromCabin
+      ? getPlaneLocalWorldPoint(walkStartSeats[i][0], 1.48, walkStartSeats[i][1])
+      : null;
+    const aislePoint = shouldWalkFromCabin
+      ? getPlaneLocalWorldPoint(0.13, 1.48, walkStartSeats[i][1])
+      : null;
+    const doorInside = shouldWalkFromCabin
+      ? door.clone().add(side.clone().multiplyScalar(-0.95)).add(forward.clone().multiplyScalar(-0.32)).add(new THREE.Vector3(0, 0.12, 0))
+      : null;
+    const passengerQueue = shouldWalkFromCabin ? walkStart : queue;
     passenger.position.copy(queue);
     passenger.rotation.y = slide.rotation.y;
     passenger.userData.lifeJacket.visible = surface === "水面";
     passenger.visible = surface !== "水面" || state.evacuationPassengersReleased;
     passenger.userData.evacuationPath = {
       delay: index * 0.55 + i * 0.18,
+      walkDuration: shouldWalkFromCabin ? 1.45 + i * 0.08 : 0,
+      walkPoints: shouldWalkFromCabin
+        ? [walkStart, aislePoint, doorInside, slideStart.clone().add(lateral.clone().multiplyScalar(0.4))]
+        : null,
       duration: surface === "水面" ? 2.35 : 1.55,
-      queue,
+      queue: passengerQueue,
       slideStart: slideStart.clone().add(lateral.clone().multiplyScalar(0.4)),
       slideEnd: raftLanding,
       slideYaw: slide.rotation.y,
@@ -1921,10 +1945,10 @@ function openEmergencyExitAndSlide(force = false) {
     deployLifeRaft();
     releasePlayerEvacuation(surface);
     routeLabel.textContent = "救生筏已充气：乘客一个个滑下去";
-    statusText.textContent = force
-      ? "救生筏自动充气完成，两边鼓起来并和滑梯末端接在一起。乘客开始排队滑到救生筏上，你也会一起滑下去。"
-      : "救生筏充气完成，两边鼓起来并和滑梯末端接在一起。乘客开始排队滑到救生筏上，你也会一起滑下去。";
-    addLog(force ? "乘务员完成自动撤离准备：救生筏充气，乘客和你开始撤离。" : "紧急流程：救生筏充气完成，乘客和你一起从滑梯进入救生筏。");
+  statusText.textContent = force
+      ? "救生筏自动充气完成，两边鼓起来并和滑梯末端接在一起。你和几个乘客会先走到滑梯口，再一个个滑到救生筏上。"
+      : "救生筏充气完成，两边鼓起来并和滑梯末端接在一起。你和几个乘客会先走到滑梯口，再一个个滑到救生筏上。";
+    addLog(force ? "乘务员完成自动撤离准备：你和几个乘客开始走向滑梯。" : "紧急流程：救生筏充气完成，你和几个乘客一起走向滑梯。");
     return;
   }
   statusText.textContent = surface === "水面"
