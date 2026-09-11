@@ -324,6 +324,10 @@ body {
   background: linear-gradient(135deg, #23669a, #6fb36d);
 }
 
+.travel-assistant {
+  background: linear-gradient(135deg, #0b3142, #087f8c 48%, #ffd166);
+}
+
 .ludo {
   background: linear-gradient(135deg, #c7354f, #2861a6);
 }

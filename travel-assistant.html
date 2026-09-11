@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>3D 旅游助手</title>
+    <meta name="description" content="在一座 3D 大城市里走路、打车、坐地铁、坐高铁和坐飞机，旅游助手会讲买票、订酒店、景点玩法和历史故事。" />
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%230b3142'/%3E%3Cpath d='M10 38 32 12l22 26-8 14H18z' fill='%2342d6c2'/%3E%3Cpath d='M15 42h34v8H15z' fill='%23ffd166'/%3E%3Ccircle cx='32' cy='31' r='7' fill='%23ffffff'/%3E%3C/svg%3E" />
+    <link rel="stylesheet" href="travel-assistant.css?v=travel-helper-city-20260911" />
+  </head>
+  <body>
+    <main class="travel-shell">
+      <section class="city-stage">
+        <canvas id="cityCanvas" aria-label="3D 旅游助手城市"></canvas>
+        <a class="home-link" href="arcade.html">游戏大厅</a>
+        <div class="city-hud">
+          <p>Travel Assistant Game</p>
+          <h1>3D 旅游助手</h1>
+          <span id="statusText">你在星湾大城市中心。可以走路、打车、坐地铁、高铁或飞机，去机场、酒店、商场和景点。</span>
+        </div>
+        <div class="compass" id="compass">面向北城</div>
+        <div class="mobile-pad" aria-label="移动按钮">
+          <button type="button" data-move="forward">前</button>
+          <div>
+            <button type="button" data-move="left">左</button>
+            <button type="button" data-move="back">后</button>
+            <button type="button" data-move="right">右</button>
+          </div>
+        </div>
+      </section>
+
+      <aside class="travel-panel">
+        <section class="panel hero-panel">
+          <p class="label">单独游戏</p>
+          <h2>星湾大城市</h2>
+          <p>两个机场、一个高铁站、12 个地铁站、酒店、商场、河边和观景塔都在同一个 3D 城市里。</p>
+        </section>
+
+        <section class="panel controls-panel">
+          <p class="label">交通方式</p>
+          <div class="mode-grid" id="modeGrid">
+            <button type="button" class="active" data-mode="walk">走路</button>
+            <button type="button" data-mode="taxi">打车</button>
+            <button type="button" data-mode="metro">地铁</button>
+            <button type="button" data-mode="rail">高铁</button>
+            <button type="button" data-mode="plane">飞机</button>
+          </div>
+          <div class="quick-actions">
+            <button type="button" id="goButton">按路线出发</button>
+            <button type="button" id="resetButton">回到市中心</button>
+          </div>
+        </section>
+
+        <section class="panel destination-panel">
+          <p class="label">选择目的地</p>
+          <div class="destination-grid" id="destinationGrid"></div>
+        </section>
+
+        <section class="panel assistant-panel">
+          <p class="label">旅游助手</p>
+          <div class="assistant-buttons">
+            <button type="button" data-topic="ticket">怎么买票</button>
+            <button type="button" data-topic="hotel">怎么订酒店</button>
+            <button type="button" data-topic="play">怎么玩</button>
+            <button type="button" data-topic="history">讲点历史</button>
+          </div>
+          <article class="assistant-card" id="assistantCard">
+            <h3>先选一个地方</h3>
+            <p>点一个目的地，再选交通方式。绿色路线会出现，人物会沿着城市道路或交通线路过去。</p>
+          </article>
+        </section>
+
+        <section class="panel mini-map-panel">
+          <p class="label">城市状态</p>
+          <div class="stats">
+            <div><span>交通</span><strong id="modeText">走路</strong></div>
+            <div><span>目的地</span><strong id="destText">未选择</strong></div>
+            <div><span>距离</span><strong id="distanceText">0 m</strong></div>
+            <div><span>视角</span><strong id="cameraText">跟随</strong></div>
+          </div>
+        </section>
+      </aside>
+    </main>
+
+    <script type="module" src="travel-assistant.js?v=travel-helper-city-20260911"></script>
+    <script src="arcade-stats.js?v=visitor-table-20260728"></script>
+  </body>
+</html>

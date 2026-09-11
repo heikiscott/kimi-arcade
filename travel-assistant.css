@@ -1,0 +1,337 @@
+:root {
+  --ink: #102b36;
+  --muted: #5d7480;
+  --teal: #087f8c;
+  --deep: #0b3142;
+  --mint: #4dd9c4;
+  --gold: #ffd166;
+  --paper: rgba(255, 255, 255, 0.94);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  overflow: hidden;
+  color: var(--ink);
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: #cdebf4;
+}
+
+button,
+a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.travel-shell {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 390px;
+  min-height: 100vh;
+}
+
+.city-stage {
+  position: relative;
+  min-height: 100vh;
+  background: #9bd6ef;
+}
+
+#cityCanvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 100vh;
+  touch-action: none;
+}
+
+.home-link,
+.city-hud,
+.compass,
+.mobile-pad,
+.panel {
+  border: 1px solid rgba(16, 43, 54, 0.14);
+  border-radius: 8px;
+  background: var(--paper);
+  box-shadow: 0 18px 44px rgba(16, 43, 54, 0.18);
+}
+
+.home-link {
+  position: absolute;
+  top: 18px;
+  left: 18px;
+  z-index: 5;
+  padding: 10px 13px;
+  color: var(--deep);
+  font-size: 0.92rem;
+  font-weight: 950;
+  text-decoration: none;
+}
+
+.city-hud {
+  position: absolute;
+  left: 18px;
+  bottom: 18px;
+  z-index: 5;
+  width: min(560px, calc(100% - 36px));
+  padding: 16px 18px;
+}
+
+.city-hud p,
+.label {
+  margin: 0 0 6px;
+  color: var(--teal);
+  font-size: 0.76rem;
+  font-weight: 950;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.city-hud h1,
+.hero-panel h2 {
+  margin: 0;
+  color: var(--deep);
+  font-size: clamp(1.65rem, 4vw, 3.1rem);
+  line-height: 1;
+  letter-spacing: 0;
+}
+
+.city-hud span,
+.panel p,
+.assistant-card p {
+  color: var(--muted);
+  font-weight: 780;
+  line-height: 1.45;
+}
+
+.compass {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  z-index: 5;
+  min-width: 112px;
+  padding: 10px 13px;
+  color: var(--deep);
+  font-weight: 950;
+  text-align: center;
+}
+
+.mobile-pad {
+  position: absolute;
+  right: 18px;
+  bottom: 18px;
+  z-index: 5;
+  display: none;
+  gap: 6px;
+  padding: 10px;
+}
+
+.mobile-pad,
+.mobile-pad div {
+  grid-template-columns: repeat(3, 48px);
+}
+
+.mobile-pad button {
+  width: 48px;
+  height: 42px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--deep);
+  color: #fff;
+  font-weight: 950;
+}
+
+.mobile-pad > button {
+  grid-column: 2;
+}
+
+.mobile-pad div {
+  display: grid;
+  gap: 6px;
+}
+
+.travel-panel {
+  display: grid;
+  align-content: start;
+  gap: 14px;
+  max-height: 100vh;
+  padding: 18px;
+  overflow-y: auto;
+  background:
+    linear-gradient(90deg, rgba(8, 127, 140, 0.08) 1px, transparent 1px),
+    linear-gradient(rgba(8, 127, 140, 0.08) 1px, transparent 1px),
+    linear-gradient(180deg, #e7f8fb, #f7fbfc);
+  background-size: 34px 34px, 34px 34px, auto;
+}
+
+.panel {
+  padding: 16px;
+}
+
+.panel h2 {
+  font-size: 1.75rem;
+}
+
+.panel p {
+  margin: 8px 0 0;
+  font-size: 0.95rem;
+}
+
+.mode-grid,
+.destination-grid,
+.assistant-buttons,
+.quick-actions {
+  display: grid;
+  gap: 8px;
+}
+
+.mode-grid {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.quick-actions {
+  grid-template-columns: 1fr 1fr;
+  margin-top: 10px;
+}
+
+.destination-grid {
+  grid-template-columns: 1fr 1fr;
+}
+
+.assistant-buttons {
+  grid-template-columns: 1fr 1fr;
+}
+
+.mode-grid button,
+.destination-grid button,
+.assistant-buttons button,
+.quick-actions button {
+  min-height: 42px;
+  border: 2px solid rgba(8, 127, 140, 0.22);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--deep);
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 950;
+}
+
+.mode-grid button.active,
+.destination-grid button.active,
+.quick-actions button:first-child {
+  border-color: transparent;
+  background: var(--teal);
+  color: #fff;
+}
+
+.quick-actions button:last-child {
+  background: #fff8dd;
+}
+
+.assistant-card {
+  margin-top: 12px;
+  padding: 13px;
+  border: 2px solid rgba(255, 209, 102, 0.74);
+  border-radius: 8px;
+  background: #fffdf3;
+}
+
+.assistant-card h3 {
+  margin: 0;
+  color: #9a5d00;
+  font-size: 1.05rem;
+}
+
+.assistant-card p {
+  margin: 8px 0 0;
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.stats div {
+  min-height: 76px;
+  padding: 11px;
+  border-radius: 8px;
+  background: #eefbfc;
+}
+
+.stats span {
+  display: block;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 900;
+}
+
+.stats strong {
+  display: block;
+  margin-top: 5px;
+  color: var(--deep);
+  font-size: 1rem;
+  line-height: 1.2;
+}
+
+@media (max-width: 980px) {
+  body {
+    overflow: auto;
+  }
+
+  .travel-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .city-stage,
+  #cityCanvas {
+    min-height: 62vh;
+  }
+
+  .travel-panel {
+    max-height: none;
+  }
+
+  .mobile-pad {
+    display: grid;
+  }
+}
+
+@media (max-width: 560px) {
+  .home-link,
+  .compass {
+    top: 10px;
+  }
+
+  .home-link {
+    left: 10px;
+  }
+
+  .compass {
+    right: 10px;
+  }
+
+  .city-hud {
+    left: 10px;
+    bottom: 10px;
+    width: calc(100% - 20px);
+    padding: 13px;
+  }
+
+  .mobile-pad {
+    right: 10px;
+    bottom: 132px;
+  }
+
+  .mode-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .destination-grid,
+  .assistant-buttons,
+  .quick-actions,
+  .stats {
+    grid-template-columns: 1fr;
+  }
+}
