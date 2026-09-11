@@ -62,11 +62,11 @@ const state = {
   mode: "walk",
   destination: null,
   route: null,
-  routeTime: 0,
-  routeDuration: 1,
+  legTime: 0,
   keys: new Set(),
   drag: null,
-  walkPulse: 0
+  walkPulse: 0,
+  riding: false
 };
 
 const modeNames = {
@@ -80,89 +80,91 @@ const modeNames = {
 const destinations = [
   {
     key: "tower",
-    name: "天空观景塔",
+    name: "东方明珠广播电视塔",
     type: "景点",
     pos: [4, 0, -24],
-    ticket: "现场机和手机都可以买票。高峰时先选时间段，再进电梯排队上观景层。",
-    hotel: "想看夜景就订观景塔东边的高层酒店；想省钱就住地铁三站外。",
-    play: "先到一楼展厅，再上观景层。傍晚去最漂亮，城市灯会一层一层亮起来。",
-    history: "这座塔在游戏里是星湾城的第一座观景塔，设计灵感是海风、玻璃幕墙和城市天际线。"
+    ticket: "可以提前在官方或正规平台看门票和时段。到陆家嘴后先确认入口，再排队安检上观光层。",
+    hotel: "想看黄浦江夜景可以住陆家嘴或外滩附近；想省预算就住地铁 2 号线沿线。",
+    play: "先看塔下广场，再上观光层看外滩、黄浦江和陆家嘴高楼。晚上灯光更像真实上海。",
+    history: "东方明珠在浦东陆家嘴，是上海很有代表性的城市地标之一。"
   },
   {
     key: "museum",
-    name: "海湾博物馆",
-    type: "景点",
+    name: "上海博物馆",
+    type: "博物馆",
     pos: [-32, 0, 8],
-    ticket: "普通票可以当天买，亲子讲解票要提前预约。进门会安检，水和零食放包里。",
-    hotel: "附近适合住河岸酒店，早上可以走路到博物馆和码头。",
-    play: "先看城市模型厅，再看古船和航海厅，最后去纪念品商店。",
-    history: "博物馆讲的是星湾城从渔港变成大城市的故事，所以旁边保留了一条蓝色河道。"
+    ticket: "博物馆通常要先看预约要求。到人民广场后按入口排队，安检后进馆。",
+    hotel: "第一次来上海住人民广场、南京路附近很方便，走路或坐地铁都能到很多景点。",
+    play: "可以先看青铜器和陶瓷展，再去人民广场和南京路。这里适合慢慢看，不要赶太快。",
+    history: "上海博物馆位于人民广场一带，是上海重要的文化场馆。"
   },
   {
     key: "mall",
-    name: "中央商场",
-    type: "商场",
+    name: "南京路步行街",
+    type: "商圈",
     pos: [24, 0, -7],
-    ticket: "商场不用门票。坐地铁到中央广场站，从 B 口出来最近。",
-    hotel: "商场楼上有城市酒店，适合第一天刚到的时候住，吃饭和买东西都方便。",
-    play: "先去游客中心拿地图，再上楼吃饭。想买伴手礼就去二楼城市礼物店。",
-    history: "中央商场是星湾城最早的商业中心之一，后来加了玻璃中庭和屋顶花园。"
+    ticket: "步行街不用门票。坐地铁到人民广场或南京东路站，出来就是商店和人流。",
+    hotel: "住南京路附近最方便，吃饭、购物、去外滩都近，但节假日会很热闹。",
+    play: "白天逛老字号和商场，晚上可以一路走到外滩看灯光和黄浦江。",
+    history: "南京路是上海著名商业街，也是很多游客第一次认识上海的地方。"
   },
   {
     key: "hotel",
-    name: "云顶酒店",
+    name: "陆家嘴酒店区",
     type: "酒店",
     pos: [12, 0, 22],
-    ticket: "订酒店时先看取消规则，再看早餐、机场接送和离地铁站距离。",
-    hotel: "选双床房适合和朋友住；想看城市夜景就选高楼层。",
-    play: "入住后先放行李，再去旁边美食街。晚上可以回酒店看城市灯光。",
-    history: "云顶酒店是游戏里的旅行基地，楼下有出租车点，旁边有地铁和便利店。"
+    ticket: "订酒店先看位置、取消规则、早餐和到地铁站的距离。陆家嘴适合看夜景。",
+    hotel: "选江景房能看到黄浦江和高楼；如果主要逛老城，也可以住人民广场或豫园附近。",
+    play: "入住后先放行李，再去滨江步道、东方明珠或商场吃饭。",
+    history: "陆家嘴是上海浦东的金融贸易区，高楼密集，是上海天际线最明显的地方。"
   },
   {
     key: "westAirport",
-    name: "西城国际机场",
+    name: "上海虹桥国际机场",
     type: "机场",
     pos: [-58, 0, 45],
-    ticket: "国内航班提前到，国际航班更早到。先看航站楼，再值机、托运行李、过安检。",
-    hotel: "早班机可以住机场酒店，步行或接驳车到航站楼。",
-    play: "可以看跑道、廊桥和飞机滑行。坐飞机模式会沿绿色航线飞到另一座机场。",
-    history: "西城国际机场有两条跑道，是星湾城远距离航班的主要机场。"
+    ticket: "买机票后一定看清是虹桥还是浦东。到机场先找航站楼和值机柜台，再过安检。",
+    hotel: "虹桥机场旁边适合赶早班机，也方便换乘虹桥火车站的高铁。",
+    play: "可以看航站楼、跑道和廊桥。飞机模式会沿绿色航线飞向浦东机场。",
+    history: "虹桥机场和虹桥火车站组成上海西侧重要交通枢纽。"
   },
   {
     key: "eastAirport",
-    name: "东海第二机场",
+    name: "上海浦东国际机场",
     type: "机场",
     pos: [60, 0, -39],
-    ticket: "第二机场多是短途和海岛航班。先确认机场名字，别跑错机场。",
-    hotel: "赶早班可以住机场旁边；想玩市区就住地铁换乘站附近。",
-    play: "从这里可以看到海、跑道灯和城市边缘。飞机会从一座机场飞到另一座机场。",
-    history: "东海第二机场建在海边，游戏里用来表现城市另一头的机场。"
+    ticket: "浦东机场离市区更远，出发前要留足路上时间。国际航班要更早到。",
+    hotel: "赶早班或转机可以住浦东机场附近；想去市区玩就住地铁或机场线方便的位置。",
+    play: "从这里可以看大航站楼、长跑道和飞机滑行。也能飞回虹桥机场。",
+    history: "浦东国际机场是上海主要国际航空门户之一，官方机场集团同时运营浦东和虹桥两座机场。"
   },
   {
     key: "rail",
-    name: "高铁中央站",
+    name: "上海虹桥站",
     type: "高铁",
     pos: [-8, 0, 38],
-    ticket: "高铁票要选车次、座位和出发站。进站先刷证件，再看候车口。",
-    hotel: "赶高铁住车站附近最省时间，但晚上会比较热闹。",
-    play: "站台可以看高铁进站。坐高铁会沿银色轨道穿过城市。",
-    history: "高铁中央站把机场、市中心和新区连起来，是星湾城最快的陆上交通。"
+    ticket: "买高铁票要看清上海虹桥站、上海站、上海南站这些不同车站。进站后看候车口。",
+    hotel: "第二天坐高铁可以住虹桥商务区；想玩景点就住市中心再坐地铁过去。",
+    play: "可以看高铁站台、候车大厅和银色轨道。高铁模式会沿轨道穿城。",
+    history: "上海虹桥站与虹桥机场距离很近，是上海重要的铁路和航空换乘枢纽。"
   },
   {
     key: "oldGate",
-    name: "中央古城门",
+    name: "豫园",
     type: "名胜",
     pos: [-20, 0, 17],
-    ticket: "外面广场免费，登城门需要买小门票。学生票要带证件。",
-    hotel: "附近老街酒店比较有味道，但房间会小一点。",
-    play: "白天看城门细节，晚上看灯光。旁边有老街小吃和纪念章。",
-    history: "古城门是星湾城还没变成现代都市前留下的建筑，后来周围长出了高楼。"
+    ticket: "豫园景区周边可以逛街，进园要看当天开放和购票规则。",
+    hotel: "喜欢老城味道可以住豫园、城隍庙附近；想安静一点就住地铁几站外。",
+    play: "先逛园林和九曲桥，再去周边老街吃小吃，晚上看灯会感更强。",
+    history: "豫园是上海老城厢的代表景点之一，和外滩、南京路经常一起安排。"
   }
 ];
 
 const destinationMap = new Map(destinations.map((item) => [item.key, item]));
 const world = new THREE.Group();
 scene.add(world);
+let routeLine = null;
+let vehicle = null;
 
 function box(name, size, pos, material, cast = true) {
   const mesh = new THREE.Mesh(new THREE.BoxGeometry(size[0], size[1], size[2]), material);
@@ -286,25 +288,25 @@ function createAirport(key, x, z, rot, labelText) {
 function createLandmarks() {
   cyl("tower stem", 2.2, 42, [4, 21, -34], mat.glass, 40);
   cyl("tower deck", 7.5, 2.4, [4, 36, -34], mat.gold, 40);
-  label("天空观景塔", [4, 45, -34]);
+  label("东方明珠", [4, 45, -34]);
   box("museum", [18, 7, 14], [-32, 3.6, -4], mat.white);
   cyl("museum dome", 8, 5, [-32, 9.4, -4], mat.glass, 48);
-  label("海湾博物馆", [-32, 15, -4]);
+  label("上海博物馆", [-32, 15, -4]);
   box("mall", [24, 10, 18], [24, 5.1, 7], mat.gold);
   box("mall atrium", [8, 13, 8], [24, 6.7, 7], mat.glass);
-  label("中央商场", [24, 16, 7]);
+  label("南京路步行街", [24, 16, 7]);
   box("hotel", [14, 34, 12], [12, 17, 32], mat.glass);
   box("hotel cap", [16, 2, 14], [12, 35, 32], mat.teal);
-  label("云顶酒店", [12, 41, 32]);
+  label("陆家嘴酒店区", [12, 41, 32]);
   box("rail station", [24, 7, 10], [-8, 3.6, 48], mat.white);
   box("rail roof", [28, 1, 12], [-8, 7.6, 48], mat.teal);
-  label("高铁中央站", [-8, 13, 48]);
+  label("上海虹桥站", [-8, 13, 48]);
   box("old gate left", [4, 14, 5], [-25, 7, 25], mat.red);
   box("old gate right", [4, 14, 5], [-15, 7, 25], mat.red);
   box("old gate top", [16, 4, 5], [-20, 14.6, 25], mat.gold);
-  label("中央古城门", [-20, 21, 25]);
-  createAirport("westAirport", -78, 45, -0.35, "西城国际机场");
-  createAirport("eastAirport", 82, -42, 0.28, "东海第二机场");
+  label("豫园", [-20, 21, 25]);
+  createAirport("westAirport", -78, 45, -0.35, "虹桥机场");
+  createAirport("eastAirport", 82, -42, 0.28, "浦东机场");
 }
 
 function createStationsAndCrowds() {
@@ -312,9 +314,10 @@ function createStationsAndCrowds() {
     [-20, -31], [0, -29], [26, -31], [-30, 0], [0, 0], [31, 0],
     [-24, 31], [0, 31], [28, 31], [-50, 22], [48, -24], [54, 18]
   ];
+  const stationNames = ["人民广场", "南京东路", "陆家嘴", "静安寺", "世纪大道", "豫园", "徐家汇", "上海火车站", "龙阳路", "虹桥火车站", "虹桥2号航站楼", "迪士尼"];
   stations.forEach(([x, z], index) => {
     cyl("metro station", 1.3, 0.35, [x, 0.35, z], mat.teal, 24);
-    label(`M${index + 1}`, [x, 2.9, z], "#0b3142").scale.set(3.2, 0.82, 1);
+    label(stationNames[index], [x, 2.9, z], "#0b3142").scale.set(4.9, 1.2, 1);
   });
   const rnd = seedRandom(10);
   for (let i = 0; i < 72; i += 1) {
@@ -356,33 +359,181 @@ function createAvatar() {
 mat.deep = new THREE.MeshStandardMaterial({ color: 0x113847, roughness: 0.72 });
 const avatar = createAvatar();
 
-let routeLine = null;
+function clearVehicle() {
+  if (!vehicle) return;
+  scene.remove(vehicle);
+  vehicle.traverse((child) => {
+    if (child.geometry) child.geometry.dispose();
+  });
+  vehicle = null;
+}
 
-function createRoute(target) {
+function createVehicle(mode) {
+  clearVehicle();
+  const group = new THREE.Group();
+  const dark = new THREE.MeshStandardMaterial({ color: 0x102b36, roughness: 0.62 });
+  if (mode === "taxi") {
+    const body = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.8, 1.35), mat.gold);
+    body.position.y = 0.7;
+    const roof = new THREE.Mesh(new THREE.BoxGeometry(1.3, 0.55, 1.05), mat.white);
+    roof.position.y = 1.25;
+    const sign = new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.18, 0.34), mat.teal);
+    sign.position.y = 1.63;
+    group.add(body, roof, sign);
+    [-0.8, 0.8].forEach((x) => {
+      [-0.58, 0.58].forEach((z) => {
+        const wheel = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.24, 0.16, 16), dark);
+        wheel.rotation.z = Math.PI / 2;
+        wheel.position.set(x, 0.28, z);
+        group.add(wheel);
+      });
+    });
+  } else if (mode === "metro" || mode === "rail") {
+    const color = mode === "metro" ? mat.teal : mat.white;
+    for (let i = 0; i < 3; i += 1) {
+      const car = new THREE.Mesh(new THREE.BoxGeometry(3.3, 1.25, 1.35), color);
+      car.position.set((i - 1) * 3.55, 0.9, 0);
+      group.add(car);
+      const stripe = new THREE.Mesh(new THREE.BoxGeometry(3.0, 0.18, 0.05), mode === "metro" ? mat.gold : mat.teal);
+      stripe.position.set((i - 1) * 3.55, 1.25, -0.7);
+      group.add(stripe);
+    }
+  } else if (mode === "plane") {
+    const body = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, 5.6, 24), mat.white);
+    body.rotation.z = Math.PI / 2;
+    body.position.y = 1.2;
+    const nose = new THREE.Mesh(new THREE.ConeGeometry(0.52, 1.15, 24), mat.white);
+    nose.rotation.z = -Math.PI / 2;
+    nose.position.set(-3.35, 1.2, 0);
+    const wing = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.12, 5.3), mat.teal);
+    wing.position.y = 1.2;
+    const tail = new THREE.Mesh(new THREE.BoxGeometry(0.16, 1.1, 1.35), mat.teal);
+    tail.position.set(2.55, 1.75, 0);
+    group.add(body, nose, wing, tail);
+  }
+  group.visible = false;
+  scene.add(group);
+  vehicle = group;
+  return group;
+}
+
+function curveFrom(points) {
+  return new THREE.CatmullRomCurve3(points.map((point) => new THREE.Vector3(point.x, point.y ?? 0.7, point.z)));
+}
+
+function roadLeg(labelText, from, to, speed, rideMode = "") {
+  const roadZ = Math.abs(to.z) > 38 ? (to.z > 0 ? 31 : -30) : 0;
+  const points = [
+    { x: from.x, y: 0.7, z: from.z },
+    { x: from.x, y: 0.7, z: roadZ },
+    { x: to.x, y: 0.7, z: roadZ },
+    { x: to.x, y: 0.7, z: to.z }
+  ];
+  const distance = from.distanceTo(to);
+  return {
+    label: labelText,
+    curve: curveFrom(points),
+    duration: Math.max(0.75, distance / speed),
+    rideMode,
+    riding: Boolean(rideMode)
+  };
+}
+
+function airLeg(labelText, from, to) {
+  const points = [
+    { x: from.x, y: 1.2, z: from.z },
+    { x: from.x, y: 10, z: from.z - 10 },
+    { x: (from.x + to.x) / 2, y: 24, z: (from.z + to.z) / 2 },
+    { x: to.x, y: 10, z: to.z + 10 },
+    { x: to.x, y: 1.2, z: to.z }
+  ];
+  return {
+    label: labelText,
+    curve: curveFrom(points),
+    duration: Math.max(2.6, from.distanceTo(to) / 42),
+    rideMode: "plane",
+    riding: true
+  };
+}
+
+function nearestStation(position) {
+  const stations = [
+    new THREE.Vector3(-20, 0, -31), new THREE.Vector3(0, 0, -29), new THREE.Vector3(26, 0, -31),
+    new THREE.Vector3(-30, 0, 0), new THREE.Vector3(0, 0, 0), new THREE.Vector3(31, 0, 0),
+    new THREE.Vector3(-24, 0, 31), new THREE.Vector3(0, 0, 31), new THREE.Vector3(28, 0, 31),
+    new THREE.Vector3(-50, 0, 22), new THREE.Vector3(48, 0, -24), new THREE.Vector3(54, 0, 18)
+  ];
+  return stations.reduce((best, station) => station.distanceTo(position) < best.distanceTo(position) ? station : best, stations[0]).clone();
+}
+
+function makeTripLegs(target) {
+  const start = state.pos.clone();
+  const end = new THREE.Vector3(target.pos[0], 0, target.pos[2]);
+  if (state.mode === "walk") return [roadLeg(`步行去 ${target.name}，一路沿着上海街道走。`, start, end, 7)];
+  if (state.mode === "taxi") {
+    const pickup = new THREE.Vector3(start.x, 0, Math.abs(start.z) > 22 ? 31 * Math.sign(start.z) : 0);
+    const dropoff = new THREE.Vector3(end.x, 0, Math.abs(end.z) > 22 ? 31 * Math.sign(end.z) : 0);
+    return [
+      roadLeg("先走到路边出租车上车点。", start, pickup, 7),
+      roadLeg(`坐出租车去 ${target.name} 附近，车会沿主路开。`, pickup, dropoff, 23, "taxi"),
+      roadLeg(`下车后走进 ${target.name}。`, dropoff, end, 7)
+    ];
+  }
+  if (state.mode === "metro") {
+    const origin = nearestStation(start);
+    const exit = nearestStation(end);
+    return [
+      roadLeg("先走进最近的上海地铁站。", start, origin, 7),
+      roadLeg(`坐上海地铁到 ${target.name} 附近的站。`, origin, exit, 34, "metro"),
+      roadLeg(`出站后走到 ${target.name}。`, exit, end, 7)
+    ];
+  }
+  if (state.mode === "rail") {
+    const station = new THREE.Vector3(-8, 0, 38);
+    return [
+      roadLeg("先到上海虹桥站，进站检票。", start, station, 16, start.distanceTo(station) > 18 ? "taxi" : ""),
+      roadLeg("坐高铁从站台出发，沿银色轨道运行一段。", station, new THREE.Vector3(48, 0, 54), 48, "rail"),
+      roadLeg(`高铁到站后下车，再去 ${target.name}。`, new THREE.Vector3(48, 0, 54), end, 12)
+    ];
+  }
+  const hongqiao = new THREE.Vector3(-58, 0, 45);
+  const pudong = new THREE.Vector3(60, 0, -39);
+  const startAirport = target.key === "westAirport" ? pudong : hongqiao;
+  const endAirport = target.key === "westAirport" ? hongqiao : pudong;
+  const legs = [
+    roadLeg(`先去 ${startAirport === hongqiao ? "上海虹桥国际机场" : "上海浦东国际机场"}，进航站楼。`, start, startAirport, 22, "taxi"),
+    airLeg(`登机后起飞，飞到 ${endAirport === pudong ? "上海浦东国际机场" : "上海虹桥国际机场"}。`, startAirport, endAirport)
+  ];
+  if (target.type !== "机场") legs.push(roadLeg(`下飞机出站，再坐车去 ${target.name}。`, endAirport, end, 20, "taxi"));
+  return legs;
+}
+
+function drawRouteLine(legs) {
   if (routeLine) {
     world.remove(routeLine);
     routeLine.geometry.dispose();
   }
-  const start = state.pos.clone();
-  const end = new THREE.Vector3(target.pos[0], 0, target.pos[2]);
-  const routeY = state.mode === "plane" ? 18 : state.mode === "metro" ? 2.1 : 0.8;
-  const roadZ = state.mode === "rail" ? 54 : target.type === "机场" ? (end.z > 0 ? 31 : -30) : 0;
-  const points = [
-    start.clone().setY(0.7),
-    new THREE.Vector3(start.x, routeY, roadZ),
-    new THREE.Vector3(end.x, routeY, roadZ),
-    end.clone().setY(0.7)
-  ];
-  const curve = new THREE.CatmullRomCurve3(points);
-  const samples = curve.getPoints(70);
+  const samples = legs.flatMap((leg) => leg.curve.getPoints(32));
   const geometry = new THREE.BufferGeometry().setFromPoints(samples);
   routeLine = new THREE.Line(geometry, mat.route);
   world.add(routeLine);
-  state.route = { start, end, curve, target };
-  state.routeTime = 0;
-  const distance = start.distanceTo(end);
-  const speed = { walk: 7, taxi: 22, metro: 34, rail: 46, plane: 55 }[state.mode];
-  state.routeDuration = Math.max(1.5, distance / speed);
+}
+
+function previewRoute(target) {
+  drawRouteLine(makeTripLegs(target));
+  state.route = null;
+  state.riding = false;
+  clearVehicle();
+}
+
+function createRoute(target) {
+  clearVehicle();
+  const legs = makeTripLegs(target);
+  drawRouteLine(legs);
+  state.route = { legs, legIndex: 0, target };
+  state.legTime = 0;
+  state.riding = false;
+  ui.status.textContent = legs[0].label;
   showAssistant("play");
 }
 
@@ -393,7 +544,7 @@ function setDestination(key) {
   });
   ui.destText.textContent = state.destination.name;
   ui.status.textContent = `目的地改成 ${state.destination.name}。选择交通方式后点“按路线出发”。`;
-  createRoute(state.destination);
+  previewRoute(state.destination);
 }
 
 function setMode(mode) {
@@ -402,7 +553,7 @@ function setMode(mode) {
   [...ui.modeGrid.querySelectorAll("button")].forEach((button) => {
     button.classList.toggle("active", button.dataset.mode === mode);
   });
-  if (state.destination) createRoute(state.destination);
+  if (state.destination) previewRoute(state.destination);
 }
 
 function showAssistant(topic) {
@@ -435,14 +586,15 @@ function buildUi() {
   ui.go.addEventListener("click", () => {
     if (!state.destination) setDestination("tower");
     createRoute(state.destination);
-    ui.status.textContent = `${modeNames[state.mode]}出发，绿色线会带你去 ${state.destination.name}。`;
   });
   ui.reset.addEventListener("click", () => {
     state.pos.set(0, 0, 0);
     state.heading = -Math.PI / 2;
     state.route = null;
+    state.riding = false;
+    clearVehicle();
     if (routeLine) routeLine.visible = false;
-    ui.status.textContent = "已经回到市中心。可以重新选择目的地。";
+    ui.status.textContent = "已经回到上海人民广场附近。可以重新选择目的地。";
   });
 }
 
@@ -505,19 +657,46 @@ function updateMovement(dt) {
   }
   state.pos.x = THREE.MathUtils.clamp(state.pos.x, -100, 100);
   state.pos.z = THREE.MathUtils.clamp(state.pos.z, -75, 75);
-  if (moved) state.route = null;
+  if (moved) {
+    state.route = null;
+    state.riding = false;
+    clearVehicle();
+  }
   state.walkPulse += moved ? dt * 9 : dt * 2;
 }
 
 function updateRoute(dt) {
   if (!state.route) return;
-  state.routeTime += dt;
-  const t = Math.min(1, state.routeTime / state.routeDuration);
-  const point = state.route.curve.getPoint(t);
-  state.pos.set(point.x, 0, point.z);
+  const leg = state.route.legs[state.route.legIndex];
+  state.legTime += dt;
+  const t = Math.min(1, state.legTime / leg.duration);
+  const point = leg.curve.getPoint(t);
+  const tangent = leg.curve.getTangent(Math.min(0.98, t + 0.01));
+  state.riding = leg.riding;
+  if (leg.riding) {
+    if (!vehicle || vehicle.userData.mode !== leg.rideMode) {
+      createVehicle(leg.rideMode);
+      vehicle.userData.mode = leg.rideMode;
+    }
+    vehicle.visible = true;
+    vehicle.position.copy(point);
+    vehicle.rotation.y = Math.atan2(tangent.x, tangent.z) + Math.PI / 2;
+    state.pos.set(point.x, 0, point.z);
+  } else {
+    if (vehicle) vehicle.visible = false;
+    state.pos.set(point.x, 0, point.z);
+  }
   if (t >= 1) {
-    ui.status.textContent = `到达 ${state.route.target.name}。现在可以问怎么买票、订酒店、怎么玩或讲历史。`;
-    state.route = null;
+    state.route.legIndex += 1;
+    state.legTime = 0;
+    if (state.route.legIndex >= state.route.legs.length) {
+      ui.status.textContent = `已经下车/出站，到达 ${state.route.target.name}。现在可以问怎么买票、订酒店、怎么玩或讲历史。`;
+      state.route = null;
+      state.riding = false;
+      clearVehicle();
+    } else {
+      ui.status.textContent = state.route.legs[state.route.legIndex].label;
+    }
   }
 }
 
@@ -526,14 +705,15 @@ function updateCamera() {
   avatar.rotation.y = state.heading;
   avatar.children[3].rotation.x = Math.sin(state.walkPulse) * 0.22;
   avatar.children[4].rotation.x = -Math.sin(state.walkPulse) * 0.22;
-  avatar.visible = state.cameraDistance > 2.4;
+  avatar.visible = state.cameraDistance > 2.4 && !state.riding;
 
   const behind = new THREE.Vector3(-Math.sin(state.heading), 0, -Math.cos(state.heading));
-  const camPos = state.pos.clone()
+  const focus = vehicle?.visible ? vehicle.position.clone() : state.pos.clone();
+  const camPos = focus.clone()
     .addScaledVector(behind, state.cameraDistance)
-    .add(new THREE.Vector3(0, 2.6 + state.cameraDistance * 0.2, 0));
+    .add(new THREE.Vector3(0, 2.6 + state.cameraDistance * 0.2 + (vehicle?.visible ? 2 : 0), 0));
   camera.position.copy(camPos);
-  camera.lookAt(state.pos.x, 1.5 + state.pitch * 5, state.pos.z);
+  camera.lookAt(focus.x, 1.5 + state.pitch * 5, focus.z);
 }
 
 function updateStats() {
